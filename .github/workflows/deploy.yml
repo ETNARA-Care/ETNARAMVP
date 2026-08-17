@@ -22,10 +22,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
 
       - name: Unzip ETNARA frontend
         run: |
+          rm -rf frontend
           unzip -q ETNARALAST-NEW.zip
           ls -la
           ls -la frontend
@@ -37,33 +37,41 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Configure GitHub Pages base path
+      - name: Configure GitHub Pages
         working-directory: frontend
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           vite = Path("vite.config.ts")
           text = vite.read_text()
 
-          if "base:" not in text:
+          if re.search(r"\bbase\s*:", text):
+              text = re.sub(
+                  r"""base\s*:\s*['"][^'"]*['"]""",
+                  "base: '/ETNARAMVP/'",
+                  text,
+                  count=1
+              )
+          else:
               text = text.replace(
                   "defineConfig({",
-                  "defineConfig({\n  base: '/ETNARAMVP/',"
+                  "defineConfig({\n  base: '/ETNARAMVP/',",
+                  1
               )
 
           vite.write_text(text)
 
           app = Path("src/App.tsx")
-          text = app.read_text()
-
-          if "basename={import.meta.env.BASE_URL}" not in text:
-              text = text.replace(
-                  "<BrowserRouter>",
-                  "<BrowserRouter basename={import.meta.env.BASE_URL}>"
-              )
-
-          app.write_text(text)
+          if app.exists():
+              text = app.read_text()
+              if "<BrowserRouter>" in text:
+                  text = text.replace(
+                      "<BrowserRouter>",
+                      "<BrowserRouter basename={import.meta.env.BASE_URL}>"
+                  )
+              app.write_text(text)
           PY
 
       - name: Install dependencies
@@ -74,10 +82,17 @@ jobs:
         working-directory: frontend
         run: npm test -- --run
 
-     - name: Build
-  working-directory: frontend
-  run: npm run build
-  
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://etnara-care-backend-staging-production.up.railway.app
+        run: npm run build
+
+      - name: Add SPA fallback
+        working-directory: frontend
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -91,7 +106,6 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
     needs: build
 
