@@ -26,8 +26,8 @@ jobs:
       - name: Unzip ETNARA frontend
         run: |
           rm -rf frontend
-          unzip -q ETNARAMVPcaregiverready.zip
-          ls -la
+          mkdir -p frontend
+          unzip -q ETNARAMVPcaregiverready.zip -d frontend
           ls -la frontend
 
       - name: Setup Node
