@@ -124,4 +124,4 @@ describe("Caregiver -- mis turnos", () => {
       expect(screen.getByText("Sin turnos asignados")).toBeInTheDocument();
     });
   });
-}
+});
