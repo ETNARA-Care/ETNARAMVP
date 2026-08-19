@@ -2,8 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { RequireAuth, roleHome } from "./auth/RequireAuth";
 import { TopNav } from "./navigation/TopNav";
+import { FamilyTabBar } from "./navigation/FamilyTabBar";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { FamilyHomePage } from "./pages/family/FamilyHomePage";
+import { FamilyHistoryPage, FamilyProfilePage } from "./pages/family/FamilySupportPages";
 import { AgencyDashboardRealPage } from "./pages/agency/AgencyDashboardRealPage";
 import { AgencyShiftsPage } from "./pages/agency/AgencyShiftsPage";
 import { AgencyRecipientsPage } from "./pages/agency/AgencyRecipientsPage";
@@ -26,6 +28,17 @@ function AppShell() {
   );
 }
 
+function FamilyShell() {
+  return (
+    <div style={{ minHeight: "100dvh", background: "var(--color-bg)", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1 }}>
+        <Outlet />
+      </div>
+      <FamilyTabBar />
+    </div>
+  );
+}
+
 function RoleHomeRedirect() {
   const { activeOrganization } = useAuth();
   return <Navigate to={roleHome(activeOrganization?.roles ?? [])} replace />;
@@ -39,9 +52,15 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
 
           <Route element={<RequireAuth />}>
+            <Route path="/" element={<RoleHomeRedirect />} />
+            <Route path="/family" element={<FamilyShell />}>
+              <Route index element={<FamilyHomePage />} />
+              <Route path="historial" element={<FamilyHistoryPage />} />
+              <Route path="mensajes" element={<MessagesPage />} />
+              <Route path="perfil" element={<FamilyProfilePage />} />
+            </Route>
+
             <Route element={<AppShell />}>
-              <Route path="/" element={<RoleHomeRedirect />} />
-              <Route path="/family" element={<FamilyHomePage />} />
               <Route path="/agency" element={<AgencyDashboardRealPage />} />
               <Route path="/agency/turnos" element={<AgencyShiftsPage />} />
               <Route path="/agency/personas" element={<AgencyRecipientsPage />} />

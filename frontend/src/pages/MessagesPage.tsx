@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
   listConversations,
@@ -14,6 +14,7 @@ import { ApiError } from "../api/client";
 
 export function MessagesPage() {
   const { activeOrganization, user } = useAuth();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -27,6 +28,7 @@ export function MessagesPage() {
 
   const organizationId = activeOrganization?.id;
   const recipientId = searchParams.get("recipientId");
+  const isFamilyRoute = location.pathname.startsWith("/family");
 
   useEffect(() => {
     if (!organizationId) return;
@@ -112,27 +114,57 @@ export function MessagesPage() {
   }
 
   return (
-    <div className="etnara-messages-layout" style={{ display: "flex", height: "100dvh" }}>
+    <div
+      className="etnara-messages-layout"
+      style={{
+        display: "flex",
+        flexDirection: isFamilyRoute ? "column" : "row",
+        height: isFamilyRoute ? "auto" : "100dvh",
+        maxWidth: isFamilyRoute ? 560 : undefined,
+        margin: isFamilyRoute ? "0 auto" : undefined,
+        padding: isFamilyRoute ? 16 : 0,
+        gap: isFamilyRoute ? 12 : 0,
+      }}
+    >
+      {isFamilyRoute && (
+        <div style={{ marginBottom: 4 }}>
+          <p style={{ margin: 0, fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>Mensajes</p>
+          <h1 style={{ margin: "4px 0 0", fontFamily: "var(--font-display)", fontSize: "var(--fs-display-lg)", color: "var(--color-ink)" }}>
+            Habla con el equipo
+          </h1>
+        </div>
+      )}
       <aside
         className="etnara-messages-sidebar"
-        style={{ width: 260, borderRight: "1px solid var(--color-border)", overflowY: "auto", flexShrink: 0 }}
+        style={{
+          width: isFamilyRoute ? "100%" : 260,
+          borderRight: isFamilyRoute ? "none" : "1px solid var(--color-border)",
+          overflowY: "auto",
+          overflowX: isFamilyRoute ? "auto" : "hidden",
+          flexShrink: 0,
+          display: isFamilyRoute ? "flex" : "block",
+          gap: isFamilyRoute ? 8 : 0,
+          paddingBottom: isFamilyRoute ? 4 : 0,
+        }}
       >
         {conversations.map((c) => (
           <button
             key={c.id}
             onClick={() => setSelectedId(c.id)}
             style={{
-              display: "block",
-              width: "100%",
+              display: isFamilyRoute ? "inline-block" : "block",
+              width: isFamilyRoute ? "auto" : "100%",
               textAlign: "left",
               padding: "14px 16px",
-              border: "none",
-              borderBottom: "1px solid var(--color-border)",
+              border: isFamilyRoute ? "1px solid var(--color-border)" : "none",
+              borderBottom: isFamilyRoute ? undefined : "1px solid var(--color-border)",
+              borderRadius: isFamilyRoute ? 999 : 0,
               background: c.id === selectedId ? "var(--color-ink-tint)" : "transparent",
               cursor: "pointer",
               fontFamily: "var(--font-body)",
               fontSize: "var(--fs-body)",
               color: "var(--color-ink)",
+              whiteSpace: isFamilyRoute ? "nowrap" : undefined,
             }}
           >
             Conversación · {new Date(c.created_at).toLocaleDateString()}
@@ -140,12 +172,23 @@ export function MessagesPage() {
         ))}
       </aside>
 
-      <main className="etnara-messages-main" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <main
+        className="etnara-messages-main"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          border: isFamilyRoute ? "1px solid var(--color-border)" : "none",
+          borderRadius: isFamilyRoute ? "var(--radius-lg)" : 0,
+          overflow: "hidden",
+          background: isFamilyRoute ? "var(--color-surface)" : undefined,
+        }}
+      >
         {loadingMessages && <LoadingState label="Cargando mensajes..." />}
         {!loadingMessages && loadError && <ErrorState description={loadError} />}
         {!loadingMessages && !loadError && (
           <>
-            <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: isFamilyRoute ? 320 : undefined }}>
               {messages && messages.length === 0 && (
                 <EmptyState title="Sin mensajes" description="Envía el primer mensaje para comenzar." />
               )}

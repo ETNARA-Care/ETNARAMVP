@@ -421,23 +421,25 @@ export function AgencyDashboardRealPage() {
         Profesionales verificados y credenciales por vencer requieren endpoints backend aún no disponibles. Incidentes abiertos y turnos son funcionales.
       </div>
 
-      {/* ── ACCESO AL CENTRO DE CUMPLIMIENTO ──────────────────────────────── */}
-      <button
-        onClick={() => navigate("/agency/cumplimiento")}
+      <div
         style={{
-          background: "none",
           border: "1px solid var(--color-border)",
           borderRadius: "var(--radius-md)",
           padding: "var(--space-3) var(--space-5)",
-          fontWeight: 600,
           display: "flex",
           alignItems: "center",
-          gap: 6,
-          cursor: "pointer",
+          justifyContent: "space-between",
+          gap: 12,
         }}
       >
-        Ver Centro de Cumplimiento <ChevronRightIcon size={16} />
-      </button>
+        <div>
+          <p style={{ margin: 0, fontWeight: 600, color: "var(--color-ink)" }}>Centro de cumplimiento</p>
+          <p style={{ margin: "4px 0 0", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>
+            Mantuvimos este espacio visible, pero sin navegar a una pantalla demo hasta que existan datos reales de verificación y credenciales.
+          </p>
+        </div>
+        <ChevronRightIcon size={16} color="var(--color-ink-soft)" />
+      </div>
     </div>
   );
 }

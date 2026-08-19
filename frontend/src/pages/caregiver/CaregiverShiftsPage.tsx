@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { listOrgShifts, type OrgShift } from "../../api/agency";
@@ -24,7 +24,21 @@ function statusBadge(shiftStatus: string, visitStatus: VisitVerificationSummary[
   return { label: "Pendiente", tone: "warning" };
 }
 
-function ShiftCard({ shift, organizationId }: { shift: OrgShift; organizationId: string }) {
+function shiftOrder(shift: OrgShift) {
+  return new Date(shift.scheduled_start).getTime();
+}
+
+function ShiftCard({
+  shift,
+  organizationId,
+  title,
+  subtitle,
+}: {
+  shift: OrgShift;
+  organizationId: string;
+  title?: string;
+  subtitle?: string;
+}) {
   const [status, setStatus] = useState<VisitVerificationSummary["status"] | null>(null);
   const [loadingAction, setLoadingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -74,6 +88,7 @@ function ShiftCard({ shift, organizationId }: { shift: OrgShift; organizationId:
   }
 
   const badge = statusBadge(shift.status, status);
+  const isHomeCare = !shift.room_id;
 
   return (
     <Card
@@ -83,6 +98,12 @@ function ShiftCard({ shift, organizationId }: { shift: OrgShift; organizationId:
         borderRadius: "var(--radius-lg)",
       }}
     >
+      {(title || subtitle) && (
+        <div style={{ marginBottom: "var(--space-3)" }}>
+          {title && <p style={{ margin: 0, fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{title}</p>}
+          {subtitle && <p style={{ margin: "4px 0 0", fontSize: "var(--fs-body)", color: "var(--color-ink)" }}>{subtitle}</p>}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--space-3)", marginBottom: "var(--space-2)" }}>
         <p
           style={{
@@ -99,7 +120,7 @@ function ShiftCard({ shift, organizationId }: { shift: OrgShift; organizationId:
         <Badge tone={badge.tone}>{badge.label}</Badge>
       </div>
       <p style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)", margin: "0 0 var(--space-4)" }}>
-        {shift.room_id ? "Turno residencial" : "Turno a domicilio"}
+        {isHomeCare ? "Visita a domicilio" : "Turno residencial"}
       </p>
 
       {actionError && (
@@ -169,7 +190,7 @@ function ShiftCard({ shift, organizationId }: { shift: OrgShift; organizationId:
           to={`/caregiver/shifts/${shift.id}`}
           style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-caption)", fontWeight: 600, color: "var(--color-ink)" }}
         >
-          Ver detalle del turno →
+          Abrir workspace →
         </Link>
       </div>
     </Card>
@@ -199,6 +220,11 @@ export function CaregiverShiftsPage() {
     };
   }, [organizationId]);
 
+  const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => shiftOrder(a) - shiftOrder(b)), [shifts]);
+  const actionableShifts = orderedShifts.filter((shift) => !["completed", "cancelled"].includes(shift.status));
+  const focusShift = actionableShifts[0] ?? orderedShifts[0] ?? null;
+  const remainingAgenda = orderedShifts.filter((shift) => shift.id !== focusShift?.id);
+
   if (!organizationId) return <LoadingState />;
   if (loading) return <LoadingState label="Cargando tus turnos..." />;
   if (error) return <ErrorState description={error} />;
@@ -207,11 +233,36 @@ export function CaregiverShiftsPage() {
   }
 
   return (
-    <div style={{ padding: "var(--space-4)", maxWidth: 480, margin: "0 auto" }}>
-      <h1 style={{ fontFamily: "var(--font-display)", fontSize: "var(--fs-display)", color: "var(--color-ink)" }}>Mis turnos</h1>
-      {shifts.map((s) => (
-        <ShiftCard key={s.id} shift={s} organizationId={organizationId} />
-      ))}
+    <div style={{ padding: "var(--space-4)", maxWidth: 560, margin: "0 auto", paddingBottom: 32 }}>
+      <div style={{ marginBottom: "var(--space-5)" }}>
+        <p style={{ margin: 0, fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>Tu jornada</p>
+        <h1 style={{ margin: "4px 0 0", fontFamily: "var(--font-display)", fontSize: "var(--fs-display-lg)", color: "var(--color-ink)" }}>
+          Empieza por el turno que importa ahora
+        </h1>
+      </div>
+
+      {focusShift && (
+        <ShiftCard
+          shift={focusShift}
+          organizationId={organizationId}
+          title="Turno actual o próximo"
+          subtitle="Abre el workspace, registra cuidados y mantén la visita al día."
+        />
+      )}
+
+      {remainingAgenda.length > 0 && (
+        <div style={{ marginTop: "var(--space-6)" }}>
+          <div style={{ marginBottom: "var(--space-3)" }}>
+            <h2 style={{ margin: 0, fontSize: "var(--fs-title)", color: "var(--color-ink)" }}>Agenda completa</h2>
+            <p style={{ margin: "4px 0 0", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>
+              Tus siguientes turnos quedan visibles, pero el foco principal es tu workspace operativo.
+            </p>
+          </div>
+          {remainingAgenda.map((shift) => (
+            <ShiftCard key={shift.id} shift={shift} organizationId={organizationId} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -37,6 +37,16 @@ function recipientName(r: OrgCareRecipient): string {
   return `${r.preferred_name ?? r.first_name} ${r.last_name}`;
 }
 
+function recipientContext(r: OrgCareRecipient): string[] {
+  const bits: string[] = [];
+  if (r.date_of_birth) {
+    const years = Math.max(0, Math.floor((Date.now() - new Date(r.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000)));
+    if (years > 0) bits.push(`${years} años`);
+  }
+  bits.push(r.room_id ? `Habitación ${r.room_id}` : "Visita a domicilio");
+  return bits;
+}
+
 function eventSummary(e: CareEvent): string {
   const data = (e.structured_data ?? {}) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === "string" ? v : null);
@@ -198,12 +208,17 @@ export function CaregiverShiftWorkspacePage() {
   const canLogCareEvents = status === "in_progress";
   const recipientQuery = recipient ? `?recipientId=${recipient.id}` : "";
   const badge = visitStatusBadge(status);
+  const careSummary = {
+    careEvents: events?.length ?? 0,
+    observations: observations?.length ?? 0,
+    incidents: incidents?.length ?? 0,
+  };
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 40 }}>
       <ScreenHeader
         title={recipient ? recipientName(recipient) : "Turno"}
-        subtitle={recipient ? "Persona bajo tu cuidado en este turno" : "No pudimos identificar al recipient de este turno"}
+        subtitle={recipient ? "Workspace vivo del turno en curso" : "No pudimos identificar al recipient de este turno"}
         onBack={() => navigate("/caregiver")}
       />
 
@@ -283,6 +298,24 @@ export function CaregiverShiftWorkspacePage() {
         </Card>
 
         {recipient && (
+          <Card style={{ padding: "var(--space-5)" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, color: "var(--color-ink)" }}>Contexto útil del turno</p>
+                <p style={{ margin: "4px 0 0", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>
+                  {recipientContext(recipient).join(" · ")}
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Badge tone="neutral">{careSummary.careEvents} cuidados</Badge>
+                <Badge tone="warning">{careSummary.observations} observaciones</Badge>
+                <Badge tone={careSummary.incidents > 0 ? "critical" : "neutral"}>{careSummary.incidents} incidentes</Badge>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {recipient && (
           <Card style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             <Link
               to={`/messages${recipientQuery}`}
@@ -339,7 +372,10 @@ export function CaregiverShiftWorkspacePage() {
         {recipient && (
           <>
             <div>
-              <p style={{ fontWeight: 700, fontSize: "var(--fs-title)", margin: "0 0 10px" }}>Registrar cuidado</p>
+              <p style={{ fontWeight: 700, fontSize: "var(--fs-title)", margin: "0 0 4px" }}>Registrar cuidado</p>
+              <p style={{ margin: "0 0 10px", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>
+                Usa solo acciones reales disponibles para esta visita.
+              </p>
               <div
                 style={{
                   display: "grid",

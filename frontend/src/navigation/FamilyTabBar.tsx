@@ -1,11 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { HomeIcon, HistoryIcon, MessageIcon, ShieldIcon, UsersIcon } from "../components/icons";
+import { HomeIcon, HistoryIcon, MessageIcon, UsersIcon } from "../components/icons";
 
 const tabs = [
   { to: "/family", label: "Hoy", Icon: HomeIcon, end: true },
   { to: "/family/historial", label: "Historial", Icon: HistoryIcon },
   { to: "/family/mensajes", label: "Mensajes", Icon: MessageIcon },
-  { to: "/family/confianza", label: "Confianza", Icon: ShieldIcon },
   { to: "/family/perfil", label: "Perfil", Icon: UsersIcon },
 ];
 

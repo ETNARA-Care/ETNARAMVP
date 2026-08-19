@@ -1,85 +1,48 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
-import { listMyCareRecipients, getFamilyTimeline, type MyRecipient, type TimelineItem } from "../../api/familyRecipients";
-import { LoadingState, EmptyState, ErrorState } from "../../components/UiStates";
-import { Card, Avatar } from "../../components/Primitives";
+import { getFamilyTimeline, type TimelineItem } from "../../api/familyRecipients";
 import { ApiError } from "../../api/client";
+import { LoadingState, EmptyState, ErrorState } from "../../components/UiStates";
+import { Card } from "../../components/Primitives";
+import {
+  FamilyRecipientHero,
+  FamilyRecipientPicker,
+  FamilyTimelineCard,
+  useFamilyRecipients,
+  familyDisplayName,
+} from "./familyShared";
 
-function initials(first: string, last: string): string {
-  return `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase();
-}
-
-function timeAgo(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.round(diffMs / 60000);
-  if (mins < 1) return "hace un momento";
-  if (mins < 60) return `hace ${mins} min`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `hace ${hrs} h`;
-  const days = Math.round(hrs / 24);
-  return `hace ${days} d`;
-}
-
-function EventCard({ item }: { item: TimelineItem }) {
-  return (
-    <Card style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontFamily: "var(--font-display)", fontSize: "var(--fs-title)", color: "var(--color-ink)" }}>{item.title}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>
-          {timeAgo(item.occurredAt)}
-        </span>
-      </div>
-      <p style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-body)", color: "var(--color-ink)", margin: "0 0 8px" }}>
-        {item.summary}
-      </p>
-      {item.type === "PHOTO" && !item.photo?.visible && (
-        <p style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)", fontStyle: "italic" }}>
-          Foto registrada — no disponible con tu nivel de acceso actual.
-        </p>
-      )}
-      {item.caregiver.displayName && (
-        <p style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)", margin: 0 }}>
-          Por {item.caregiver.displayName}
-          {item.caregiver.role ? ` · ${item.caregiver.role}` : ""}
-        </p>
-      )}
-    </Card>
-  );
+function currentStatus(items: TimelineItem[]): { title: string; detail: string } {
+  if (items.length === 0) {
+    return {
+      title: "Todavía no hay actualizaciones de hoy.",
+      detail: "Cuando el equipo registre cuidados o novedades, aparecerán aquí.",
+    };
+  }
+  const [latest] = items;
+  return {
+    title: `${latest.title}: ${latest.summary}`,
+    detail: latest.caregiver.displayName ? `Última actualización por ${latest.caregiver.displayName}` : "Última actualización del equipo de cuidado",
+  };
 }
 
 export function FamilyHomePage() {
   const { activeOrganization } = useAuth();
-  const [recipients, setRecipients] = useState<MyRecipient[] | null>(null);
-  const [selected, setSelected] = useState<MyRecipient | null>(null);
+  const { recipients, selected, selectedId, setSelectedId, error: recipientError, loading: loadingRecipients } = useFamilyRecipients(
+    activeOrganization?.id
+  );
   const [items, setItems] = useState<TimelineItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadingRecipients, setLoadingRecipients] = useState(true);
   const [loadingTimeline, setLoadingTimeline] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingRecipients(true);
-    listMyCareRecipients()
-      .then((r) => {
-        if (cancelled) return;
-        setRecipients(r);
-        const first = activeOrganization ? r.find((x) => x.organizationId === activeOrganization.id) ?? r[0] : r[0];
-        setSelected(first ?? null);
-      })
-      .catch(() => !cancelled && setError("No pudimos cargar tus familiares autorizados."))
-      .finally(() => !cancelled && setLoadingRecipients(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [activeOrganization]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!selected) return;
     let cancelled = false;
     setLoadingTimeline(true);
     setError(null);
-    getFamilyTimeline(selected.organizationId, selected.recipientId, { limit: 20 })
+    getFamilyTimeline(selected.organizationId, selected.recipientId, { limit: 12 })
       .then((res) => !cancelled && setItems(res.items))
       .catch((err) => {
         if (cancelled) return;
@@ -93,79 +56,107 @@ export function FamilyHomePage() {
     return () => {
       cancelled = true;
     };
-  }, [selected]);
+  }, [selected, reloadKey]);
 
   if (loadingRecipients) return <LoadingState label="Cargando..." />;
-
+  if (recipientError && !recipients) return <ErrorState description={recipientError} />;
   if (!recipients || recipients.length === 0) {
     return <EmptyState title="Sin familiares vinculados todavía" description="Cuando una organización te autorice, aparecerá aquí." />;
   }
 
+  const status = currentStatus(items ?? []);
+
   return (
-    <div style={{ padding: 16 }}>
-      {recipients.length > 1 && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto" }}>
-          {recipients.map((r) => (
-            <button
-              key={r.recipientId}
-              onClick={() => setSelected(r)}
-              style={{
-                flexShrink: 0,
-                padding: "8px 14px",
-                borderRadius: 20,
-                border: `1px solid ${selected?.recipientId === r.recipientId ? "var(--color-ink)" : "var(--color-border)"}`,
-                background: selected?.recipientId === r.recipientId ? "var(--color-ink)" : "var(--color-surface)",
-                color: selected?.recipientId === r.recipientId ? "#fff" : "var(--color-ink)",
-                fontFamily: "var(--font-body)",
-                cursor: "pointer",
-              }}
-            >
-              {r.preferredName ?? r.firstName}
-            </button>
-          ))}
-        </div>
+    <div style={{ padding: 16, maxWidth: 560, margin: "0 auto", paddingBottom: 28 }}>
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ margin: 0, fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>Hoy</p>
+        <h1 style={{ margin: "4px 0 0", fontFamily: "var(--font-display)", fontSize: "var(--fs-display-lg)", color: "var(--color-ink)" }}>
+          Sigue el cuidado en tiempo real
+        </h1>
+      </div>
+
+      <FamilyRecipientPicker recipients={recipients} selectedId={selectedId} onSelect={setSelectedId} />
+
+      {selected && (
+        <FamilyRecipientHero recipient={selected} eyebrow="Tu ser querido" title={status.title} detail={status.detail} />
       )}
 
       {selected && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <Avatar initials={initials(selected.firstName, selected.lastName)} color="var(--color-ink-tint)" />
-          <div>
-            <p style={{ fontFamily: "var(--font-display)", fontSize: "var(--fs-display)", color: "var(--color-ink)", margin: 0 }}>
-              {selected.preferredName ?? selected.firstName} {selected.lastName}
-            </p>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)", margin: 0 }}>
-              Actividad reciente
-            </p>
+        <Card style={{ marginBottom: 16, borderRadius: "var(--radius-lg)" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, color: "var(--color-ink)" }}>Qué pasó hoy</p>
+              <p style={{ margin: "4px 0 0", fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>
+                {items?.length ? `${items.length} actualizaciones recientes de ${familyDisplayName(selected)}` : "Aún no hay registros del día."}
+              </p>
+            </div>
+            <Link
+              to={`/messages?recipientId=${selected.recipientId}&organizationId=${selected.organizationId}`}
+              style={{
+                textDecoration: "none",
+                fontWeight: 700,
+                color: "var(--color-ink)",
+                background: "var(--color-ink-tint)",
+                borderRadius: "var(--radius-md)",
+                padding: "10px 14px",
+              }}
+            >
+              Contactar al equipo
+            </Link>
           </div>
-        </div>
+        </Card>
       )}
 
       {loadingTimeline && <LoadingState label="Cargando actividad..." />}
-      {!loadingTimeline && error && <ErrorState description={error} onRetry={() => setSelected((s) => (s ? { ...s } : s))} />}
+      {!loadingTimeline && error && <ErrorState description={error} onRetry={() => setReloadKey((value) => value + 1)} />}
       {!loadingTimeline && !error && items && items.length === 0 && (
         <EmptyState title="Sin actividad reciente" description="Aquí aparecerá lo que ocurra durante el cuidado." />
       )}
-      {!loadingTimeline && !error && items && items.map((item) => <EventCard key={item.id} item={item} />)}
 
-      {selected && (
+      {!loadingTimeline && !error && items && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h2 style={{ margin: 0, fontSize: "var(--fs-title)", color: "var(--color-ink)" }}>Timeline de hoy</h2>
+            <Link to="/family/historial" style={{ fontSize: "var(--fs-caption)", color: "var(--color-ink-soft)" }}>
+              Ver historial
+            </Link>
+          </div>
+          {items.map((item) => (
+            <FamilyTimelineCard key={item.id} item={item} />
+          ))}
+        </>
+      )}
+
+      <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
         <Link
-          to={`/messages?recipientId=${selected.recipientId}&organizationId=${selected.organizationId}`}
+          to="/family/mensajes"
           style={{
-            display: "block",
-            textAlign: "center",
-            marginTop: 20,
-            padding: "12px",
-            borderRadius: 10,
-            background: "var(--color-ink-tint)",
-            color: "var(--color-ink)",
-            fontFamily: "var(--font-body)",
-            fontWeight: 600,
             textDecoration: "none",
+            color: "var(--color-ink)",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "14px 16px",
+            fontWeight: 700,
           }}
         >
-          Enviar mensaje al equipo de cuidado
+          Abrir mensajes
         </Link>
-      )}
+        <Link
+          to="/notifications"
+          style={{
+            textDecoration: "none",
+            color: "var(--color-ink)",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "14px 16px",
+            fontWeight: 700,
+          }}
+        >
+          Ver notificaciones
+        </Link>
+      </div>
     </div>
   );
 }
