@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import type { OrganizationType } from "../../demoData/organizations";
+
+type OrganizationType = "RESIDENTIAL_CARE_HOME" | "HOME_CARE_AGENCY";
 
 interface OrgTypeContextValue {
   type: OrganizationType;

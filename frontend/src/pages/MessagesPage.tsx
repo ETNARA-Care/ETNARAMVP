@@ -184,10 +184,10 @@ export function MessagesPage() {
           background: isFamilyRoute ? "var(--color-surface)" : undefined,
         }}
       >
-        {loadingMessages && <LoadingState label="Cargando mensajes..." />}
-        {!loadingMessages && loadError && <ErrorState description={loadError} />}
-        {!loadingMessages && !loadError && (
-          <>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          {loadingMessages && <LoadingState label="Cargando mensajes..." />}
+          {!loadingMessages && loadError && <ErrorState description={loadError} />}
+          {!loadError && !loadingMessages && (
             <div style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: isFamilyRoute ? 320 : undefined }}>
               {messages && messages.length === 0 && (
                 <EmptyState title="Sin mensajes" description="Envía el primer mensaje para comenzar." />
@@ -217,7 +217,11 @@ export function MessagesPage() {
               })}
               <div ref={bottomRef} />
             </div>
+          )}
+        </div>
 
+        {selectedId && !loadError && (
+          <>
             <form onSubmit={handleSend} style={{ display: "flex", gap: 8, padding: 16, borderTop: "1px solid var(--color-border)" }}>
               <label
                 htmlFor="message-draft"
