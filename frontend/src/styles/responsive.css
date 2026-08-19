@@ -1,0 +1,27 @@
+/* Ajustes responsive mínimos y reales -- no cosméticos.
+   La mensajería usa un layout de dos columnas (lista + hilo) que en
+   pantallas angostas debe apilarse verticalmente en vez de desbordar. */
+@media (max-width: 640px) {
+  .etnara-messages-layout {
+    flex-direction: column;
+    height: auto;
+  }
+  .etnara-messages-sidebar {
+    width: 100% !important;
+    max-height: 180px;
+    border-right: none !important;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .etnara-messages-main {
+    height: calc(100dvh - 180px - 56px);
+  }
+}
+
+/* Foco visible consistente para navegación por teclado (sección 21). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}

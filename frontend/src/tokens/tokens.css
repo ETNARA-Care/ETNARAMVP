@@ -1,0 +1,103 @@
+/* ============================================================
+   DESIGN TOKENS — Plataforma de Cuidado de Adultos Mayores
+   ============================================================
+   Identidad propia: cálida, profesional, confiable. Inspirada
+   conceptualmente en la simplicidad de Brightwheel, pero con
+   paleta y tipografía propias, orientadas a adultos mayores
+   (mayor tamaño, mayor contraste, sin frialdad clínica).
+   ============================================================ */
+
+:root {
+  /* ---- Color: superficie ---- */
+  --color-bg: #fffbf5;           /* blanco roto cálido, no crema-cliché saturado */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6efe4;
+  --color-border: #e8ddc9;
+
+  /* ---- Color: marca / confianza ---- */
+  --color-ink: #17324a;          /* azul profundo tinta — confianza, estabilidad */
+  --color-ink-soft: #2c4d6b;
+  --color-ink-tint: #e4ecf1;
+
+  /* ---- Color: estados ---- */
+  --color-verified: #3d7a54;     /* verde salvia — verificado / positivo */
+  --color-verified-bg: #e6f0e8;
+  --color-warning: #b5651d;      /* terracota/ámbar — avisos, no crítico */
+  --color-warning-bg: #f7ead9;
+  --color-critical: #ab3327;     /* rojo — solo situaciones críticas reales */
+  --color-critical-bg: #f8e4e1;
+
+  /* ---- Tipografía ---- */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --fs-display-lg: 28px;
+  --fs-display: 22px;
+  --fs-title: 18px;
+  --fs-body: 16px;
+  --fs-body-lg: 17px;
+  --fs-caption: 13px;
+  --fs-mono: 13px;
+
+  /* ---- Espaciado ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ---- Radios ---- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-full: 999px;
+
+  /* ---- Sombra ---- */
+  --shadow-card: 0 1px 3px rgba(23, 50, 74, 0.06), 0 1px 2px rgba(23, 50, 74, 0.04);
+  --shadow-lift: 0 8px 24px rgba(23, 50, 74, 0.10);
+
+  /* ---- Tamaños táctiles ---- */
+  --tap-min: 48px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-ink);
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+/* Foco visible siempre -- accesibilidad, nunca solo color */
+:focus-visible {
+  outline: 3px solid var(--color-ink-soft);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
