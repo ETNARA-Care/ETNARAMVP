@@ -23,20 +23,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-           steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-
-  - name: Setup Node
-    uses: actions/setup-node@v4
-          with:
-            node-version: 22
-            cache: npm
-            cache-dependency-path: frontend/package-lock.json
-
-        - name: Configure GitHub Pages
-          working-directory: frontend
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -56,7 +42,7 @@ jobs:
 
           if re.search(r"\bbase\s*:", text):
               text = re.sub(
-                  r"""base\s*:\s*['"][^'"]*['"]""",
+                  r"""base\s*:\s*["'][^"']*["']""",
                   "base: '/ETNARAMVP/'",
                   text,
                   count=1
