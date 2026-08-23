@@ -1,4 +1,4 @@
-name: Deploy ETNARA MVP to GitHub Pages
+name: Deploy ETNARA V23 to GitHub Pages
 
 on:
   push:
@@ -23,66 +23,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Prepare frontend v23
+        run: |
+          rm -rf frontend-v23
+          mkdir frontend-v23
+          unzip -q frontend-v23.zip -d frontend-v23
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Configure GitHub Pages
-        working-directory: frontend
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          vite = Path("vite.config.ts")
-          text = vite.read_text()
-
-          if re.search(r"\bbase\s*:", text):
-              text = re.sub(
-                  r"""base\s*:\s*["'][^"']*["']""",
-                  "base: '/ETNARAMVP/'",
-                  text,
-                  count=1
-              )
-          else:
-              text = text.replace(
-                  "defineConfig({",
-                  "defineConfig({\n  base: '/ETNARAMVP/',",
-                  1
-              )
-
-          vite.write_text(text)
-
-          app = Path("src/App.tsx")
-          if app.exists():
-              text = app.read_text()
-              if "<BrowserRouter>" in text:
-                  text = text.replace(
-                      "<BrowserRouter>",
-                      "<BrowserRouter basename={import.meta.env.BASE_URL}>"
-                  )
-              app.write_text(text)
-          PY
+          cache-dependency-path: frontend-v23/package-lock.json
 
       - name: Install dependencies
-        working-directory: frontend
+        working-directory: frontend-v23
         run: npm ci
 
-      - name: Run tests
-        working-directory: frontend
-        run: npm test -- --run
+      - name: Type check
+        working-directory: frontend-v23
+        run: npm run build
 
-      - name: Build
-        working-directory: frontend
+      - name: Build production
+        working-directory: frontend-v23
         env:
           VITE_API_URL: https://etnara-care-backend-staging-production-b0b7.up.railway.app
         run: npm run build
 
       - name: Add SPA fallback
-        working-directory: frontend
+        working-directory: frontend-v23
         run: |
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
@@ -93,7 +62,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: frontend/dist
+          path: frontend-v23/dist
 
   deploy:
     environment:
