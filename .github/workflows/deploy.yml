@@ -47,7 +47,7 @@ jobs:
       - name: Build production
         working-directory: frontend-v23
         env:
-          VITE_API_URL: https://etnara-care-backend-staging-production-b0b7.up.railway.app
+          VITE_API_URL: https://etnara-care-backend-staging-production-07e2.up.railway.app
         run: npm run build
 
       - name: Add SPA fallback
