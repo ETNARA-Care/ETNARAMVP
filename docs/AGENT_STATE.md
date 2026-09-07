@@ -46,6 +46,23 @@ Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
 
+### 2026-09-07 — Emergency visual restoration
+
+- GitHub Pages had switched from the prior V23 experience to the incomplete
+  `frontend/` interface when PR #6 changed the deployment artifact.
+- The deployment workflow is being restored to build `frontend-v23.zip`.
+- The deployed V23 build now targets the active Railway backend (`d460`).
+- The real-data `frontend/` implementation remains in the repository and is
+  not deleted or reverted.
+- Important: V23 still contains DemoStore-backed feature screens. Restore is
+  for visual continuity only; those screens must not be represented as
+  backend-persisted data.
+
+### Exact next task after restoration
+
+- Port the verified real API flows from `frontend/` into the V23 visual shell,
+  beginning with messaging and the Family care summary, without mock fallback.
+
 ### Completed
 - Frontend AGENTS.md created
 

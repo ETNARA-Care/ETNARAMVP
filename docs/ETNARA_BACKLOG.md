@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FDEPLOY-001 — Restore V23 visual deployment
+Goal:
+Restore the prior mobile V23 interface after PR #6 changed the GitHub Pages
+artifact, while retaining the real-data frontend source for the next migration.
+
+Acceptance criteria:
+- GitHub Pages builds `frontend-v23.zip`
+- V23 points to the active Railway backend
+- `frontend/` real-data work remains preserved
+- V23 mock-backed screens are documented and not described as real persistence
+
+---
+
 ### FETN-001 — Audit Administration real data
 Goal:
 Identify and replace mock/demo/local data in Administration where real backend endpoints already exist.
