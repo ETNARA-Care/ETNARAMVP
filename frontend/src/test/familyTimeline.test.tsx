@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../auth/AuthContext";
 import * as familyApi from "../api/familyRecipients";
+import * as familyCareApi from "../api/familyCare";
 import { ApiError } from "../api/client";
 import { FamilyHomePage } from "../pages/family/FamilyHomePage";
 
@@ -19,6 +20,9 @@ function renderFamilyHome() {
 describe("Family Timeline -- recipients autorizados", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(familyCareApi, "listFamilyShifts").mockResolvedValue([]);
+    vi.spyOn(familyCareApi, "listFamilyObservations").mockResolvedValue([]);
+    vi.spyOn(familyCareApi, "listFamilyIncidents").mockResolvedValue([]);
   });
 
   it("muestra la actividad del recipient autorizado", async () => {
@@ -67,5 +71,35 @@ describe("Family Timeline -- recipients autorizados", () => {
     await waitFor(() => {
       expect(screen.getByText("Sin familiares vinculados todavía")).toBeInTheDocument();
     });
+  });
+
+  it("muestra el resumen real y curado de cuidado familiar", async () => {
+    vi.spyOn(familyApi, "listMyCareRecipients").mockResolvedValue([
+      { organizationId: "org-1", recipientId: "rec-1", relationshipType: "child", canViewPhotos: true, firstName: "Carmen", lastName: "Rivera", preferredName: null },
+    ]);
+    vi.spyOn(familyApi, "getFamilyTimeline").mockResolvedValue({ items: [], nextCursor: null });
+    vi.spyOn(familyCareApi, "listFamilyShifts").mockResolvedValue([
+      {
+        id: "shift-1",
+        careRecipientId: "rec-1",
+        scheduledStart: "2026-09-06T12:00:00.000Z",
+        scheduledEnd: "2026-09-06T21:00:00.000Z",
+        status: "in_progress",
+        checkedInAt: "2026-09-06T12:03:00.000Z",
+        checkedOutAt: null,
+      },
+    ]);
+    vi.spyOn(familyCareApi, "listFamilyObservations").mockResolvedValue([
+      { id: "obs-1", careRecipientId: "rec-1", category: "pain", status: "reviewed", createdAt: new Date().toISOString() },
+    ]);
+    vi.spyOn(familyCareApi, "listFamilyIncidents").mockResolvedValue([
+      { id: "inc-1", careRecipientId: "rec-1", severity: "moderate", description: "Caída sin lesión", status: "open", createdAt: new Date().toISOString() },
+    ]);
+
+    renderFamilyHome();
+
+    expect(await screen.findByText(/Cuidado en curso desde/i)).toBeInTheDocument();
+    expect(screen.getByText(/Dolor ·/i)).toBeInTheDocument();
+    expect(screen.getByText("1 incidente activo.")).toBeInTheDocument();
   });
 });
