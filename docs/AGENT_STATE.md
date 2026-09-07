@@ -74,6 +74,22 @@ Verify GitHub Actions deployment before assuming new code is live.
 - Local TypeScript and production build pass.
 - Pending: PR review, merge, GitHub Pages deployment, and three-role live test.
 
+### 2026-09-07 — V23 real shifts integration
+
+- Branch: `fix/v23-real-shifts`
+- Administration now loads real recipients, workers, shifts, and assignments.
+- Administration can create a shift and assign an active worker through the
+  existing scheduling and assignment endpoints.
+- Caregiver now loads only the authenticated worker's real assignments through
+  `GET /organizations/:organizationId/me/shifts`.
+- Caregiver shift detail uses real visit verification for start/check-in and
+  finish/check-out; no DemoStore fallback remains in these three shift screens.
+- Mock care-event entry was removed from the real shift detail rather than
+  pretending those records persist. Care events remain a separate task.
+- Local TypeScript production build and lint pass (warnings only).
+- Pending: backend demo eligibility seed PR, frontend PR, merges, deployment,
+  and live Admin → María start/finish validation.
+
 ### Completed
 - Frontend AGENTS.md created
 
@@ -91,5 +107,5 @@ Verify GitHub Actions deployment before assuming new code is live.
 - To be determined
 
 ### Exact Next Step
-- Review and merge the isolated V23 messaging PR, then validate
-  María -> Familia -> Administración on GitHub Pages.
+- Review the coordinated backend eligibility and frontend V23 shifts PRs, merge
+  backend first, verify Railway, then merge frontend and validate Admin → María.

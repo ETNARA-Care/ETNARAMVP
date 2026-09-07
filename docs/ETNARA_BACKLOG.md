@@ -55,6 +55,9 @@ Acceptance criteria:
 - worker action
 - admin operational visibility
 - family-safe visibility
+- Admin create/assign and Worker start/finish implemented on
+  `fix/v23-real-shifts`; pending PRs, deployment, and live validation.
+- Family-safe shift visibility remains pending and is not included in this gate.
 
 ### FETN-006 — Notifications
 - messages
