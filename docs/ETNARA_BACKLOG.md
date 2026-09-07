@@ -41,6 +41,9 @@ Acceptance criteria:
 - verify participants
 - refetch/update after sends
 - no duplicate local threads
+- implementation complete on `fix/v23-real-messaging`
+- local TypeScript/build pass
+- pending PR merge and live three-role validation
 
 ### FETN-004 — Timeline / Care Events
 - verify caregiver writes
