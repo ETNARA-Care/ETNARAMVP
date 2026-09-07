@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: main
+Branch: fix/v23-real-messaging
 
 ## Last Known Frontend Checkpoint
 
@@ -63,6 +63,17 @@ Verify GitHub Actions deployment before assuming new code is live.
 - Port the verified real API flows from `frontend/` into the V23 visual shell,
   beginning with messaging and the Family care summary, without mock fallback.
 
+### 2026-09-07 — V23 real messaging integration
+
+- Branch: `fix/v23-real-messaging`
+- Replaced DemoStore messaging in Caregiver, Family, and Agency with the real
+  Railway messaging endpoints.
+- Preserved the V23 layouts, routes, navigation, and visual components.
+- Messages are loaded from and written to the authenticated user's authorized
+  backend conversation; no local/mock fallback remains in messaging.
+- Local TypeScript and production build pass.
+- Pending: PR review, merge, GitHub Pages deployment, and three-role live test.
+
 ### Completed
 - Frontend AGENTS.md created
 
@@ -80,4 +91,5 @@ Verify GitHub Actions deployment before assuming new code is live.
 - To be determined
 
 ### Exact Next Step
-- Audit AgencyResidentProfilePage and related API connections
+- Review and merge the isolated V23 messaging PR, then validate
+  María -> Familia -> Administración on GitHub Pages.
