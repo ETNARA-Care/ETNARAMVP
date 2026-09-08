@@ -2,6 +2,24 @@
 
 ## In Progress
 
+### FCONSOL-001 — Phase 4.5 single V23 build source
+
+Goal:
+Make the V23 source that CI validates identical to the source Pages builds,
+without changing the design or production.
+
+Acceptance criteria:
+- safe restore branch points to the Phase 4 main commit
+- `frontend-v23/` contains the exact V23 source previously held in the ZIP
+- CI and deploy both run typecheck, lint, tests, and build there
+- failed tests cannot be ignored
+- real/simulated/mixed screens and backend contracts are documented
+- historical source/ZIP are inactive and retained for this reversible cut
+
+Status: Implemented on `phase-4-5/consolidate-v23-source`; pending PR checks and review.
+
+---
+
 ### FDEPLOY-001 — Restore V23 visual deployment
 Goal:
 Restore the prior mobile V23 interface after PR #6 changed the GitHub Pages
@@ -12,6 +30,9 @@ Acceptance criteria:
 - V23 points to the active Railway backend
 - `frontend/` real-data work remains preserved
 - V23 mock-backed screens are documented and not described as real persistence
+
+Status: Completed for emergency restoration; superseded by FCONSOL-001 for the
+active build mechanism. The ZIP is no longer used by CI or deployment.
 
 ---
 

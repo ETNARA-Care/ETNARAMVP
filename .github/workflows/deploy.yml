@@ -1,4 +1,4 @@
-name: Deploy ETNARA V23 to GitHub Pages
+name: Validate and deploy ETNARA V23 to GitHub Pages
 
 on:
   push:
@@ -23,12 +23,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare frontend v23
-        run: |
-          rm -rf frontend-v23
-          mkdir frontend-v23
-          unzip -q frontend-v23.zip -d frontend-v23
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -42,7 +36,15 @@ jobs:
 
       - name: Type check
         working-directory: frontend-v23
-        run: npx tsc -b
+        run: npm run typecheck
+
+      - name: Lint
+        working-directory: frontend-v23
+        run: npm run lint
+
+      - name: Tests
+        working-directory: frontend-v23
+        run: npm test
 
       - name: Build production
         working-directory: frontend-v23

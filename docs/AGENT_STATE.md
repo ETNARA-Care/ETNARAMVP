@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: fix/v23-real-messaging
+Branch: phase-4-5/consolidate-v23-source
 
 ## Last Known Frontend Checkpoint
 
@@ -45,6 +45,27 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-08 — Phase 4.5 first consolidation cut
+
+- Restore point created at `restore/phase4-stable-2026-09-08` from main commit
+  `73bc3697391b6cba94cc718995d4cd7ca32417e3`.
+- Extracted the exact deployed V23 artifact into tracked source at
+  `frontend-v23/`; visual source is unchanged.
+- CI and Pages deployment now validate/build that same directory.
+- Removed `continue-on-error`; typecheck, lint, boundary tests, and build are
+  blocking in both PR validation and deployment.
+- Added `docs/FRONTEND_DATA_AUDIT.md` with real/simulated/mixed classification.
+- Backend `main` was inspected at `46002664806854defe2576e3633de317fcddfcbb`;
+  no backend changes were made.
+- Frontend validation passed: typecheck, lint (warnings only), 3/3 boundary
+  tests, and production build.
+- Backend read-only regression passed: TypeScript build and 11/11 tests.
+
+### Exact next task after this cut
+
+- Review this PR, then migrate Family Today and Family History from DemoStore
+  to the family-safe recipient timeline/shift contracts without changing V23.
 
 ### 2026-09-07 — Emergency visual restoration
 
@@ -98,7 +119,8 @@ Verify GitHub Actions deployment before assuming new code is live.
 - docs/AGENT_STATE.md
 
 ### Tests Run
-- None yet
+- Phase 4.5 frontend: typecheck, lint, 3 boundary tests, production build
+- Backend contract regression: build and 11 tests
 
 ### Failures / Risks
 - Real/mock data boundaries still need audit
