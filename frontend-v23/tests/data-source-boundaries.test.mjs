@@ -12,6 +12,7 @@ const realDataModules = [
   "src/pages/caregiver/CaregiverSupportPages.tsx",
   "src/pages/family/FamilyMessagesPage.tsx",
   "src/pages/family/FamilySupportPages.tsx",
+  "src/pages/family/FamilyTodayPage.tsx",
 ];
 
 test("real-data modules never import the demo store", async () => {
@@ -44,6 +45,20 @@ test("operational DemoStore imports remain confined to the audited files", async
   assert.deepEqual(actual.sort(), [
     "agency/AgencySupportPages.tsx",
     "family/FamilyHistoryPage.tsx",
-    "family/FamilyTodayPage.tsx",
   ]);
+});
+
+test("validation fixes use curated real endpoints", async () => {
+  const today = await readFile(new URL("../src/pages/family/FamilyTodayPage.tsx", import.meta.url), "utf8");
+  const caregiver = await readFile(new URL("../src/pages/caregiver/CaregiverSupportPages.tsx", import.meta.url), "utf8");
+  const incident = await readFile(new URL("../src/pages/caregiver/CaregiverShiftDetailPage.tsx", import.meta.url), "utf8");
+  const family = await readFile(new URL("../src/pages/family/FamilySupportPages.tsx", import.meta.url), "utf8");
+
+  assert.match(today, /listFamilyShifts/);
+  assert.match(today, /caregiver\?\.displayName/);
+  assert.match(caregiver, /listMyCredentials/);
+  assert.match(incident, /createIncident/);
+  assert.match(incident, /Reportar incidente/);
+  assert.match(family, /Credenciales verificadas/);
+  assert.match(family, /documentos y datos privados permanecen protegidos/);
 });

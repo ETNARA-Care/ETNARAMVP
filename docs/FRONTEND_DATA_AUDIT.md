@@ -45,14 +45,14 @@ published by the active workflows.
 | Admin Compliance | Placeholder | none | Explicitly says no data yet |
 | Admin Settings | Mixed | real session + placeholder organization settings | No fake persistence |
 | Caregiver Shifts | Real | `/organizations/:id/me/shifts` | Authenticated worker scope |
-| Caregiver Shift Detail | Real | shift, visit verification, care events | Check-in, activity and check-out persist |
+| Caregiver Shift Detail | Real | shift, visit verification, care events, incidents | Check-in, activity, incident and check-out persist |
 | Caregiver Messages | Real | conversations and messages | No demo fallback |
-| Caregiver Profile | Mixed | real session + hard-coded display identity | Display name/credential label must be sourced later |
-| Family Today | Simulated | `DemoStore` | Fixed demo recipient and shift |
+| Caregiver Profile | Real/Mixed | real session + `/me/credentials`; hard-coded display name | Credentials and expiration status are real; display identity remains pending |
+| Family Today | Real | family-safe shifts + timeline | Assigned caregiver and check-in/out status come from backend |
 | Family Activity | Real | `/me/care-recipients` + family-safe timeline | Curated family response |
 | Family History | Simulated | `DemoStore` | Fixed demo recipient and completed shifts |
 | Family Messages | Real | conversations and messages | No demo fallback |
-| Family Profile | Mixed | real session + hard-coded family/recipient identity | Must use family relationship data |
+| Family Profile | Real/Mixed | family-safe caregiver credentials + real session; hard-coded family identity | Never exposes credential documents or internal review data |
 | Family Notifications | Placeholder | none | Bell still uses `DemoStore` notifications |
 | `/demo` landing | Explicit demo | static demo identities | Isolated, not an operational fallback |
 
@@ -74,5 +74,5 @@ care events, family-safe timeline, conversations and messages.
 - Local contract regression passed against backend `main`: TypeScript build and
   11/11 tests. The V23 cut passed typecheck, lint (warnings only), 3/3 boundary
   tests, and a production build using the active `d460` Railway URL.
-- Next: migrate Family Today and Family History to family-safe endpoints, then
+- Next: migrate Family History to family-safe endpoints, then
   Admin Workers/Incidents and notifications, one reversible surface at a time.

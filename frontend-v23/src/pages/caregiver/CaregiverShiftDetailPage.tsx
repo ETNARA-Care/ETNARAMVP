@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Activity, Bath, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, Utensils } from "lucide-react";
+import { Activity, Bath, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { createCareEvent, listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
+import { createIncident } from "@/api/incidents";
 import {
   checkIn, checkOut, getShift, getVisitVerification, listCareRecipients, recipientName,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
@@ -80,6 +81,10 @@ export function CaregiverShiftDetailPage() {
   const [activityDuration, setActivityDuration] = useState("");
   const [mood, setMood] = useState("Tranquilo");
   const [note, setNote] = useState("");
+  const [incidentOpen, setIncidentOpen] = useState(false);
+  const [incidentSeverity, setIncidentSeverity] = useState("Moderado");
+  const [incidentDescription, setIncidentDescription] = useState("");
+  const [incidentActions, setIncidentActions] = useState("");
   const organizationId = activeOrganization?.id;
 
   const load = useCallback(async () => {
@@ -178,6 +183,28 @@ export function CaregiverShiftDetailPage() {
     finally { setSaving(false); }
   }
 
+  async function saveIncident() {
+    const token = getToken();
+    if (!organizationId || !shift?.care_recipient_id || !token || !incidentDescription.trim()) return;
+    setSaving(true);
+    try {
+      await createIncident(organizationId, {
+        careRecipientId: shift.care_recipient_id,
+        severity: incidentSeverity,
+        description: incidentDescription.trim(),
+        ...(incidentActions.trim() ? { actionsTaken: incidentActions.trim() } : {}),
+      }, token);
+      show("Incidente reportado. Administración fue notificada.", "success");
+      setIncidentOpen(false);
+      setIncidentDescription("");
+      setIncidentActions("");
+    } catch (requestError) {
+      show(actionError(requestError), "danger");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (error) return <ErrorState kind="not_found" onRetry={() => void load()} />;
   if (!shift || !verification) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-32" /></div>;
 
@@ -219,6 +246,16 @@ export function CaregiverShiftDetailPage() {
         {!canFinish && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-2">Comienza el turno para registrar cuidados.</p>}
       </div>
 
+      <Button
+        variant="danger"
+        fullWidth
+        icon={<TriangleAlert size={18} />}
+        disabled={!canFinish || saving}
+        onClick={() => setIncidentOpen(true)}
+      >
+        Reportar incidente
+      </Button>
+
       <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {recipientName(recipient).split(" ")[0]}</Button>
 
       <Card>
@@ -240,6 +277,25 @@ export function CaregiverShiftDetailPage() {
           {activeAction === "ACTIVITY" && <><Input label="Descripción de la actividad" value={activityLabel} onChange={(event) => setActivityLabel(event.target.value)} placeholder="Ej. Música o caminata" required /><Input label="Duración en minutos (opcional)" type="number" min={1} value={activityDuration} onChange={(event) => setActivityDuration(event.target.value)} /></>}
           {activeAction === "MOOD" && <Select label="Estado observado" value={mood} onChange={(event) => setMood(event.target.value)}><option>Contento</option><option>Tranquilo</option><option>Triste</option><option>Ansioso</option><option>Confundido</option><option>Irritable</option><option>Somnoliento</option></Select>}
           <Textarea label={activeAction === "NOTE" ? "Observación" : "Nota adicional (opcional)"} value={note} onChange={(event) => setNote(event.target.value)} required={activeAction === "NOTE"} placeholder="Detalles..." />
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={incidentOpen}
+        onClose={() => !saving && setIncidentOpen(false)}
+        title="Reportar incidente"
+        footer={<><Button variant="secondary" fullWidth disabled={saving} onClick={() => setIncidentOpen(false)}>Cancelar</Button><Button variant="danger" fullWidth disabled={saving || !incidentDescription.trim()} onClick={() => void saveIncident()}>{saving ? "Enviando..." : "Enviar reporte"}</Button></>}
+      >
+        <div className="flex flex-col gap-3">
+          <Select label="Severidad" value={incidentSeverity} onChange={(event) => setIncidentSeverity(event.target.value)}>
+            <option>Leve</option>
+            <option>Moderado</option>
+            <option>Grave</option>
+            <option>Crítico</option>
+          </Select>
+          <Textarea label="¿Qué ocurrió?" value={incidentDescription} onChange={(event) => setIncidentDescription(event.target.value)} required placeholder="Describe lo ocurrido con claridad..." />
+          <Textarea label="Acciones tomadas (opcional)" value={incidentActions} onChange={(event) => setIncidentActions(event.target.value)} placeholder="Ej. Se notificó al supervisor..." />
+          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Este reporte quedará registrado y notificará a Administración.</p>
         </div>
       </BottomSheet>
     </div>

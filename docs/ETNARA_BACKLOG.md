@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FVAL-001 — Phase 4.5 live validation corrections
+
+- synchronize Family Today with real assigned caregiver and visit status
+- expose real caregiver incident reporting
+- show self credential status/expiration to caregiver
+- show only verified credential summaries to authorized Family
+
+Status: Implemented and validated locally on `fix/phase-4-5-validation`;
+coordinated backend/frontend PR publication pending.
+
+---
+
 ### FCONSOL-001 — Phase 4.5 single V23 build source
 
 Goal:
