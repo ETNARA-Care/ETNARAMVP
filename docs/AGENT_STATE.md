@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-4-5/consolidate-v23-source
+Branch: fix/phase-4-5-validation
 
 ## Last Known Frontend Checkpoint
 
@@ -45,6 +45,21 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-08 — Validation findings: shifts, incidents and credentials
+
+- Family Today now uses the curated family shift and timeline contracts; the
+  assigned caregiver and check-in/out state no longer come from DemoStore.
+- Caregiver shift detail includes a real incident form backed by the existing
+  incident endpoint.
+- Caregiver Profile loads the authenticated worker's credential summaries and
+  highlights pending, expiring and expired items.
+- Family Profile and Today show only the assigned caregiver's verified,
+  family-safe credential summaries; no documents or internal review fields.
+- Requires the coordinated backend branch `feature/shift-incidents-credentials`.
+- Frontend typecheck, lint, 4/4 boundary tests and production build pass.
+- Production remains unchanged. Exact next step: commit, then
+  request authorization to publish coordinated backend/frontend PRs.
 
 ### 2026-09-08 — Phase 4.5 first consolidation cut
 
