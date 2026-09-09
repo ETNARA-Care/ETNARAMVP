@@ -90,8 +90,8 @@ export function FamilyTodayPage() {
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <div>
-        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">Buenos días, Ana</p>
-        <h1 className="font-display text-[var(--text-h1)] text-[var(--color-text-primary)]">{caredFor.split(" ")[0]} está bien hoy</h1>
+        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">Seguimiento de hoy</p>
+        <h1 className="font-display text-[var(--text-h1)] text-[var(--color-text-primary)]">{caredFor}</h1>
       </div>
 
       <Card className="flex items-center gap-3">

@@ -138,6 +138,15 @@ test("Family History uses only family-safe shifts and timeline", async () => {
   assert.match(history, /status === "completed"/);
 });
 
+test("Family Today never invents a wellbeing update", async () => {
+  const today = await readFile(new URL("../src/pages/family/FamilyTodayPage.tsx", import.meta.url), "utf8");
+
+  assert.doesNotMatch(today, /Buenos días, Ana|está bien hoy/);
+  assert.match(today, /getFamilyTimeline/);
+  assert.match(today, /Todavía no hay actualizaciones hoy/);
+  assert.match(today, /lastEntry\.title/);
+});
+
 test("Administration Workers uses real organization workers and credential summaries", async () => {
   const workers = await readFile(new URL("../src/pages/agency/AgencySupportPages.tsx", import.meta.url), "utf8");
   const shiftsApi = await readFile(new URL("../src/api/shifts.ts", import.meta.url), "utf8");
