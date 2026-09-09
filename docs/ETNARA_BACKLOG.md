@@ -2,6 +2,17 @@
 
 ## In Progress
 
+### FPH5-001 — Truthful Family status
+
+- remove hard-coded Family identity and wellbeing claim
+- show care/wellbeing information only from the family-safe timeline
+- preserve the existing Family Today layout
+
+Status: Implemented on `phase-5/family-real-status`; validation and publication
+in progress. No backend change required.
+
+---
+
 ### FETN-012 — Real Administration Workers
 
 - remove mock availability and `DemoStore`

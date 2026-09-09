@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: feature/admin-real-workers
+Branch: phase-5/family-real-status
 
 ## Last Known Frontend Checkpoint
 
@@ -45,6 +45,17 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-09 — Phase 5 start: truthful Family status
+
+- Removed the hard-coded Family greeting name and the unsupported claim that
+  the recipient “está bien hoy”.
+- Family Today now identifies the real authorized recipient without asserting
+  a wellbeing status.
+- A wellbeing/care update appears only from the real family-safe timeline; when
+  none exists, the screen says there are no updates today.
+- No backend change is required. Exact next step: validate and publish this
+  isolated Phase 5 correction.
 
 ### 2026-09-09 — Administration Workers real-data migration
 
