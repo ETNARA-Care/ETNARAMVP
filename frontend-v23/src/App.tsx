@@ -24,10 +24,10 @@ import { CaregiverMessagesPage, CaregiverProfilePage } from "@/pages/caregiver/C
 import { AgencyLayout } from "@/layouts/AgencyLayout";
 import { AgencyOverviewPage } from "@/pages/agency/AgencyOverviewPage";
 import { AgencyShiftsPage } from "@/pages/agency/AgencyShiftsPage";
+import { AgencyIncidentsPage } from "@/pages/agency/AgencyIncidentsPage";
 import {
   AgencyResidentsPage,
   AgencyWorkersPage,
-  AgencyIncidentsPage,
   AgencyMessagesPage,
   AgencyCompliancePage,
   AgencySettingsPage,

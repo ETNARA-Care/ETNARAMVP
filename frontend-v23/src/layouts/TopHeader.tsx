@@ -4,11 +4,10 @@ import { NotificationBell } from "@/features/notifications/NotificationBell";
 interface TopHeaderProps {
   title: string;
   userName: string;
-  participantId: string;
 }
 
 /** Header compacto móvil: máximo dos toques para llegar a cualquier acción global (perfil, notificaciones). */
-export function TopHeader({ title, userName, participantId }: TopHeaderProps) {
+export function TopHeader({ title, userName }: TopHeaderProps) {
   return (
     <header
       className="sticky top-0 z-[var(--z-header)] flex items-center justify-between h-14 px-[var(--spacing-md)]
@@ -16,7 +15,7 @@ export function TopHeader({ title, userName, participantId }: TopHeaderProps) {
     >
       <span className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">{title}</span>
       <div className="flex items-center gap-2">
-        <NotificationBell participantId={participantId} />
+        <NotificationBell />
         <Avatar name={userName} size={32} />
       </div>
     </header>

@@ -98,10 +98,17 @@ Acceptance criteria:
 - incidents
 - correct role recipients
 
+Status: V23 bells and Family notification page now consume `/me/notifications`;
+incident notifications are visible to the backend-selected Admin/Supervisor and
+authorized Family recipients. Pending live three-role validation after deploy.
+
 ### FETN-007 — Family-safe observations / incidents
 - use curated endpoints only
 - never raw endpoints
 - verify 403 behavior for blocked access
+
+Admin incident listing now uses the real organization-scoped incident endpoint.
+The separate Family-safe incident history surface remains pending.
 
 ### FETN-008 — Remove remaining mocks
 Audit:

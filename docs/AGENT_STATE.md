@@ -46,6 +46,25 @@ Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
 
+### 2026-09-08 — Real incidents and notifications correction
+
+- Branch: `fix/v23-real-incidents-notifications` from deployed frontend commit
+  `38be84a807e72ec8bbf2fbf730c7c85d4eff62de`.
+- Administration Incidents now lists organization-scoped backend incidents and
+  resolves recipient names from the real recipient endpoint.
+- Notification bells in Family, Caregiver and Agency now load the authenticated
+  user's `/me/notifications` inbox, refresh when opened/focused and poll every
+  30 seconds.
+- Family Notifications now renders real items and supports one/all read actions.
+- Removed the fake fixed Admin incident badge and the caregiver success message
+  that claimed delivery before another portal had loaded it.
+- Backend required no code change: incident creation and recipient notification
+  insertion already occur in the same transaction.
+- Validation passed: typecheck, 5/5 boundary tests, lint (warnings only),
+  production build; backend regression 15/15 passed.
+- Production remains unchanged. Exact next step: review diff, commit and create
+  a frontend PR; do not merge without explicit authorization.
+
 ### 2026-09-08 — Validation findings: shifts, incidents and credentials
 
 - Family Today now uses the curated family shift and timeline contracts; the

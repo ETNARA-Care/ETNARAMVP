@@ -22,3 +22,11 @@ export async function createIncident(
   );
   return result.incident;
 }
+
+export async function listIncidents(organizationId: string, token: string): Promise<Incident[]> {
+  const result = await apiClient.get<{ incidents: Incident[] }>(
+    `/organizations/${organizationId}/incidents`,
+    token,
+  );
+  return result.incidents;
+}

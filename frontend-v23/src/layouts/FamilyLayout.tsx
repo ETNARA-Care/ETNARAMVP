@@ -2,12 +2,11 @@ import { Outlet } from "react-router-dom";
 import { Home, Activity, Clock, MessageCircle, User } from "lucide-react";
 import { TopHeader } from "./TopHeader";
 import { MobileTabBar } from "./MobileTabBar";
-import { DEMO_IDENTITIES } from "@/mocks/seed";
 
 export function FamilyLayout() {
   return (
     <div className="min-h-dvh flex flex-col">
-      <TopHeader title="ETNARA Care" userName="Ana Rivera" participantId={DEMO_IDENTITIES.familyMemberId} />
+      <TopHeader title="ETNARA Care" userName="Ana Rivera" />
       <main className="flex-1 max-w-[560px] w-full mx-auto px-[var(--spacing-md)] py-[var(--spacing-md)] pb-24">
         <Outlet />
       </main>

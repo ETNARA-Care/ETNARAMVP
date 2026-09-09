@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { Avatar, IconButton, NavigationItem } from "@/components/ui";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
-import { DEMO_IDENTITIES } from "@/mocks/seed";
 
 // Rutas alineadas exactamente a las definidas en el brief de Fase 2 --
 // no se agregó /agency/reports porque no estaba en la lista de rutas dada.
@@ -15,7 +14,7 @@ const NAV = [
   { to: "/agency/residents", icon: <Users size={18} />, label: "Residentes" },
   { to: "/agency/workers", icon: <UserCog size={18} />, label: "Cuidadores" },
   { to: "/agency/shifts", icon: <CalendarRange size={18} />, label: "Turnos" },
-  { to: "/agency/incidents", icon: <AlertTriangle size={18} />, label: "Incidentes", badge: 2 },
+  { to: "/agency/incidents", icon: <AlertTriangle size={18} />, label: "Incidentes" },
   { to: "/agency/messages", icon: <MessageCircle size={18} />, label: "Mensajes" },
   { to: "/agency/compliance", icon: <ShieldCheck size={18} />, label: "Cumplimiento" },
   { to: "/agency/settings", icon: <Settings size={18} />, label: "Configuración" },
@@ -79,7 +78,7 @@ export function AgencyLayout() {
             Residencial Los Almendros
           </span>
           <div className="flex items-center gap-3">
-            <NotificationBell participantId={DEMO_IDENTITIES.agencyAdminId} />
+            <NotificationBell />
             <Avatar name="Rafael Vega" size={32} />
           </div>
         </header>
