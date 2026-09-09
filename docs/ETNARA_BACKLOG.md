@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FETN-011 — Real Family History
+
+- remove fixed demo recipient and `DemoStore` history data
+- load authenticated family recipient
+- load completed family-safe shifts and curated timeline
+- preserve the existing V23 list/detail experience
+
+Status: Implemented on `feature/family-real-history`; validation and draft PR
+publication in progress. No backend change required.
+
+---
+
 ### FETN-010 — Incident details and resident profile
 
 - notification click-through for Family and Administration

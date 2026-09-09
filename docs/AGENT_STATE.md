@@ -4,18 +4,18 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: feature/incident-details-resident-profile
+Branch: feature/family-real-history
 
 ## Last Known Frontend Checkpoint
 
 Backend connectivity is working.
 
 Known product issue:
-- Administration still contains mock/fake data in at least some resident surfaces.
-- AgencyResidentProfilePage.tsx needs conversion to real backend data.
+- Administration Workers still contains mock availability data.
+- The active Agency resident profile is backed by real organization data.
 - Caregiver / Family / Administration synchronization still requires frontend validation.
 - Messaging backend fixes may exist or be pending deployment depending on backend state.
-- Family-safe endpoints for observations/incidents/shifts may exist in backend and must be used rather than raw endpoints.
+- Family-safe endpoints for observations/incidents/shifts exist and must be used rather than raw endpoints.
 
 ## Mandatory Next Step
 
@@ -45,6 +45,17 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-09 — Family History real-data migration
+
+- Removed the fixed Carmen demo identity and all `DemoStore` reads from Family
+  History.
+- The screen now resolves the authenticated Family recipient, loads completed
+  family-safe shifts and uses the curated timeline for each shift detail.
+- Existing V23 list/detail layout is preserved with loading, empty and visible
+  API error states.
+- No backend change is required. Exact next step: validate, commit and create a
+  draft frontend PR; do not merge without explicit authorization.
 
 ### 2026-09-09 — Incident details and real resident profile
 

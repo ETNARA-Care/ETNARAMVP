@@ -21,6 +21,7 @@ const realDataModules = [
   "src/pages/caregiver/CaregiverSupportPages.tsx",
   "src/pages/family/FamilyMessagesPage.tsx",
   "src/pages/family/FamilyIncidentDetailPage.tsx",
+  "src/pages/family/FamilyHistoryPage.tsx",
   "src/pages/family/FamilySupportPages.tsx",
   "src/pages/family/FamilyTodayPage.tsx",
 ];
@@ -54,7 +55,6 @@ test("operational DemoStore imports remain confined to the audited files", async
 
   assert.deepEqual(actual.sort(), [
     "agency/AgencySupportPages.tsx",
-    "family/FamilyHistoryPage.tsx",
   ]);
 });
 
@@ -127,4 +127,14 @@ test("Administration detail and resident profile use real organization APIs", as
   assert.match(residentProfile, /useAgencySupervision/);
   assert.doesNotMatch(incidentDetail, /@\/mocks\//);
   assert.doesNotMatch(residentProfile, /@\/mocks\//);
+});
+
+test("Family History uses only family-safe shifts and timeline", async () => {
+  const history = await readFile(new URL("../src/pages/family/FamilyHistoryPage.tsx", import.meta.url), "utf8");
+
+  assert.match(history, /listMyCareRecipients/);
+  assert.match(history, /listFamilyShifts/);
+  assert.match(history, /getFamilyTimeline/);
+  assert.doesNotMatch(history, /DemoStore|@\/mocks\//);
+  assert.match(history, /status === "completed"/);
 });
