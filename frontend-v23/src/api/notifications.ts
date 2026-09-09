@@ -28,6 +28,9 @@ function notificationSummary(type: string): string {
   if (type === "NEW_MESSAGE") return "Nuevo mensaje";
   if (type === "NEW_CARE_EVENT") return "Nueva actividad de cuidado";
   if (type === "NEW_INCIDENT") return "Nuevo incidente";
+  if (type === "SHIFT_ASSIGNMENT_PENDING") return "Nuevo turno pendiente de respuesta";
+  if (type === "SHIFT_ASSIGNMENT_ACCEPTED") return "Turno aceptado por la cuidadora";
+  if (type === "SHIFT_ASSIGNMENT_REJECTED") return "Turno rechazado por la cuidadora";
   return "Notificación";
 }
 

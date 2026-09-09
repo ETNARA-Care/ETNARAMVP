@@ -157,3 +157,18 @@ test("Administration Workers uses real organization workers and credential summa
   assert.doesNotMatch(workers, /DemoStore|useWorkers|available/);
   assert.match(shiftsApi, /\/workers\/\$\{membershipId\}/);
 });
+
+test("Phase 5 assignment response is real and blocks care until accepted", async () => {
+  const api = await readFile(new URL("../src/api/shifts.ts", import.meta.url), "utf8");
+  const caregiver = await readFile(new URL("../src/pages/caregiver/CaregiverShiftDetailPage.tsx", import.meta.url), "utf8");
+  const agency = await readFile(new URL("../src/pages/agency/AgencyShiftsPage.tsx", import.meta.url), "utf8");
+
+  assert.match(api, /respondToAssignment/);
+  assert.match(api, /\/me\/shifts\/\$\{shiftId\}\/respond/);
+  assert.match(caregiver, /¿Puedes cubrir este turno\?/);
+  assert.match(caregiver, /assignmentAccepted/);
+  assert.match(caregiver, /respond\("accepted"\)/);
+  assert.match(caregiver, /respond\("rejected"\)/);
+  assert.match(agency, /Esperando respuesta/);
+  assert.match(agency, /response_status === "accepted"/);
+});

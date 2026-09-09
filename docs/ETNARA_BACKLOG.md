@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FPH5-002 — Caregiver assignment response
+
+- show pending response in Caregiver and Administration
+- accept/reject through the authenticated worker endpoint
+- block shift start until acceptance
+- preserve Family-safe confirmation behavior
+
+Status: Implemented and validated locally on `phase-5/assignment-responses`;
+PR publication in progress.
+
+---
+
 ### FPH5-001 — Truthful Family status
 
 - remove hard-coded Family identity and wellbeing claim

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
-import { Card, EmptyState, ErrorState, PageHeader, Skeleton, StatusBadge } from "@/components/ui";
+import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton, StatusBadge } from "@/components/ui";
 
 function formatWindow(shift: Shift): string {
   const start = new Date(shift.scheduled_start);
@@ -52,7 +52,9 @@ export function CaregiverShiftsPage() {
           <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
           <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
         </div>
-        <StatusBadge status={shift.status} />
+        {shift.assignment_response_status === "pending"
+          ? <Badge tone="warning">Responder</Badge>
+          : <StatusBadge status={shift.status} />}
       </Card>
     </Link>
   );
