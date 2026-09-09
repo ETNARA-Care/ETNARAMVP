@@ -11,6 +11,8 @@ export interface Shift {
   scheduled_end: string;
   status: ShiftStatus;
   assignment_count?: number;
+  assignment_id?: string;
+  assignment_response_status?: "pending" | "accepted";
 }
 
 export interface CareRecipient {
@@ -54,6 +56,9 @@ export interface Assignment {
   id: string;
   shift_id: string;
   organization_worker_membership_id: string;
+  response_status: "pending" | "accepted" | "rejected";
+  responded_at: string | null;
+  response_reason: string | null;
 }
 
 export interface VisitVerification {
@@ -139,6 +144,21 @@ export async function assignShift(
   const result = await apiClient.post<{ assignment: Assignment }>(
     `/organizations/${organizationId}/shifts/${shiftId}/assignments`,
     { organizationWorkerMembershipId },
+    token,
+  );
+  return result.assignment;
+}
+
+export async function respondToAssignment(
+  organizationId: string,
+  shiftId: string,
+  decision: "accepted" | "rejected",
+  reason: string | undefined,
+  token: string,
+): Promise<Assignment> {
+  const result = await apiClient.post<{ assignment: Assignment }>(
+    `/organizations/${organizationId}/me/shifts/${shiftId}/respond`,
+    { decision, ...(reason?.trim() ? { reason: reason.trim() } : {}) },
     token,
   );
   return result.assignment;

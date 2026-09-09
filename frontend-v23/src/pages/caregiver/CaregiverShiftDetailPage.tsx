@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Activity, Bath, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils } from "lucide-react";
+import { Activity, Bath, Check, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { createCareEvent, listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
 import { createIncident } from "@/api/incidents";
 import {
-  checkIn, checkOut, getShift, getVisitVerification, listCareRecipients, recipientName,
+  checkIn, checkOut, getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
-import { BottomSheet, Button, Card, ErrorState, Input, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
+import { Badge, BottomSheet, Button, Card, ErrorState, Input, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 
 const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }> = [
   { code: "MEAL", label: "Comida", icon: <Utensils size={22} /> },
@@ -30,6 +30,8 @@ function actionError(error: unknown): string {
   const apiError = error as ApiError;
   if (apiError.status === 0) return "No hay conexión con el servidor.";
   if (apiError.code === "ALREADY_CHECKED_IN") return "Este turno ya fue iniciado.";
+  if (apiError.code === "ASSIGNMENT_NOT_ACCEPTED") return "Debes aceptar el turno antes de comenzarlo.";
+  if (apiError.code === "ASSIGNMENT_ALREADY_RESPONDED") return "Esta asignación ya fue respondida.";
   if (apiError.code === "NO_ACTIVE_CHECK_IN") return "No encontramos una llegada activa para finalizar.";
   if (apiError.code === "NO_ACTIVE_VISIT") return "Debes comenzar el turno antes de registrar cuidados.";
   if (apiError.code === "EVENT_TYPE_NOT_ENABLED") return "Esta acción no está habilitada para la organización.";
@@ -85,6 +87,8 @@ export function CaregiverShiftDetailPage() {
   const [incidentSeverity, setIncidentSeverity] = useState("Moderado");
   const [incidentDescription, setIncidentDescription] = useState("");
   const [incidentActions, setIncidentActions] = useState("");
+  const [rejectionOpen, setRejectionOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const organizationId = activeOrganization?.id;
 
   const load = useCallback(async () => {
@@ -92,12 +96,14 @@ export function CaregiverShiftDetailPage() {
     if (!organizationId || !shiftId || !token) return;
     setError(false);
     try {
-      const [shiftRow, summary, recipientRows, eventRows] = await Promise.all([
-        getShift(organizationId, shiftId, token),
+      const [shiftRows, summary, recipientRows, eventRows] = await Promise.all([
+        listMyShifts(organizationId, token),
         getVisitVerification(organizationId, shiftId, token),
         listCareRecipients(organizationId, token),
         listShiftCareEvents(organizationId, shiftId, token),
       ]);
+      const shiftRow = shiftRows.find((item) => item.id === shiftId);
+      if (!shiftRow) throw new Error("SHIFT_NOT_ASSIGNED");
       setShift(shiftRow);
       setVerification(summary);
       setRecipient(recipientRows.find((item) => item.id === shiftRow.care_recipient_id));
@@ -144,6 +150,33 @@ export function CaregiverShiftDetailPage() {
       navigate("/caregiver/shifts");
     } catch (requestError) { show(actionError(requestError), "danger"); }
     finally { setSaving(false); }
+  }
+
+  async function respond(decision: "accepted" | "rejected") {
+    const token = getToken();
+    if (!organizationId || !shiftId || !token) return;
+    setSaving(true);
+    try {
+      await respondToAssignment(
+        organizationId,
+        shiftId,
+        decision,
+        decision === "rejected" ? rejectionReason : undefined,
+        token,
+      );
+      if (decision === "rejected") {
+        show("Turno rechazado. Administración fue notificada.", "success");
+        navigate("/caregiver/shifts");
+        return;
+      }
+      show("Turno aceptado. Administración fue notificada.", "success");
+      await load();
+    } catch (requestError) {
+      show(actionError(requestError), "danger");
+    } finally {
+      setSaving(false);
+      setRejectionOpen(false);
+    }
   }
 
   function carePayload(): { payload?: Record<string, unknown>; noteText?: string } {
@@ -209,7 +242,9 @@ export function CaregiverShiftDetailPage() {
   if (!shift || !verification) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-32" /></div>;
 
   const status = effectiveStatus(shift, verification);
-  const canStart = verification.status === "not_started" && status !== "cancelled" && status !== "completed";
+  const assignmentAccepted = shift.assignment_response_status === "accepted";
+  const assignmentPending = shift.assignment_response_status === "pending";
+  const canStart = assignmentAccepted && verification.status === "not_started" && status !== "cancelled" && status !== "completed";
   const canFinish = verification.status === "in_progress";
 
   return (
@@ -222,6 +257,20 @@ export function CaregiverShiftDetailPage() {
           {new Date(shift.scheduled_start).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })} – {new Date(shift.scheduled_end).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}
         </p>
       </Card>
+
+      {assignmentPending && (
+        <Card className="flex flex-col gap-3">
+          <div>
+            <Badge tone="warning">Respuesta pendiente</Badge>
+            <p className="font-medium text-[var(--color-text-primary)] mt-2">¿Puedes cubrir este turno?</p>
+            <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Confirma tu disponibilidad antes de comenzar.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="danger" icon={<X size={18} />} disabled={saving} onClick={() => setRejectionOpen(true)}>Rechazar</Button>
+            <Button icon={<Check size={18} />} disabled={saving} onClick={() => void respond("accepted")}>Aceptar</Button>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Button variant="secondary" size="lg" icon={<LogIn size={18} />} disabled={!canStart || saving} onClick={() => void startShift()}>Comenzar turno</Button>
@@ -243,7 +292,7 @@ export function CaregiverShiftDetailPage() {
             </button>
           ))}
         </div>
-        {!canFinish && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-2">Comienza el turno para registrar cuidados.</p>}
+        {!canFinish && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-2">{assignmentPending ? "Acepta el turno antes de registrar cuidados." : "Comienza el turno para registrar cuidados."}</p>}
       </div>
 
       <Button
@@ -297,6 +346,15 @@ export function CaregiverShiftDetailPage() {
           <Textarea label="Acciones tomadas (opcional)" value={incidentActions} onChange={(event) => setIncidentActions(event.target.value)} placeholder="Ej. Se notificó al supervisor..." />
           <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Este reporte quedará registrado y notificará a Administración.</p>
         </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={rejectionOpen}
+        onClose={() => !saving && setRejectionOpen(false)}
+        title="Rechazar turno"
+        footer={<><Button variant="secondary" fullWidth disabled={saving} onClick={() => setRejectionOpen(false)}>Cancelar</Button><Button variant="danger" fullWidth disabled={saving} onClick={() => void respond("rejected")}>{saving ? "Enviando..." : "Confirmar rechazo"}</Button></>}
+      >
+        <Textarea label="Motivo (opcional)" value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} maxLength={500} placeholder="Ej. Conflicto de horario" />
       </BottomSheet>
     </div>
   );

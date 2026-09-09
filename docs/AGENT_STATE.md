@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-5/family-real-status
+Branch: phase-5/assignment-responses
 
 ## Last Known Frontend Checkpoint
 
@@ -45,6 +45,19 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-09 — Phase 5.2 caregiver assignment response
+
+- Caregiver shifts expose the real pending/accepted assignment state.
+- María can accept or reject from the shift detail; rejection supports an
+  optional reason.
+- Start and care controls remain disabled until acceptance.
+- Administration distinguishes “Esperando respuesta” from “Aceptado” and a
+  rejected shift becomes assignable again.
+- Frontend typecheck, lint (warnings only), 12/12 boundary tests and production
+  build pass locally.
+- Exact next step: publish the coordinated frontend PR after the backend PR and
+  wait for CI before requesting merge authorization.
 
 ### 2026-09-09 — Phase 5 start: truthful Family status
 

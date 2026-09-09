@@ -5,9 +5,9 @@ import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import {
   assignShift, createShift, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
-  type CareRecipient, type Shift, type WorkerMembership,
+  type Assignment, type CareRecipient, type Shift, type WorkerMembership,
 } from "@/api/shifts";
-import { Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, StatusBadge, useToast } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, StatusBadge, useToast } from "@/components/ui";
 
 function localDateTime(date: Date): string {
   const offset = date.getTimezoneOffset() * 60_000;
@@ -42,7 +42,7 @@ export function AgencyShiftsPage() {
   const [shifts, setShifts] = useState<Shift[] | null>(null);
   const [recipients, setRecipients] = useState<CareRecipient[]>([]);
   const [workers, setWorkers] = useState<WorkerMembership[]>([]);
-  const [assigneeByShift, setAssigneeByShift] = useState<Record<string, string>>({});
+  const [assignmentByShift, setAssignmentByShift] = useState<Record<string, Assignment | undefined>>({});
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -64,7 +64,11 @@ export function AgencyShiftsPage() {
       setShifts(shiftRows);
       setRecipients(recipientRows);
       setWorkers(workerRows.filter((worker) => worker.status === "active"));
-      setAssigneeByShift(Object.fromEntries(assignmentRows.map(([shiftId, assignments]) => [shiftId, assignments[0]?.organization_worker_membership_id ?? ""])));
+      setAssignmentByShift(Object.fromEntries(assignmentRows.map(([shiftId, assignments]) => [
+        shiftId,
+        assignments.find((assignment) => assignment.response_status === "accepted")
+          ?? assignments.find((assignment) => assignment.response_status === "pending"),
+      ])));
     } catch {
       setError(true);
       setShifts([]);
@@ -98,7 +102,7 @@ export function AgencyShiftsPage() {
       }, token);
       await assignShift(organizationId, shift.id, selectedWorkerId, token);
       setCreating(false);
-      show(`Turno asignado a ${workerById[selectedWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
+      show(`Asignación enviada a ${workerById[selectedWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
       await load();
     } catch (requestError) {
       show(requestMessage(requestError), "danger");
@@ -113,7 +117,7 @@ export function AgencyShiftsPage() {
     try {
       await assignShift(organizationId, assigning.id, selectedWorkerId, token);
       setAssigning(null);
-      show(`Turno asignado a ${workerById[selectedWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
+      show(`Asignación enviada a ${workerById[selectedWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
       await load();
     } catch (requestError) { show(requestMessage(requestError), "danger"); }
     finally { setSaving(false); }
@@ -130,7 +134,8 @@ export function AgencyShiftsPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {orderedShifts.map((shift) => {
-            const assignee = workerById[assigneeByShift[shift.id]];
+            const assignment = assignmentByShift[shift.id];
+            const assignee = assignment ? workerById[assignment.organization_worker_membership_id] : undefined;
             return (
               <Card key={shift.id} className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
@@ -140,7 +145,9 @@ export function AgencyShiftsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={shift.status} />
-                  {shift.status === "unassigned" && <Button size="md" onClick={() => { setAssigning(shift); setSelectedWorkerId(workers[0]?.id ?? ""); }}>Asignar cuidadora</Button>}
+                  {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
+                  {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
+                  {shift.status === "unassigned" && !assignment && <Button size="md" onClick={() => { setAssigning(shift); setSelectedWorkerId(workers[0]?.id ?? ""); }}>Asignar cuidadora</Button>}
                 </div>
               </Card>
             );
