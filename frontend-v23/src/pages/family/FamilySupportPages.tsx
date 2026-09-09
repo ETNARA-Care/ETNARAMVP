@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyTimelineItem } from "@/api/familyTimeline";
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
+import { useNotifications } from "@/features/notifications/useNotifications";
 
 function isToday(iso: string): boolean {
   const event = new Date(iso);
@@ -149,10 +150,45 @@ export function FamilyProfilePage() {
 }
 
 export function FamilyNotificationsPage() {
+  const { items, unread, error, reload, markRead, markAllRead } = useNotifications();
+
+  if (items === null) {
+    return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
+  }
+  if (error) return <ErrorState kind="server" onRetry={() => void reload()} />;
+
   return (
     <div>
-      <PageHeader title="Notificaciones" />
-      <EmptyState icon={<MessageCircle size={28} />} title="No tienes notificaciones nuevas." />
+      <PageHeader
+        title="Notificaciones"
+        actions={unread > 0 ? <Button variant="secondary" onClick={() => void markAllRead()}>Marcar todas como leídas</Button> : undefined}
+      />
+      {items.length === 0 ? (
+        <EmptyState icon={<MessageCircle size={28} />} title="No tienes notificaciones nuevas." />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {items.map((notification) => (
+            <button
+              type="button"
+              key={notification.id}
+              onClick={() => void markRead(notification.id)}
+              className="text-left"
+            >
+              <Card className={notification.readAt ? "" : "border-[var(--color-accent-700)] bg-[var(--color-accent-100)]/30"}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-[var(--color-text-primary)]">{notification.summary}</p>
+                    <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">
+                      {new Date(notification.createdAt).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}
+                    </p>
+                  </div>
+                  {!notification.readAt && <Badge tone="accent">Nueva</Badge>}
+                </div>
+              </Card>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

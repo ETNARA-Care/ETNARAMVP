@@ -5,6 +5,13 @@ import test from "node:test";
 const realDataModules = [
   "src/features/agency/useAgencySupervision.ts",
   "src/features/messaging/ConversationUI.tsx",
+  "src/features/notifications/NotificationBell.tsx",
+  "src/features/notifications/useNotifications.ts",
+  "src/layouts/AgencyLayout.tsx",
+  "src/layouts/CaregiverLayout.tsx",
+  "src/layouts/FamilyLayout.tsx",
+  "src/layouts/TopHeader.tsx",
+  "src/pages/agency/AgencyIncidentsPage.tsx",
   "src/pages/agency/AgencyOverviewPage.tsx",
   "src/pages/agency/AgencyShiftsPage.tsx",
   "src/pages/caregiver/CaregiverShiftDetailPage.tsx",
@@ -61,4 +68,23 @@ test("validation fixes use curated real endpoints", async () => {
   assert.match(incident, /Reportar incidente/);
   assert.match(family, /Credenciales verificadas/);
   assert.match(family, /documentos y datos privados permanecen protegidos/);
+});
+
+test("incidents and notification surfaces use the real API", async () => {
+  const incidents = await readFile(new URL("../src/pages/agency/AgencyIncidentsPage.tsx", import.meta.url), "utf8");
+  const notificationBell = await readFile(new URL("../src/features/notifications/NotificationBell.tsx", import.meta.url), "utf8");
+  const notificationsHook = await readFile(new URL("../src/features/notifications/useNotifications.ts", import.meta.url), "utf8");
+  const notificationsApi = await readFile(new URL("../src/api/notifications.ts", import.meta.url), "utf8");
+  const family = await readFile(new URL("../src/pages/family/FamilySupportPages.tsx", import.meta.url), "utf8");
+  const agencyLayout = await readFile(new URL("../src/layouts/AgencyLayout.tsx", import.meta.url), "utf8");
+
+  assert.match(incidents, /listIncidents/);
+  assert.match(incidents, /listCareRecipients/);
+  assert.match(notificationBell, /useNotifications/);
+  assert.match(notificationsHook, /listMyNotifications/);
+  assert.match(notificationsHook, /markNotificationRead/);
+  assert.match(notificationsApi, /notification_type/);
+  assert.match(notificationsApi, /read_at/);
+  assert.match(family, /markAllRead/);
+  assert.doesNotMatch(agencyLayout, /badge:\s*2/);
 });

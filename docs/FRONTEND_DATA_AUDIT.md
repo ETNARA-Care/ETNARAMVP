@@ -41,7 +41,7 @@ published by the active workflows.
 | Admin Shifts | Real | shifts, recipients, workers, assignments | Create and assign persist in backend |
 | Admin Messages | Real | conversations and messages | No demo fallback |
 | Admin Workers | Simulated | `DemoStore` | Availability and credential status are mock |
-| Admin Incidents | Simulated | `DemoStore` | Must move to incident endpoints |
+| Admin Incidents | Real | `/organizations/:id/incidents` + recipients | Open incidents persist and reload from the backend |
 | Admin Compliance | Placeholder | none | Explicitly says no data yet |
 | Admin Settings | Mixed | real session + placeholder organization settings | No fake persistence |
 | Caregiver Shifts | Real | `/organizations/:id/me/shifts` | Authenticated worker scope |
@@ -53,7 +53,7 @@ published by the active workflows.
 | Family History | Simulated | `DemoStore` | Fixed demo recipient and completed shifts |
 | Family Messages | Real | conversations and messages | No demo fallback |
 | Family Profile | Real/Mixed | family-safe caregiver credentials + real session; hard-coded family identity | Never exposes credential documents or internal review data |
-| Family Notifications | Placeholder | none | Bell still uses `DemoStore` notifications |
+| Family Notifications | Real | `/me/notifications` | Bell and full page use the authenticated user's backend inbox |
 | `/demo` landing | Explicit demo | static demo identities | Isolated, not an operational fallback |
 
 ## Backend contracts verified
@@ -74,5 +74,8 @@ care events, family-safe timeline, conversations and messages.
 - Local contract regression passed against backend `main`: TypeScript build and
   11/11 tests. The V23 cut passed typecheck, lint (warnings only), 3/3 boundary
   tests, and a production build using the active `d460` Railway URL.
-- Next: migrate Family History to family-safe endpoints, then
-  Admin Workers/Incidents and notifications, one reversible surface at a time.
+- Notification bells in Family, Caregiver and Agency use the real authenticated
+  inbox, refresh on focus/open and poll every 30 seconds; no participant ID or
+  DemoStore notification fallback remains.
+- Next: migrate Family History to family-safe endpoints, then Admin Workers,
+  one reversible surface at a time.

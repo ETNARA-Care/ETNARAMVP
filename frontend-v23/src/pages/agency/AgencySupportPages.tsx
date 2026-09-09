@@ -2,7 +2,7 @@ import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, S
 import { ShieldCheck, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
-import { useIncidents, useResident, useShift, useWorkers } from "@/mocks/DemoStoreContext";
+import { useWorkers } from "@/mocks/DemoStoreContext";
 import { useAuth } from "@/auth/AuthProvider";
 import { recipientName } from "@/api/shifts";
 import { isToday, useAgencySupervision, type AdminShift } from "@/features/agency/useAgencySupervision";
@@ -65,37 +65,6 @@ export function AgencyWorkersPage() {
         ))}
       </div>
     </div>
-  );
-}
-
-export function AgencyIncidentsPage() {
-  const incidents = useIncidents();
-  return (
-    <div>
-      <PageHeader title="Incidentes" description="Distinto de una observación rutinaria -- severidad y tipo visibles solo aquí." />
-      {incidents.length === 0 ? (
-        <EmptyState icon={<ShieldCheck size={28} />} title="No hay incidentes abiertos." />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {incidents.map((inc) => <IncidentRow key={inc.id} incident={inc} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function IncidentRow({ incident }: { incident: ReturnType<typeof useIncidents>[number] }) {
-  const shift = useShift(incident.shiftId);
-  const resident = useResident(shift?.residentId);
-  return (
-    <Card className="flex items-center justify-between">
-      <div>
-        <p className="font-medium text-[var(--color-text-primary)]">{incident.incidentType}</p>
-        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{resident?.name}</p>
-        {incident.note && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">{incident.note}</p>}
-      </div>
-      <Badge tone="danger">Severidad {incident.incidentSeverity}</Badge>
-    </Card>
   );
 }
 

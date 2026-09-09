@@ -194,7 +194,7 @@ export function CaregiverShiftDetailPage() {
         description: incidentDescription.trim(),
         ...(incidentActions.trim() ? { actionsTaken: incidentActions.trim() } : {}),
       }, token);
-      show("Incidente reportado. Administración fue notificada.", "success");
+      show("Incidente reportado correctamente.", "success");
       setIncidentOpen(false);
       setIncidentDescription("");
       setIncidentActions("");
