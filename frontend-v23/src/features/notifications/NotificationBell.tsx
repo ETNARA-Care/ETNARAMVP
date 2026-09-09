@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, Check } from "lucide-react";
 import { IconButton, Badge } from "@/components/ui";
 import { useNotifications } from "./useNotifications";
@@ -15,7 +16,17 @@ function timeAgo(iso: string) {
 /** Campana conectada a la bandeja real del usuario autenticado. */
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const { items, unread, error, reload, markRead } = useNotifications();
+
+  async function openNotification(notificationId: string, entityType: string | null, entityId: string | null) {
+    await markRead(notificationId);
+    if (entityType !== "incident" || !entityId) return;
+    setOpen(false);
+    if (location.pathname.startsWith("/family")) navigate(`/family/incidents/${entityId}`);
+    if (location.pathname.startsWith("/agency")) navigate(`/agency/incidents/${entityId}`);
+  }
 
   function toggle() {
     const next = !open;
@@ -74,7 +85,7 @@ export function NotificationBell() {
                 items.map((n) => (
                   <button
                     key={n.id}
-                    onClick={() => void markRead(n.id)}
+                    onClick={() => void openNotification(n.id, n.relatedEntityType, n.relatedEntityId)}
                     className={`w-full text-left flex items-start gap-2 px-3.5 py-3 border-b border-[var(--color-border)] last:border-b-0
                       transition-colors hover:bg-[var(--color-ivory-100)]
                       ${n.readAt ? "" : "bg-[var(--color-accent-100)]/40"}`}

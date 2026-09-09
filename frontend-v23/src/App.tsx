@@ -25,6 +25,9 @@ import { AgencyLayout } from "@/layouts/AgencyLayout";
 import { AgencyOverviewPage } from "@/pages/agency/AgencyOverviewPage";
 import { AgencyShiftsPage } from "@/pages/agency/AgencyShiftsPage";
 import { AgencyIncidentsPage } from "@/pages/agency/AgencyIncidentsPage";
+import { AgencyIncidentDetailPage } from "@/pages/agency/AgencyIncidentDetailPage";
+import { AgencyResidentProfilePage } from "@/pages/agency/AgencyResidentProfilePage";
+import { FamilyIncidentDetailPage } from "@/pages/family/FamilyIncidentDetailPage";
 import {
   AgencyResidentsPage,
   AgencyWorkersPage,
@@ -68,6 +71,7 @@ export default function App() {
           <Route path="messages" element={<FamilyMessagesPage />} />
           <Route path="profile" element={<FamilyProfilePage />} />
           <Route path="notifications" element={<FamilyNotificationsPage />} />
+          <Route path="incidents/:incidentId" element={<FamilyIncidentDetailPage />} />
         </Route>
 
         <Route
@@ -95,9 +99,11 @@ export default function App() {
         >
           <Route index element={<AgencyOverviewPage />} />
           <Route path="residents" element={<AgencyResidentsPage />} />
+          <Route path="residents/:residentId" element={<AgencyResidentProfilePage />} />
           <Route path="workers" element={<AgencyWorkersPage />} />
           <Route path="shifts" element={<AgencyShiftsPage />} />
           <Route path="incidents" element={<AgencyIncidentsPage />} />
+          <Route path="incidents/:incidentId" element={<AgencyIncidentDetailPage />} />
           <Route path="messages" element={<AgencyMessagesPage />} />
           <Route path="compliance" element={<AgencyCompliancePage />} />
           <Route path="settings" element={<AgencySettingsPage />} />

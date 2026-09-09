@@ -15,9 +15,19 @@ export interface Shift {
 
 export interface CareRecipient {
   id: string;
+  organization_id: string;
   first_name: string;
   last_name: string;
   preferred_name: string | null;
+  date_of_birth: string | null;
+  allergies: string[] | null;
+  preferences: unknown;
+  routines: unknown;
+  status: string;
+  room_id: string | null;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
 }
 
 export interface WorkerMembership {
@@ -70,6 +80,18 @@ export async function listCareRecipients(organizationId: string, token: string):
     token,
   );
   return result.recipients;
+}
+
+export async function getCareRecipient(
+  organizationId: string,
+  recipientId: string,
+  token: string,
+): Promise<CareRecipient> {
+  const result = await apiClient.get<{ recipient: CareRecipient }>(
+    `/organizations/${organizationId}/care-recipients/${recipientId}`,
+    token,
+  );
+  return result.recipient;
 }
 
 export async function listWorkers(organizationId: string, token: string): Promise<WorkerMembership[]> {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
@@ -7,6 +8,7 @@ import { listIncidents, type Incident } from "@/api/incidents";
 import { listCareRecipients, recipientName, type CareRecipient } from "@/api/shifts";
 
 export function AgencyIncidentsPage() {
+  const navigate = useNavigate();
   const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
   const [incidents, setIncidents] = useState<Incident[] | null>(null);
@@ -55,7 +57,8 @@ export function AgencyIncidentsPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {openIncidents.map((incident) => (
-            <Card key={incident.id} className="flex items-start justify-between gap-3">
+            <button key={incident.id} type="button" className="text-left" onClick={() => navigate(`/agency/incidents/${incident.id}`)}>
+            <Card className="flex items-start justify-between gap-3 hover:bg-[var(--color-ivory-100)] transition-colors">
               <div className="min-w-0">
                 <p className="font-medium text-[var(--color-text-primary)]">Incidente reportado</p>
                 <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
@@ -68,6 +71,7 @@ export function AgencyIncidentsPage() {
               </div>
               <Badge tone="danger">Severidad {incident.severity}</Badge>
             </Card>
+            </button>
           ))}
         </div>
       )}

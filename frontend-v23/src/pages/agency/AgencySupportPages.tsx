@@ -17,7 +17,7 @@ export function AgencyResidentsPage() {
       {recipients.length === 0 ? <EmptyState title="No hay residentes registrados" /> : (
         <div className="flex flex-col gap-2">
           {recipients.map((recipient) => (
-            <ResidentRow key={recipient.id} name={recipientName(recipient)} shift={shiftForRecipientToday(shifts, recipient.id)} />
+            <ResidentRow key={recipient.id} id={recipient.id} name={recipientName(recipient)} shift={shiftForRecipientToday(shifts, recipient.id)} />
           ))}
         </div>
       )}
@@ -33,10 +33,12 @@ function shiftForRecipientToday(shifts: AdminShift[], recipientId: string): Admi
     ?? rows.sort((a, b) => new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime())[0];
 }
 
-function ResidentRow({ name, shift }: { name: string; shift?: AdminShift }) {
+function ResidentRow({ id, name, shift }: { id: string; name: string; shift?: AdminShift }) {
+  const navigate = useNavigate();
   const workerName = shift?.caregiver?.display_name ?? shift?.caregiver?.internal_role;
   return (
-    <Card className="flex items-center justify-between">
+    <button type="button" className="text-left" onClick={() => navigate(`/agency/residents/${id}`)}>
+    <Card className="flex items-center justify-between hover:bg-[var(--color-ivory-100)] transition-colors">
       <div>
         <p className="font-medium text-[var(--color-text-primary)]">{name}</p>
         <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
@@ -45,6 +47,7 @@ function ResidentRow({ name, shift }: { name: string; shift?: AdminShift }) {
       </div>
       {shift && <StatusBadge status={shift.status} />}
     </Card>
+    </button>
   );
 }
 

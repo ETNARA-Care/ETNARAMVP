@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FETN-010 — Incident details and resident profile
+
+- notification click-through for Family and Administration
+- family-safe incident detail using only the curated endpoint
+- operational Admin incident detail and follow-up timeline
+- real Admin resident profile linked from residents and incidents
+
+Status: Implemented on `feature/incident-details-resident-profile`; validation
+and draft PR publication in progress. No backend change required.
+
+---
+
 ### FVAL-001 — Phase 4.5 live validation corrections
 
 - synchronize Family Today with real assigned caregiver and visit status
@@ -68,6 +80,9 @@ Acceptance criteria:
 - preserve current layout
 - remove mock fallback where backend exists
 - handle loading/error states
+
+Status: Implemented in the active V23 source as part of FETN-010; pending PR
+review and merge.
 
 ### FETN-003 — Messaging across Worker / Family / Admin
 - use backend conversations
