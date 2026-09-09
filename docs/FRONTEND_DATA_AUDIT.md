@@ -37,11 +37,11 @@ published by the active workflows.
 |---|---|---|---|
 | Login, session, organization selection | Real | `/auth/*`, `/me`, `/me/active-organization` | No demo fallback |
 | Admin Overview | Real | recipients, workers, shifts, assignments, care events | Organization-scoped API |
-| Admin Residents | Real | recipients, shifts, assignments | Organization-scoped API |
+| Admin Residents | Real | recipients, shifts, assignments, care events, incidents | Rows open a real operational resident profile; no demo fallback |
 | Admin Shifts | Real | shifts, recipients, workers, assignments | Create and assign persist in backend |
 | Admin Messages | Real | conversations and messages | No demo fallback |
 | Admin Workers | Simulated | `DemoStore` | Availability and credential status are mock |
-| Admin Incidents | Real | `/organizations/:id/incidents` + recipients | Open incidents persist and reload from the backend |
+| Admin Incidents | Real | incidents, incident timeline, recipients, workers | Cards and notifications open the operational detail and link to the resident profile |
 | Admin Compliance | Placeholder | none | Explicitly says no data yet |
 | Admin Settings | Mixed | real session + placeholder organization settings | No fake persistence |
 | Caregiver Shifts | Real | `/organizations/:id/me/shifts` | Authenticated worker scope |
@@ -53,7 +53,7 @@ published by the active workflows.
 | Family History | Simulated | `DemoStore` | Fixed demo recipient and completed shifts |
 | Family Messages | Real | conversations and messages | No demo fallback |
 | Family Profile | Real/Mixed | family-safe caregiver credentials + real session; hard-coded family identity | Never exposes credential documents or internal review data |
-| Family Notifications | Real | `/me/notifications` | Bell and full page use the authenticated user's backend inbox |
+| Family Notifications | Real | `/me/notifications` + curated `family-incidents` | Incident alerts open a family-safe detail; internal actions, assignments and resolution are excluded |
 | `/demo` landing | Explicit demo | static demo identities | Isolated, not an operational fallback |
 
 ## Backend contracts verified
@@ -77,5 +77,8 @@ care events, family-safe timeline, conversations and messages.
 - Notification bells in Family, Caregiver and Agency use the real authenticated
   inbox, refresh on focus/open and poll every 30 seconds; no participant ID or
   DemoStore notification fallback remains.
+- Incident notification navigation is role-aware. Family resolves an incident
+  only through the curated family contract; Administration uses the staff
+  incident detail and can continue to the resident's real operational profile.
 - Next: migrate Family History to family-safe endpoints, then Admin Workers,
   one reversible surface at a time.

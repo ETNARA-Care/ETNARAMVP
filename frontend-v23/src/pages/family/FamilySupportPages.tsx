@@ -150,7 +150,13 @@ export function FamilyProfilePage() {
 }
 
 export function FamilyNotificationsPage() {
+  const navigate = useNavigate();
   const { items, unread, error, reload, markRead, markAllRead } = useNotifications();
+
+  async function openNotification(notificationId: string, entityType: string | null, entityId: string | null) {
+    await markRead(notificationId);
+    if (entityType === "incident" && entityId) navigate(`/family/incidents/${entityId}`);
+  }
 
   if (items === null) {
     return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
@@ -171,7 +177,7 @@ export function FamilyNotificationsPage() {
             <button
               type="button"
               key={notification.id}
-              onClick={() => void markRead(notification.id)}
+              onClick={() => void openNotification(notification.id, notification.relatedEntityType, notification.relatedEntityId)}
               className="text-left"
             >
               <Card className={notification.readAt ? "" : "border-[var(--color-accent-700)] bg-[var(--color-accent-100)]/30"}>

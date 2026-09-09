@@ -12,12 +12,15 @@ const realDataModules = [
   "src/layouts/FamilyLayout.tsx",
   "src/layouts/TopHeader.tsx",
   "src/pages/agency/AgencyIncidentsPage.tsx",
+  "src/pages/agency/AgencyIncidentDetailPage.tsx",
   "src/pages/agency/AgencyOverviewPage.tsx",
+  "src/pages/agency/AgencyResidentProfilePage.tsx",
   "src/pages/agency/AgencyShiftsPage.tsx",
   "src/pages/caregiver/CaregiverShiftDetailPage.tsx",
   "src/pages/caregiver/CaregiverShiftsPage.tsx",
   "src/pages/caregiver/CaregiverSupportPages.tsx",
   "src/pages/family/FamilyMessagesPage.tsx",
+  "src/pages/family/FamilyIncidentDetailPage.tsx",
   "src/pages/family/FamilySupportPages.tsx",
   "src/pages/family/FamilyTodayPage.tsx",
 ];
@@ -87,4 +90,41 @@ test("incidents and notification surfaces use the real API", async () => {
   assert.match(notificationsApi, /read_at/);
   assert.match(family, /markAllRead/);
   assert.doesNotMatch(agencyLayout, /badge:\s*2/);
+});
+
+test("incident notifications navigate to role-appropriate detail pages", async () => {
+  const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
+  const bell = await readFile(new URL("../src/features/notifications/NotificationBell.tsx", import.meta.url), "utf8");
+  const familyNotifications = await readFile(new URL("../src/pages/family/FamilySupportPages.tsx", import.meta.url), "utf8");
+
+  assert.match(app, /path="incidents\/:incidentId" element={<FamilyIncidentDetailPage/);
+  assert.match(app, /path="incidents\/:incidentId" element={<AgencyIncidentDetailPage/);
+  assert.match(app, /path="residents\/:residentId" element={<AgencyResidentProfilePage/);
+  assert.match(bell, /\/family\/incidents\/\$\{entityId\}/);
+  assert.match(bell, /\/agency\/incidents\/\$\{entityId\}/);
+  assert.match(familyNotifications, /\/family\/incidents\/\$\{entityId\}/);
+});
+
+test("Family incident detail uses only the curated family-safe contract", async () => {
+  const familyDetail = await readFile(new URL("../src/pages/family/FamilyIncidentDetailPage.tsx", import.meta.url), "utf8");
+  const incidentsApi = await readFile(new URL("../src/api/incidents.ts", import.meta.url), "utf8");
+
+  assert.match(familyDetail, /listFamilyIncidents/);
+  assert.doesNotMatch(familyDetail, /getIncident/);
+  assert.doesNotMatch(familyDetail, /actions_taken|assigned_to_user_id|resolution/);
+  assert.match(incidentsApi, /family-incidents/);
+});
+
+test("Administration detail and resident profile use real organization APIs", async () => {
+  const incidentDetail = await readFile(new URL("../src/pages/agency/AgencyIncidentDetailPage.tsx", import.meta.url), "utf8");
+  const residentProfile = await readFile(new URL("../src/pages/agency/AgencyResidentProfilePage.tsx", import.meta.url), "utf8");
+
+  assert.match(incidentDetail, /getIncident/);
+  assert.match(incidentDetail, /listIncidentTimeline/);
+  assert.match(incidentDetail, /getCareRecipient/);
+  assert.match(residentProfile, /getCareRecipient/);
+  assert.match(residentProfile, /listIncidents/);
+  assert.match(residentProfile, /useAgencySupervision/);
+  assert.doesNotMatch(incidentDetail, /@\/mocks\//);
+  assert.doesNotMatch(residentProfile, /@\/mocks\//);
 });

@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: fix/phase-4-5-validation
+Branch: feature/incident-details-resident-profile
 
 ## Last Known Frontend Checkpoint
 
@@ -45,6 +45,21 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-09 — Incident details and real resident profile
+
+- Family and Agency incident notifications now open role-appropriate detail
+  routes instead of only changing read state.
+- Family detail uses only the curated `family-incidents` contract and never
+  receives internal actions, assignment or resolution fields.
+- Agency incident cards open the full operational detail, including reporter,
+  immediate actions, status, resolution when present and follow-up timeline.
+- Agency incident detail links directly to the associated resident.
+- Agency resident rows open a real profile with demographics, care information,
+  shift/caregiver, open incidents and recent care events.
+- No backend change was required; existing protected contracts cover the scope.
+- Production remains unchanged. Exact next step: finish validation, commit and
+  create a draft frontend PR without merging.
 
 ### 2026-09-08 — Real incidents and notifications correction
 
