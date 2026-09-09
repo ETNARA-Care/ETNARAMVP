@@ -38,6 +38,18 @@ export interface WorkerMembership {
   display_name: string | null;
 }
 
+export interface WorkerCredentialSummary {
+  id: string;
+  type_code: string;
+  status: string;
+  expires_at: string | null;
+}
+
+export interface WorkerProfile {
+  membership: Omit<WorkerMembership, "display_name">;
+  credentialsSummary: WorkerCredentialSummary[];
+}
+
 export interface Assignment {
   id: string;
   shift_id: string;
@@ -100,6 +112,14 @@ export async function listWorkers(organizationId: string, token: string): Promis
     token,
   );
   return result.memberships;
+}
+
+export async function getWorkerProfile(
+  organizationId: string,
+  membershipId: string,
+  token: string,
+): Promise<WorkerProfile> {
+  return apiClient.get(`/organizations/${organizationId}/workers/${membershipId}`, token);
 }
 
 export async function listAssignments(organizationId: string, shiftId: string, token: string): Promise<Assignment[]> {

@@ -4,14 +4,14 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: feature/family-real-history
+Branch: feature/admin-real-workers
 
 ## Last Known Frontend Checkpoint
 
 Backend connectivity is working.
 
 Known product issue:
-- Administration Workers still contains mock availability data.
+- Administration Workers has been migrated to real organization data locally.
 - The active Agency resident profile is backed by real organization data.
 - Caregiver / Family / Administration synchronization still requires frontend validation.
 - Messaging backend fixes may exist or be pending deployment depending on backend state.
@@ -45,6 +45,17 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-09 — Administration Workers real-data migration
+
+- Removed the final operational `DemoStore` import from Administration.
+- The caregiver list now loads organization memberships and each real worker
+  profile, including credential type, status and expiration.
+- Replaced unsupported mock availability with the actual membership state.
+- Added visible expired and 30-day expiration warnings, plus loading, empty,
+  error and retry states.
+- Existing backend contracts cover the scope; no backend change is required.
+- Exact next step: validate, commit, publish and integrate the frontend PR.
 
 ### 2026-09-09 — Family History real-data migration
 
