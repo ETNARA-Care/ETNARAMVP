@@ -40,7 +40,7 @@ published by the active workflows.
 | Admin Residents | Real | recipients, shifts, assignments, care events, incidents | Rows open a real operational resident profile; no demo fallback |
 | Admin Shifts | Real | shifts, recipients, workers, assignments | Create and assign persist in backend |
 | Admin Messages | Real | conversations and messages | No demo fallback |
-| Admin Workers | Simulated | `DemoStore` | Availability and credential status are mock |
+| Admin Workers | Real | organization workers + worker profile credential summaries | Membership, credentials and expiration warnings come from the organization-scoped API; unsupported availability was removed |
 | Admin Incidents | Real | incidents, incident timeline, recipients, workers | Cards and notifications open the operational detail and link to the resident profile |
 | Admin Compliance | Placeholder | none | Explicitly says no data yet |
 | Admin Settings | Mixed | real session + placeholder organization settings | No fake persistence |
@@ -84,5 +84,6 @@ care events, family-safe timeline, conversations and messages.
   `DemoStore` dependency. It resolves the authenticated family relationship,
   loads completed family-safe shifts and associates curated timeline events by
   the real shift window.
-- Next: migrate Admin Workers from `DemoStore`, one reversible surface at a
-  time.
+- Admin Workers no longer imports `DemoStore`; no operational page uses the
+  demo store as a fallback. Remaining mixed identity labels are documented
+  above and should be migrated independently.

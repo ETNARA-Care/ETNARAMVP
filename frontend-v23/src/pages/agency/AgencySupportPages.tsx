@@ -1,10 +1,17 @@
 import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, Skeleton } from "@/components/ui";
+import { useCallback, useEffect, useState } from "react";
 import { ShieldCheck, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
-import { useWorkers } from "@/mocks/DemoStoreContext";
 import { useAuth } from "@/auth/AuthProvider";
-import { recipientName } from "@/api/shifts";
+import { getToken } from "@/auth/token";
+import {
+  getWorkerProfile,
+  listWorkers,
+  recipientName,
+  type WorkerCredentialSummary,
+  type WorkerMembership,
+} from "@/api/shifts";
 import { isToday, useAgencySupervision, type AdminShift } from "@/features/agency/useAgencySupervision";
 
 export function AgencyResidentsPage() {
@@ -52,23 +59,129 @@ function ResidentRow({ id, name, shift }: { id: string; name: string; shift?: Ad
 }
 
 export function AgencyWorkersPage() {
-  const workers = useWorkers();
+  const { activeOrganization } = useAuth();
+  const organizationId = activeOrganization?.id;
+  const [workers, setWorkers] = useState<Array<WorkerMembership & { credentials: WorkerCredentialSummary[] }> | null>(null);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(async () => {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    setError(false);
+    try {
+      const memberships = await listWorkers(organizationId, token);
+      const profiles = await Promise.all(
+        memberships.map((membership) => getWorkerProfile(organizationId, membership.id, token)),
+      );
+      const credentialsByMembership = new Map(
+        profiles.map((profile) => [profile.membership.id, profile.credentialsSummary]),
+      );
+      setWorkers(memberships.map((membership) => ({
+        ...membership,
+        credentials: credentialsByMembership.get(membership.id) ?? [],
+      })));
+    } catch {
+      setWorkers([]);
+      setError(true);
+    }
+  }, [organizationId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (workers === null) {
+    return <div className="flex flex-col gap-3"><Skeleton className="h-32" /><Skeleton className="h-32" /></div>;
+  }
+  if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
+
   return (
     <div>
-      <PageHeader title="Cuidadores" description="Estado y disponibilidad del equipo (demo)." />
-      <div className="flex flex-col gap-2">
-        {workers.map((w) => (
-          <Card key={w.id} className="flex items-center justify-between">
-            <p className="font-medium text-[var(--color-text-primary)]">{w.name}</p>
-            <div className="flex gap-2">
-              <Badge tone={w.available ? "success" : "neutral"}>{w.available ? "Disponible" : "No disponible"}</Badge>
-              {w.credentialStatus !== "active" && <Badge tone="warning">Credencial por vencer</Badge>}
-            </div>
-          </Card>
-        ))}
-      </div>
+      <PageHeader title="Cuidadores" description="Estado real de membresía y credenciales del equipo." />
+      {workers.length === 0 ? <EmptyState title="No hay cuidadores registrados" /> : (
+        <div className="flex flex-col gap-3">
+          {workers.map((worker) => <WorkerCard key={worker.id} worker={worker} />)}
+        </div>
+      )}
     </div>
   );
+}
+
+function WorkerCard({ worker }: { worker: WorkerMembership & { credentials: WorkerCredentialSummary[] } }) {
+  const expiringCount = worker.credentials.filter((credential) => credentialState(credential) === "expiring").length;
+  const expiredCount = worker.credentials.filter((credential) => credentialState(credential) === "expired").length;
+  const revokedCount = worker.credentials.filter((credential) => credentialState(credential) === "revoked").length;
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-medium text-[var(--color-text-primary)]">
+            {worker.display_name || "Cuidador sin nombre"}
+          </p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{worker.internal_role}</p>
+        </div>
+        <Badge tone={worker.status === "active" ? "success" : "neutral"}>
+          {worker.status === "active" ? "Activo" : "Inactivo"}
+        </Badge>
+      </div>
+
+      {(expiredCount > 0 || expiringCount > 0 || revokedCount > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {expiredCount > 0 && <Badge tone="danger">{expiredCount} vencida{expiredCount === 1 ? "" : "s"}</Badge>}
+          {revokedCount > 0 && <Badge tone="danger">{revokedCount} revocada{revokedCount === 1 ? "" : "s"}</Badge>}
+          {expiringCount > 0 && <Badge tone="warning">{expiringCount} por vencer</Badge>}
+        </div>
+      )}
+
+      <div className="border-t border-[var(--color-border-subtle)] pt-3">
+        <p className="text-[var(--text-caption)] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-2">
+          Credenciales
+        </p>
+        {worker.credentials.length === 0 ? (
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Sin credenciales registradas.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {worker.credentials.map((credential) => (
+              <div key={credential.id} className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[var(--text-small)] font-medium text-[var(--color-text-primary)]">{credential.type_code}</p>
+                  <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">
+                    {credential.expires_at ? `Expira ${formatCredentialDate(credential.expires_at)}` : "Sin fecha de expiración"}
+                  </p>
+                </div>
+                <CredentialBadge credential={credential} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function credentialState(credential: WorkerCredentialSummary): "active" | "expiring" | "expired" | "revoked" {
+  if (credential.status === "revoked") return "revoked";
+  if (credential.status === "expired") return "expired";
+  if (!credential.expires_at) return "active";
+  const expiry = new Date(`${credential.expires_at}T23:59:59`);
+  if (expiry.getTime() < Date.now()) return "expired";
+  const thirtyDaysFromNow = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  return expiry.getTime() <= thirtyDaysFromNow ? "expiring" : "active";
+}
+
+function CredentialBadge({ credential }: { credential: WorkerCredentialSummary }) {
+  const state = credentialState(credential);
+  if (state === "revoked") return <Badge tone="danger">Revocada</Badge>;
+  if (state === "expired") return <Badge tone="danger">Vencida</Badge>;
+  if (state === "expiring") return <Badge tone="warning">Por vencer</Badge>;
+  return <Badge tone="success">Vigente</Badge>;
+}
+
+function formatCredentialDate(value: string): string {
+  return new Date(`${value}T12:00:00`).toLocaleDateString("es-PR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function AgencyMessagesPage() {

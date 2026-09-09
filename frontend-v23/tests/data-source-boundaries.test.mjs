@@ -16,6 +16,7 @@ const realDataModules = [
   "src/pages/agency/AgencyOverviewPage.tsx",
   "src/pages/agency/AgencyResidentProfilePage.tsx",
   "src/pages/agency/AgencyShiftsPage.tsx",
+  "src/pages/agency/AgencySupportPages.tsx",
   "src/pages/caregiver/CaregiverShiftDetailPage.tsx",
   "src/pages/caregiver/CaregiverShiftsPage.tsx",
   "src/pages/caregiver/CaregiverSupportPages.tsx",
@@ -53,9 +54,7 @@ test("operational DemoStore imports remain confined to the audited files", async
     if (source.includes("@/mocks/DemoStoreContext")) actual.push(relativePath);
   }
 
-  assert.deepEqual(actual.sort(), [
-    "agency/AgencySupportPages.tsx",
-  ]);
+  assert.deepEqual(actual.sort(), []);
 });
 
 test("validation fixes use curated real endpoints", async () => {
@@ -137,4 +136,15 @@ test("Family History uses only family-safe shifts and timeline", async () => {
   assert.match(history, /getFamilyTimeline/);
   assert.doesNotMatch(history, /DemoStore|@\/mocks\//);
   assert.match(history, /status === "completed"/);
+});
+
+test("Administration Workers uses real organization workers and credential summaries", async () => {
+  const workers = await readFile(new URL("../src/pages/agency/AgencySupportPages.tsx", import.meta.url), "utf8");
+  const shiftsApi = await readFile(new URL("../src/api/shifts.ts", import.meta.url), "utf8");
+
+  assert.match(workers, /listWorkers/);
+  assert.match(workers, /getWorkerProfile/);
+  assert.match(workers, /credentialsSummary/);
+  assert.doesNotMatch(workers, /DemoStore|useWorkers|available/);
+  assert.match(shiftsApi, /\/workers\/\$\{membershipId\}/);
 });

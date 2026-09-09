@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FETN-012 — Real Administration Workers
+
+- remove mock availability and `DemoStore`
+- load organization-scoped worker memberships and profiles
+- show real credential states and expiration warnings
+- preserve the V23 card experience
+
+Status: Implemented on `feature/admin-real-workers`; validation and PR
+publication in progress. No backend change required.
+
+---
+
 ### FETN-011 — Real Family History
 
 - remove fixed demo recipient and `DemoStore` history data
