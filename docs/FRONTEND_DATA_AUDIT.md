@@ -1,6 +1,6 @@
 # Phase 4.5 Frontend Source and Data Audit
 
-Audit date: 2026-09-08
+Audit date: 2026-09-09
 
 ## Stable baseline and restore point
 
@@ -50,7 +50,7 @@ published by the active workflows.
 | Caregiver Profile | Real/Mixed | real session + `/me/credentials`; hard-coded display name | Credentials and expiration status are real; display identity remains pending |
 | Family Today | Real | family-safe shifts + timeline | Assigned caregiver and check-in/out status come from backend |
 | Family Activity | Real | `/me/care-recipients` + family-safe timeline | Curated family response |
-| Family History | Simulated | `DemoStore` | Fixed demo recipient and completed shifts |
+| Family History | Real | family-safe shifts + timeline | Completed shifts and their authorized summaries persist and reload from the backend |
 | Family Messages | Real | conversations and messages | No demo fallback |
 | Family Profile | Real/Mixed | family-safe caregiver credentials + real session; hard-coded family identity | Never exposes credential documents or internal review data |
 | Family Notifications | Real | `/me/notifications` + curated `family-incidents` | Incident alerts open a family-safe detail; internal actions, assignments and resolution are excluded |
@@ -80,5 +80,9 @@ care events, family-safe timeline, conversations and messages.
 - Incident notification navigation is role-aware. Family resolves an incident
   only through the curated family contract; Administration uses the staff
   incident detail and can continue to the resident's real operational profile.
-- Next: migrate Family History to family-safe endpoints, then Admin Workers,
-  one reversible surface at a time.
+- Family History no longer has a fixed demo recipient or operational
+  `DemoStore` dependency. It resolves the authenticated family relationship,
+  loads completed family-safe shifts and associates curated timeline events by
+  the real shift window.
+- Next: migrate Admin Workers from `DemoStore`, one reversible surface at a
+  time.
