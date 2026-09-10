@@ -39,7 +39,7 @@ jobs:
 
       - name: Build
         env:
-          VITE_API_URL: https://etnara-care-backend-staging-production-d460.up.railway.app
+          VITE_API_URL: https://etnara-care-backend-staging-production-2a3a.up.railway.app
         run: npm run build
 
       - name: Diff safety check
