@@ -2,6 +2,17 @@
 
 ## In Progress
 
+### FDEPLOY-002 — Align Pages with active Railway backend
+
+- replace obsolete `d460` endpoint with active `2a3a` endpoint
+- keep CI and Pages deployment configuration identical
+- add a regression test for endpoint drift
+
+Status: Implemented and validated; typecheck, lint, 13/13 tests and production
+build pass.
+
+---
+
 ### FPH5-002 — Caregiver assignment response
 
 - show pending response in Caregiver and Administration
