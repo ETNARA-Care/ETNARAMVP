@@ -46,6 +46,18 @@ Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
 
+### 2026-09-10 — Align GitHub Pages with the active Railway backend
+
+- The public V23 bundle was proven to call the obsolete `d460` Railway
+  endpoint while the maintained backend and its logs run on `2a3a`.
+- CI and Pages now build against the same active `2a3a` endpoint.
+- Added a regression test that prevents either workflow from returning to the
+  obsolete endpoint.
+- No UI, API contract, role permission, or backend code changed.
+- Typecheck, lint, 13/13 tests and the production build pass locally.
+- Exact next step: publish, wait for Pages, sign in again, and validate one new
+  Admin → María assignment response against `2a3a`.
+
 ### 2026-09-09 — Phase 5.2 caregiver assignment response
 
 - Caregiver shifts expose the real pending/accepted assignment state.
