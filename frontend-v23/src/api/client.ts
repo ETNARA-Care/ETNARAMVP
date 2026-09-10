@@ -1,6 +1,6 @@
 /**
  * Cliente HTTP mínimo para el backend real de ETNARA
- * (https://etnara-care-backend-staging-production-b0b7.up.railway.app).
+ * (https://etnara-care-backend-staging-production-2a3a.up.railway.app).
  *
  * Reglas de esta capa, deliberadas:
  * - Nunca convierte un fallo de red/CORS en un 401 -- eso sería mostrarle
