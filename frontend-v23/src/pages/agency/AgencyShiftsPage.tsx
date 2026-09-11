@@ -36,6 +36,12 @@ function requestMessage(error: unknown): string {
   return "No pudimos guardar el turno. Intenta nuevamente.";
 }
 
+function isOperationalShift(shift: Shift, now = new Date()): boolean {
+  if (shift.status === "completed" || shift.status === "cancelled") return false;
+  if (shift.status === "in_progress") return true;
+  return new Date(shift.scheduled_end).getTime() > now.getTime();
+}
+
 export function AgencyShiftsPage() {
   const { activeOrganization } = useAuth();
   const { show } = useToast();
@@ -60,8 +66,9 @@ export function AgencyShiftsPage() {
       const [shiftRows, recipientRows, workerRows] = await Promise.all([
         listShifts(organizationId, token), listCareRecipients(organizationId, token), listWorkers(organizationId, token),
       ]);
-      const assignmentRows = await Promise.all(shiftRows.map(async (shift) => [shift.id, await listAssignments(organizationId, shift.id, token)] as const));
-      setShifts(shiftRows);
+      const operationalShiftRows = shiftRows.filter((shift) => isOperationalShift(shift));
+      const assignmentRows = await Promise.all(operationalShiftRows.map(async (shift) => [shift.id, await listAssignments(organizationId, shift.id, token)] as const));
+      setShifts(operationalShiftRows);
       setRecipients(recipientRows);
       setWorkers(workerRows.filter((worker) => worker.status === "active"));
       setAssignmentByShift(Object.fromEntries(assignmentRows.map(([shiftId, assignments]) => [
@@ -130,7 +137,7 @@ export function AgencyShiftsPage() {
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Turnos" description="Asignaciones reales de la organización." actions={<Button icon={<Plus size={18} />} onClick={openCreate}>Crear turno</Button>} />
       {orderedShifts.length === 0 ? (
-        <EmptyState title="No hay turnos todavía" description="Crea el primer turno y asígnalo a una cuidadora." action={{ label: "Crear turno", onClick: openCreate }} />
+        <EmptyState title="No hay turnos activos" description="Crea un turno y asígnalo a una cuidadora." action={{ label: "Crear turno", onClick: openCreate }} />
       ) : (
         <div className="flex flex-col gap-2">
           {orderedShifts.map((shift) => {

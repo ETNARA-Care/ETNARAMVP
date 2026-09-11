@@ -46,6 +46,18 @@ Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
 
+### 2026-09-11 — Phase 5.3 operational shift cleanup
+
+- Administration now excludes completed, cancelled, and other expired shifts
+  from the active assignment list while preserving in-progress shifts.
+- Historical rows remain in the backend for audit; no records are deleted.
+- Assignment lookups now run only for the operational rows shown on screen.
+- The empty state now accurately says there are no active shifts.
+- Local typecheck, 14/14 tests, lint (pre-existing warnings only), and the
+  production build pass.
+- Exact next step: publish and merge after backend migration 043 passes CI,
+  wait for Pages, then verify the old September 8/10 cards are absent.
+
 ### 2026-09-10 — Align GitHub Pages with the active Railway backend
 
 - The public V23 bundle was proven to call the obsolete `d460` Railway

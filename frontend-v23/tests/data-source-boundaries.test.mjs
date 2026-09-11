@@ -172,3 +172,14 @@ test("Phase 5 assignment response is real and blocks care until accepted", async
   assert.match(agency, /Esperando respuesta/);
   assert.match(agency, /response_status === "accepted"/);
 });
+
+test("Administration keeps expired shifts out of the operational list", async () => {
+  const agency = await readFile(new URL("../src/pages/agency/AgencyShiftsPage.tsx", import.meta.url), "utf8");
+
+  assert.match(agency, /isOperationalShift/);
+  assert.match(agency, /shift\.status === "completed" \|\| shift\.status === "cancelled"/);
+  assert.match(agency, /shift\.status === "in_progress"/);
+  assert.match(agency, /new Date\(shift\.scheduled_end\)\.getTime\(\) > now\.getTime\(\)/);
+  assert.match(agency, /shiftRows\.filter\(\(shift\) => isOperationalShift\(shift\)\)/);
+  assert.match(agency, /No hay turnos activos/);
+});
