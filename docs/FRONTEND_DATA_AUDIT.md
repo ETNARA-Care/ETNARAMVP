@@ -42,7 +42,7 @@ published by the active workflows.
 | Admin Messages | Real | conversations and messages | No demo fallback |
 | Admin Workers | Real | organization workers + worker profile credential summaries | Membership, credentials and expiration warnings come from the organization-scoped API; unsupported availability was removed |
 | Admin Incidents | Real | incidents, incident timeline, recipients, workers | Cards and notifications open the operational detail and link to the resident profile |
-| Admin Compliance | Placeholder | none | Explicitly says no data yet |
+| Admin Compliance | Real | organization workers + worker profile credential summaries + eligibility evaluation | Compact per-worker status expands to show unmet requirements and credential alerts; no mock fallback |
 | Admin Settings | Mixed | real session + placeholder organization settings | No fake persistence |
 | Caregiver Shifts | Real | `/organizations/:id/me/shifts` | Authenticated worker scope |
 | Caregiver Shift Detail | Real | shift, visit verification, care events, incidents | Check-in, activity, incident and check-out persist |
