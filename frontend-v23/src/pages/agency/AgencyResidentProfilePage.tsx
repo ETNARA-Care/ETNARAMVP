@@ -5,8 +5,9 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listIncidents, type Incident } from "@/api/incidents";
 import { getCareRecipient, recipientName, type CareRecipient } from "@/api/shifts";
-import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton, StatusBadge, Timeline } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Skeleton, StatusBadge, Timeline, useToast } from "@/components/ui";
 import { useAgencySupervision } from "@/features/agency/useAgencySupervision";
+import { updateCareRecipient } from "@/api/roster";
 
 const careLabels: Record<string, string> = {
   MEAL: "Comida",
@@ -36,6 +37,11 @@ export function AgencyResidentProfilePage() {
   const [resident, setResident] = useState<CareRecipient | null | undefined>(undefined);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [error, setError] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmingStatus, setConfirmingStatus] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ firstName: "", lastName: "", preferredName: "", dateOfBirth: "", allergies: "" });
+  const toast = useToast();
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -55,6 +61,57 @@ export function AgencyResidentProfilePage() {
   }, [organizationId, residentId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const openEdit = () => {
+    if (!resident) return;
+    setForm({
+      firstName: resident.first_name,
+      lastName: resident.last_name,
+      preferredName: resident.preferred_name ?? "",
+      dateOfBirth: resident.date_of_birth ?? "",
+      allergies: resident.allergies?.join(", ") ?? "",
+    });
+    setEditing(true);
+  };
+
+  const saveResident = async () => {
+    const token = getToken();
+    if (!organizationId || !residentId || !token || !form.firstName.trim() || !form.lastName.trim()) return;
+    setSaving(true);
+    try {
+      const updated = await updateCareRecipient(organizationId, residentId, {
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        preferredName: form.preferredName.trim() || null,
+        dateOfBirth: form.dateOfBirth || null,
+        allergies: form.allergies.trim() ? form.allergies.split(",").map((item) => item.trim()).filter(Boolean) : [],
+      }, token);
+      setResident(updated);
+      setEditing(false);
+      toast.show("Información del residente actualizada.", "success");
+    } catch {
+      toast.show("No pudimos actualizar al residente.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const changeStatus = async () => {
+    const token = getToken();
+    if (!organizationId || !residentId || !resident || !token) return;
+    const nextStatus = resident.status === "active" ? "archived" : "active";
+    setSaving(true);
+    try {
+      const updated = await updateCareRecipient(organizationId, residentId, { status: nextStatus }, token);
+      setResident(updated);
+      setConfirmingStatus(false);
+      toast.show(nextStatus === "active" ? "Residente reactivado." : "Residente archivado; su historial se conserva.", "success");
+    } catch {
+      toast.show("No pudimos cambiar el estado del residente.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const shifts = useMemo(
     () => supervision.shifts.filter((shift) => shift.care_recipient_id === residentId).sort((a, b) => new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime()),
@@ -77,7 +134,11 @@ export function AgencyResidentProfilePage() {
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <Button variant="ghost" icon={<ArrowLeft size={18} />} onClick={() => navigate(-1)} className="self-start">Volver</Button>
-      <PageHeader title={recipientName(resident)} description="Perfil operacional del residente con información real de cuidado." />
+      <PageHeader
+        title={recipientName(resident)}
+        description="Perfil operacional del residente con información real de cuidado."
+        actions={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={resident.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{resident.status === "active" ? "Archivar" : "Reactivar"}</Button></div>}
+      />
 
       <div className="grid gap-3 md:grid-cols-2">
         <Card>
@@ -138,6 +199,30 @@ export function AgencyResidentProfilePage() {
           }))} />
         )}
       </div>
+
+      <Modal
+        open={editing}
+        onClose={() => !saving && setEditing(false)}
+        title="Editar residente"
+        footer={<><Button variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveResident()} loading={saving} disabled={!form.firstName.trim() || !form.lastName.trim()}>Guardar cambios</Button></>}
+      >
+        <div className="flex flex-col gap-3">
+          <Input label="Nombre" value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} required />
+          <Input label="Apellidos" value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} required />
+          <Input label="Nombre preferido (opcional)" value={form.preferredName} onChange={(event) => setForm((current) => ({ ...current, preferredName: event.target.value }))} />
+          <Input label="Fecha de nacimiento (opcional)" type="date" value={form.dateOfBirth} onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))} />
+          <Input label="Alergias (opcional)" hint="Separa varias alergias con comas." value={form.allergies} onChange={(event) => setForm((current) => ({ ...current, allergies: event.target.value }))} />
+        </div>
+      </Modal>
+
+      <Modal
+        open={confirmingStatus}
+        onClose={() => !saving && setConfirmingStatus(false)}
+        title={resident.status === "active" ? "Archivar residente" : "Reactivar residente"}
+        footer={<><Button variant="secondary" onClick={() => setConfirmingStatus(false)} disabled={saving}>Volver</Button><Button variant={resident.status === "active" ? "danger" : "primary"} onClick={() => void changeStatus()} loading={saving}>{resident.status === "active" ? "Sí, archivar" : "Sí, reactivar"}</Button></>}
+      >
+        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">{resident.status === "active" ? "El residente dejará de aparecer como activo, pero sus turnos, incidentes y actividades permanecerán en el historial." : "El residente volverá a estar disponible para la operación y nuevas asignaciones."}</p>
+      </Modal>
     </div>
   );
 }

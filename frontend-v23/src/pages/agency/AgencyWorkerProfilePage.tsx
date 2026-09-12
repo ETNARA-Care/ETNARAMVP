@@ -4,7 +4,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getWorkerProfile, listWorkers, type WorkerCredentialSummary, type WorkerMembership } from "@/api/shifts";
-import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
+import { updateWorker } from "@/api/roster";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
 import { formatCredentialDate } from "./workerCredentialUtils";
 
@@ -16,6 +17,11 @@ export function AgencyWorkerProfilePage() {
   const [worker, setWorker] = useState<WorkerMembership | null | undefined>(undefined);
   const [credentials, setCredentials] = useState<WorkerCredentialSummary[]>([]);
   const [error, setError] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmingStatus, setConfirmingStatus] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ displayName: "", internalRole: "CNA", hiredAt: "" });
+  const toast = useToast();
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -36,6 +42,56 @@ export function AgencyWorkerProfilePage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const openEdit = () => {
+    if (!worker) return;
+    setForm({
+      displayName: worker.display_name ?? "",
+      internalRole: worker.internal_role,
+      hiredAt: worker.hired_at?.slice(0, 10) ?? "",
+    });
+    setEditing(true);
+  };
+
+  const saveWorker = async () => {
+    const token = getToken();
+    if (!organizationId || !membershipId || !token || !form.displayName.trim() || !form.internalRole.trim()) return;
+    setSaving(true);
+    try {
+      const updated = await updateWorker(organizationId, membershipId, {
+        displayName: form.displayName.trim(),
+        internalRole: form.internalRole,
+        hiredAt: form.hiredAt || null,
+      }, token);
+      setWorker((current) => current ? { ...current, ...updated } : current);
+      setEditing(false);
+      toast.show("Información del personal actualizada.", "success");
+    } catch {
+      toast.show("No pudimos actualizar la información.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const changeStatus = async () => {
+    const token = getToken();
+    if (!organizationId || !membershipId || !worker || !token) return;
+    const active = worker.status !== "active";
+    setSaving(true);
+    try {
+      const updated = await updateWorker(organizationId, membershipId, {
+        status: active ? "active" : "inactive",
+        endedAt: active ? null : new Date().toISOString(),
+      }, token);
+      setWorker((current) => current ? { ...current, ...updated } : current);
+      setConfirmingStatus(false);
+      toast.show(active ? "Personal reactivado." : "Personal desactivado; su historial se conserva.", "success");
+    } catch {
+      toast.show("No pudimos cambiar el estado del personal.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (worker === undefined) return <div className="flex flex-col gap-3"><Skeleton className="h-24" /><Skeleton className="h-56" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
   if (!worker) return <ErrorState kind="not_found" />;
@@ -46,7 +102,7 @@ export function AgencyWorkerProfilePage() {
       <PageHeader
         title={worker.display_name || "Cuidador sin nombre"}
         description="Información laboral y credenciales verificadas."
-        actions={<Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Activo" : "Inactivo"}</Badge>}
+        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Activo" : "Inactivo"}</Badge><Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
       />
 
       <Card>
@@ -83,6 +139,30 @@ export function AgencyWorkerProfilePage() {
           </div>
         )}
       </section>
+
+      <Modal
+        open={editing}
+        onClose={() => !saving && setEditing(false)}
+        title="Editar personal"
+        footer={<><Button variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveWorker()} loading={saving} disabled={!form.displayName.trim() || !form.internalRole.trim()}>Guardar cambios</Button></>}
+      >
+        <div className="flex flex-col gap-3">
+          <Input label="Nombre completo" value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} required />
+          <Select label="Clasificación laboral" value={form.internalRole} onChange={(event) => setForm((current) => ({ ...current, internalRole: event.target.value }))} required>
+            <option value="CNA">CNA</option><option value="HHA">HHA</option><option value="RN">RN</option><option value="LPN">LPN</option><option value="SUPERVISOR">Supervisor/a</option><option value="OTRO">Otro</option>
+          </Select>
+          <Input label="Fecha de contratación (opcional)" type="date" value={form.hiredAt} onChange={(event) => setForm((current) => ({ ...current, hiredAt: event.target.value }))} />
+        </div>
+      </Modal>
+
+      <Modal
+        open={confirmingStatus}
+        onClose={() => !saving && setConfirmingStatus(false)}
+        title={worker.status === "active" ? "Desactivar personal" : "Reactivar personal"}
+        footer={<><Button variant="secondary" onClick={() => setConfirmingStatus(false)} disabled={saving}>Volver</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => void changeStatus()} loading={saving}>{worker.status === "active" ? "Sí, desactivar" : "Sí, reactivar"}</Button></>}
+      >
+        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">{worker.status === "active" ? "La persona dejará de estar disponible para nuevas asignaciones. Sus turnos, credenciales y actividad permanecerán en el historial." : "La persona volverá a estar disponible para la operación y nuevas asignaciones."}</p>
+      </Modal>
     </div>
   );
 }

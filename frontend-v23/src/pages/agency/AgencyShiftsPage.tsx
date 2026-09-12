@@ -71,7 +71,7 @@ export function AgencyShiftsPage() {
       const operationalShiftRows = shiftRows.filter((shift) => isOperationalShift(shift));
       const assignmentRows = await Promise.all(operationalShiftRows.map(async (shift) => [shift.id, await listAssignments(organizationId, shift.id, token)] as const));
       setShifts(operationalShiftRows);
-      setRecipients(recipientRows);
+      setRecipients(recipientRows.filter((recipient) => recipient.status === "active"));
       setWorkers(workerRows.filter((worker) => worker.status === "active"));
       setAssignmentByShift(Object.fromEntries(assignmentRows.map(([shiftId, assignments]) => [
         shiftId,
