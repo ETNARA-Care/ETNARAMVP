@@ -7,6 +7,7 @@ import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyTimelineItem } from "@/api/familyTimeline";
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
 import { useNotifications } from "@/features/notifications/useNotifications";
+import type { NotificationItem } from "@/api/notifications";
 
 function isToday(iso: string): boolean {
   const event = new Date(iso);
@@ -153,9 +154,15 @@ export function FamilyNotificationsPage() {
   const navigate = useNavigate();
   const { items, unread, error, reload, markRead, markAllRead } = useNotifications();
 
-  async function openNotification(notificationId: string, entityType: string | null, entityId: string | null) {
-    await markRead(notificationId);
-    if (entityType === "incident" && entityId) navigate(`/family/incidents/${entityId}`);
+  async function openNotification(notification: NotificationItem) {
+    await markRead(notification.id);
+    if (notification.relatedEntityType === "incident" && notification.relatedEntityId) {
+      navigate(`/family/incidents/${notification.relatedEntityId}`);
+    } else if (notification.relatedEntityType === "message_thread" && notification.relatedEntityId) {
+      navigate(`/family/messages?thread=${notification.relatedEntityId}`);
+    } else if (notification.type === "NEW_CARE_EVENT") {
+      navigate("/family/activity");
+    }
   }
 
   if (items === null) {
@@ -177,7 +184,7 @@ export function FamilyNotificationsPage() {
             <button
               type="button"
               key={notification.id}
-              onClick={() => void openNotification(notification.id, notification.relatedEntityType, notification.relatedEntityId)}
+              onClick={() => void openNotification(notification)}
               className="text-left"
             >
               <Card className={notification.readAt ? "" : "border-[var(--color-accent-700)] bg-[var(--color-accent-100)]/30"}>
