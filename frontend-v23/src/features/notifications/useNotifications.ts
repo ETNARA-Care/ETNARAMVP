@@ -40,7 +40,9 @@ export function useNotifications() {
     if (!token) return;
     try {
       const updated = await markNotificationRead(notificationId, token);
-      setItems((current) => current?.map((item) => item.id === updated.id ? updated : item) ?? []);
+      setItems((current) => current?.map((item) => item.id === updated.id
+        ? { ...item, readAt: updated.readAt }
+        : item) ?? []);
       setError(false);
     } catch {
       setError(true);
