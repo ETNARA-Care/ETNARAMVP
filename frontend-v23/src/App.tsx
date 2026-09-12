@@ -24,6 +24,8 @@ import { CaregiverMessagesPage, CaregiverProfilePage } from "@/pages/caregiver/C
 import { AgencyLayout } from "@/layouts/AgencyLayout";
 import { AgencyOverviewPage } from "@/pages/agency/AgencyOverviewPage";
 import { AgencyShiftsPage } from "@/pages/agency/AgencyShiftsPage";
+import { AgencyShiftDetailPage } from "@/pages/agency/AgencyShiftDetailPage";
+import { AgencyWorkerProfilePage } from "@/pages/agency/AgencyWorkerProfilePage";
 import { AgencyIncidentsPage } from "@/pages/agency/AgencyIncidentsPage";
 import { AgencyIncidentDetailPage } from "@/pages/agency/AgencyIncidentDetailPage";
 import { AgencyResidentProfilePage } from "@/pages/agency/AgencyResidentProfilePage";
@@ -101,7 +103,9 @@ export default function App() {
           <Route path="residents" element={<AgencyResidentsPage />} />
           <Route path="residents/:residentId" element={<AgencyResidentProfilePage />} />
           <Route path="workers" element={<AgencyWorkersPage />} />
+          <Route path="workers/:membershipId" element={<AgencyWorkerProfilePage />} />
           <Route path="shifts" element={<AgencyShiftsPage />} />
+          <Route path="shifts/:shiftId" element={<AgencyShiftDetailPage />} />
           <Route path="incidents" element={<AgencyIncidentsPage />} />
           <Route path="incidents/:incidentId" element={<AgencyIncidentDetailPage />} />
           <Route path="messages" element={<AgencyMessagesPage />} />

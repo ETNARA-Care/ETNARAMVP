@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FPH5-003 — Phase 5.4 actionable Admin workflows
+
+- route notifications to authorized detail screens
+- show assignment response identity, time, and reason
+- allow safe future-shift cancellation with confirmation
+- compact caregiver cards and add real-data caregiver detail
+- correct Agency mobile navigation contrast, width, safe area, and labels
+
+Status: Implemented and validated locally; coordinated publication pending.
+
+---
+
 ### FDEPLOY-002 — Align Pages with active Railway backend
 
 - replace obsolete `d460` endpoint with active `2a3a` endpoint

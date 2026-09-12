@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Send } from "lucide-react";
 import { Avatar, Badge, Card, EmptyState, ErrorState, IconButton, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
@@ -33,6 +34,8 @@ export function RealMessagingPanel({ conversationTitle = "Cuidado de Carmen Rive
   const [openId, setOpenId] = useState<string | null>(null);
   const [error, setError] = useState<ErrorKind | null>(null);
   const [sending, setSending] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedThreadId = searchParams.get("thread");
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -50,12 +53,15 @@ export function RealMessagingPanel({ conversationTitle = "Cuidado de Carmen Rive
       );
       setConversations(list);
       setMessagesByConversation(Object.fromEntries(loaded));
-      setOpenId((current) => current && list.some((item) => item.id === current) ? current : null);
+      setOpenId((current) => {
+        if (requestedThreadId && list.some((item) => item.id === requestedThreadId)) return requestedThreadId;
+        return current && list.some((item) => item.id === current) ? current : null;
+      });
     } catch (requestError) {
       setError(errorKind(requestError));
       setConversations([]);
     }
-  }, [activeOrganization?.id]);
+  }, [activeOrganization?.id, requestedThreadId]);
 
   useEffect(() => {
     void load();
@@ -103,7 +109,11 @@ export function RealMessagingPanel({ conversationTitle = "Cuidado de Carmen Rive
         sending={sending}
         error={error}
         onSend={(body) => submit(openId, body)}
-        onBack={() => { setError(null); setOpenId(null); }}
+        onBack={() => {
+          setError(null);
+          setOpenId(null);
+          if (requestedThreadId) setSearchParams({}, { replace: true });
+        }}
       />
     );
   }

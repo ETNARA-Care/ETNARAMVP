@@ -16,7 +16,9 @@ const realDataModules = [
   "src/pages/agency/AgencyOverviewPage.tsx",
   "src/pages/agency/AgencyResidentProfilePage.tsx",
   "src/pages/agency/AgencyShiftsPage.tsx",
+  "src/pages/agency/AgencyShiftDetailPage.tsx",
   "src/pages/agency/AgencySupportPages.tsx",
+  "src/pages/agency/AgencyWorkerProfilePage.tsx",
   "src/pages/caregiver/CaregiverShiftDetailPage.tsx",
   "src/pages/caregiver/CaregiverShiftsPage.tsx",
   "src/pages/caregiver/CaregiverSupportPages.tsx",
@@ -101,7 +103,7 @@ test("incident notifications navigate to role-appropriate detail pages", async (
   assert.match(app, /path="residents\/:residentId" element={<AgencyResidentProfilePage/);
   assert.match(bell, /\/family\/incidents\/\$\{entityId\}/);
   assert.match(bell, /\/agency\/incidents\/\$\{entityId\}/);
-  assert.match(familyNotifications, /\/family\/incidents\/\$\{entityId\}/);
+  assert.match(familyNotifications, /\/family\/incidents\/\$\{notification\.relatedEntityId\}/);
 });
 
 test("Family incident detail uses only the curated family-safe contract", async () => {
@@ -182,4 +184,38 @@ test("Administration keeps expired shifts out of the operational list", async ()
   assert.match(agency, /new Date\(shift\.scheduled_end\)\.getTime\(\) > now\.getTime\(\)/);
   assert.match(agency, /shiftRows\.filter\(\(shift\) => isOperationalShift\(shift\)\)/);
   assert.match(agency, /No hay turnos activos/);
+});
+
+test("Phase 5.4 notifications open real destinations and preserve read navigation context", async () => {
+  const bell = await readFile(new URL("../src/features/notifications/NotificationBell.tsx", import.meta.url), "utf8");
+  const hook = await readFile(new URL("../src/features/notifications/useNotifications.ts", import.meta.url), "utf8");
+  const messaging = await readFile(new URL("../src/features/messaging/ConversationUI.tsx", import.meta.url), "utf8");
+
+  assert.match(bell, /\/agency\/shifts\/\$\{shiftId\}/);
+  assert.match(bell, /\/caregiver\/shifts\/\$\{shiftId\}/);
+  assert.match(bell, /messages\?thread=\$\{entityId\}/);
+  assert.match(bell, /\/family\/activity/);
+  assert.match(hook, /\{ \.\.\.item, readAt: updated\.readAt \}/);
+  assert.match(messaging, /requestedThreadId/);
+});
+
+test("Phase 5.4 Admin can inspect responses, safely cancel, and open compact worker profiles", async () => {
+  const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
+  const api = await readFile(new URL("../src/api/shifts.ts", import.meta.url), "utf8");
+  const shift = await readFile(new URL("../src/pages/agency/AgencyShiftDetailPage.tsx", import.meta.url), "utf8");
+  const workers = await readFile(new URL("../src/pages/agency/AgencySupportPages.tsx", import.meta.url), "utf8");
+  const workerProfile = await readFile(new URL("../src/pages/agency/AgencyWorkerProfilePage.tsx", import.meta.url), "utf8");
+  const layout = await readFile(new URL("../src/layouts/AgencyLayout.tsx", import.meta.url), "utf8");
+
+  assert.match(app, /path="shifts\/:shiftId" element={<AgencyShiftDetailPage/);
+  assert.match(app, /path="workers\/:membershipId" element={<AgencyWorkerProfilePage/);
+  assert.match(api, /\/shifts\/\$\{shiftId\}\/cancel/);
+  assert.match(shift, /Sin motivo indicado/);
+  assert.match(shift, /status === "unassigned" \|\| shift\.status === "confirmed"/);
+  assert.match(shift, /Sí, cancelar turno/);
+  assert.match(workers, /\/agency\/workers\/\$\{worker\.id\}/);
+  assert.match(workerProfile, /Información laboral/);
+  assert.match(layout, /label: "Resumen"/);
+  assert.match(layout, /activeOrganization\?\.name/);
+  assert.doesNotMatch(layout, /Residencial Los Almendros|Rafael Vega/);
 });

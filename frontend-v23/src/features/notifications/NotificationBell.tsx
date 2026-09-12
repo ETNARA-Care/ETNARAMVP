@@ -20,12 +20,31 @@ export function NotificationBell() {
   const location = useLocation();
   const { items, unread, error, reload, markRead } = useNotifications();
 
-  async function openNotification(notificationId: string, entityType: string | null, entityId: string | null) {
-    await markRead(notificationId);
-    if (entityType !== "incident" || !entityId) return;
+  async function openNotification(notification: NonNullable<typeof items>[number]) {
+    await markRead(notification.id);
     setOpen(false);
-    if (location.pathname.startsWith("/family")) navigate(`/family/incidents/${entityId}`);
-    if (location.pathname.startsWith("/agency")) navigate(`/agency/incidents/${entityId}`);
+    const { type, relatedEntityType: entityType, relatedEntityId: entityId, shiftId, careRecipientId } = notification;
+    const portal = location.pathname.startsWith("/family")
+      ? "family"
+      : location.pathname.startsWith("/caregiver") ? "caregiver" : "agency";
+
+    if (entityType === "incident" && entityId) {
+      if (portal === "family") navigate(`/family/incidents/${entityId}`);
+      if (portal === "agency") navigate(`/agency/incidents/${entityId}`);
+      return;
+    }
+    if (type.startsWith("SHIFT_ASSIGNMENT_") && shiftId) {
+      navigate(portal === "caregiver" ? `/caregiver/shifts/${shiftId}` : `/agency/shifts/${shiftId}`);
+      return;
+    }
+    if (entityType === "message_thread" && entityId) {
+      navigate(`/${portal}/messages?thread=${entityId}`);
+      return;
+    }
+    if (type === "NEW_CARE_EVENT") {
+      if (portal === "family") navigate("/family/activity");
+      if (portal === "agency" && careRecipientId) navigate(`/agency/residents/${careRecipientId}`);
+    }
   }
 
   function toggle() {
@@ -85,7 +104,7 @@ export function NotificationBell() {
                 items.map((n) => (
                   <button
                     key={n.id}
-                    onClick={() => void openNotification(n.id, n.relatedEntityType, n.relatedEntityId)}
+                    onClick={() => void openNotification(n)}
                     className={`w-full text-left flex items-start gap-2 px-3.5 py-3 border-b border-[var(--color-border)] last:border-b-0
                       transition-colors hover:bg-[var(--color-ivory-100)]
                       ${n.readAt ? "" : "bg-[var(--color-accent-100)]/40"}`}

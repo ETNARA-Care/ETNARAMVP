@@ -6,6 +6,8 @@ export interface NotificationItem {
   summary: string;
   relatedEntityType: string | null;
   relatedEntityId: string | null;
+  careRecipientId: string | null;
+  shiftId: string | null;
   createdAt: string;
   readAt: string | null;
 }
@@ -51,6 +53,8 @@ export async function markNotificationRead(notificationId: string, token: string
     summary: notificationSummary(row.notification_type),
     relatedEntityType: row.related_entity_type,
     relatedEntityId: row.related_entity_id,
+    careRecipientId: null,
+    shiftId: null,
     createdAt: row.created_at,
     readAt: row.read_at,
   };
