@@ -2,6 +2,16 @@
 
 ## In Progress
 
+### FPH5-004 — Phase 5.5 real Administration compliance
+
+- replace the empty Compliance placeholder with organization-scoped data
+- evaluate each worker through the backend eligibility contract
+- summarize fully compliant workers and workers requiring attention
+- expand compact worker rows to show unmet requirements and credential alerts
+- preserve direct navigation to the full caregiver profile
+
+Status: Implemented locally; final validation and publication pending.
+
 ### FPH5-003 — Phase 5.4 actionable Admin workflows
 
 - route notifications to authorized detail screens
@@ -10,7 +20,7 @@
 - compact caregiver cards and add real-data caregiver detail
 - correct Agency mobile navigation contrast, width, safe area, and labels
 
-Status: Implemented and validated locally; coordinated publication pending.
+Status: Completed, published and validated in production.
 
 ---
 
