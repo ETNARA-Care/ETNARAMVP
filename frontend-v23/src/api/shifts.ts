@@ -38,6 +38,9 @@ export interface WorkerMembership {
   status: string;
   internal_role: string;
   display_name: string | null;
+  hired_at?: string | null;
+  ended_at?: string | null;
+  created_at?: string;
 }
 
 export interface WorkerCredentialSummary {
@@ -59,6 +62,7 @@ export interface Assignment {
   response_status: "pending" | "accepted" | "rejected";
   responded_at: string | null;
   response_reason: string | null;
+  created_at?: string;
 }
 
 export interface VisitVerification {
@@ -88,6 +92,15 @@ export async function createShift(
   token: string,
 ): Promise<Shift> {
   const result = await apiClient.post<{ shift: Shift }>(`/organizations/${organizationId}/shifts`, input, token);
+  return result.shift;
+}
+
+export async function cancelShift(organizationId: string, shiftId: string, token: string): Promise<Shift> {
+  const result = await apiClient.post<{ shift: Shift }>(
+    `/organizations/${organizationId}/shifts/${shiftId}/cancel`,
+    {},
+    token,
+  );
   return result.shift;
 }
 
