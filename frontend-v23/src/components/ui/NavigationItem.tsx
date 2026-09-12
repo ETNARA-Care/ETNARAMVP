@@ -19,7 +19,7 @@ export function NavigationItem({ to, icon, label, end, badge }: NavigationItemPr
         `flex items-center gap-3 h-11 px-3 rounded-[var(--radius-sm)] text-[var(--text-body)] font-medium transition-colors
         ${isActive
           ? "bg-[var(--color-navy-800)] text-white"
-          : "text-[var(--color-ivory-100)]/80 hover:bg-white/10 hover:text-white"}`
+          : "text-white/85 hover:bg-white/10 hover:text-white"}`
       }
     >
       <span aria-hidden>{icon}</span>
