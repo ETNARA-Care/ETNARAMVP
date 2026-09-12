@@ -219,3 +219,16 @@ test("Phase 5.4 Admin can inspect responses, safely cancel, and open compact wor
   assert.match(layout, /activeOrganization\?\.name/);
   assert.doesNotMatch(layout, /Residencial Los Almendros|Rafael Vega/);
 });
+
+test("Phase 5.5 Administration compliance uses real eligibility and credential contracts", async () => {
+  const complianceApi = await readFile(new URL("../src/api/compliance.ts", import.meta.url), "utf8");
+  const page = await readFile(new URL("../src/pages/agency/AgencySupportPages.tsx", import.meta.url), "utf8");
+
+  assert.match(complianceApi, /\/workers\/\$\{membershipId\}\/compliance/);
+  assert.match(page, /getWorkerCompliance/);
+  assert.match(page, /getWorkerProfile/);
+  assert.match(page, /aria-expanded/);
+  assert.match(page, /Requieren atención/);
+  assert.match(page, /ORGANIZATION_REVIEW_MISSING/);
+  assert.doesNotMatch(page, /DemoStore|@\/mocks\//);
+});
