@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-5/assignment-responses
+Branch: phase-5-4/admin-workflows
 
 ## Last Known Frontend Checkpoint
 
@@ -45,6 +45,23 @@ Frontend deploys through GitHub Pages.
 Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
+
+### 2026-09-12 — Phase 5.4 Admin workflows and actionable notifications
+
+- Notification items now open the exact authorized shift, incident,
+  conversation, care activity, or resident destination and mark themselves
+  read without losing navigation context.
+- Admin shift detail shows caregiver responses, response time, rejection
+  reason (or `Sin motivo indicado`) and a confirmed safe cancellation action.
+- Worker cards are compact and open a dedicated real-data profile with work
+  information and credential status.
+- The Agency mobile drawer is narrower, uses stronger contrast and safe-area
+  spacing, labels Overview as Resumen, and derives organization/user avatars
+  from authenticated data instead of conflicting hard-coded initials.
+- Typecheck, 16/16 boundary tests, lint (pre-existing warnings only), and the
+  production build pass.
+- Exact next step: publish only after backend migration 044 is merged and live,
+  then wait for Pages and validate notification click-through and cancellation.
 
 ### 2026-09-11 — Phase 5.3 operational shift cleanup
 
