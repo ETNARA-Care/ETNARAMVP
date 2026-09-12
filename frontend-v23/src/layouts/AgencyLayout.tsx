@@ -6,11 +6,12 @@ import {
 } from "lucide-react";
 import { Avatar, IconButton, NavigationItem } from "@/components/ui";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
+import { useAuth } from "@/auth/AuthProvider";
 
 // Rutas alineadas exactamente a las definidas en el brief de Fase 2 --
 // no se agregó /agency/reports porque no estaba en la lista de rutas dada.
 const NAV = [
-  { to: "/agency", end: true, icon: <LayoutDashboard size={18} />, label: "Overview" },
+  { to: "/agency", end: true, icon: <LayoutDashboard size={18} />, label: "Resumen" },
   { to: "/agency/residents", icon: <Users size={18} />, label: "Residentes" },
   { to: "/agency/workers", icon: <UserCog size={18} />, label: "Cuidadores" },
   { to: "/agency/shifts", icon: <CalendarRange size={18} />, label: "Turnos" },
@@ -20,23 +21,25 @@ const NAV = [
   { to: "/agency/settings", icon: <Settings size={18} />, label: "Configuración" },
 ];
 
-function SidebarContent() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const { activeOrganization } = useAuth();
+  const organizationName = activeOrganization?.name ?? "Organización";
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full pb-[env(safe-area-inset-bottom)]">
       <Link to="/agency" className="flex items-center gap-2 px-3 h-16">
         <span className="font-display text-[var(--text-h3)] text-white">ETNARA</span>
         <span className="text-[var(--text-caption)] text-white/60 font-medium uppercase tracking-wide">Agencia</span>
       </Link>
-      <nav className="flex-1 flex flex-col gap-1 px-2 overflow-y-auto">
+      <nav className="flex-1 flex flex-col gap-1 px-2 overflow-y-auto" onClick={onNavigate}>
         {NAV.map((item) => (
           <NavigationItem key={item.to} {...item} />
         ))}
       </nav>
       <div className="p-3 border-t border-white/10 flex items-center gap-2.5">
-        <Avatar name="Residencial Los Almendros" size={36} />
+        <Avatar name={organizationName} size={36} />
         <div className="min-w-0">
-          <p className="text-[var(--text-small)] font-medium text-white truncate">Los Almendros</p>
-          <p className="text-[var(--text-caption)] text-white/60 truncate">Organización activa</p>
+          <p className="text-[var(--text-small)] font-medium text-white truncate">{organizationName}</p>
+          <p className="text-[var(--text-caption)] text-white/80 truncate">Organización activa</p>
         </div>
       </div>
     </div>
@@ -45,6 +48,7 @@ function SidebarContent() {
 
 export function AgencyLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { activeOrganization, user } = useAuth();
 
   return (
     <div className="min-h-dvh md:flex bg-[var(--color-bg)]">
@@ -59,8 +63,8 @@ export function AgencyLayout() {
       {drawerOpen && (
         <div className="fixed inset-0 z-[var(--z-overlay)] md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} aria-hidden />
-          <div className="absolute left-0 top-0 h-full w-72 bg-[var(--color-navy-950)]">
-            <SidebarContent />
+          <div className="absolute left-0 top-0 h-full w-[min(82vw,17rem)] bg-[var(--color-navy-950)]">
+            <SidebarContent onNavigate={() => setDrawerOpen(false)} />
           </div>
         </div>
       )}
@@ -75,11 +79,11 @@ export function AgencyLayout() {
             onClick={() => setDrawerOpen((v) => !v)}
           />
           <span className="hidden md:block text-[var(--text-body)] text-[var(--color-text-secondary)]">
-            Residencial Los Almendros
+            {activeOrganization?.name ?? "Organización"}
           </span>
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <Avatar name="Rafael Vega" size={32} />
+            <Avatar name={user?.email ?? "Administrador"} size={32} />
           </div>
         </header>
         <main className="p-[var(--spacing-md)] md:p-[var(--spacing-lg)] max-w-[1200px] mx-auto">
