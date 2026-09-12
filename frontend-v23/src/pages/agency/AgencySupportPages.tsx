@@ -1,6 +1,6 @@
-import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, Skeleton } from "@/components/ui";
+import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AlertTriangle, ChevronDown, LogOut, Settings, ShieldCheck, UserCheck } from "lucide-react";
+import { AlertTriangle, ChevronDown, LogOut, Plus, Settings, ShieldCheck, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useAuth } from "@/auth/AuthProvider";
@@ -20,21 +20,65 @@ import {
   type ComplianceRequirement,
   type ComplianceSummary,
 } from "@/api/compliance";
+import { createCareRecipient, createWorker } from "@/api/roster";
 
 export function AgencyResidentsPage() {
   const { loading, error, recipients, shifts, reload } = useAgencySupervision();
+  const { activeOrganization } = useAuth();
+  const toast = useToast();
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ firstName: "", lastName: "", preferredName: "", dateOfBirth: "", allergies: "" });
+
+  const saveResident = async () => {
+    const token = getToken();
+    if (!activeOrganization?.id || !token || !form.firstName.trim() || !form.lastName.trim()) return;
+    setSaving(true);
+    try {
+      await createCareRecipient(activeOrganization.id, {
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        ...(form.preferredName.trim() ? { preferredName: form.preferredName.trim() } : {}),
+        ...(form.dateOfBirth ? { dateOfBirth: form.dateOfBirth } : {}),
+        ...(form.allergies.trim() ? { allergies: form.allergies.split(",").map((item) => item.trim()).filter(Boolean) } : {}),
+      }, token);
+      setCreating(false);
+      setForm({ firstName: "", lastName: "", preferredName: "", dateOfBirth: "", allergies: "" });
+      await reload();
+      toast.show("Residente añadido correctamente.", "success");
+    } catch {
+      toast.show("No pudimos añadir al residente. Intenta nuevamente.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void reload()} />;
   return (
     <div>
-      <PageHeader title="Residentes" description="Vista real de residentes, turnos de hoy y equipo asignado." />
+      <PageHeader title="Residentes" description="Vista real de residentes, turnos de hoy y equipo asignado." actions={<Button icon={<Plus size={18} />} onClick={() => setCreating(true)}>Añadir residente</Button>} />
       {recipients.length === 0 ? <EmptyState title="No hay residentes registrados" /> : (
         <div className="flex flex-col gap-2">
           {recipients.map((recipient) => (
-            <ResidentRow key={recipient.id} id={recipient.id} name={recipientName(recipient)} shift={shiftForRecipientToday(shifts, recipient.id)} />
+            <ResidentRow key={recipient.id} id={recipient.id} name={recipientName(recipient)} status={recipient.status} shift={shiftForRecipientToday(shifts, recipient.id)} />
           ))}
         </div>
       )}
+      <Modal
+        open={creating}
+        onClose={() => !saving && setCreating(false)}
+        title="Añadir residente"
+        footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveResident()} loading={saving} disabled={!form.firstName.trim() || !form.lastName.trim()}>Guardar</Button></>}
+      >
+        <div className="flex flex-col gap-3">
+          <Input label="Nombre" value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} required />
+          <Input label="Apellidos" value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} required />
+          <Input label="Nombre preferido (opcional)" value={form.preferredName} onChange={(event) => setForm((current) => ({ ...current, preferredName: event.target.value }))} />
+          <Input label="Fecha de nacimiento (opcional)" type="date" value={form.dateOfBirth} onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))} />
+          <Input label="Alergias (opcional)" hint="Separa varias alergias con comas." value={form.allergies} onChange={(event) => setForm((current) => ({ ...current, allergies: event.target.value }))} />
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -47,7 +91,7 @@ function shiftForRecipientToday(shifts: AdminShift[], recipientId: string): Admi
     ?? rows.sort((a, b) => new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime())[0];
 }
 
-function ResidentRow({ id, name, shift }: { id: string; name: string; shift?: AdminShift }) {
+function ResidentRow({ id, name, status, shift }: { id: string; name: string; status: string; shift?: AdminShift }) {
   const navigate = useNavigate();
   const workerName = shift?.caregiver?.display_name ?? shift?.caregiver?.internal_role;
   return (
@@ -59,7 +103,7 @@ function ResidentRow({ id, name, shift }: { id: string; name: string; shift?: Ad
           {workerName ? `Cuidadora: ${workerName}` : shift ? "Sin cuidadora asignada" : "Sin turno programado hoy"}
         </p>
       </div>
-      {shift && <StatusBadge status={shift.status} />}
+      {status === "archived" ? <Badge tone="neutral">Archivado</Badge> : shift ? <StatusBadge status={shift.status} /> : null}
     </Card>
     </button>
   );
@@ -70,6 +114,10 @@ export function AgencyWorkersPage() {
   const organizationId = activeOrganization?.id;
   const [workers, setWorkers] = useState<Array<WorkerMembership & { credentials: WorkerCredentialSummary[] }> | null>(null);
   const [error, setError] = useState(false);
+  const toast = useToast();
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ displayName: "", internalRole: "CNA", hiredAt: "" });
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -95,6 +143,27 @@ export function AgencyWorkersPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const saveWorker = async () => {
+    const token = getToken();
+    if (!organizationId || !token || !form.displayName.trim() || !form.internalRole.trim()) return;
+    setSaving(true);
+    try {
+      await createWorker(organizationId, {
+        displayName: form.displayName.trim(),
+        internalRole: form.internalRole.trim(),
+        ...(form.hiredAt ? { hiredAt: form.hiredAt } : {}),
+      }, token);
+      setCreating(false);
+      setForm({ displayName: "", internalRole: "CNA", hiredAt: "" });
+      await load();
+      toast.show("Personal añadido correctamente.", "success");
+    } catch {
+      toast.show("No pudimos añadir al personal. Intenta nuevamente.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (workers === null) {
     return <div className="flex flex-col gap-3"><Skeleton className="h-32" /><Skeleton className="h-32" /></div>;
   }
@@ -102,12 +171,27 @@ export function AgencyWorkersPage() {
 
   return (
     <div>
-      <PageHeader title="Cuidadores" description="Estado real de membresía y credenciales del equipo." />
+      <PageHeader title="Cuidadores" description="Estado real de membresía y credenciales del equipo." actions={<Button icon={<Plus size={18} />} onClick={() => setCreating(true)}>Añadir personal</Button>} />
       {workers.length === 0 ? <EmptyState title="No hay cuidadores registrados" /> : (
         <div className="flex flex-col gap-3">
           {workers.map((worker) => <WorkerCard key={worker.id} worker={worker} />)}
         </div>
       )}
+      <Modal
+        open={creating}
+        onClose={() => !saving && setCreating(false)}
+        title="Añadir personal"
+        footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveWorker()} loading={saving} disabled={!form.displayName.trim() || !form.internalRole.trim()}>Guardar</Button></>}
+      >
+        <div className="flex flex-col gap-3">
+          <Input label="Nombre completo" value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} required />
+          <Select label="Clasificación laboral" value={form.internalRole} onChange={(event) => setForm((current) => ({ ...current, internalRole: event.target.value }))} required>
+            <option value="CNA">CNA</option><option value="HHA">HHA</option><option value="RN">RN</option><option value="LPN">LPN</option><option value="SUPERVISOR">Supervisor/a</option><option value="OTRO">Otro</option>
+          </Select>
+          <Input label="Fecha de contratación (opcional)" type="date" value={form.hiredAt} onChange={(event) => setForm((current) => ({ ...current, hiredAt: event.target.value }))} />
+          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Este registro añade a la persona al equipo. El acceso por correo se habilitará mediante una invitación segura en una entrega posterior.</p>
+        </div>
+      </Modal>
     </div>
   );
 }

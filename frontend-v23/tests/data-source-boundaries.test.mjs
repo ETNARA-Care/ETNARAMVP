@@ -232,3 +232,22 @@ test("Phase 5.5 Administration compliance uses real eligibility and credential c
   assert.match(page, /ORGANIZATION_REVIEW_MISSING/);
   assert.doesNotMatch(page, /DemoStore|@\/mocks\//);
 });
+
+test("Phase 5.6 Administration manages real residents and workforce without deleting history", async () => {
+  const rosterApi = await readFile(new URL("../src/api/roster.ts", import.meta.url), "utf8");
+  const pages = await readFile(new URL("../src/pages/agency/AgencySupportPages.tsx", import.meta.url), "utf8");
+  const residentProfile = await readFile(new URL("../src/pages/agency/AgencyResidentProfilePage.tsx", import.meta.url), "utf8");
+  const workerProfile = await readFile(new URL("../src/pages/agency/AgencyWorkerProfilePage.tsx", import.meta.url), "utf8");
+  const shifts = await readFile(new URL("../src/pages/agency/AgencyShiftsPage.tsx", import.meta.url), "utf8");
+
+  assert.match(rosterApi, /createCareRecipient/);
+  assert.match(rosterApi, /updateCareRecipient/);
+  assert.match(rosterApi, /createWorker/);
+  assert.match(rosterApi, /updateWorker/);
+  assert.match(pages, /Añadir residente/);
+  assert.match(pages, /Añadir personal/);
+  assert.match(residentProfile, /status: nextStatus/);
+  assert.match(workerProfile, /endedAt: active \? null/);
+  assert.match(shifts, /recipientRows\.filter\(\(recipient\) => recipient\.status === "active"\)/);
+  assert.doesNotMatch(rosterApi, /DemoStore|@\/mocks\//);
+});
