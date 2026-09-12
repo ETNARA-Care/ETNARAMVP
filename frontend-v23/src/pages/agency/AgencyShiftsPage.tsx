@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
@@ -43,6 +44,7 @@ function isOperationalShift(shift: Shift, now = new Date()): boolean {
 }
 
 export function AgencyShiftsPage() {
+  const navigate = useNavigate();
   const { activeOrganization } = useAuth();
   const { show } = useToast();
   const [shifts, setShifts] = useState<Shift[] | null>(null);
@@ -144,7 +146,16 @@ export function AgencyShiftsPage() {
             const assignment = assignmentByShift[shift.id];
             const assignee = assignment ? workerById[assignment.organization_worker_membership_id] : undefined;
             return (
-              <Card key={shift.id} className="flex items-center justify-between gap-3 flex-wrap">
+              <Card
+                key={shift.id}
+                role="link"
+                tabIndex={0}
+                onClick={() => navigate(`/agency/shifts/${shift.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") navigate(`/agency/shifts/${shift.id}`);
+                }}
+                className="flex items-center justify-between gap-3 flex-wrap cursor-pointer hover:bg-[var(--color-ivory-100)] transition-colors"
+              >
                 <div>
                   <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
@@ -154,7 +165,7 @@ export function AgencyShiftsPage() {
                   <StatusBadge status={shift.status} />
                   {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
                   {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
-                  {shift.status === "unassigned" && !assignment && <Button size="md" onClick={() => { setAssigning(shift); setSelectedWorkerId(workers[0]?.id ?? ""); }}>Asignar cuidadora</Button>}
+                  {shift.status === "unassigned" && !assignment && <Button size="md" onClick={(event) => { event.stopPropagation(); setAssigning(shift); setSelectedWorkerId(workers[0]?.id ?? ""); }}>Asignar cuidadora</Button>}
                 </div>
               </Card>
             );
