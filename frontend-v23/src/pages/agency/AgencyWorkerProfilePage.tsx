@@ -8,6 +8,7 @@ import { updateWorker } from "@/api/roster";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
 import { formatCredentialDate } from "./workerCredentialUtils";
+import { AccessInvitationPanel } from "./AccessInvitationPanel";
 
 export function AgencyWorkerProfilePage() {
   const { membershipId } = useParams();
@@ -117,6 +118,10 @@ export function AgencyWorkerProfilePage() {
           {worker.ended_at && <Detail label="Fecha de finalización" value={new Date(worker.ended_at).toLocaleDateString("es-PR")} />}
         </dl>
       </Card>
+
+      {organizationId && membershipId && worker.status === "active" && (
+        <AccessInvitationPanel organizationId={organizationId} type="worker" workerMembershipId={membershipId} />
+      )}
 
       <section>
         <div className="flex items-center gap-2 mb-3">

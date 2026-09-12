@@ -8,6 +8,7 @@ import { getCareRecipient, recipientName, type CareRecipient } from "@/api/shift
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Skeleton, StatusBadge, Timeline, useToast } from "@/components/ui";
 import { useAgencySupervision } from "@/features/agency/useAgencySupervision";
 import { updateCareRecipient } from "@/api/roster";
+import { AccessInvitationPanel } from "./AccessInvitationPanel";
 
 const careLabels: Record<string, string> = {
   MEAL: "Comida",
@@ -157,6 +158,10 @@ export function AgencyResidentProfilePage() {
           <ListField label="Rutinas" items={routineItems} />
         </Card>
       </div>
+
+      {organizationId && residentId && resident.status === "active" && (
+        <AccessInvitationPanel organizationId={organizationId} type="family" careRecipientId={residentId} />
+      )}
 
       <Card>
         <div className="flex items-center gap-2 mb-4"><CalendarRange size={21} /><h2 className="font-medium text-[var(--color-text-primary)]">Turno y cuidadora</h2></div>

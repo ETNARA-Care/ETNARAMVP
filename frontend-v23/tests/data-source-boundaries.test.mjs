@@ -19,6 +19,8 @@ const realDataModules = [
   "src/pages/agency/AgencyShiftDetailPage.tsx",
   "src/pages/agency/AgencySupportPages.tsx",
   "src/pages/agency/AgencyWorkerProfilePage.tsx",
+  "src/pages/agency/AccessInvitationPanel.tsx",
+  "src/pages/ActivateInvitationPage.tsx",
   "src/pages/caregiver/CaregiverShiftDetailPage.tsx",
   "src/pages/caregiver/CaregiverShiftsPage.tsx",
   "src/pages/caregiver/CaregiverSupportPages.tsx",
@@ -250,4 +252,23 @@ test("Phase 5.6 Administration manages real residents and workforce without dele
   assert.match(workerProfile, /endedAt: active \? null/);
   assert.match(shifts, /recipientRows\.filter\(\(recipient\) => recipient\.status === "active"\)/);
   assert.doesNotMatch(rosterApi, /DemoStore|@\/mocks\//);
+});
+
+test("Phase 5.7 uses real, single-use access invitation contracts", async () => {
+  const api = await readFile(new URL("../src/api/accessInvitations.ts", import.meta.url), "utf8");
+  const panel = await readFile(new URL("../src/pages/agency/AccessInvitationPanel.tsx", import.meta.url), "utf8");
+  const activation = await readFile(new URL("../src/pages/ActivateInvitationPage.tsx", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
+
+  assert.match(api, /\/access-invitations\/activate/);
+  assert.match(api, /\/access-invitations\/accept/);
+  assert.match(panel, /Crear invitación/);
+  assert.match(panel, /Nuevo enlace/);
+  assert.match(panel, /Revocar/);
+  assert.match(panel, /Desactivar acceso/);
+  assert.match(panel, /window\.location\.origin/);
+  assert.match(activation, /new URLSearchParams\(window\.location\.hash\.slice\(1\)\)/);
+  assert.match(activation, /minLength=\{12\}/);
+  assert.match(app, /path="\/activate" element={<ActivateInvitationPage/);
+  assert.doesNotMatch(api, /DemoStore|@\/mocks\//);
 });
