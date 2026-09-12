@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { DemoLandingPage } from "@/pages/DemoLandingPage";
 import { RootRedirect } from "@/pages/RootRedirect";
 import { LoginPage } from "@/pages/LoginPage";
+import { ActivateInvitationPage } from "@/pages/ActivateInvitationPage";
 import { SelectOrganizationPage } from "@/pages/SelectOrganizationPage";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { RoleGuard } from "@/auth/RoleGuard";
@@ -54,6 +55,7 @@ export default function App() {
       <Route path="/" element={<RootRedirect />} />
       <Route path="/demo" element={<DemoLandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/activate" element={<ActivateInvitationPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/select-organization" element={<SelectOrganizationPage />} />
