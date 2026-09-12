@@ -46,6 +46,21 @@ Verify GitHub Actions deployment before assuming new code is live.
 
 ## Session Handoff
 
+### 2026-09-12 — Phase 5.5 real Administration compliance
+
+- Replaced the empty Administration Compliance placeholder with real,
+  organization-scoped workforce, credential and eligibility data.
+- Summary metrics distinguish active personnel, fully compliant workers and
+  workers requiring attention without double-counting credential alerts.
+- Caregiver rows remain compact and expand on demand to show requirement
+  failures, organization-review needs and credential expiration/revocation
+  alerts; full worker profiles remain one action away.
+- No mock fallback or Family-facing contract is involved; the existing
+  manager-authorized `/workers/:membershipId/compliance` contract remains
+  authoritative.
+- Exact next step: finish validation, review the diff and publish only with
+  explicit authorization.
+
 ### 2026-09-12 — Phase 5.4 Admin workflows and actionable notifications
 
 - Notification items now open the exact authorized shift, incident,
