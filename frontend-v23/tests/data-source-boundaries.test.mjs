@@ -20,6 +20,7 @@ const realDataModules = [
   "src/pages/agency/AgencySupportPages.tsx",
   "src/pages/agency/AgencyWorkerProfilePage.tsx",
   "src/pages/agency/AccessInvitationPanel.tsx",
+  "src/api/agencyCredentials.ts",
   "src/pages/ActivateInvitationPage.tsx",
   "src/pages/caregiver/CaregiverShiftDetailPage.tsx",
   "src/pages/caregiver/CaregiverShiftsPage.tsx",
@@ -40,6 +41,18 @@ test("real-data modules never import the demo store", async () => {
       `${path} must fail visibly when the API is unavailable; it cannot fall back to demo data`,
     );
   }
+});
+
+test("agency credential management uses the secured API and database catalog", async () => {
+  const page = await readFile(new URL("../src/pages/agency/AgencyWorkerProfilePage.tsx", import.meta.url), "utf8");
+  const api = await readFile(new URL("../src/api/agencyCredentials.ts", import.meta.url), "utf8");
+
+  assert.match(page, /Agregar credencial/);
+  assert.match(page, /Revocar credencial/);
+  assert.match(page, /listCredentialTypes/);
+  assert.match(api, /\/credential-types/);
+  assert.match(api, /workers\/\$\{workerId\}\/credentials/);
+  assert.doesNotMatch(page, /@\/mocks\//);
 });
 
 test("the API client requires an explicit backend URL", async () => {
