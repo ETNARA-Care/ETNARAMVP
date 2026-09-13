@@ -7,6 +7,7 @@ import { listWorkers, type WorkerMembership } from "@/api/shifts";
 import { updateWorker } from "@/api/roster";
 import {
   createWorkerCredential,
+  CredentialDocumentUploadError,
   listCredentialDocuments,
   listCredentialTypes,
   listWorkerCredentials,
@@ -206,8 +207,18 @@ export function AgencyWorkerProfilePage() {
       setCredentialFile(null);
       await load();
       toast.show("Documento cargado de forma privada y enviado a revisión.", "success");
-    } catch {
-      toast.show("No pudimos cargar el documento. Verifica el almacenamiento seguro.", "danger");
+    } catch (error) {
+      if (error instanceof CredentialDocumentUploadError) {
+        const stage = error.stage === "initiate"
+          ? "iniciar la carga"
+          : error.stage === "content" ? "enviar el archivo" : "verificar el documento";
+        const detail = error.status === 0
+          ? "RED"
+          : `${error.status}${error.code ? ` · ${error.code}` : ""}`;
+        toast.show(`No pudimos ${stage}. Código: ${detail}.`, "danger");
+      } else {
+        toast.show("No pudimos cargar el documento. Intenta nuevamente.", "danger");
+      }
     } finally {
       setSaving(false);
     }
