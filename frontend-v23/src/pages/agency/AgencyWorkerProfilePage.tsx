@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, BriefcaseBusiness, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, Plus, ShieldCheck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
-import { getWorkerProfile, listWorkers, type WorkerCredentialSummary, type WorkerMembership } from "@/api/shifts";
+import { listWorkers, type WorkerMembership } from "@/api/shifts";
 import { updateWorker } from "@/api/roster";
+import {
+  createWorkerCredential,
+  listCredentialTypes,
+  listWorkerCredentials,
+  updateWorkerCredential,
+  type CredentialTypeCatalogItem,
+  type WorkerCredential,
+} from "@/api/agencyCredentials";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
 import { formatCredentialDate } from "./workerCredentialUtils";
@@ -16,12 +24,24 @@ export function AgencyWorkerProfilePage() {
   const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
   const [worker, setWorker] = useState<WorkerMembership | null | undefined>(undefined);
-  const [credentials, setCredentials] = useState<WorkerCredentialSummary[]>([]);
+  const [credentials, setCredentials] = useState<WorkerCredential[]>([]);
+  const [credentialTypes, setCredentialTypes] = useState<CredentialTypeCatalogItem[]>([]);
   const [error, setError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmingStatus, setConfirmingStatus] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ displayName: "", internalRole: "CNA", hiredAt: "" });
+  const [creatingCredential, setCreatingCredential] = useState(false);
+  const [editingCredential, setEditingCredential] = useState<WorkerCredential | null>(null);
+  const [confirmingCredentialRevocation, setConfirmingCredentialRevocation] = useState(false);
+  const [credentialForm, setCredentialForm] = useState({
+    credentialTypeCode: "",
+    issuingEntityName: "",
+    issuingEntityType: "external_provider" as "government" | "external_provider" | "platform",
+    issuedAt: "",
+    expiresAt: "",
+    status: "active" as "active" | "expired",
+  });
   const toast = useToast();
 
   const load = useCallback(async () => {
@@ -29,12 +49,20 @@ export function AgencyWorkerProfilePage() {
     if (!organizationId || !membershipId || !token) return;
     setError(false);
     try {
-      const [workers, profile] = await Promise.all([
-        listWorkers(organizationId, token),
-        getWorkerProfile(organizationId, membershipId, token),
+      const workers = await listWorkers(organizationId, token);
+      const selectedWorker = workers.find((row) => row.id === membershipId) ?? null;
+      setWorker(selectedWorker);
+      if (!selectedWorker) {
+        setCredentials([]);
+        setCredentialTypes([]);
+        return;
+      }
+      const [credentialRows, catalog] = await Promise.all([
+        listWorkerCredentials(organizationId, selectedWorker.worker_id, token),
+        listCredentialTypes(organizationId, token),
       ]);
-      setWorker(workers.find((row) => row.id === membershipId) ?? null);
-      setCredentials(profile.credentialsSummary);
+      setCredentials(credentialRows);
+      setCredentialTypes(catalog);
     } catch {
       setWorker(null);
       setError(true);
@@ -51,6 +79,94 @@ export function AgencyWorkerProfilePage() {
       hiredAt: worker.hired_at?.slice(0, 10) ?? "",
     });
     setEditing(true);
+  };
+
+  const openCredentialCreate = () => {
+    setCredentialForm({
+      credentialTypeCode: credentialTypes[0]?.code ?? "",
+      issuingEntityName: "",
+      issuingEntityType: "external_provider",
+      issuedAt: "",
+      expiresAt: "",
+      status: "active",
+    });
+    setCreatingCredential(true);
+  };
+
+  const openCredentialEdit = (credential: WorkerCredential) => {
+    setCredentialForm({
+      credentialTypeCode: credential.type_code,
+      issuingEntityName: credential.issuing_entity_name ?? "",
+      issuingEntityType: credential.issuing_entity_type,
+      issuedAt: credential.issued_at ?? "",
+      expiresAt: credential.expires_at ?? "",
+      status: credential.status === "expired" ? "expired" : "active",
+    });
+    setEditingCredential(credential);
+  };
+
+  const credentialDatesAreValid = !credentialForm.issuedAt || !credentialForm.expiresAt
+    || credentialForm.expiresAt >= credentialForm.issuedAt;
+
+  const saveCredential = async () => {
+    const token = getToken();
+    if (!organizationId || !worker || !token || !credentialForm.credentialTypeCode || !credentialDatesAreValid) return;
+    setSaving(true);
+    try {
+      await createWorkerCredential(organizationId, worker.worker_id, {
+        credentialTypeCode: credentialForm.credentialTypeCode,
+        issuingEntityType: credentialForm.issuingEntityType,
+        ...(credentialForm.issuingEntityName.trim() ? { issuingEntityName: credentialForm.issuingEntityName.trim() } : {}),
+        ...(credentialForm.issuedAt ? { issuedAt: credentialForm.issuedAt } : {}),
+        ...(credentialForm.expiresAt ? { expiresAt: credentialForm.expiresAt } : {}),
+      }, token);
+      setCreatingCredential(false);
+      await load();
+      toast.show("Credencial registrada correctamente.", "success");
+    } catch {
+      toast.show("No pudimos registrar la credencial.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveCredentialChanges = async () => {
+    const token = getToken();
+    if (!organizationId || !worker || !editingCredential || !token || !credentialDatesAreValid) return;
+    setSaving(true);
+    try {
+      await updateWorkerCredential(organizationId, worker.worker_id, editingCredential.id, {
+        issuingEntityName: credentialForm.issuingEntityName.trim(),
+        issuingEntityType: credentialForm.issuingEntityType,
+        issuedAt: credentialForm.issuedAt || null,
+        expiresAt: credentialForm.expiresAt || null,
+        status: credentialForm.status,
+      }, token);
+      setEditingCredential(null);
+      await load();
+      toast.show("Credencial actualizada correctamente.", "success");
+    } catch {
+      toast.show("No pudimos actualizar la credencial.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const revokeCredential = async () => {
+    const token = getToken();
+    if (!organizationId || !worker || !editingCredential || !token) return;
+    setSaving(true);
+    try {
+      await updateWorkerCredential(organizationId, worker.worker_id, editingCredential.id, { status: "revoked" }, token);
+      setConfirmingCredentialRevocation(false);
+      setEditingCredential(null);
+      await load();
+      toast.show("Credencial revocada; el historial se conserva.", "success");
+    } catch {
+      toast.show("No pudimos revocar la credencial.", "danger");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const saveWorker = async () => {
@@ -124,21 +240,26 @@ export function AgencyWorkerProfilePage() {
       )}
 
       <section>
-        <div className="flex items-center gap-2 mb-3">
-          <ShieldCheck size={21} className="text-[var(--color-text-muted)]" aria-hidden />
-          <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Credenciales</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={21} className="text-[var(--color-text-muted)]" aria-hidden />
+            <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Credenciales</h2>
+          </div>
+          {worker.status === "active" && <Button icon={<Plus size={18} />} onClick={openCredentialCreate} disabled={credentialTypes.length === 0}>Agregar credencial</Button>}
         </div>
+        {worker.status !== "active" && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-3">Reactiva la membresía para registrar o modificar credenciales.</p>}
         {credentials.length === 0 ? (
           <EmptyState title="Sin credenciales registradas" />
         ) : (
           <div className="flex flex-col gap-2">
             {credentials.map((credential) => (
-              <Card key={credential.id} className="flex items-center justify-between gap-3">
+              <Card key={credential.id} className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-medium text-[var(--color-text-primary)]">{credential.type_code}</p>
+                  <p className="font-medium text-[var(--color-text-primary)]">{credentialTypeLabel(credential.type_code)}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-1">{credential.expires_at ? `Expira ${formatCredentialDate(credential.expires_at)}` : "Sin fecha de expiración"}</p>
+                  {credential.issuing_entity_name && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Emitida por {credential.issuing_entity_name}</p>}
                 </div>
-                <WorkerCredentialBadge credential={credential} />
+                <div className="flex items-center gap-2"><WorkerCredentialBadge credential={credential} />{worker.status === "active" && credential.status !== "revoked" && <Button variant="secondary" onClick={() => openCredentialEdit(credential)}>Gestionar</Button>}</div>
               </Card>
             ))}
           </div>
@@ -161,6 +282,33 @@ export function AgencyWorkerProfilePage() {
       </Modal>
 
       <Modal
+        open={creatingCredential}
+        onClose={() => !saving && setCreatingCredential(false)}
+        title="Agregar credencial"
+        footer={<><Button variant="secondary" onClick={() => setCreatingCredential(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveCredential()} loading={saving} disabled={!credentialForm.credentialTypeCode || !credentialDatesAreValid}>Guardar credencial</Button></>}
+      >
+        <CredentialFormFields form={credentialForm} setForm={setCredentialForm} credentialTypes={credentialTypes} showType showIssuedAt dateError={!credentialDatesAreValid} />
+      </Modal>
+
+      <Modal
+        open={editingCredential !== null}
+        onClose={() => !saving && setEditingCredential(null)}
+        title={`Gestionar ${editingCredential ? credentialTypeLabel(editingCredential.type_code) : "credencial"}`}
+        footer={<><Button variant="danger" onClick={() => setConfirmingCredentialRevocation(true)} disabled={saving}>Revocar</Button><Button variant="secondary" onClick={() => setEditingCredential(null)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveCredentialChanges()} loading={saving} disabled={!credentialDatesAreValid}>Guardar cambios</Button></>}
+      >
+        <CredentialFormFields form={credentialForm} setForm={setCredentialForm} credentialTypes={credentialTypes} showIssuedAt dateError={!credentialDatesAreValid} />
+      </Modal>
+
+      <Modal
+        open={confirmingCredentialRevocation}
+        onClose={() => !saving && setConfirmingCredentialRevocation(false)}
+        title="Revocar credencial"
+        footer={<><Button variant="secondary" onClick={() => setConfirmingCredentialRevocation(false)} disabled={saving}>Volver</Button><Button variant="danger" onClick={() => void revokeCredential()} loading={saving}>Sí, revocar</Button></>}
+      >
+        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">La credencial dejará de ser válida para cumplimiento y asignaciones. El registro permanecerá en el historial.</p>
+      </Modal>
+
+      <Modal
         open={confirmingStatus}
         onClose={() => !saving && setConfirmingStatus(false)}
         title={worker.status === "active" ? "Desactivar personal" : "Reactivar personal"}
@@ -170,6 +318,51 @@ export function AgencyWorkerProfilePage() {
       </Modal>
     </div>
   );
+}
+
+type CredentialFormState = {
+  credentialTypeCode: string;
+  issuingEntityName: string;
+  issuingEntityType: "government" | "external_provider" | "platform";
+  issuedAt: string;
+  expiresAt: string;
+  status: "active" | "expired";
+};
+
+function CredentialFormFields({ form, setForm, credentialTypes, showType = false, showIssuedAt = false, dateError = false }: {
+  form: CredentialFormState;
+  setForm: React.Dispatch<React.SetStateAction<CredentialFormState>>;
+  credentialTypes: CredentialTypeCatalogItem[];
+  showType?: boolean;
+  showIssuedAt?: boolean;
+  dateError?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {showType && <Select label="Tipo de credencial" value={form.credentialTypeCode} onChange={(event) => setForm((current) => ({ ...current, credentialTypeCode: event.target.value }))} required>{credentialTypes.map((type) => <option key={type.code} value={type.code}>{credentialTypeLabel(type.code)}</option>)}</Select>}
+      <Select label="Entidad emisora" value={form.issuingEntityType} onChange={(event) => setForm((current) => ({ ...current, issuingEntityType: event.target.value as CredentialFormState["issuingEntityType"] }))} required>
+        <option value="government">Agencia gubernamental</option><option value="external_provider">Proveedor externo</option><option value="platform">ETNARA / organización</option>
+      </Select>
+      <Input label="Nombre de la entidad (opcional)" value={form.issuingEntityName} onChange={(event) => setForm((current) => ({ ...current, issuingEntityName: event.target.value }))} />
+      {showIssuedAt && <Input label="Fecha de emisión (opcional)" type="date" value={form.issuedAt} onChange={(event) => setForm((current) => ({ ...current, issuedAt: event.target.value }))} />}
+      <Input label="Fecha de vencimiento (opcional)" type="date" value={form.expiresAt} onChange={(event) => setForm((current) => ({ ...current, expiresAt: event.target.value }))} error={dateError ? "La fecha de vencimiento no puede ser anterior a la emisión." : undefined} />
+      {!showType && <Select label="Estado" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as CredentialFormState["status"] }))}><option value="active">Activa</option><option value="expired">Vencida</option></Select>}
+      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Los documentos adjuntos se habilitarán cuando se conecte el almacenamiento seguro. Esta fase registra y controla la credencial sin guardar archivos localmente.</p>
+    </div>
+  );
+}
+
+function credentialTypeLabel(code: string): string {
+  const labels: Record<string, string> = {
+    IDENTITY: "Identificación",
+    BACKGROUND_CHECK: "Verificación de antecedentes",
+    LEY_300: "Certificación Ley 300 / SICHDe",
+    CPR: "Certificación CPR",
+    BLS: "Certificación BLS",
+    PROFESSIONAL_LICENSE: "Licencia profesional",
+    INTERNAL_TRAINING: "Adiestramiento interno",
+  };
+  return labels[code] ?? code.replaceAll("_", " ");
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
