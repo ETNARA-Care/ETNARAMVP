@@ -2,6 +2,16 @@
 
 ## In Progress
 
+### FPH5-008 — Safari-safe private credential upload
+
+- send the document through the authenticated ETNARA backend
+- avoid direct browser PUTs blocked by Railway bucket CORS
+- preserve the existing credential form, history and review interface
+
+Status: Implemented locally; typecheck, 22/22 tests and build pass. Publication authorized.
+
+---
+
 ### FPH5-004 — Phase 5.5 real Administration compliance
 
 - replace the empty Compliance placeholder with organization-scoped data

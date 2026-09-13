@@ -103,12 +103,12 @@ export async function uploadCredentialDocument(
     { originalFilename: file.name, contentType: file.type, sizeBytes: file.size },
     token,
   );
-  const uploaded = await fetch(initiated.upload.uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type },
-    body: file,
-  });
-  if (!uploaded.ok) throw new Error("DOCUMENT_UPLOAD_FAILED");
+  await apiClient.postBinary<{ upload: { fileId: string } }>(
+    `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/${initiated.upload.fileId}/content`,
+    file,
+    file.type,
+    token,
+  );
   const completed = await apiClient.post<{ document: { documentId: string; fileId: string; version: number; status: string } }>(
     `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/${initiated.upload.fileId}/complete`,
     {}, token,

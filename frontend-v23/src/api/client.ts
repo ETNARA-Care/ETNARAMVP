@@ -53,6 +53,34 @@ interface RequestOptions {
   token?: string | null;
 }
 
+async function postBinary<T>(path: string, body: Blob, contentType: string, token: string): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path), {
+      method: "POST",
+      headers: {
+        "Content-Type": contentType,
+        Authorization: `Bearer ${token}`,
+      },
+      body,
+    });
+  } catch {
+    const networkError: ApiError = { status: 0, isNetworkError: true };
+    throw networkError;
+  }
+
+  const responseBody = await parseJsonSafely(response);
+  if (!response.ok) {
+    const code = responseBody && typeof responseBody === "object" && "error" in responseBody
+      && typeof (responseBody as { error: unknown }).error === "string"
+      ? (responseBody as { error: string }).error
+      : undefined;
+    const apiError: ApiError = { status: response.status, code };
+    throw apiError;
+  }
+  return responseBody as T;
+}
+
 async function request<T>(path: string, options: RequestOptions): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
@@ -86,4 +114,5 @@ export const apiClient = {
   get: <T>(path: string, token?: string | null) => request<T>(path, { method: "GET", token }),
   post: <T>(path: string, body?: unknown, token?: string | null) => request<T>(path, { method: "POST", body, token }),
   patch: <T>(path: string, body?: unknown, token?: string | null) => request<T>(path, { method: "PATCH", body, token }),
+  postBinary,
 };

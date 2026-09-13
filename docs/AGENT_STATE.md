@@ -4,7 +4,19 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-5-4/admin-workflows
+Branch: hotfix/secure-credential-upload
+
+## 2026-09-13 — Secure credential upload hotfix
+
+- Replaced the browser-to-bucket PUT with an authenticated binary POST through
+  the existing API client and backend.
+- The UI, accepted document types, 10 MB limit, completion step, document
+  versioning and review workflow remain unchanged.
+- No mock fallback or direct bucket credential is introduced in the browser.
+- Typecheck, 22/22 boundary tests and production build pass; lint reports only
+  the pre-existing warnings.
+- Exact next step: publish after the backend PR, merge, wait for Pages, and
+  validate one credential document upload from Safari.
 
 ## Last Known Frontend Checkpoint
 

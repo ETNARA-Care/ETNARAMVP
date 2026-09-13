@@ -64,6 +64,9 @@ test("Phase 5.9 uploads private credential documents and preserves version histo
   assert.match(page, /Aprobar documento/);
   assert.match(page, /Rechazar documento/);
   assert.match(api, /documents\/upload-url/);
+  assert.match(api, /documents\/\$\{initiated\.upload\.fileId\}\/content/);
+  assert.match(api, /apiClient\.postBinary/);
+  assert.doesNotMatch(api, /fetch\(initiated\.upload\.uploadUrl/);
   assert.match(api, /documents\/\$\{initiated\.upload\.fileId\}\/complete/);
   assert.match(api, /download-url/);
   assert.match(page, /window\.location\.assign\(downloadUrl\)/);
