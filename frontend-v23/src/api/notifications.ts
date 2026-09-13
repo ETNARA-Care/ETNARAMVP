@@ -8,6 +8,7 @@ export interface NotificationItem {
   relatedEntityId: string | null;
   careRecipientId: string | null;
   shiftId: string | null;
+  workerMembershipId: string | null;
   createdAt: string;
   readAt: string | null;
 }
@@ -33,6 +34,8 @@ function notificationSummary(type: string): string {
   if (type === "SHIFT_ASSIGNMENT_PENDING") return "Nuevo turno pendiente de respuesta";
   if (type === "SHIFT_ASSIGNMENT_ACCEPTED") return "Turno aceptado por la cuidadora";
   if (type === "SHIFT_ASSIGNMENT_REJECTED") return "Turno rechazado por la cuidadora";
+  if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";
+  if (type === "CREDENTIAL_EXPIRED") return "Credencial vencida";
   return "Notificación";
 }
 
@@ -55,6 +58,7 @@ export async function markNotificationRead(notificationId: string, token: string
     relatedEntityId: row.related_entity_id,
     careRecipientId: null,
     shiftId: null,
+    workerMembershipId: null,
     createdAt: row.created_at,
     readAt: row.read_at,
   };

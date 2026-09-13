@@ -23,7 +23,7 @@ export function NotificationBell() {
   async function openNotification(notification: NonNullable<typeof items>[number]) {
     await markRead(notification.id);
     setOpen(false);
-    const { type, relatedEntityType: entityType, relatedEntityId: entityId, shiftId, careRecipientId } = notification;
+    const { type, relatedEntityType: entityType, relatedEntityId: entityId, shiftId, careRecipientId, workerMembershipId } = notification;
     const portal = location.pathname.startsWith("/family")
       ? "family"
       : location.pathname.startsWith("/caregiver") ? "caregiver" : "agency";
@@ -39,6 +39,10 @@ export function NotificationBell() {
     }
     if (entityType === "message_thread" && entityId) {
       navigate(`/${portal}/messages?thread=${entityId}`);
+      return;
+    }
+    if (entityType === "credential" && portal === "agency" && workerMembershipId) {
+      navigate(`/agency/workers/${workerMembershipId}`);
       return;
     }
     if (type === "NEW_CARE_EVENT") {
