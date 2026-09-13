@@ -1,5 +1,36 @@
 import { apiClient } from "./client";
 
+export type CredentialDocumentUploadStage = "initiate" | "content" | "complete";
+
+export class CredentialDocumentUploadError extends Error {
+  readonly stage: CredentialDocumentUploadStage;
+  readonly status: number;
+  readonly code?: string;
+
+  constructor(
+    stage: CredentialDocumentUploadStage,
+    status: number,
+    code?: string,
+  ) {
+    super("CREDENTIAL_DOCUMENT_UPLOAD_FAILED");
+    this.name = "CredentialDocumentUploadError";
+    this.stage = stage;
+    this.status = status;
+    this.code = code;
+  }
+}
+
+function asCredentialDocumentUploadError(stage: CredentialDocumentUploadStage, error: unknown) {
+  const technical = error && typeof error === "object"
+    ? error as { status?: unknown; code?: unknown }
+    : {};
+  return new CredentialDocumentUploadError(
+    stage,
+    typeof technical.status === "number" ? technical.status : 0,
+    typeof technical.code === "string" ? technical.code : undefined,
+  );
+}
+
 export interface CredentialTypeCatalogItem {
   code: string;
   name: string;
@@ -98,21 +129,37 @@ export async function uploadCredentialDocument(
   file: File,
   token: string,
 ) {
-  const initiated = await apiClient.post<{ upload: { fileId: string; uploadUrl: string } }>(
-    `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/upload-url`,
-    { originalFilename: file.name, contentType: file.type, sizeBytes: file.size },
-    token,
-  );
-  await apiClient.postBinary<{ upload: { fileId: string } }>(
-    `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/${initiated.upload.fileId}/content`,
-    file,
-    file.type,
-    token,
-  );
-  const completed = await apiClient.post<{ document: { documentId: string; fileId: string; version: number; status: string } }>(
-    `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/${initiated.upload.fileId}/complete`,
-    {}, token,
-  );
+  let initiated: { upload: { fileId: string; uploadUrl: string } };
+  try {
+    initiated = await apiClient.post<{ upload: { fileId: string; uploadUrl: string } }>(
+      `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/upload-url`,
+      { originalFilename: file.name, contentType: file.type, sizeBytes: file.size },
+      token,
+    );
+  } catch (error) {
+    throw asCredentialDocumentUploadError("initiate", error);
+  }
+
+  try {
+    await apiClient.postBinary<{ upload: { fileId: string } }>(
+      `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/${initiated.upload.fileId}/content`,
+      file,
+      file.type,
+      token,
+    );
+  } catch (error) {
+    throw asCredentialDocumentUploadError("content", error);
+  }
+
+  let completed: { document: { documentId: string; fileId: string; version: number; status: string } };
+  try {
+    completed = await apiClient.post<{ document: { documentId: string; fileId: string; version: number; status: string } }>(
+      `/organizations/${organizationId}/workers/${workerId}/credentials/${credentialId}/documents/${initiated.upload.fileId}/complete`,
+      {}, token,
+    );
+  } catch (error) {
+    throw asCredentialDocumentUploadError("complete", error);
+  }
   return completed.document;
 }
 
