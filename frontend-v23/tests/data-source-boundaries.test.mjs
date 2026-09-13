@@ -55,6 +55,31 @@ test("agency credential management uses the secured API and database catalog", a
   assert.doesNotMatch(page, /@\/mocks\//);
 });
 
+test("Phase 5.9 uploads private credential documents and preserves version history", async () => {
+  const page = await readFile(new URL("../src/pages/agency/AgencyWorkerProfilePage.tsx", import.meta.url), "utf8");
+  const api = await readFile(new URL("../src/api/agencyCredentials.ts", import.meta.url), "utf8");
+
+  assert.match(page, /Documento privado/);
+  assert.match(page, /Cada reemplazo crea una versión nueva/);
+  assert.match(page, /Aprobar documento/);
+  assert.match(page, /Rechazar documento/);
+  assert.match(api, /documents\/upload-url/);
+  assert.match(api, /documents\/\$\{initiated\.upload\.fileId\}\/complete/);
+  assert.match(api, /download-url/);
+  assert.match(page, /window\.location\.assign\(downloadUrl\)/);
+  assert.doesNotMatch(api, /localStorage|DemoStore/);
+});
+
+test("Phase 5.9 credential expiry notices open the correct worker profile", async () => {
+  const bell = await readFile(new URL("../src/features/notifications/NotificationBell.tsx", import.meta.url), "utf8");
+  const notifications = await readFile(new URL("../src/api/notifications.ts", import.meta.url), "utf8");
+
+  assert.match(notifications, /CREDENTIAL_EXPIRING/);
+  assert.match(notifications, /CREDENTIAL_EXPIRED/);
+  assert.match(bell, /entityType === "credential"/);
+  assert.match(bell, /\/agency\/workers\/\$\{workerMembershipId\}/);
+});
+
 test("the API client requires an explicit backend URL", async () => {
   const source = await readFile(new URL("../src/api/client.ts", import.meta.url), "utf8");
   assert.match(source, /if \(!raw\)/);

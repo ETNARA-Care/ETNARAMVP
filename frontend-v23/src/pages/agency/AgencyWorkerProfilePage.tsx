@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, BriefcaseBusiness, Plus, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, Eye, FileText, Plus, ShieldCheck, Upload } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -7,9 +7,14 @@ import { listWorkers, type WorkerMembership } from "@/api/shifts";
 import { updateWorker } from "@/api/roster";
 import {
   createWorkerCredential,
+  listCredentialDocuments,
   listCredentialTypes,
   listWorkerCredentials,
+  openCredentialDocument,
+  reviewWorkerCredential,
+  uploadCredentialDocument,
   updateWorkerCredential,
+  type CredentialDocumentVersion,
   type CredentialTypeCatalogItem,
   type WorkerCredential,
 } from "@/api/agencyCredentials";
@@ -34,6 +39,9 @@ export function AgencyWorkerProfilePage() {
   const [creatingCredential, setCreatingCredential] = useState(false);
   const [editingCredential, setEditingCredential] = useState<WorkerCredential | null>(null);
   const [confirmingCredentialRevocation, setConfirmingCredentialRevocation] = useState(false);
+  const [credentialDocuments, setCredentialDocuments] = useState<CredentialDocumentVersion[]>([]);
+  const [credentialFile, setCredentialFile] = useState<File | null>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
   const [credentialForm, setCredentialForm] = useState({
     credentialTypeCode: "",
     issuingEntityName: "",
@@ -93,7 +101,7 @@ export function AgencyWorkerProfilePage() {
     setCreatingCredential(true);
   };
 
-  const openCredentialEdit = (credential: WorkerCredential) => {
+  const openCredentialEdit = async (credential: WorkerCredential) => {
     setCredentialForm({
       credentialTypeCode: credential.type_code,
       issuingEntityName: credential.issuing_entity_name ?? "",
@@ -102,7 +110,17 @@ export function AgencyWorkerProfilePage() {
       expiresAt: credential.expires_at ?? "",
       status: credential.status === "expired" ? "expired" : "active",
     });
+    setCredentialDocuments([]);
+    setCredentialFile(null);
+    setReviewNotes(credential.organization_review_notes ?? "");
     setEditingCredential(credential);
+    const token = getToken();
+    if (!organizationId || !worker || !token) return;
+    try {
+      setCredentialDocuments(await listCredentialDocuments(organizationId, worker.worker_id, credential.id, token));
+    } catch {
+      toast.show("No pudimos cargar el historial documental.", "danger");
+    }
   };
 
   const credentialDatesAreValid = !credentialForm.issuedAt || !credentialForm.expiresAt
@@ -164,6 +182,63 @@ export function AgencyWorkerProfilePage() {
       toast.show("Credencial revocada; el historial se conserva.", "success");
     } catch {
       toast.show("No pudimos revocar la credencial.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const uploadDocument = async () => {
+    const token = getToken();
+    if (!organizationId || !worker || !editingCredential || !credentialFile || !token) return;
+    if (!["application/pdf", "image/jpeg", "image/png"].includes(credentialFile.type)) {
+      toast.show("Selecciona un PDF, JPG o PNG.", "danger");
+      return;
+    }
+    if (credentialFile.size > 10 * 1024 * 1024) {
+      toast.show("El documento no puede superar 10 MB.", "danger");
+      return;
+    }
+    setSaving(true);
+    try {
+      await uploadCredentialDocument(organizationId, worker.worker_id, editingCredential.id, credentialFile, token);
+      setCredentialDocuments(await listCredentialDocuments(organizationId, worker.worker_id, editingCredential.id, token));
+      setEditingCredential((current) => current ? { ...current, document_status: "presented", organization_review_status: "pending" } : current);
+      setCredentialFile(null);
+      await load();
+      toast.show("Documento cargado de forma privada y enviado a revisión.", "success");
+    } catch {
+      toast.show("No pudimos cargar el documento. Verifica el almacenamiento seguro.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openDocument = async (document: CredentialDocumentVersion) => {
+    const token = getToken();
+    if (!organizationId || !worker || !editingCredential || !token) return;
+    try {
+      const downloadUrl = await openCredentialDocument(organizationId, worker.worker_id, editingCredential.id, document.file_id, token);
+      window.location.assign(downloadUrl);
+    } catch {
+      toast.show("No pudimos abrir el documento privado.", "danger");
+    }
+  };
+
+  const reviewCredential = async (reviewStatus: "approved" | "rejected") => {
+    const token = getToken();
+    if (!organizationId || !membershipId || !editingCredential || !token) return;
+    if (reviewStatus === "rejected" && !reviewNotes.trim()) {
+      toast.show("Indica el motivo del rechazo.", "danger");
+      return;
+    }
+    setSaving(true);
+    try {
+      await reviewWorkerCredential(organizationId, membershipId, editingCredential.id, reviewStatus, reviewNotes, token);
+      setEditingCredential(null);
+      await load();
+      toast.show(reviewStatus === "approved" ? "Documento aprobado." : "Documento rechazado.", "success");
+    } catch {
+      toast.show("No pudimos registrar la revisión.", "danger");
     } finally {
       setSaving(false);
     }
@@ -259,7 +334,7 @@ export function AgencyWorkerProfilePage() {
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-1">{credential.expires_at ? `Expira ${formatCredentialDate(credential.expires_at)}` : "Sin fecha de expiración"}</p>
                   {credential.issuing_entity_name && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Emitida por {credential.issuing_entity_name}</p>}
                 </div>
-                <div className="flex items-center gap-2"><WorkerCredentialBadge credential={credential} />{worker.status === "active" && credential.status !== "revoked" && <Button variant="secondary" onClick={() => openCredentialEdit(credential)}>Gestionar</Button>}</div>
+                <div className="flex items-center gap-2"><WorkerCredentialBadge credential={credential} />{credential.document_status && <Badge tone={credential.organization_review_status === "approved" ? "success" : credential.organization_review_status === "rejected" ? "danger" : "warning"}>{credential.organization_review_status === "approved" ? "Documento aprobado" : credential.organization_review_status === "rejected" ? "Documento rechazado" : "Documento pendiente"}</Badge>}{worker.status === "active" && credential.status !== "revoked" && <Button variant="secondary" onClick={() => void openCredentialEdit(credential)}>Gestionar</Button>}</div>
               </Card>
             ))}
           </div>
@@ -297,6 +372,28 @@ export function AgencyWorkerProfilePage() {
         footer={<><Button variant="danger" onClick={() => setConfirmingCredentialRevocation(true)} disabled={saving}>Revocar</Button><Button variant="secondary" onClick={() => setEditingCredential(null)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveCredentialChanges()} loading={saving} disabled={!credentialDatesAreValid}>Guardar cambios</Button></>}
       >
         <CredentialFormFields form={credentialForm} setForm={setCredentialForm} credentialTypes={credentialTypes} showIssuedAt dateError={!credentialDatesAreValid} />
+        <div className="mt-5 pt-4 border-t border-[var(--color-border)] flex flex-col gap-3">
+          <div>
+            <h3 className="font-medium text-[var(--color-text-primary)]">Documento privado</h3>
+            <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">PDF, JPG o PNG; máximo 10 MB. Cada reemplazo crea una versión nueva.</p>
+          </div>
+          <Input label="Seleccionar documento" type="file" accept="application/pdf,image/jpeg,image/png" onChange={(event) => setCredentialFile(event.target.files?.[0] ?? null)} />
+          <Button variant="secondary" icon={<Upload size={18} />} onClick={() => void uploadDocument()} loading={saving} disabled={!credentialFile}>Cargar documento</Button>
+          {credentialDocuments.length === 0 ? <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Todavía no hay documentos cargados.</p> : (
+            <div className="flex flex-col gap-2">
+              {credentialDocuments.map((document) => (
+                <Card key={document.file_id} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0"><FileText size={18} aria-hidden /><div className="min-w-0"><p className="text-[var(--text-small)] text-[var(--color-text-primary)] truncate">{document.original_filename}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Versión {document.version} · {formatFileSize(document.size_bytes)}{document.is_current ? " · Actual" : ""}</p>{document.review_status && <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)] mt-1">{document.review_status === "approved" ? "Aprobada" : document.review_status === "rejected" ? "Rechazada" : "Pendiente"}{document.review_notes ? ` · ${document.review_notes}` : ""}</p>}</div></div>
+                  <Button variant="ghost" icon={<Eye size={17} />} onClick={() => void openDocument(document)}>Ver</Button>
+                </Card>
+              ))}
+            </div>
+          )}
+          {credentialDocuments.length > 0 && <>
+            <Input label="Observaciones de revisión" value={reviewNotes} onChange={(event) => setReviewNotes(event.target.value)} placeholder="Obligatorias si rechazas el documento" />
+            <div className="flex flex-wrap gap-2"><Button variant="danger" onClick={() => void reviewCredential("rejected")} disabled={saving}>Rechazar documento</Button><Button onClick={() => void reviewCredential("approved")} disabled={saving}>Aprobar documento</Button></div>
+          </>}
+        </div>
       </Modal>
 
       <Modal
@@ -347,7 +444,7 @@ function CredentialFormFields({ form, setForm, credentialTypes, showType = false
       {showIssuedAt && <Input label="Fecha de emisión (opcional)" type="date" value={form.issuedAt} onChange={(event) => setForm((current) => ({ ...current, issuedAt: event.target.value }))} />}
       <Input label="Fecha de vencimiento (opcional)" type="date" value={form.expiresAt} onChange={(event) => setForm((current) => ({ ...current, expiresAt: event.target.value }))} error={dateError ? "La fecha de vencimiento no puede ser anterior a la emisión." : undefined} />
       {!showType && <Select label="Estado" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as CredentialFormState["status"] }))}><option value="active">Activa</option><option value="expired">Vencida</option></Select>}
-      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Los documentos adjuntos se habilitarán cuando se conecte el almacenamiento seguro. Esta fase registra y controla la credencial sin guardar archivos localmente.</p>
+      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Después de guardar, usa “Documento privado” para adjuntar o reemplazar la evidencia sin perder versiones anteriores.</p>
     </div>
   );
 }
@@ -363,6 +460,11 @@ function credentialTypeLabel(code: string): string {
     INTERNAL_TRAINING: "Adiestramiento interno",
   };
   return labels[code] ?? code.replaceAll("_", " ");
+}
+
+function formatFileSize(value: string): string {
+  const bytes = Number(value);
+  return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`;
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
