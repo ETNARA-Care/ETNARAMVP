@@ -315,3 +315,18 @@ test("Phase 5.7 uses real, single-use access invitation contracts", async () => 
   assert.match(app, /path="\/activate" element={<ActivateInvitationPage/);
   assert.doesNotMatch(api, /DemoStore|@\/mocks\//);
 });
+
+test("Phase 5.10 separates active membership from work eligibility", async () => {
+  const shifts = await readFile(new URL("../src/pages/agency/AgencyShiftsPage.tsx", import.meta.url), "utf8");
+  const workerProfile = await readFile(new URL("../src/pages/agency/AgencyWorkerProfilePage.tsx", import.meta.url), "utf8");
+  const compliance = await readFile(new URL("../src/pages/agency/AgencySupportPages.tsx", import.meta.url), "utf8");
+
+  assert.match(shifts, /getWorkerCompliance/);
+  assert.match(shifts, /disabled=\{reason !== null\}/);
+  assert.match(shifts, /No hay personal apto/);
+  assert.match(workerProfile, /Membresía activa/);
+  assert.match(workerProfile, /Apto para trabajar/);
+  assert.match(workerProfile, /solo podrá recibir asignaciones e iniciar turnos cuando cumpla/);
+  assert.match(compliance, /"Apto" : "No apto"/);
+  assert.match(compliance, /CREDENTIAL_REVOKED/);
+});

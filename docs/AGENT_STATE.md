@@ -4,7 +4,23 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: hotfix/secure-credential-upload
+Branch: phase-5-10/work-eligibility
+
+## 2026-09-15 — Phase 5.10 work eligibility enforcement
+
+- Worker profiles now show employment membership and work eligibility as two
+  independent states.
+- Administration sees the exact unmet mandatory requirements on the profile
+  and in Compliance, including revoked credentials.
+- Shift creation and assignment load fresh backend compliance, mark eligible
+  workers as apt and disable workers who are not eligible with a bounded reason.
+- Reactivation copy no longer implies that an active worker can immediately
+  work; mandatory requirements must still pass.
+- Phase 5.9 document transport remains deferred and isolated from this phase.
+- Typecheck, 23/23 boundary tests, production build and lint pass; lint retains
+  only the pre-existing warnings.
+- Exact next step: publish after explicit authorization, deploy backend first,
+  then validate one blocked and one allowed assignment.
 
 ## 2026-09-13 — Secure credential upload hotfix
 

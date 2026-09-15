@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listWorkers, type WorkerMembership } from "@/api/shifts";
 import { updateWorker } from "@/api/roster";
+import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import {
   createWorkerCredential,
   CredentialDocumentUploadError,
@@ -31,6 +32,7 @@ export function AgencyWorkerProfilePage() {
   const organizationId = activeOrganization?.id;
   const [worker, setWorker] = useState<WorkerMembership | null | undefined>(undefined);
   const [credentials, setCredentials] = useState<WorkerCredential[]>([]);
+  const [compliance, setCompliance] = useState<ComplianceSummary | null>(null);
   const [credentialTypes, setCredentialTypes] = useState<CredentialTypeCatalogItem[]>([]);
   const [error, setError] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -64,14 +66,17 @@ export function AgencyWorkerProfilePage() {
       if (!selectedWorker) {
         setCredentials([]);
         setCredentialTypes([]);
+        setCompliance(null);
         return;
       }
-      const [credentialRows, catalog] = await Promise.all([
+      const [credentialRows, catalog, complianceSummary] = await Promise.all([
         listWorkerCredentials(organizationId, selectedWorker.worker_id, token),
         listCredentialTypes(organizationId, token),
+        getWorkerCompliance(organizationId, selectedWorker.id, token),
       ]);
       setCredentials(credentialRows);
       setCredentialTypes(catalog);
+      setCompliance(complianceSummary);
     } catch {
       setWorker(null);
       setError(true);
@@ -305,7 +310,7 @@ export function AgencyWorkerProfilePage() {
       <PageHeader
         title={worker.display_name || "Cuidador sin nombre"}
         description="Información laboral y credenciales verificadas."
-        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Activo" : "Inactivo"}</Badge><Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
+        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : "No apto para trabajar"}</Badge><Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
       />
 
       <Card>
@@ -319,6 +324,27 @@ export function AgencyWorkerProfilePage() {
           <Detail label="Fecha de contratación" value={worker.hired_at ? formatCredentialDate(worker.hired_at.slice(0, 10)) : "No registrada"} />
           {worker.ended_at && <Detail label="Fecha de finalización" value={new Date(worker.ended_at).toLocaleDateString("es-PR")} />}
         </dl>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <ShieldCheck size={20} className="text-[var(--color-text-muted)]" aria-hidden />
+          <h2 className="font-medium text-[var(--color-text-primary)]">Autorización para trabajar</h2>
+        </div>
+        {worker.status !== "active" ? (
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">La membresía está inactiva. Esta persona no puede recibir asignaciones ni iniciar turnos.</p>
+        ) : compliance?.eligibility === "eligible" ? (
+          <p className="text-[var(--text-small)] text-[var(--color-success-700)]">Apta: cumple todos los requisitos obligatorios configurados.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No apta: no puede recibir asignaciones ni iniciar turnos.</p>
+            <ul className="list-disc pl-5 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+              {(compliance?.requirements ?? []).filter((requirement) => requirement.isMandatory && requirement.status !== "satisfied").map((requirement) => (
+                <li key={requirement.requirement}>{requirementName(requirement.requirement)}: {requirementReason(requirement)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Card>
 
       {organizationId && membershipId && worker.status === "active" && (
@@ -422,10 +448,27 @@ export function AgencyWorkerProfilePage() {
         title={worker.status === "active" ? "Desactivar personal" : "Reactivar personal"}
         footer={<><Button variant="secondary" onClick={() => setConfirmingStatus(false)} disabled={saving}>Volver</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => void changeStatus()} loading={saving}>{worker.status === "active" ? "Sí, desactivar" : "Sí, reactivar"}</Button></>}
       >
-        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">{worker.status === "active" ? "La persona dejará de estar disponible para nuevas asignaciones. Sus turnos, credenciales y actividad permanecerán en el historial." : "La persona volverá a estar disponible para la operación y nuevas asignaciones."}</p>
+        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">{worker.status === "active" ? "La persona dejará de estar disponible para nuevas asignaciones. Sus turnos, credenciales y actividad permanecerán en el historial." : "La membresía volverá a estar activa, pero la persona solo podrá recibir asignaciones e iniciar turnos cuando cumpla todos los requisitos obligatorios."}</p>
       </Modal>
     </div>
   );
+}
+
+function requirementName(code: string): string {
+  return code.replaceAll("_", " ");
+}
+
+function requirementReason(requirement: ComplianceRequirement): string {
+  const labels: Record<ComplianceRequirement["status"], string> = {
+    satisfied: "cumple",
+    MISSING_CREDENTIAL: "falta la credencial",
+    CREDENTIAL_NOT_ACTIVE: "credencial no activa",
+    CREDENTIAL_EXPIRED: "credencial vencida",
+    CREDENTIAL_REVOKED: "credencial revocada",
+    PLATFORM_VERIFICATION_MISSING: "verificación de plataforma pendiente",
+    ORGANIZATION_REVIEW_MISSING: "aprobación de la agencia pendiente",
+  };
+  return labels[requirement.status];
 }
 
 type CredentialFormState = {

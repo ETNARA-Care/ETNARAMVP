@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
+import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import {
   assignShift, createShift, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
   type Assignment, type CareRecipient, type Shift, type WorkerMembership,
@@ -43,13 +44,31 @@ function isOperationalShift(shift: Shift, now = new Date()): boolean {
   return new Date(shift.scheduled_end).getTime() > now.getTime();
 }
 
+type AssignableWorker = WorkerMembership & { compliance: ComplianceSummary };
+
+function firstBlockingReason(worker: AssignableWorker): string | null {
+  if (worker.compliance.eligibility === "eligible") return null;
+  const requirement = worker.compliance.requirements.find((item) => item.isMandatory && item.status !== "satisfied");
+  if (!requirement) return "No cumple los requisitos obligatorios";
+  const labels: Record<ComplianceRequirement["status"], string> = {
+    satisfied: "",
+    MISSING_CREDENTIAL: "Falta credencial",
+    CREDENTIAL_NOT_ACTIVE: "Credencial no activa",
+    CREDENTIAL_EXPIRED: "Credencial vencida",
+    CREDENTIAL_REVOKED: "Credencial revocada",
+    PLATFORM_VERIFICATION_MISSING: "Verificación pendiente",
+    ORGANIZATION_REVIEW_MISSING: "Aprobación pendiente",
+  };
+  return `${labels[requirement.status]}: ${requirement.requirement.replaceAll("_", " ")}`;
+}
+
 export function AgencyShiftsPage() {
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
   const { show } = useToast();
   const [shifts, setShifts] = useState<Shift[] | null>(null);
   const [recipients, setRecipients] = useState<CareRecipient[]>([]);
-  const [workers, setWorkers] = useState<WorkerMembership[]>([]);
+  const [workers, setWorkers] = useState<AssignableWorker[]>([]);
   const [assignmentByShift, setAssignmentByShift] = useState<Record<string, Assignment | undefined>>({});
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,10 +88,17 @@ export function AgencyShiftsPage() {
         listShifts(organizationId, token), listCareRecipients(organizationId, token), listWorkers(organizationId, token),
       ]);
       const operationalShiftRows = shiftRows.filter((shift) => isOperationalShift(shift));
-      const assignmentRows = await Promise.all(operationalShiftRows.map(async (shift) => [shift.id, await listAssignments(organizationId, shift.id, token)] as const));
+      const activeWorkers = workerRows.filter((worker) => worker.status === "active");
+      const [assignmentRows, workerCompliance] = await Promise.all([
+        Promise.all(operationalShiftRows.map(async (shift) => [shift.id, await listAssignments(organizationId, shift.id, token)] as const)),
+        Promise.all(activeWorkers.map(async (worker) => ({
+          ...worker,
+          compliance: await getWorkerCompliance(organizationId, worker.id, token),
+        }))),
+      ]);
       setShifts(operationalShiftRows);
       setRecipients(recipientRows.filter((recipient) => recipient.status === "active"));
-      setWorkers(workerRows.filter((worker) => worker.status === "active"));
+      setWorkers(workerCompliance);
       setAssignmentByShift(Object.fromEntries(assignmentRows.map(([shiftId, assignments]) => [
         shiftId,
         assignments.find((assignment) => assignment.response_status === "accepted")
@@ -88,12 +114,13 @@ export function AgencyShiftsPage() {
 
   const recipientById = useMemo(() => Object.fromEntries(recipients.map((item) => [item.id, item])), [recipients]);
   const workerById = useMemo(() => Object.fromEntries(workers.map((item) => [item.id, item])), [workers]);
+  const eligibleWorkers = useMemo(() => workers.filter((worker) => worker.compliance.eligibility === "eligible"), [workers]);
   const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
 
   function openCreate() {
     setTimes(initialTimes());
     setRecipientId(recipients[0]?.id ?? "");
-    setSelectedWorkerId(workers[0]?.id ?? "");
+    setSelectedWorkerId(eligibleWorkers[0]?.id ?? "");
     setCreating(true);
   }
 
@@ -137,7 +164,7 @@ export function AgencyShiftsPage() {
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
-      <PageHeader title="Turnos" description="Asignaciones reales de la organización." actions={<Button icon={<Plus size={18} />} onClick={openCreate}>Crear turno</Button>} />
+      <PageHeader title="Turnos" description="Asignaciones reales de la organización." actions={<Button icon={<Plus size={18} />} onClick={openCreate} disabled={eligibleWorkers.length === 0}>Crear turno</Button>} />
       {orderedShifts.length === 0 ? (
         <EmptyState title="No hay turnos activos" description="Crea un turno y asígnalo a una cuidadora." action={{ label: "Crear turno", onClick: openCreate }} />
       ) : (
@@ -165,7 +192,7 @@ export function AgencyShiftsPage() {
                   <StatusBadge status={shift.status} />
                   {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
                   {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
-                  {shift.status === "unassigned" && !assignment && <Button size="md" onClick={(event) => { event.stopPropagation(); setAssigning(shift); setSelectedWorkerId(workers[0]?.id ?? ""); }}>Asignar cuidadora</Button>}
+                  {shift.status === "unassigned" && !assignment && <Button size="md" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); setAssigning(shift); setSelectedWorkerId(eligibleWorkers[0]?.id ?? ""); }}>Asignar cuidadora</Button>}
                 </div>
               </Card>
             );
@@ -176,7 +203,8 @@ export function AgencyShiftsPage() {
       <Modal open={creating} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || !recipientId || !selectedWorkerId}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
         <div className="flex flex-col gap-4">
           <Select label="Persona atendida" value={recipientId} onChange={(event) => setRecipientId(event.target.value)} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
-          <Select label="Cuidadora" value={selectedWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => <option key={worker.id} value={worker.id}>{worker.display_name ?? worker.internal_role}</option>)}</Select>
+          <Select label="Cuidadora apta" value={selectedWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); return <option key={worker.id} value={worker.id} disabled={reason !== null}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : " — Apta"}</option>; })}</Select>
+          {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
           <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => setTimes((current) => ({ ...current, start: event.target.value }))} required />
           <Input label="Salida" type="datetime-local" value={times.end} onChange={(event) => setTimes((current) => ({ ...current, end: event.target.value }))} required />
         </div>
@@ -185,7 +213,8 @@ export function AgencyShiftsPage() {
       <Modal open={!!assigning} onClose={() => !saving && setAssigning(null)} title="Asignar cuidadora" footer={<><Button variant="secondary" onClick={() => setAssigning(null)} disabled={saving}>Cancelar</Button><Button onClick={() => void confirmAssignment()} disabled={saving || !selectedWorkerId}>{saving ? "Asignando..." : "Confirmar asignación"}</Button></>}>
         <fieldset className="flex flex-col gap-3">
           <legend className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-1">Cuidadores disponibles</legend>
-          {workers.map((worker) => <Radio key={worker.id} name="worker" label={worker.display_name ?? worker.internal_role} checked={selectedWorkerId === worker.id} onChange={() => setSelectedWorkerId(worker.id)} />)}
+          {workers.map((worker) => { const reason = firstBlockingReason(worker); return <Radio key={worker.id} name="worker" label={`${worker.display_name ?? worker.internal_role}${reason ? ` — No apta: ${reason}` : " — Apta"}`} checked={selectedWorkerId === worker.id} disabled={reason !== null} onChange={() => setSelectedWorkerId(worker.id)} />; })}
+          {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto para esta asignación. Consulta Cumplimiento para ver las causas.</p>}
         </fieldset>
       </Modal>
     </div>

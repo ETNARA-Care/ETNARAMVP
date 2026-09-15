@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FPH5-009 — Phase 5.10 work eligibility enforcement
+
+- distinguish active membership from apt-to-work eligibility
+- show exact unmet mandatory requirements in worker and Compliance views
+- disable ineligible workers before shift assignment
+- preserve backend enforcement as the authoritative gate
+
+Status: Implemented locally; typecheck, 23/23 tests, build and lint pass with
+pre-existing warnings only. Publication requires explicit authorization.
+
+---
+
 ### FPH5-008 — Safari-safe private credential upload
 
 - send the document through the authenticated ETNARA backend
