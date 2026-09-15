@@ -331,19 +331,18 @@ function ComplianceMetric({ icon, label, value, tone = "neutral" }: { icon: Reac
 
 function complianceTone(row: ComplianceWorker): "success" | "warning" | "neutral" {
   if (row.status !== "active") return "neutral";
-  const hasCredentialAlert = row.credentials.some((credential) => credentialState(credential) !== "active");
-  return row.compliance.eligibility === "eligible" && !hasCredentialAlert ? "success" : "warning";
+  return row.compliance.eligibility === "eligible" ? "success" : "warning";
 }
 
 function complianceLabel(row: ComplianceWorker): string {
   if (row.status !== "active") return "Inactivo";
-  return complianceTone(row) === "success" ? "Al día" : "Atención";
+  return complianceTone(row) === "success" ? "Apto" : "No apto";
 }
 
 function complianceSummaryText(row: ComplianceWorker): string {
   if (row.status !== "active") return "Membresía inactiva";
   const alerts = row.credentials.filter((credential) => credentialState(credential) !== "active").length;
-  const missing = row.compliance.requirements.filter((requirement) => requirement.status !== "satisfied").length;
+  const missing = row.compliance.requirements.filter((requirement) => requirement.isMandatory && requirement.status !== "satisfied").length;
   if (missing > 0) return `${missing} requisito${missing === 1 ? "" : "s"} pendiente${missing === 1 ? "" : "s"}`;
   if (alerts > 0) return `${alerts} alerta${alerts === 1 ? "" : "s"} de credenciales`;
   return "Requisitos y credenciales al día";
@@ -388,6 +387,7 @@ function RequirementRow({ requirement }: { requirement: ComplianceRequirement })
     <div className="flex items-center justify-between gap-3 text-[var(--text-small)]">
       <div>
         <p className="text-[var(--color-text-primary)]">{formatRequirementName(requirement.requirement)}</p>
+        <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{requirement.isMandatory ? "Obligatorio" : "Opcional"}</p>
         {requirement.requiresOrganizationReview && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Requiere aprobación de la agencia</p>}
       </div>
       <Badge tone={satisfied ? "success" : "warning"}>{requirementStatusLabel(requirement.status)}</Badge>
@@ -401,6 +401,7 @@ function requirementStatusLabel(status: ComplianceRequirement["status"]): string
     MISSING_CREDENTIAL: "Falta credencial",
     CREDENTIAL_NOT_ACTIVE: "No activa",
     CREDENTIAL_EXPIRED: "Vencida",
+    CREDENTIAL_REVOKED: "Revocada",
     PLATFORM_VERIFICATION_MISSING: "Verificación pendiente",
     ORGANIZATION_REVIEW_MISSING: "Revisión pendiente",
   };

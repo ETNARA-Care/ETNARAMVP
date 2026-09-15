@@ -5,12 +5,14 @@ export type ComplianceRequirementStatus =
   | "MISSING_CREDENTIAL"
   | "CREDENTIAL_NOT_ACTIVE"
   | "CREDENTIAL_EXPIRED"
+  | "CREDENTIAL_REVOKED"
   | "PLATFORM_VERIFICATION_MISSING"
   | "ORGANIZATION_REVIEW_MISSING";
 
 export interface ComplianceRequirement {
   requirement: string;
   status: ComplianceRequirementStatus;
+  isMandatory: boolean;
   requiresOrganizationReview: boolean;
 }
 
