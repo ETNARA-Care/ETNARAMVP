@@ -1,11 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, ArrowLeft, CalendarRange, HeartPulse, UserRound } from "lucide-react";
+import { Activity, AlertTriangle, ArrowLeft, CalendarRange, ClipboardList, HeartPulse, Plus, Trash2, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listIncidents, type Incident } from "@/api/incidents";
+import {
+  getActiveCarePlan,
+  saveCarePlan,
+  supportLevelLabels,
+  taskCategoryLabels,
+  taskFrequencyLabels,
+  type CarePlan,
+  type CarePlanSupportLevel,
+  type CarePlanTaskCategory,
+  type CarePlanTaskFrequency,
+  type CarePlanTaskPriority,
+} from "@/api/carePlans";
 import { getCareRecipient, recipientName, type CareRecipient } from "@/api/shifts";
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Skeleton, StatusBadge, Timeline, useToast } from "@/components/ui";
+import { Badge, BottomSheet, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { useAgencySupervision } from "@/features/agency/useAgencySupervision";
 import { updateCareRecipient } from "@/api/roster";
 import { AccessInvitationPanel } from "./AccessInvitationPanel";
@@ -29,6 +41,53 @@ function valuesFromRecord(value: unknown): string[] {
   });
 }
 
+interface CarePlanTaskDraft {
+  id?: string;
+  title: string;
+  details: string;
+  category: CarePlanTaskCategory;
+  frequency: CarePlanTaskFrequency;
+  timeOfDay: string;
+  priority: CarePlanTaskPriority;
+  requiresConfirmation: boolean;
+}
+
+interface CarePlanFormState {
+  supportLevel: CarePlanSupportLevel;
+  goals: string;
+  instructions: string;
+  precautions: string;
+  tasks: CarePlanTaskDraft[];
+}
+
+const emptyTask = (): CarePlanTaskDraft => ({
+  title: "",
+  details: "",
+  category: "OTHER",
+  frequency: "EVERY_SHIFT",
+  timeOfDay: "",
+  priority: "ROUTINE",
+  requiresConfirmation: true,
+});
+
+const emptyCarePlanForm = (): CarePlanFormState => ({
+  supportLevel: "MODERATE",
+  goals: "",
+  instructions: "",
+  precautions: "",
+  tasks: [],
+});
+
+function lines(value: string): string[] {
+  return value.split("\n").map((item) => item.trim()).filter(Boolean);
+}
+
+function priorityLabel(priority: CarePlanTaskPriority): string {
+  if (priority === "CRITICAL") return "Crítica";
+  if (priority === "IMPORTANT") return "Importante";
+  return "Rutinaria";
+}
+
 export function AgencyResidentProfilePage() {
   const { residentId } = useParams();
   const navigate = useNavigate();
@@ -37,10 +96,14 @@ export function AgencyResidentProfilePage() {
   const supervision = useAgencySupervision();
   const [resident, setResident] = useState<CareRecipient | null | undefined>(undefined);
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [carePlan, setCarePlan] = useState<CarePlan | null | undefined>(undefined);
   const [error, setError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmingStatus, setConfirmingStatus] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [planEditing, setPlanEditing] = useState(false);
+  const [planSaving, setPlanSaving] = useState(false);
+  const [planForm, setPlanForm] = useState<CarePlanFormState>(emptyCarePlanForm);
   const [form, setForm] = useState({ firstName: "", lastName: "", preferredName: "", dateOfBirth: "", allergies: "" });
   const toast = useToast();
 
@@ -49,12 +112,14 @@ export function AgencyResidentProfilePage() {
     if (!organizationId || !residentId || !token) return;
     setError(false);
     try {
-      const [recipientRow, incidentRows] = await Promise.all([
+      const [recipientRow, incidentRows, carePlanRow] = await Promise.all([
         getCareRecipient(organizationId, residentId, token),
         listIncidents(organizationId, token),
+        getActiveCarePlan(organizationId, residentId, token),
       ]);
       setResident(recipientRow);
       setIncidents(incidentRows.filter((incident) => incident.care_recipient_id === residentId));
+      setCarePlan(carePlanRow);
     } catch {
       setResident(null);
       setError(true);
@@ -114,6 +179,69 @@ export function AgencyResidentProfilePage() {
     }
   };
 
+  const openPlanEditor = () => {
+    if (!carePlan) {
+      setPlanForm(emptyCarePlanForm());
+    } else {
+      setPlanForm({
+        supportLevel: carePlan.plan_details.supportLevel,
+        goals: carePlan.plan_details.goals.join("\n"),
+        instructions: carePlan.plan_details.instructions.join("\n"),
+        precautions: carePlan.plan_details.precautions.join("\n"),
+        tasks: carePlan.plan_details.tasks.map((task) => ({
+          id: task.id,
+          title: task.title,
+          details: task.details ?? "",
+          category: task.category,
+          frequency: task.frequency,
+          timeOfDay: task.timeOfDay ?? "",
+          priority: task.priority,
+          requiresConfirmation: task.requiresConfirmation,
+        })),
+      });
+    }
+    setPlanEditing(true);
+  };
+
+  const updateTask = (index: number, patch: Partial<CarePlanTaskDraft>) => {
+    setPlanForm((current) => ({
+      ...current,
+      tasks: current.tasks.map((task, taskIndex) => taskIndex === index ? { ...task, ...patch } : task),
+    }));
+  };
+
+  const savePlan = async () => {
+    const token = getToken();
+    if (!organizationId || !residentId || !token) return;
+    const validTasks = planForm.tasks.filter((task) => task.title.trim());
+    setPlanSaving(true);
+    try {
+      const saved = await saveCarePlan(organizationId, residentId, {
+        supportLevel: planForm.supportLevel,
+        goals: lines(planForm.goals),
+        instructions: lines(planForm.instructions),
+        precautions: lines(planForm.precautions),
+        tasks: validTasks.map((task) => ({
+          ...(task.id ? { id: task.id } : {}),
+          title: task.title.trim(),
+          ...(task.details.trim() ? { details: task.details.trim() } : {}),
+          category: task.category,
+          frequency: task.frequency,
+          ...(task.timeOfDay ? { timeOfDay: task.timeOfDay } : {}),
+          priority: task.priority,
+          requiresConfirmation: task.requiresConfirmation,
+        })),
+      }, token);
+      setCarePlan(saved);
+      setPlanEditing(false);
+      toast.show(carePlan ? "Nueva versión del plan guardada." : "Plan de cuidado creado.", "success");
+    } catch {
+      toast.show("No pudimos guardar el plan de cuidado.", "danger");
+    } finally {
+      setPlanSaving(false);
+    }
+  };
+
   const shifts = useMemo(
     () => supervision.shifts.filter((shift) => shift.care_recipient_id === residentId).sort((a, b) => new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime()),
     [residentId, supervision.shifts],
@@ -158,6 +286,43 @@ export function AgencyResidentProfilePage() {
           <ListField label="Rutinas" items={routineItems} />
         </Card>
       </div>
+
+      <Card>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <ClipboardList size={21} />
+            <div>
+              <h2 className="font-medium text-[var(--color-text-primary)]">Plan individual de cuidado</h2>
+              {carePlan && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-0.5">Versión {carePlan.version} · vigente desde {new Date(carePlan.effective_from).toLocaleDateString("es-PR")}</p>}
+            </div>
+          </div>
+          <Button variant="secondary" onClick={openPlanEditor}>{carePlan ? "Actualizar plan" : "Crear plan"}</Button>
+        </div>
+        {carePlan === undefined ? <Skeleton className="h-28" /> : !carePlan ? (
+          <EmptyState icon={<ClipboardList size={28} />} title="Este residente todavía no tiene un plan de cuidado." />
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div><Badge tone={carePlan.plan_details.supportLevel === "COMPLEX" || carePlan.plan_details.supportLevel === "HIGH" ? "warning" : "accent"}>{supportLevelLabels[carePlan.plan_details.supportLevel]}</Badge></div>
+            <PlanList title="Objetivos" items={carePlan.plan_details.goals} empty="Sin objetivos registrados." />
+            <PlanList title="Instrucciones" items={carePlan.plan_details.instructions} empty="Sin instrucciones registradas." />
+            <PlanList title="Precauciones" items={carePlan.plan_details.precautions} empty="Sin precauciones registradas." />
+            <div>
+              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mb-2">Tareas del cuidado</p>
+              {carePlan.plan_details.tasks.length === 0 ? <p className="text-[var(--text-small)] text-[var(--color-text-primary)]">Sin tareas registradas.</p> : (
+                <div className="flex flex-col gap-2">
+                  {carePlan.plan_details.tasks.map((task) => (
+                    <div key={task.id} className="rounded-[var(--radius-sm)] border border-[var(--color-border)] p-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2"><p className="font-medium text-[var(--color-text-primary)]">{task.title}</p><Badge tone={task.priority === "CRITICAL" ? "danger" : task.priority === "IMPORTANT" ? "warning" : "neutral"}>{priorityLabel(task.priority)}</Badge></div>
+                      <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)] mt-1">{taskCategoryLabels[task.category]} · {taskFrequencyLabels[task.frequency]}{task.timeOfDay ? ` · ${task.timeOfDay}` : ""}</p>
+                      {task.details && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-2">{task.details}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
 
       {organizationId && residentId && resident.status === "active" && (
         <AccessInvitationPanel organizationId={organizationId} type="family" careRecipientId={residentId} />
@@ -220,6 +385,47 @@ export function AgencyResidentProfilePage() {
         </div>
       </Modal>
 
+      <BottomSheet
+        open={planEditing}
+        onClose={() => !planSaving && setPlanEditing(false)}
+        title={carePlan ? "Actualizar plan de cuidado" : "Crear plan de cuidado"}
+        footer={<><Button variant="secondary" fullWidth disabled={planSaving} onClick={() => setPlanEditing(false)}>Cancelar</Button><Button fullWidth loading={planSaving} onClick={() => void savePlan()}>Guardar plan</Button></>}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cada guardado crea una nueva versión y conserva el historial anterior.</p>
+          <Select label="Nivel de apoyo" value={planForm.supportLevel} onChange={(event) => setPlanForm((current) => ({ ...current, supportLevel: event.target.value as CarePlanSupportLevel }))}>
+            {Object.entries(supportLevelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </Select>
+          <Textarea label="Objetivos" hint="Escribe un objetivo por línea." value={planForm.goals} onChange={(event) => setPlanForm((current) => ({ ...current, goals: event.target.value }))} placeholder="Mantener movilidad segura" />
+          <Textarea label="Instrucciones" hint="Escribe una instrucción por línea." value={planForm.instructions} onChange={(event) => setPlanForm((current) => ({ ...current, instructions: event.target.value }))} placeholder="Hablar despacio y confirmar comprensión" />
+          <Textarea label="Precauciones" hint="Escribe una precaución por línea." value={planForm.precautions} onChange={(event) => setPlanForm((current) => ({ ...current, precautions: event.target.value }))} placeholder="Riesgo de caída" />
+
+          <div className="flex items-center justify-between gap-3">
+            <div><p className="font-medium text-[var(--color-text-primary)]">Tareas</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Define lo que debe realizarse durante el cuidado.</p></div>
+            <Button type="button" variant="secondary" icon={<Plus size={18} />} onClick={() => setPlanForm((current) => ({ ...current, tasks: [...current.tasks, emptyTask()] }))}>Añadir</Button>
+          </div>
+          {planForm.tasks.map((task, index) => (
+            <div key={task.id ?? `new-${index}`} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2"><p className="font-medium text-[var(--color-text-primary)]">Tarea {index + 1}</p><Button type="button" variant="ghost" icon={<Trash2 size={17} />} onClick={() => setPlanForm((current) => ({ ...current, tasks: current.tasks.filter((_, taskIndex) => taskIndex !== index) }))}>Quitar</Button></div>
+              <Input label="Tarea" value={task.title} onChange={(event) => updateTask(index, { title: event.target.value })} placeholder="Ej. Ofrecer un vaso de agua" required />
+              <Textarea label="Detalles (opcional)" value={task.details} onChange={(event) => updateTask(index, { details: event.target.value })} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Select label="Categoría" value={task.category} onChange={(event) => updateTask(index, { category: event.target.value as CarePlanTaskCategory })}>
+                  {Object.entries(taskCategoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </Select>
+                <Select label="Frecuencia" value={task.frequency} onChange={(event) => updateTask(index, { frequency: event.target.value as CarePlanTaskFrequency })}>
+                  {Object.entries(taskFrequencyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </Select>
+                <Input label="Hora sugerida (opcional)" type="time" value={task.timeOfDay} onChange={(event) => updateTask(index, { timeOfDay: event.target.value })} />
+                <Select label="Prioridad" value={task.priority} onChange={(event) => updateTask(index, { priority: event.target.value as CarePlanTaskPriority })}>
+                  <option value="ROUTINE">Rutinaria</option><option value="IMPORTANT">Importante</option><option value="CRITICAL">Crítica</option>
+                </Select>
+              </div>
+            </div>
+          ))}
+        </div>
+      </BottomSheet>
+
       <Modal
         open={confirmingStatus}
         onClose={() => !saving && setConfirmingStatus(false)}
@@ -238,4 +444,8 @@ function ProfileField({ label, value }: { label: string; value: string }) {
 
 function ListField({ label, items }: { label: string; items: string[] }) {
   return <div className="mt-3"><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{label}</p>{items.length ? <ul className="list-disc pl-5 mt-1 text-[var(--text-small)] text-[var(--color-text-primary)]">{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="text-[var(--text-small)] text-[var(--color-text-primary)] mt-1">No registradas</p>}</div>;
+}
+
+function PlanList({ title, items, empty }: { title: string; items: string[]; empty: string }) {
+  return <div><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{title}</p>{items.length ? <ul className="list-disc pl-5 mt-1 text-[var(--text-small)] text-[var(--color-text-primary)] space-y-1">{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="text-[var(--text-small)] text-[var(--color-text-primary)] mt-1">{empty}</p>}</div>;
 }
