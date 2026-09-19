@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import {
-  assignShift, createShift, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
-  type Assignment, type CareRecipient, type Shift, type WorkerMembership,
+  assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
+  type Assignment, type CareRecipient, type CoverageCandidate, type Shift, type WorkerMembership,
 } from "@/api/shifts";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, StatusBadge, useToast } from "@/components/ui";
 
@@ -78,6 +78,8 @@ export function AgencyShiftsPage() {
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
   const [recipientId, setRecipientId] = useState("");
   const [times, setTimes] = useState(initialTimes);
+  const [coverageCandidates, setCoverageCandidates] = useState<CoverageCandidate[] | null>(null);
+  const [coverageLoading, setCoverageLoading] = useState(false);
   const organizationId = activeOrganization?.id;
 
   const load = useCallback(async () => {
@@ -119,12 +121,50 @@ export function AgencyShiftsPage() {
   const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
   const effectiveRecipientId = recipientId || recipients[0]?.id || "";
   const effectiveWorkerId = selectedWorkerId || eligibleWorkers[0]?.id || "";
+  const selectedCoverageCandidate = coverageCandidates?.find((candidate) => candidate.membershipId === effectiveWorkerId);
+  const selectedWorkerAllowed = !coverageCandidates || selectedCoverageCandidate?.recommended === true;
 
   function openCreate() {
     setTimes(initialTimes());
     setRecipientId(recipients[0]?.id ?? "");
     setSelectedWorkerId(eligibleWorkers[0]?.id ?? "");
+    setCoverageCandidates(null);
     setCreating(true);
+  }
+
+  async function analyzeCoverage(careRecipientId: string, scheduledStart: string, scheduledEnd: string) {
+    const token = getToken();
+    if (!organizationId || !token || !careRecipientId) return;
+    const start = new Date(scheduledStart);
+    const end = new Date(scheduledEnd);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start >= end) {
+      show("Verifica las horas antes de analizar la cobertura.", "danger");
+      return;
+    }
+    setCoverageLoading(true);
+    try {
+      const candidates = await getCoverageRecommendations(organizationId, {
+        careRecipientId,
+        scheduledStart: start.toISOString(),
+        scheduledEnd: end.toISOString(),
+      }, token);
+      setCoverageCandidates(candidates);
+      const firstRecommended = candidates.find((candidate) => candidate.recommended);
+      setSelectedWorkerId(firstRecommended?.membershipId ?? "");
+    } catch {
+      show("No pudimos analizar la cobertura. Intenta nuevamente.", "danger");
+    } finally {
+      setCoverageLoading(false);
+    }
+  }
+
+  function openAssignment(shift: Shift) {
+    setAssigning(shift);
+    setCoverageCandidates(null);
+    setSelectedWorkerId(eligibleWorkers[0]?.id ?? "");
+    if (shift.care_recipient_id) {
+      void analyzeCoverage(shift.care_recipient_id, shift.scheduled_start, shift.scheduled_end);
+    }
   }
 
   async function saveNewShift() {
@@ -195,7 +235,7 @@ export function AgencyShiftsPage() {
                   <StatusBadge status={shift.status} />
                   {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
                   {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
-                  {shift.status === "unassigned" && !assignment && <Button size="md" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); setAssigning(shift); setSelectedWorkerId(eligibleWorkers[0]?.id ?? ""); }}>Asignar cuidadora</Button>}
+                  {shift.status === "unassigned" && !assignment && <Button size="md" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
                 </div>
               </Card>
             );
@@ -203,23 +243,53 @@ export function AgencyShiftsPage() {
         </div>
       )}
 
-      <Modal open={creating} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || !effectiveRecipientId || !effectiveWorkerId}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
+      <Modal open={creating} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || coverageLoading || !effectiveRecipientId || !effectiveWorkerId || !selectedWorkerAllowed}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
         <div className="flex flex-col gap-4">
-          <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => setRecipientId(event.target.value)} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
-          <Select label="Cuidadora apta" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); return <option key={worker.id} value={worker.id} disabled={reason !== null}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : " — Apta"}</option>; })}</Select>
+          <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => { setRecipientId(event.target.value); setCoverageCandidates(null); }} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
+          <Select label="Cuidadora apta" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); const recommendation = coverageCandidates?.find((candidate) => candidate.membershipId === worker.id); const unavailable = recommendation && !recommendation.recommended; return <option key={worker.id} value={worker.id} disabled={reason !== null || unavailable}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : unavailable ? " — Conflicto o requisito pendiente" : " — Apta"}</option>; })}</Select>
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
-          <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => setTimes((current) => ({ ...current, start: event.target.value }))} required />
-          <Input label="Salida" type="datetime-local" value={times.end} onChange={(event) => setTimes((current) => ({ ...current, end: event.target.value }))} required />
+          <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => { setTimes((current) => ({ ...current, start: event.target.value })); setCoverageCandidates(null); }} required />
+          <Input label="Salida" type="datetime-local" value={times.end} onChange={(event) => { setTimes((current) => ({ ...current, end: event.target.value })); setCoverageCandidates(null); }} required />
+          <Button variant="secondary" icon={<Sparkles size={18} />} loading={coverageLoading} onClick={() => void analyzeCoverage(effectiveRecipientId, times.start, times.end)} disabled={!effectiveRecipientId}>Analizar cobertura</Button>
+          {coverageCandidates && <CoverageRecommendations candidates={coverageCandidates} selectedWorkerId={effectiveWorkerId} onSelect={setSelectedWorkerId} />}
         </div>
       </Modal>
 
-      <Modal open={!!assigning} onClose={() => !saving && setAssigning(null)} title="Asignar cuidadora" footer={<><Button variant="secondary" onClick={() => setAssigning(null)} disabled={saving}>Cancelar</Button><Button onClick={() => void confirmAssignment()} disabled={saving || !selectedWorkerId}>{saving ? "Asignando..." : "Confirmar asignación"}</Button></>}>
+      <Modal open={!!assigning} onClose={() => !saving && setAssigning(null)} title="Asignar cuidadora" footer={<><Button variant="secondary" onClick={() => setAssigning(null)} disabled={saving}>Cancelar</Button><Button onClick={() => void confirmAssignment()} disabled={saving || coverageLoading || !selectedWorkerId || !selectedWorkerAllowed}>{saving ? "Asignando..." : "Confirmar asignación"}</Button></>}>
         <fieldset className="flex flex-col gap-3">
-          <legend className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-1">Cuidadores disponibles</legend>
-          {workers.map((worker) => { const reason = firstBlockingReason(worker); return <Radio key={worker.id} name="worker" label={`${worker.display_name ?? worker.internal_role}${reason ? ` — No apta: ${reason}` : " — Apta"}`} checked={selectedWorkerId === worker.id} disabled={reason !== null} onChange={() => setSelectedWorkerId(worker.id)} />; })}
+          <legend className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-1">Cobertura asistida</legend>
+          {coverageLoading && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Analizando requisitos, cruces de horario, continuidad y carga próxima…</p>}
+          {coverageCandidates ? <CoverageRecommendations candidates={coverageCandidates} selectedWorkerId={selectedWorkerId} onSelect={setSelectedWorkerId} /> : workers.map((worker) => { const reason = firstBlockingReason(worker); return <Radio key={worker.id} name="worker" label={`${worker.display_name ?? worker.internal_role}${reason ? ` — No apta: ${reason}` : " — Apta"}`} checked={selectedWorkerId === worker.id} disabled={reason !== null} onChange={() => setSelectedWorkerId(worker.id)} />; })}
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto para esta asignación. Consulta Cumplimiento para ver las causas.</p>}
         </fieldset>
       </Modal>
+    </div>
+  );
+}
+
+function CoverageRecommendations({ candidates, selectedWorkerId, onSelect }: { candidates: CoverageCandidate[]; selectedWorkerId: string; onSelect: (membershipId: string) => void }) {
+  if (candidates.length === 0) return <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal activo para analizar.</p>;
+  return (
+    <div className="flex flex-col gap-2" aria-label="Recomendaciones de cobertura">
+      <div className="flex items-center gap-2">
+        <Sparkles size={18} className="text-[var(--color-accent-700)]" />
+        <p className="font-medium text-[var(--color-text-primary)]">Mejores opciones para este turno</p>
+      </div>
+      {candidates.map((candidate) => (
+        <label key={candidate.membershipId} className={`flex gap-3 rounded-[var(--radius-md)] border p-3 ${candidate.recommended ? "border-[var(--color-border)] cursor-pointer" : "border-[var(--color-ivory-300)] opacity-70"}`}>
+          <input type="radio" name="coverage-candidate" className="mt-1 h-5 w-5 accent-[var(--color-navy-800)]" checked={selectedWorkerId === candidate.membershipId} disabled={!candidate.recommended} onChange={() => onSelect(candidate.membershipId)} />
+          <span className="flex-1 min-w-0">
+            <span className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-medium text-[var(--color-text-primary)]">{candidate.displayName ?? candidate.internalRole}</span>
+              {candidate.rank === 1 ? <Badge tone="success">Mejor opción</Badge> : candidate.recommended ? <Badge tone="accent">Opción {candidate.rank}</Badge> : <Badge tone="warning">No disponible</Badge>}
+            </span>
+            <span className="block text-[var(--text-caption)] text-[var(--color-text-muted)]">{candidate.internalRole}</span>
+            {candidate.reasons.slice(0, 3).map((reason) => <span key={reason} className="block text-[var(--text-caption)] text-[var(--color-text-secondary)]">• {reason}</span>)}
+            {candidate.blockers.map((blocker) => <span key={blocker} className="block text-[var(--text-caption)] text-[var(--color-warning-700)]">• {blocker}</span>)}
+          </span>
+        </label>
+      ))}
+      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">ETNARA recomienda; Administración conserva la decisión final y confirma la asignación.</p>
     </div>
   );
 }

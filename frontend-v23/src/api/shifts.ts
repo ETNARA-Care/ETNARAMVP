@@ -71,6 +71,20 @@ export interface VisitVerification {
   status: "not_started" | "in_progress" | "completed";
 }
 
+export interface CoverageCandidate {
+  membershipId: string;
+  displayName: string | null;
+  internalRole: string;
+  eligibility: "eligible" | "not_eligible";
+  hasScheduleConflict: boolean;
+  continuityCount: number;
+  scheduledMinutesNext7Days: number;
+  recommended: boolean;
+  rank: number | null;
+  reasons: string[];
+  blockers: string[];
+}
+
 export async function listShifts(organizationId: string, token: string): Promise<Shift[]> {
   const result = await apiClient.get<{ shifts: Shift[] }>(`/organizations/${organizationId}/shifts`, token);
   return result.shifts;
@@ -160,6 +174,19 @@ export async function assignShift(
     token,
   );
   return result.assignment;
+}
+
+export async function getCoverageRecommendations(
+  organizationId: string,
+  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string },
+  token: string,
+): Promise<CoverageCandidate[]> {
+  const result = await apiClient.post<{ candidates: CoverageCandidate[] }>(
+    `/organizations/${organizationId}/coverage/recommendations`,
+    input,
+    token,
+  );
+  return result.candidates;
 }
 
 export async function respondToAssignment(
