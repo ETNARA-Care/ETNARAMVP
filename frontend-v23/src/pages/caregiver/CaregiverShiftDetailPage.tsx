@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Activity, Bath, Check, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils, X } from "lucide-react";
+import { Activity, Bath, Check, ClipboardList, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { createCareEvent, listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
 import { createIncident } from "@/api/incidents";
+import {
+  getActiveCarePlan,
+  supportLevelLabels,
+  taskCategoryLabels,
+  taskFrequencyLabels,
+  type CarePlan,
+  type CarePlanTaskPriority,
+} from "@/api/carePlans";
 import {
   checkIn, checkOut, getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
@@ -62,6 +70,12 @@ function careEventSummary(event: CareEvent): string {
   return "Observación · " + (event.note_text || "registrada");
 }
 
+function taskPriorityLabel(priority: CarePlanTaskPriority): string {
+  if (priority === "CRITICAL") return "Crítica";
+  if (priority === "IMPORTANT") return "Importante";
+  return "Rutinaria";
+}
+
 export function CaregiverShiftDetailPage() {
   const { shiftId } = useParams();
   const navigate = useNavigate();
@@ -71,6 +85,7 @@ export function CaregiverShiftDetailPage() {
   const [recipient, setRecipient] = useState<CareRecipient | undefined>();
   const [verification, setVerification] = useState<VisitVerification | null>(null);
   const [careEvents, setCareEvents] = useState<CareEvent[]>([]);
+  const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeAction, setActiveAction] = useState<CareEventTypeCode | null>(null);
@@ -104,10 +119,14 @@ export function CaregiverShiftDetailPage() {
       ]);
       const shiftRow = shiftRows.find((item) => item.id === shiftId);
       if (!shiftRow) throw new Error("SHIFT_NOT_ASSIGNED");
+      const carePlanRow = shiftRow.care_recipient_id
+        ? await getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token)
+        : null;
       setShift(shiftRow);
       setVerification(summary);
       setRecipient(recipientRows.find((item) => item.id === shiftRow.care_recipient_id));
       setCareEvents(eventRows);
+      setCarePlan(carePlanRow);
     } catch {
       setError(true);
     }
@@ -256,6 +275,40 @@ export function CaregiverShiftDetailPage() {
         <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
           {new Date(shift.scheduled_start).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })} – {new Date(shift.scheduled_end).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}
         </p>
+      </Card>
+
+      <Card>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2"><ClipboardList size={20} /><p className="font-medium text-[var(--color-text-primary)]">Plan de cuidado</p></div>
+          {carePlan && <Badge tone={carePlan.plan_details.supportLevel === "COMPLEX" || carePlan.plan_details.supportLevel === "HIGH" ? "warning" : "accent"}>{supportLevelLabels[carePlan.plan_details.supportLevel]}</Badge>}
+        </div>
+        {!carePlan ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Administración todavía no ha publicado un plan para este residente.</p> : (
+          <div className="flex flex-col gap-3">
+            {carePlan.plan_details.precautions.length > 0 && (
+              <div className="rounded-[var(--radius-sm)] bg-[var(--color-warning-100)] p-3">
+                <p className="text-[var(--text-caption)] font-semibold text-[var(--color-warning-700)] uppercase tracking-wide">Precauciones</p>
+                <ul className="list-disc pl-5 mt-1 text-[var(--text-small)] text-[var(--color-text-primary)]">{carePlan.plan_details.precautions.map((item) => <li key={item}>{item}</li>)}</ul>
+              </div>
+            )}
+            {carePlan.plan_details.instructions.length > 0 && (
+              <div><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Instrucciones</p><ul className="list-disc pl-5 mt-1 text-[var(--text-small)] text-[var(--color-text-primary)]">{carePlan.plan_details.instructions.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            )}
+            <div>
+              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mb-2">Tareas de este cuidado</p>
+              {carePlan.plan_details.tasks.length === 0 ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">No hay tareas específicas.</p> : (
+                <div className="flex flex-col gap-2">
+                  {carePlan.plan_details.tasks.map((task) => (
+                    <div key={task.id} className="rounded-[var(--radius-sm)] border border-[var(--color-border)] p-3">
+                      <div className="flex items-start justify-between gap-2"><p className="font-medium text-[var(--color-text-primary)]">{task.title}</p><Badge tone={task.priority === "CRITICAL" ? "danger" : task.priority === "IMPORTANT" ? "warning" : "neutral"}>{taskPriorityLabel(task.priority)}</Badge></div>
+                      <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)] mt-1">{taskCategoryLabels[task.category]} · {taskFrequencyLabels[task.frequency]}{task.timeOfDay ? ` · ${task.timeOfDay}` : ""}</p>
+                      {task.details && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-2">{task.details}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Card>
 
       {assignmentPending && (
