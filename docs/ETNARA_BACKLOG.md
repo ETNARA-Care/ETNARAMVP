@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FPH6-001 — Phase 6 end-to-end operational synchronization
+
+- keep Family Today limited to today's real shift
+- resolve accepted/pending coverage without using rejected history
+- refresh Admin and Family operational state on focus and every 30 seconds
+- route shift-started/completed notifications to role-safe destinations
+
+Status: Implemented locally; typecheck, 24/24 tests and production build pass.
+Lint retains only existing warnings. Coordinated publication requires explicit
+authorization.
+
+---
+
 ### FPH5-009 — Phase 5.10 work eligibility enforcement
 
 - distinguish active membership from apt-to-work eligibility

@@ -160,6 +160,8 @@ export function FamilyNotificationsPage() {
       navigate(`/family/incidents/${notification.relatedEntityId}`);
     } else if (notification.relatedEntityType === "message_thread" && notification.relatedEntityId) {
       navigate(`/family/messages?thread=${notification.relatedEntityId}`);
+    } else if (notification.type === "SHIFT_STARTED" || notification.type === "SHIFT_COMPLETED") {
+      navigate("/family");
     } else if (notification.type === "NEW_CARE_EVENT") {
       navigate("/family/activity");
     }
