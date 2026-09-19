@@ -65,13 +65,21 @@ export function FamilyTodayPage() {
     }
   }, [activeOrganization]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const interval = window.setInterval(() => void load(), 30_000);
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [load]);
 
   const shift = useMemo(() => {
     if (!shifts) return undefined;
     return shifts.find((item) => isToday(item.scheduledStart) && !item.checkedOutAt && item.status !== "cancelled")
-      ?? shifts.find((item) => isToday(item.scheduledStart))
-      ?? shifts.find((item) => item.status !== "cancelled");
+      ?? shifts.find((item) => isToday(item.scheduledStart));
   }, [shifts]);
   const entries = timeline.filter((item) => isToday(item.occurredAt)).map((item) => ({
     id: item.id,

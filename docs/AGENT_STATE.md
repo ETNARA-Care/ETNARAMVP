@@ -4,7 +4,25 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-5-10/work-eligibility
+Branch: phase-6/end-to-end-validation
+
+## 2026-09-15 — Phase 6 end-to-end operational synchronization
+
+- Family Today now shows only a shift scheduled for the current local day;
+  it no longer labels a future shift as today's care.
+- Administration resolves the active caregiver from accepted, then pending,
+  assignments and never treats a rejected historical response as coverage.
+- Administration supervision, shift detail and Family Today refresh every 30
+  seconds and when the browser regains focus, while preserving manual retry.
+- Shift-started and shift-completed notifications navigate Admin to the shift
+  and Family to its safe Today view.
+- Existing real APIs for activities, incidents, messages and notifications
+  remain in place; no mock fallback or UI redesign was added.
+- Phase 5.9 private-document transport remains deferred and isolated.
+- Typecheck, 24/24 boundary tests and production build pass. Lint reports only
+  the existing project warnings.
+- Exact next step: publish after the backend PR, wait for Railway and Pages,
+  then validate one complete Admin → María → Family shift.
 
 ## 2026-09-15 — Phase 5.10 work eligibility enforcement
 

@@ -43,7 +43,7 @@ export function AgencyShiftDetailPage() {
   const [error, setError] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [loadedAt] = useState(() => Date.now());
+  const [refreshedAt, setRefreshedAt] = useState(() => Date.now());
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -60,13 +60,23 @@ export function AgencyShiftDetailPage() {
       setAssignments(assignmentRows);
       setRecipient(recipientRows.find((row) => row.id === shiftRow.care_recipient_id) ?? null);
       setWorkers(workerRows);
+      setRefreshedAt(Date.now());
     } catch {
       setShift(null);
       setError(true);
     }
   }, [organizationId, shiftId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const interval = window.setInterval(() => void load(), 30_000);
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [load]);
 
   const workerByMembership = useMemo(
     () => Object.fromEntries(workers.map((worker) => [worker.id, worker])),
@@ -98,7 +108,7 @@ export function AgencyShiftDetailPage() {
   if (!shift) return <ErrorState kind="not_found" />;
 
   const cancellable = (shift.status === "unassigned" || shift.status === "confirmed")
-    && new Date(shift.scheduled_start).getTime() > loadedAt;
+    && new Date(shift.scheduled_start).getTime() > refreshedAt;
   const start = new Date(shift.scheduled_start);
   const end = new Date(shift.scheduled_end);
 

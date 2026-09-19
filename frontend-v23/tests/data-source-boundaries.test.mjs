@@ -330,3 +330,22 @@ test("Phase 5.10 separates active membership from work eligibility", async () =>
   assert.match(compliance, /"Apto" : "No apto"/);
   assert.match(compliance, /CREDENTIAL_REVOKED/);
 });
+
+test("Phase 6 synchronizes truthful shift state across Admin and Family", async () => {
+  const supervision = await readFile(new URL("../src/features/agency/useAgencySupervision.ts", import.meta.url), "utf8");
+  const shiftDetail = await readFile(new URL("../src/pages/agency/AgencyShiftDetailPage.tsx", import.meta.url), "utf8");
+  const familyToday = await readFile(new URL("../src/pages/family/FamilyTodayPage.tsx", import.meta.url), "utf8");
+  const bell = await readFile(new URL("../src/features/notifications/NotificationBell.tsx", import.meta.url), "utf8");
+  const notifications = await readFile(new URL("../src/api/notifications.ts", import.meta.url), "utf8");
+
+  assert.match(supervision, /assignments\.find\(\(assignment\) => assignment\.response_status === "accepted"\)/);
+  assert.match(supervision, /assignments\.find\(\(assignment\) => assignment\.response_status === "pending"\)/);
+  assert.match(supervision, /setInterval\(\(\) => void reload\(\), 30_000\)/);
+  assert.match(shiftDetail, /setInterval\(\(\) => void load\(\), 30_000\)/);
+  assert.match(familyToday, /setInterval\(\(\) => void load\(\), 30_000\)/);
+  assert.doesNotMatch(familyToday, /shifts\.find\(\(item\) => item\.status !== "cancelled"\)/);
+  assert.match(notifications, /SHIFT_STARTED/);
+  assert.match(notifications, /SHIFT_COMPLETED/);
+  assert.match(bell, /type === "SHIFT_STARTED" \|\| type === "SHIFT_COMPLETED"/);
+  assert.match(bell, /portal === "family" \? "\/family" : `\/agency\/shifts\/\$\{shiftId\}`/);
+});

@@ -51,7 +51,6 @@ export function useAgencySupervision(): AgencySupervisionState {
   const reload = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !token) return;
-    setLoading(true);
     setError(false);
     try {
       const [recipientRows, workerRows, shiftRows] = await Promise.all([
@@ -74,7 +73,10 @@ export function useAgencySupervision(): AgencySupervisionState {
       const workerByMembershipId = Object.fromEntries(workerRows.map((worker) => [worker.id, worker]));
       const assigneeByShiftId = Object.fromEntries(assignmentRows.map(({ shiftId, assignments }) => [
         shiftId,
-        workerByMembershipId[assignments[0]?.organization_worker_membership_id ?? ""],
+        workerByMembershipId[(
+          assignments.find((assignment) => assignment.response_status === "accepted")
+          ?? assignments.find((assignment) => assignment.response_status === "pending")
+        )?.organization_worker_membership_id ?? ""],
       ]));
 
       setRecipients(recipientRows);
@@ -98,7 +100,16 @@ export function useAgencySupervision(): AgencySupervisionState {
     }
   }, [organizationId]);
 
-  useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => {
+    void reload();
+    const interval = window.setInterval(() => void reload(), 30_000);
+    const onFocus = () => void reload();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [reload]);
 
   return useMemo(() => ({ loading, error, recipients, shifts, events, reload }), [loading, error, recipients, shifts, events, reload]);
 }
