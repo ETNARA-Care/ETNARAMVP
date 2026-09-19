@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
@@ -64,6 +64,7 @@ function firstBlockingReason(worker: AssignableWorker): string | null {
 
 export function AgencyShiftsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { activeOrganization } = useAuth();
   const { show } = useToast();
   const [shifts, setShifts] = useState<Shift[] | null>(null);
@@ -72,7 +73,7 @@ export function AgencyShiftsPage() {
   const [assignmentByShift, setAssignmentByShift] = useState<Record<string, Assignment | undefined>>({});
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(() => searchParams.get("create") === "1");
   const [assigning, setAssigning] = useState<Shift | null>(null);
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
   const [recipientId, setRecipientId] = useState("");
@@ -116,6 +117,8 @@ export function AgencyShiftsPage() {
   const workerById = useMemo(() => Object.fromEntries(workers.map((item) => [item.id, item])), [workers]);
   const eligibleWorkers = useMemo(() => workers.filter((worker) => worker.compliance.eligibility === "eligible"), [workers]);
   const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
+  const effectiveRecipientId = recipientId || recipients[0]?.id || "";
+  const effectiveWorkerId = selectedWorkerId || eligibleWorkers[0]?.id || "";
 
   function openCreate() {
     setTimes(initialTimes());
@@ -126,7 +129,7 @@ export function AgencyShiftsPage() {
 
   async function saveNewShift() {
     const token = getToken();
-    if (!organizationId || !token || !recipientId || !selectedWorkerId) return;
+    if (!organizationId || !token || !effectiveRecipientId || !effectiveWorkerId) return;
     if (new Date(times.start).getTime() >= new Date(times.end).getTime()) {
       show("La hora de salida debe ser posterior a la de entrada.", "danger");
       return;
@@ -134,11 +137,11 @@ export function AgencyShiftsPage() {
     setSaving(true);
     try {
       const shift = await createShift(organizationId, {
-        careRecipientId: recipientId, scheduledStart: new Date(times.start).toISOString(), scheduledEnd: new Date(times.end).toISOString(),
+        careRecipientId: effectiveRecipientId, scheduledStart: new Date(times.start).toISOString(), scheduledEnd: new Date(times.end).toISOString(),
       }, token);
-      await assignShift(organizationId, shift.id, selectedWorkerId, token);
+      await assignShift(organizationId, shift.id, effectiveWorkerId, token);
       setCreating(false);
-      show(`Asignación enviada a ${workerById[selectedWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
+      show(`Asignación enviada a ${workerById[effectiveWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
       await load();
     } catch (requestError) {
       show(requestMessage(requestError), "danger");
@@ -200,10 +203,10 @@ export function AgencyShiftsPage() {
         </div>
       )}
 
-      <Modal open={creating} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || !recipientId || !selectedWorkerId}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
+      <Modal open={creating} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || !effectiveRecipientId || !effectiveWorkerId}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
         <div className="flex flex-col gap-4">
-          <Select label="Persona atendida" value={recipientId} onChange={(event) => setRecipientId(event.target.value)} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
-          <Select label="Cuidadora apta" value={selectedWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); return <option key={worker.id} value={worker.id} disabled={reason !== null}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : " — Apta"}</option>; })}</Select>
+          <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => setRecipientId(event.target.value)} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
+          <Select label="Cuidadora apta" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); return <option key={worker.id} value={worker.id} disabled={reason !== null}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : " — Apta"}</option>; })}</Select>
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
           <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => setTimes((current) => ({ ...current, start: event.target.value }))} required />
           <Input label="Salida" type="datetime-local" value={times.end} onChange={(event) => setTimes((current) => ({ ...current, end: event.target.value }))} required />
