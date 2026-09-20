@@ -30,6 +30,10 @@ function formatWindow(shift: Shift): string {
   return `${start.toLocaleDateString("es-PR", { weekday: "short", day: "numeric", month: "short" })} · ${start.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })} – ${end.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}`;
 }
 
+function formatWaveDeadline(value: string): string {
+  return new Date(value).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" });
+}
+
 function requestMessage(error: unknown): string {
   const apiError = error as ApiError;
   if (apiError.status === 0) return "No hay conexión con el servidor.";
@@ -119,6 +123,18 @@ export function AgencyShiftsPage() {
   }, [organizationId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    if (!organizationId || !shifts) return;
+    const timer = window.setInterval(() => {
+      const token = getToken();
+      if (!token) return;
+      void Promise.all(shifts.filter((shift) => shift.status === "unassigned").map(async (shift) => [
+        shift.id, await listShiftCoverageOffers(organizationId, shift.id, token),
+      ] as const)).then((rows) => setOffersByShift(Object.fromEntries(rows))).catch(() => undefined);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [organizationId, shifts]);
 
   const recipientById = useMemo(() => Object.fromEntries(recipients.map((item) => [item.id, item])), [recipients]);
   const workerById = useMemo(() => Object.fromEntries(workers.map((item) => [item.id, item])), [workers]);
@@ -214,7 +230,7 @@ export function AgencyShiftsPage() {
     setOfferingShiftId(shift.id);
     try {
       const campaign = await openCoverageCampaign(organizationId, shift.id, token);
-      show(`Oferta enviada a ${campaign.offerCount} cuidador${campaign.offerCount === 1 ? "" : "es"}.`, "success");
+      show(`Ola 1 enviada a ${campaign.offerCount} cuidador${campaign.offerCount === 1 ? "" : "es"}. ETNARA continuará si nadie está disponible.`, "success");
       await load();
     } catch (error) {
       const apiError = error as ApiError;
@@ -237,6 +253,10 @@ export function AgencyShiftsPage() {
             const assignee = assignment ? workerById[assignment.organization_worker_membership_id] : undefined;
             const shiftOffers = offersByShift[shift.id] ?? [];
             const interestedNames = shiftOffers.filter((offer) => offer.responseStatus === "interested").map((offer) => offer.displayName ?? "Cuidadora");
+            const campaign = shiftOffers[0];
+            const queuedCount = shiftOffers.filter((offer) => offer.responseStatus === "queued").length;
+            const pendingCount = shiftOffers.filter((offer) => offer.responseStatus === "pending").length;
+            const canStartCoverage = shiftOffers.length === 0 || campaign?.campaignStatus === "exhausted" || campaign?.campaignStatus === "cancelled";
             return (
               <Card
                 key={shift.id}
@@ -252,14 +272,17 @@ export function AgencyShiftsPage() {
                   <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
                   {assignee && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidadora: {assignee.display_name ?? assignee.internal_role}</p>}
-                  {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ofertas: {interestedNames.length} disponible(s) · {shiftOffers.filter((offer) => offer.responseStatus === "pending").length} pendiente(s)</p>}
+                  {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ola {campaign.currentWave}: {interestedNames.length} disponible(s) · {pendingCount} pendiente(s) · {queuedCount} en espera</p>}
+                  {campaign?.campaignStatus === "open" && campaign.nextWaveAt && interestedNames.length === 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Próxima ola automática a las {formatWaveDeadline(campaign.nextWaveAt)} si nadie está disponible.</p>}
+                  {campaign?.campaignStatus === "open" && !campaign.nextWaveAt && interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-success-700)]">Escalación detenida: Administración puede realizar la asignación final.</p>}
+                  {campaign?.campaignStatus === "exhausted" && <p className="text-[var(--text-caption)] text-[var(--color-warning-700)]">Se consultó a todo el personal elegible sin encontrar disponibilidad.</p>}
                   {interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Interesadas: {interestedNames.join(", ")}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={shift.status} />
                   {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
                   {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
-                  {shift.status === "unassigned" && !assignment && shiftOffers.length === 0 && <Button variant="secondary" size="md" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>Ofrecer turno</Button>}
+                  {shift.status === "unassigned" && !assignment && canStartCoverage && <Button variant="secondary" size="md" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>{campaign?.campaignStatus === "exhausted" ? "Reintentar cobertura" : "Ofrecer turno"}</Button>}
                   {shift.status === "unassigned" && !assignment && <Button size="md" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
                 </div>
               </Card>
