@@ -17,8 +17,11 @@ Branch: phase-7/open-shift-offers
 - New offer and response notifications open the correct role-specific shift view.
 - Typecheck, 36/36 boundary tests, production build and lint pass; lint retains
   only the existing project warnings.
-- Exact next step: publish only after explicit authorization and validate the
-  complete responsive flow after backend migration 052 is live.
+- Published and merged in frontend PR #38 after backend PR #34 was live.
+  Pull-request CI, post-merge CI and GitHub Pages deployment passed; the public
+  bundle contains the Phase 7.4 offer and response workflow.
+- Exact next step: validate the complete responsive flow with real Admin and
+  caregiver roles on mobile.
 
 ## 2026-09-20 — Phase 7.3 worker-declared availability
 

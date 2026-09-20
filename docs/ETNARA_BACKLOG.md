@@ -250,8 +250,8 @@ Acceptance criteria:
 - notifications navigate to the appropriate role workflow
 - local typecheck, 36/36 tests, build and lint pass
 
-Status: Implemented and validated locally on `phase-7/open-shift-offers`;
-publication pending explicit authorization.
+Status: Complete — published and merged in PR #38 after backend PR #34; CI and
+GitHub Pages deployment passed.
 
 ### FETN-002 — Rewrite AgencyResidentProfilePage
 - use real backend data
