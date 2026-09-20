@@ -4,7 +4,21 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-7/worker-availability
+Branch: phase-7/open-shift-offers
+
+## 2026-09-20 — Phase 7.4 collaborative open-shift offers
+
+- Administration can send an uncovered shift to the top three real coverage
+  recommendations and monitor pending and interested responses.
+- Interested caregiver names appear beside the shift so the administrator can
+  make the final assignment through the existing confirmed workflow.
+- Caregivers see only date, time and requested role before assignment and must
+  confirm whether they are available; no resident or clinical data is exposed.
+- New offer and response notifications open the correct role-specific shift view.
+- Typecheck, 36/36 boundary tests, production build and lint pass; lint retains
+  only the existing project warnings.
+- Exact next step: publish only after explicit authorization and validate the
+  complete responsive flow after backend migration 052 is live.
 
 ## 2026-09-20 — Phase 7.3 worker-declared availability
 

@@ -34,6 +34,9 @@ function notificationSummary(type: string): string {
   if (type === "SHIFT_ASSIGNMENT_PENDING") return "Nuevo turno pendiente de respuesta";
   if (type === "SHIFT_ASSIGNMENT_ACCEPTED") return "Turno aceptado por la cuidadora";
   if (type === "SHIFT_ASSIGNMENT_REJECTED") return "Turno rechazado por la cuidadora";
+  if (type === "OPEN_SHIFT_OFFER") return "Nuevo turno disponible";
+  if (type === "OPEN_SHIFT_INTERESTED") return "Una cuidadora está disponible para un turno";
+  if (type === "OPEN_SHIFT_DECLINED") return "Respuesta a una oferta de turno";
   if (type === "SHIFT_STARTED") return "La cuidadora comenzó el turno";
   if (type === "SHIFT_COMPLETED") return "La cuidadora finalizó el turno";
   if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";

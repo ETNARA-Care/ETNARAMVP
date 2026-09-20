@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
+import { listShiftCoverageOffers, openCoverageCampaign, type ShiftCoverageOffer } from "@/api/coverageOffers";
 import {
   assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
   type Assignment, type CareRecipient, type CoverageCandidate, type Shift, type WorkerMembership,
@@ -80,6 +81,8 @@ export function AgencyShiftsPage() {
   const [times, setTimes] = useState(initialTimes);
   const [coverageCandidates, setCoverageCandidates] = useState<CoverageCandidate[] | null>(null);
   const [coverageLoading, setCoverageLoading] = useState(false);
+  const [offersByShift, setOffersByShift] = useState<Record<string, ShiftCoverageOffer[]>>({});
+  const [offeringShiftId, setOfferingShiftId] = useState<string | null>(null);
   const organizationId = activeOrganization?.id;
 
   const load = useCallback(async () => {
@@ -107,6 +110,8 @@ export function AgencyShiftsPage() {
         assignments.find((assignment) => assignment.response_status === "accepted")
           ?? assignments.find((assignment) => assignment.response_status === "pending"),
       ])));
+      const offerRows = await Promise.all(operationalShiftRows.filter((shift) => shift.status === "unassigned").map(async (shift) => [shift.id, await listShiftCoverageOffers(organizationId, shift.id, token)] as const));
+      setOffersByShift(Object.fromEntries(offerRows));
     } catch {
       setError(true);
       setShifts([]);
@@ -202,6 +207,21 @@ export function AgencyShiftsPage() {
     finally { setSaving(false); }
   }
 
+  async function offerOpenShift(shift: Shift) {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    if (!window.confirm("¿Enviar esta oportunidad a las tres mejores opciones disponibles? No se compartirá información del residente.")) return;
+    setOfferingShiftId(shift.id);
+    try {
+      const campaign = await openCoverageCampaign(organizationId, shift.id, token);
+      show(`Oferta enviada a ${campaign.offerCount} cuidador${campaign.offerCount === 1 ? "" : "es"}.`, "success");
+      await load();
+    } catch (error) {
+      const apiError = error as ApiError;
+      show(apiError.code === "NO_AVAILABLE_CANDIDATES" ? "No hay personal elegible y disponible para este horario." : apiError.code === "COVERAGE_CAMPAIGN_ALREADY_OPEN" ? "Este turno ya tiene una oferta abierta." : "No pudimos enviar la oferta.", "danger");
+    } finally { setOfferingShiftId(null); }
+  }
+
   if (shifts === null) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
 
@@ -215,6 +235,8 @@ export function AgencyShiftsPage() {
           {orderedShifts.map((shift) => {
             const assignment = assignmentByShift[shift.id];
             const assignee = assignment ? workerById[assignment.organization_worker_membership_id] : undefined;
+            const shiftOffers = offersByShift[shift.id] ?? [];
+            const interestedNames = shiftOffers.filter((offer) => offer.responseStatus === "interested").map((offer) => offer.displayName ?? "Cuidadora");
             return (
               <Card
                 key={shift.id}
@@ -230,11 +252,14 @@ export function AgencyShiftsPage() {
                   <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
                   {assignee && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidadora: {assignee.display_name ?? assignee.internal_role}</p>}
+                  {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ofertas: {interestedNames.length} disponible(s) · {shiftOffers.filter((offer) => offer.responseStatus === "pending").length} pendiente(s)</p>}
+                  {interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Interesadas: {interestedNames.join(", ")}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={shift.status} />
                   {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
                   {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
+                  {shift.status === "unassigned" && !assignment && shiftOffers.length === 0 && <Button variant="secondary" size="md" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>Ofrecer turno</Button>}
                   {shift.status === "unassigned" && !assignment && <Button size="md" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
                 </div>
               </Card>
