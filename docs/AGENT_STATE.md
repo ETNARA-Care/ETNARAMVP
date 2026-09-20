@@ -16,8 +16,10 @@ Branch: phase-7/worker-availability
   availability reasons while retaining explicit human assignment confirmation.
 - Typecheck, 33/33 boundary tests, production build and lint pass; lint retains
   only the existing project warnings.
-- Exact next step: publish after explicit authorization and after the backend
-  migration is live, then validate the workflow on mobile.
+- Published and merged in frontend PR #36 after backend PR #31 was live.
+  Pull-request CI, post-merge CI and GitHub Pages deployment passed; the public
+  portal returned HTTP 200 with the availability interface in its live bundle.
+- Exact next step: validate saving availability and coverage blocking on mobile.
 
 ## 2026-09-19 — Phase 7.2 assisted coverage intelligence
 
