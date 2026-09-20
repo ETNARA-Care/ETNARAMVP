@@ -2,6 +2,59 @@
 
 ## In Progress
 
+### FPH7-004 — Phase 7.3 worker-declared availability
+
+- let the authenticated caregiver configure weekly work windows
+- add future vacation, appointment and other unavailable periods
+- persist through the real organization-scoped backend API
+- show declared-availability explanations in assisted coverage
+- retain explicit Administration confirmation for every assignment
+
+Status: Implemented locally; typecheck, 33/33 tests, production build and lint
+pass with pre-existing warnings only. Coordinated publication requires explicit
+authorization.
+
+---
+
+### FPH7-003 — Phase 7.2 assisted coverage intelligence
+
+- request real coverage recommendations from the create/assign shift workflow
+- explain eligibility, schedule conflicts, continuity and upcoming workload
+- rank selectable candidates and disable blocked options
+- preserve explicit Administration confirmation for every assignment
+
+Status: Published and merged in frontend PR #35 after backend PR #30 was live.
+Pull-request CI, post-merge CI and Pages deployment passed; the public portal
+returned HTTP 200.
+
+---
+
+### FPH7-002 — Actionable Administration Overview
+
+- add direct creation and navigation actions to the operational dashboard
+- make summary metrics, today's shifts and recent activity interactive
+- reuse the real create-and-assign shift workflow from the dashboard
+- preserve the current mobile layout and real organization-scoped data
+
+Status: Published and merged in frontend PR #34. Pull-request CI, post-merge
+CI and the GitHub Pages deployment passed; the public portal returned HTTP 200.
+
+---
+
+### FPH7-001 — Phase 7.1 individual care plans
+
+- let Administration create and update a resident's structured care plan
+- show the active version, support level, goals, instructions, precautions and
+  tasks in the real resident profile
+- show the same authorized plan to an assigned caregiver inside the shift
+- preserve real backend errors and avoid mock fallback
+- do not expose an operational care-plan route to Family
+
+Status: Published and merged in frontend PR #33 after backend PR #29;
+post-merge CI and deployment checks passed.
+
+---
+
 ### FPH6-001 — Phase 6 end-to-end operational synchronization
 
 - keep Family Today limited to today's real shift

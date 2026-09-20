@@ -48,7 +48,7 @@ async function parseJsonSafely(response: Response): Promise<unknown> {
 }
 
 interface RequestOptions {
-  method: "GET" | "POST" | "PATCH";
+  method: "GET" | "POST" | "PUT" | "PATCH";
   body?: unknown;
   token?: string | null;
 }
@@ -113,6 +113,7 @@ async function request<T>(path: string, options: RequestOptions): Promise<T> {
 export const apiClient = {
   get: <T>(path: string, token?: string | null) => request<T>(path, { method: "GET", token }),
   post: <T>(path: string, body?: unknown, token?: string | null) => request<T>(path, { method: "POST", body, token }),
+  put: <T>(path: string, body?: unknown, token?: string | null) => request<T>(path, { method: "PUT", body, token }),
   patch: <T>(path: string, body?: unknown, token?: string | null) => request<T>(path, { method: "PATCH", body, token }),
   postBinary,
 };

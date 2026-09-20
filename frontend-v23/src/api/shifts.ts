@@ -79,6 +79,9 @@ export interface CoverageCandidate {
   hasScheduleConflict: boolean;
   continuityCount: number;
   scheduledMinutesNext7Days: number;
+  availabilityConfigured: boolean;
+  matchesDeclaredAvailability: boolean;
+  hasUnavailabilityPeriod: boolean;
   recommended: boolean;
   rank: number | null;
   reasons: string[];
