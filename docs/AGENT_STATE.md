@@ -16,10 +16,12 @@ Branch: phase-7/platform-verification
   and work eligibility is recalculated by the backend automatically.
 - Agency compliance surfaces now distinguish a pending verification from a
   rejected one; there is no manual “mark apt” control.
-- TypeScript/build, 42/42 boundary tests and lint pass locally; lint retains
-  only the existing project warnings.
-- Exact next step: perform coordinated diff review and publish only after
-  explicit authorization, backend first and frontend after Railway health.
+- Frontend PR #42 was merged after typecheck/build, 42/42 tests, lint and diff
+  safety passed; lint retained only the repository's existing warnings.
+- GitHub Pages deployment succeeded after Railway served the protected backend
+  route; the public bundle contains the platform queue and review interface.
+- Exact next step: validate one approval and one rejection on mobile using the
+  demo platform administrator.
 
 ## 2026-09-20 — Phase 7.5 staged coverage escalation
 
