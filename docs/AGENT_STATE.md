@@ -18,10 +18,11 @@ Branch: phase-7/staged-coverage
   information remain hidden before final assignment.
 - The Administration view refreshes coverage state every 30 seconds without a
   mock fallback or visual redesign.
-- Local typecheck, 39/39 tests, production build and lint pass; lint reports only
-  the repository's pre-existing warnings.
-- Exact next step: publish only after backend migration 054 passes PostgreSQL CI
-  and its Railway deployment is healthy.
+- Frontend PR #40 was merged after typecheck, 39/39 tests, production build,
+  lint and diff safety passed.
+- GitHub Pages deployment succeeded after backend PR #37 was healthy; the live
+  public bundle contains the Phase 7.5 wave progress and response deadline UI.
+- Exact next step: validate one timed second-wave progression with real roles.
 
 ## 2026-09-20 — Phase 7.4 collaborative open-shift offers
 
