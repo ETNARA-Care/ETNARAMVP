@@ -10,8 +10,8 @@
 - stop escalation visibly on interest and preserve final human assignment
 - explain exhausted coverage and allow an explicit retry
 
-Status: Implemented locally on `phase-7/staged-coverage`; typecheck, 39/39
-tests, build and lint pass. Publication requires backend-first authorization.
+Status: Complete — published and merged in frontend PR #40 after backend PR
+#37; CI and GitHub Pages deployment passed.
 
 ---
 
