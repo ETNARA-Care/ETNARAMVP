@@ -403,6 +403,7 @@ function requirementStatusLabel(status: ComplianceRequirement["status"]): string
     CREDENTIAL_EXPIRED: "Vencida",
     CREDENTIAL_REVOKED: "Revocada",
     PLATFORM_VERIFICATION_MISSING: "Verificación pendiente",
+    PLATFORM_VERIFICATION_REJECTED: "Verificación rechazada",
     ORGANIZATION_REVIEW_MISSING: "Revisión pendiente",
   };
   return labels[status];

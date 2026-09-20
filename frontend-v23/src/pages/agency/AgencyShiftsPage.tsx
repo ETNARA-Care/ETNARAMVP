@@ -62,6 +62,7 @@ function firstBlockingReason(worker: AssignableWorker): string | null {
     CREDENTIAL_EXPIRED: "Credencial vencida",
     CREDENTIAL_REVOKED: "Credencial revocada",
     PLATFORM_VERIFICATION_MISSING: "Verificación pendiente",
+    PLATFORM_VERIFICATION_REJECTED: "Verificación rechazada",
     ORGANIZATION_REVIEW_MISSING: "Aprobación pendiente",
   };
   return `${labels[requirement.status]}: ${requirement.requirement.replaceAll("_", " ")}`;
