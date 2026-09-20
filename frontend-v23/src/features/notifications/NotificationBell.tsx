@@ -37,6 +37,10 @@ export function NotificationBell() {
       navigate(portal === "caregiver" ? `/caregiver/shifts/${shiftId}` : `/agency/shifts/${shiftId}`);
       return;
     }
+    if (type.startsWith("OPEN_SHIFT_")) {
+      navigate(portal === "caregiver" ? "/caregiver/shifts" : "/agency/shifts");
+      return;
+    }
     if ((type === "SHIFT_STARTED" || type === "SHIFT_COMPLETED") && shiftId) {
       navigate(portal === "family" ? "/family" : `/agency/shifts/${shiftId}`);
       return;

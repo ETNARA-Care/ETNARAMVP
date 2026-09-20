@@ -243,6 +243,16 @@ Acceptance criteria:
 
 ## Next
 
+### FPH7-005 — Phase 7.4 collaborative open-shift offers
+- Administration sends a privacy-safe first wave to three ranked caregivers
+- caregivers explicitly answer available or unavailable
+- Administration sees interested names and retains final assignment
+- notifications navigate to the appropriate role workflow
+- local typecheck, 36/36 tests, build and lint pass
+
+Status: Implemented and validated locally on `phase-7/open-shift-offers`;
+publication pending explicit authorization.
+
 ### FETN-002 — Rewrite AgencyResidentProfilePage
 - use real backend data
 - preserve current layout
