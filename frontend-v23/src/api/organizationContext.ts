@@ -20,6 +20,7 @@ export interface MeOrganization {
 
 export interface MeResult {
   user: MeUser;
+  platformAdmin: boolean;
   organizations: MeOrganization[];
 }
 

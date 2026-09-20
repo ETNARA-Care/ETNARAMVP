@@ -7,7 +7,7 @@ import { loginErrorMessage } from "@/auth/errorMessages";
 import type { ApiError } from "@/api/client";
 
 export function LoginPage() {
-  const { status, login, organizations, activeOrganization, roles } = useAuth();
+  const { status, login, organizations, activeOrganization, roles, isPlatformAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [identifier, setIdentifier] = useState("");
@@ -20,13 +20,13 @@ export function LoginPage() {
   // en cuanto haya suficiente información para decidir a dónde.
   useEffect(() => {
     if (status !== "authenticated") return;
-    if (organizations.length > 1 && !activeOrganization) {
+    if (!isPlatformAdmin && organizations.length > 1 && !activeOrganization) {
       navigate("/select-organization", { replace: true });
       return;
     }
-    const route = resolveExperienceRoute(roles);
+    const route = resolveExperienceRoute(roles, isPlatformAdmin);
     if (route) navigate(route, { replace: true });
-  }, [status, organizations, activeOrganization, roles, navigate]);
+  }, [status, organizations, activeOrganization, roles, isPlatformAdmin, navigate]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

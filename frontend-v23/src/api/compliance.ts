@@ -7,6 +7,7 @@ export type ComplianceRequirementStatus =
   | "CREDENTIAL_EXPIRED"
   | "CREDENTIAL_REVOKED"
   | "PLATFORM_VERIFICATION_MISSING"
+  | "PLATFORM_VERIFICATION_REJECTED"
   | "ORGANIZATION_REVIEW_MISSING";
 
 export interface ComplianceRequirement {

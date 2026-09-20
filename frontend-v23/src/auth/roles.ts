@@ -21,11 +21,12 @@
  * no algo que el backend indique explícitamente -- documentada aquí para
  * poder ajustarla si Rafa prefiere otro criterio (ej. dejar elegir).
  */
-export type ExperienceRoute = "/agency" | "/caregiver" | "/family";
+export type ExperienceRoute = "/platform" | "/agency" | "/caregiver" | "/family";
 
 const ADMIN_ROLES = ["PLATFORM_SUPERADMIN", "ORGANIZATION_ADMIN", "SUPERVISOR"];
 
-export function resolveExperienceRoute(roles: string[]): ExperienceRoute | null {
+export function resolveExperienceRoute(roles: string[], isPlatformAdmin = false): ExperienceRoute | null {
+  if (isPlatformAdmin) return "/platform";
   if (roles.some((r) => ADMIN_ROLES.includes(r))) return "/agency";
   if (roles.includes("WORKER")) return "/caregiver";
   if (roles.includes("FAMILY")) return "/family";

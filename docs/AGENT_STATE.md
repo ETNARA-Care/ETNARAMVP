@@ -4,7 +4,22 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-7/staged-coverage
+Branch: phase-7/platform-verification
+
+## 2026-09-20 — Phase 7.6.1 platform credential verification
+
+- Added an exclusive platform-administration experience backed by the real
+  server-side `platform_admins` authority rather than an organization role.
+- The queue shows current credential files, organization context and the latest
+  current-version decision, with signed private document viewing.
+- Platform administrators can verify or reject; rejection requires a reason
+  and work eligibility is recalculated by the backend automatically.
+- Agency compliance surfaces now distinguish a pending verification from a
+  rejected one; there is no manual “mark apt” control.
+- TypeScript/build, 42/42 boundary tests and lint pass locally; lint retains
+  only the existing project warnings.
+- Exact next step: perform coordinated diff review and publish only after
+  explicit authorization, backend first and frontend after Railway health.
 
 ## 2026-09-20 — Phase 7.5 staged coverage escalation
 

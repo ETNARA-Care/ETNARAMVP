@@ -6,6 +6,9 @@ import { ActivateInvitationPage } from "@/pages/ActivateInvitationPage";
 import { SelectOrganizationPage } from "@/pages/SelectOrganizationPage";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { RoleGuard } from "@/auth/RoleGuard";
+import { PlatformGuard } from "@/auth/PlatformGuard";
+import { PlatformLayout } from "@/layouts/PlatformLayout";
+import { PlatformCredentialVerificationPage } from "@/pages/platform/PlatformCredentialVerificationPage";
 
 import { FamilyLayout } from "@/layouts/FamilyLayout";
 import { FamilyTodayPage } from "@/pages/family/FamilyTodayPage";
@@ -59,6 +62,17 @@ export default function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/select-organization" element={<SelectOrganizationPage />} />
+
+        <Route
+          path="/platform"
+          element={
+            <PlatformGuard>
+              <PlatformLayout />
+            </PlatformGuard>
+          }
+        >
+          <Route index element={<PlatformCredentialVerificationPage />} />
+        </Route>
 
         <Route
           path="/family"

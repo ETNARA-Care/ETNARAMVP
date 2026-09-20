@@ -256,6 +256,16 @@ Acceptance criteria:
 
 ## Next
 
+### FPH7-007 — Phase 7.6.1 platform credential verification
+- exclusive server-authorized platform route
+- real current-document review queue with private file access
+- auditable verify/reject workflow and automatic eligibility messaging
+- rejected-state visibility in Agency compliance and assignment blocking
+- local build, 42/42 tests and lint pass
+
+Status: Implemented locally; coordinated publication remains pending explicit
+authorization.
+
 ### FPH7-005 — Phase 7.4 collaborative open-shift offers
 - Administration sends a privacy-safe first wave to three ranked caregivers
 - caregivers explicitly answer available or unavailable

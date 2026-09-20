@@ -13,6 +13,7 @@ interface AuthContextValue {
   organizations: MeOrganization[];
   activeOrganization: MeOrganization | null;
   roles: string[]; // roles del usuario en `activeOrganization` únicamente
+  isPlatformAdmin: boolean;
   error: ApiError | null;
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -36,11 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<MeUser | null>(null);
   const [organizations, setOrganizations] = useState<MeOrganization[]>([]);
   const [activeOrganization, setActiveOrganizationState] = useState<MeOrganization | null>(null);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
   const applyMeResult = useCallback((me: orgApi.MeResult) => {
     setUser(me.user);
     setOrganizations(me.organizations);
+    setIsPlatformAdmin(me.platformAdmin);
   }, []);
 
   /**
@@ -75,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const apiErr = err as ApiError;
       if (apiErr.status === 401) {
         clearToken();
+        setIsPlatformAdmin(false);
         setStatus("unauthenticated");
       } else {
         // Error de red o del servidor -- NUNCA se interpreta como sesión
@@ -111,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setOrganizations([]);
       setActiveOrganizationState(null);
+      setIsPlatformAdmin(false);
       setStatus("unauthenticated");
       setError(null);
       throw err;
@@ -132,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setOrganizations([]);
     setActiveOrganizationState(null);
+    setIsPlatformAdmin(false);
     setError(null);
     setStatus("unauthenticated");
   }, []);
@@ -153,10 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      status, user, organizations, activeOrganization, roles, error,
+      status, user, organizations, activeOrganization, roles, isPlatformAdmin, error,
       login, logout, refreshSession, setActiveOrganization: setActiveOrganizationById,
     }),
-    [status, user, organizations, activeOrganization, roles, error, login, logout, refreshSession, setActiveOrganizationById]
+    [status, user, organizations, activeOrganization, roles, isPlatformAdmin, error, login, logout, refreshSession, setActiveOrganizationById]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -466,6 +466,7 @@ function requirementReason(requirement: ComplianceRequirement): string {
     CREDENTIAL_EXPIRED: "credencial vencida",
     CREDENTIAL_REVOKED: "credencial revocada",
     PLATFORM_VERIFICATION_MISSING: "verificación de plataforma pendiente",
+    PLATFORM_VERIFICATION_REJECTED: "verificación de plataforma rechazada",
     ORGANIZATION_REVIEW_MISSING: "aprobación de la agencia pendiente",
   };
   return labels[requirement.status];

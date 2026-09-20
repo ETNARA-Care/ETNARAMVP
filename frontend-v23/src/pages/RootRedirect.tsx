@@ -12,7 +12,7 @@ import { resolveExperienceRoute } from "@/auth/roles";
  * desarrollo (ver App.tsx) -- ya no es alcanzable desde ningún link visible.
  */
 export function RootRedirect() {
-  const { status, organizations, activeOrganization, roles } = useAuth();
+  const { status, organizations, activeOrganization, roles, isPlatformAdmin } = useAuth();
 
   if (status === "loading") {
     return (
@@ -26,10 +26,10 @@ export function RootRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  if (organizations.length > 1 && !activeOrganization) {
+  if (!isPlatformAdmin && organizations.length > 1 && !activeOrganization) {
     return <Navigate to="/select-organization" replace />;
   }
 
-  const route = resolveExperienceRoute(roles);
+  const route = resolveExperienceRoute(roles, isPlatformAdmin);
   return <Navigate to={route ?? "/login"} replace />;
 }
