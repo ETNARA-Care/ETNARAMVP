@@ -263,8 +263,8 @@ Acceptance criteria:
 - rejected-state visibility in Agency compliance and assignment blocking
 - local build, 42/42 tests and lint pass
 
-Status: Implemented locally; coordinated publication remains pending explicit
-authorization.
+Status: Complete — published and merged in PR #42 after backend PR #40;
+frontend CI and GitHub Pages deployment passed.
 
 ### FPH7-005 — Phase 7.4 collaborative open-shift offers
 - Administration sends a privacy-safe first wave to three ranked caregivers
