@@ -4,7 +4,65 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-6/end-to-end-validation
+Branch: phase-7/worker-availability
+
+## 2026-09-20 — Phase 7.3 worker-declared availability
+
+- The caregiver profile now manages real weekly availability and future
+  vacation, appointment or other unavailable periods.
+- The interface loads and saves only through the authenticated organization API
+  and clearly distinguishes pending from configured availability.
+- Administration coverage recommendations consume the backend's declared-
+  availability reasons while retaining explicit human assignment confirmation.
+- Typecheck, 33/33 boundary tests, production build and lint pass; lint retains
+  only the existing project warnings.
+- Exact next step: publish after explicit authorization and after the backend
+  migration is live, then validate the workflow on mobile.
+
+## 2026-09-19 — Phase 7.2 assisted coverage intelligence
+
+- Administration can request real coverage recommendations while creating or
+  assigning a shift.
+- The ranked options explain eligibility, schedule conflicts, continuity with
+  the resident and scheduled load over the next seven days.
+- Conflicted or ineligible options are disabled; ETNARA recommends but the
+  administrator must explicitly confirm the assignment.
+- Typecheck, 31/31 boundary tests, production build and lint pass; lint retains
+  only the existing project warnings.
+- Published and merged in frontend PR #35 after backend PR #30 was live.
+  Pull-request CI, post-merge CI and GitHub Pages deployment passed; the public
+  portal returned HTTP 200.
+- Exact next step: validate one recommended and one blocked candidate on mobile.
+
+## 2026-09-19 — Actionable Administration Overview
+
+- The Administration Overview now includes direct actions for creating a
+  shift and opening residents, caregivers and incidents.
+- All four summary metrics are interactive; shift and activity rows now open
+  their corresponding real-data detail screens.
+- The empty-day state can start the existing create-and-assign shift workflow.
+- The shift page accepts `?create=1` and opens that existing workflow without
+  adding a duplicate form or mock state.
+- Typecheck, 29/29 boundary tests, production build and lint pass; lint retains
+  only the existing project warnings.
+- Published and merged in frontend PR #34. Pull-request CI, post-merge CI and
+  the GitHub Pages deployment passed; the public portal returned HTTP 200.
+- Exact next step: validate the new actions while signed in as Administration
+  on mobile, then continue with the next Phase 7 increment.
+
+## 2026-09-19 — Phase 7.1 individual care plans
+
+- Administration can create or update the active plan from the real resident
+  profile; each save is a new backend version.
+- The plan captures support level, goals, instructions, precautions and
+  structured tasks with category, frequency, suggested time and priority.
+- Assigned caregivers see the active plan inside the real shift detail.
+- Family has no care-plan route in this delivery and no mock fallback was
+  introduced.
+- Typecheck, 27/27 boundary tests and production build pass; lint retains only
+  the existing warnings.
+- Phase 7.1 was published and merged in frontend PR #33 after the coordinated
+  backend PR #29; post-merge CI and deployment checks passed.
 
 ## 2026-09-15 — Phase 6 end-to-end operational synchronization
 
