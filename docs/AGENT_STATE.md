@@ -4,7 +4,24 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-7/open-shift-offers
+Branch: phase-7/staged-coverage
+
+## 2026-09-20 — Phase 7.5 staged coverage escalation
+
+- Administration now sees the active wave, interested and pending responses,
+  queued candidates and the next automatic wave time on the existing shift card.
+- An interested response visibly stops escalation while preserving the existing
+  human-only final assignment button.
+- Exhausted campaigns explain that all eligible staff were consulted and allow
+  Administration to retry without deleting prior history.
+- Caregivers see the response deadline while resident identity and clinical
+  information remain hidden before final assignment.
+- The Administration view refreshes coverage state every 30 seconds without a
+  mock fallback or visual redesign.
+- Local typecheck, 39/39 tests, production build and lint pass; lint reports only
+  the repository's pre-existing warnings.
+- Exact next step: publish only after backend migration 054 passes PostgreSQL CI
+  and its Railway deployment is healthy.
 
 ## 2026-09-20 — Phase 7.4 collaborative open-shift offers
 

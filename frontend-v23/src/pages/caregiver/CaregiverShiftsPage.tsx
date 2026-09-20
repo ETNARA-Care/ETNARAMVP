@@ -12,6 +12,10 @@ function formatWindow(shift: Shift): string {
   return `${start.toLocaleDateString("es-PR", { weekday: "short", day: "numeric", month: "short" })} · ${start.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })} – ${end.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}`;
 }
 
+function formatResponseDeadline(value: string): string {
+  return new Date(value).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" });
+}
+
 export function CaregiverShiftsPage() {
   const { activeOrganization } = useAuth();
   const [shifts, setShifts] = useState<Shift[] | null>(null);
@@ -90,7 +94,7 @@ export function CaregiverShiftsPage() {
         <div className="flex flex-col gap-3">
           {offers.map((offer) => <Card key={offer.id} className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-3">
-              <div><p className="font-medium text-[var(--color-text-primary)]">Oportunidad de turno</p><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow({ scheduled_start: offer.scheduledStart, scheduled_end: offer.scheduledEnd } as Shift)}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{offer.roleLabel} · sin información clínica hasta la asignación</p></div>
+              <div><p className="font-medium text-[var(--color-text-primary)]">Oportunidad de turno</p><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow({ scheduled_start: offer.scheduledStart, scheduled_end: offer.scheduledEnd } as Shift)}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{offer.roleLabel} · sin información clínica hasta la asignación</p>{offer.responseStatus === "pending" && offer.responseDueAt && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Responde antes de las {formatResponseDeadline(offer.responseDueAt)}</p>}</div>
               <Badge tone={offer.responseStatus === "interested" ? "success" : offer.responseStatus === "declined" ? "neutral" : "accent"}>{offer.responseStatus === "interested" ? "Disponible" : offer.responseStatus === "declined" ? "No disponible" : "Responder"}</Badge>
             </div>
             {offer.responseStatus === "pending" && <div className="grid grid-cols-2 gap-2"><Button onClick={() => void answerOffer(offer, "interested")} loading={respondingOfferId === offer.id}>Estoy disponible</Button><Button variant="secondary" onClick={() => void answerOffer(offer, "declined")} disabled={respondingOfferId === offer.id}>No disponible</Button></div>}

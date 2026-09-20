@@ -9,19 +9,31 @@ export interface MyCoverageOffer {
   responseStatus: "pending" | "interested" | "declined";
   expiresAt: string;
   candidateRank: number;
+  waveNumber: number;
+  responseDueAt: string | null;
 }
 
 export interface ShiftCoverageOffer {
   id: string;
   displayName: string | null;
-  responseStatus: "pending" | "interested" | "declined" | "withdrawn";
+  responseStatus: "queued" | "pending" | "interested" | "declined" | "expired" | "withdrawn";
   respondedAt: string | null;
   candidateRank: number;
+  waveNumber: number;
+  responseDueAt: string | null;
+  campaignStatus: "open" | "closed" | "cancelled" | "exhausted";
+  currentWave: number;
+  nextWaveAt: string | null;
+  waveSize: number;
+  totalCandidates: number;
 }
 
 export async function openCoverageCampaign(organizationId: string, shiftId: string, token: string) {
-  const result = await apiClient.post<{ campaign: { id: string; offerCount: number; expiresAt: string } }>(
-    `/organizations/${organizationId}/shifts/${shiftId}/coverage-campaigns`, { waveSize: 3 }, token,
+  const result = await apiClient.post<{ campaign: {
+    id: string; offerCount: number; totalCandidates: number; currentWave: number; nextWaveAt: string; expiresAt: string;
+  } }>(
+    `/organizations/${organizationId}/shifts/${shiftId}/coverage-campaigns`,
+    { waveSize: 3, responseWindowMinutes: 30 }, token,
   );
   return result.campaign;
 }
