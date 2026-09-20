@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FPH7-006 — Phase 7.5 staged coverage escalation
+
+- show current wave, queued candidates and automatic progression time
+- refresh real campaign status while Administration remains on the shift list
+- show caregiver response deadlines without resident or clinical information
+- stop escalation visibly on interest and preserve final human assignment
+- explain exhausted coverage and allow an explicit retry
+
+Status: Implemented locally on `phase-7/staged-coverage`; typecheck, 39/39
+tests, build and lint pass. Publication requires backend-first authorization.
+
+---
+
 ### FPH7-004 — Phase 7.3 worker-declared availability
 
 - let the authenticated caregiver configure weekly work windows
