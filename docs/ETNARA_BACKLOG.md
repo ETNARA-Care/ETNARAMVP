@@ -10,9 +10,9 @@
 - show declared-availability explanations in assisted coverage
 - retain explicit Administration confirmation for every assignment
 
-Status: Implemented locally; typecheck, 33/33 tests, production build and lint
-pass with pre-existing warnings only. Coordinated publication requires explicit
-authorization.
+Status: Published and merged in frontend PR #36 after backend PR #31 was live.
+Pull-request CI, post-merge CI and Pages deployment passed; the public portal
+returned HTTP 200 with the new interface in its live bundle.
 
 ---
 
