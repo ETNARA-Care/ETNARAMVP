@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
   LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle,
-  MessageCircle, ShieldCheck, Settings, Menu, X,
+  BadgeCheck, MessageCircle, ShieldCheck, Settings, Menu, X,
 } from "lucide-react";
 import { Avatar, IconButton, NavigationItem } from "@/components/ui";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -22,7 +22,7 @@ const NAV = [
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, isPlatformAdmin } = useAuth();
   const organizationName = activeOrganization?.name ?? "Organización";
   return (
     <div className="flex flex-col h-full pb-[env(safe-area-inset-bottom)]">
@@ -31,6 +31,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-[var(--text-caption)] text-white/60 font-medium uppercase tracking-wide">Agencia</span>
       </Link>
       <nav className="flex-1 flex flex-col gap-1 px-2 overflow-y-auto" onClick={onNavigate}>
+        {isPlatformAdmin && (
+          <NavigationItem
+            to="/platform"
+            icon={<BadgeCheck size={18} />}
+            label="Plataforma"
+          />
+        )}
         {NAV.map((item) => (
           <NavigationItem key={item.to} {...item} />
         ))}

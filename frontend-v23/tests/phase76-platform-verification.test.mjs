@@ -8,10 +8,14 @@ test("platform review is protected by independent server authority", () => {
   const auth = read("src/auth/AuthProvider.tsx");
   const guard = read("src/auth/PlatformGuard.tsx");
   const app = read("src/App.tsx");
+  const agencyLayout = read("src/layouts/AgencyLayout.tsx");
   assert.match(auth, /platformAdmin/);
   assert.match(guard, /isPlatformAdmin/);
   assert.match(app, /<PlatformGuard>/);
   assert.match(app, /path="\/platform"/);
+  assert.match(agencyLayout, /isPlatformAdmin/);
+  assert.match(agencyLayout, /to="\/platform"/);
+  assert.match(agencyLayout, /label="Plataforma"/);
 });
 
 test("credential queue uses only real platform APIs", () => {

@@ -256,6 +256,14 @@ Acceptance criteria:
 
 ## Next
 
+### FPH7-010 — Persistent platform navigation
+- show a “Plataforma” destination in Agency only for platform administrators
+- include the destination in both desktop sidebar and mobile drawer
+- preserve the independent `PlatformGuard` authorization boundary
+
+Status: Implemented locally on `fix/persistent-platform-navigation`;
+publication pending explicit authorization.
+
 ### FPH7-008 — Caregiver self-identity correction
 - remove fixed María identity from caregiver header and profile
 - consume the authenticated tenant-scoped worker profile
@@ -283,7 +291,8 @@ frontend CI and GitHub Pages deployment passed.
 - real API only; no manual “mark apt” override
 - local typecheck, build, 45/45 tests and lint pass
 
-Status: Complete — published and merged in PR #46 after backend PR #44; CI and\nGitHub Pages deployment passed.
+Status: Complete — published and merged in PR #46 after backend PR #44; CI and
+GitHub Pages deployment passed.
 
 ### FPH7-005 — Phase 7.4 collaborative open-shift offers
 - Administration sends a privacy-safe first wave to three ranked caregivers

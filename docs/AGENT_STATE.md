@@ -4,7 +4,19 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: main
+Branch: fix/persistent-platform-navigation
+
+## 2026-09-21 — Persistent platform navigation hotfix
+
+- Confirmed that the root redirect correctly opens `/platform` for a platform
+  administrator, but Agency had no return link after selecting “Agencia”.
+- Added “Plataforma” to the Agency sidebar and mobile drawer only when the
+  authenticated `/me` result grants independent platform authority.
+- Ordinary organization administrators, supervisors and caregivers never see
+  the link, and `/platform` remains protected by `PlatformGuard`.
+- Frontend validation passed: typecheck, production build, 45/45 tests and
+  lint; lint retains only existing warnings. `git diff --check` also passed.
+- Exact next step: publish only after explicit authorization.
 
 ## 2026-09-21 — Phase 7.6.2 compliance self-service
 
@@ -18,10 +30,13 @@ Branch: main
   can be adopted as the starting point for a role-specific policy.
 - The worker detail action leads to the existing credential and secure-access
   controls rather than duplicating invitation behavior.
-- Frontend PR #46 was merged after typecheck, production build, 45/45 tests,\n  lint and every CI check passed; lint retained only existing warnings.
+- Frontend PR #46 was merged after typecheck, production build, 45/45 tests,
+  lint and every CI check passed; lint retained only existing warnings.
 - Credential-document upload remains intentionally deferred to the final
   technical close and does not block this phase.
-- GitHub Pages deployed successfully and the live bundle contains the new\n  requirements, audit and access surfaces.\n- Exact next step: configure and verify one role policy on mobile.
+- GitHub Pages deployed successfully and the live bundle contains the new
+  requirements, audit and access surfaces.
+- Exact next step: configure and verify one role policy on mobile.
 
 ## 2026-09-20 — Caregiver identity hotfix
 
