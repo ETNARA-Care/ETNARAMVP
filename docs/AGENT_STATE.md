@@ -4,7 +4,7 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-7/7.6.2-compliance-self-service
+Branch: main
 
 ## 2026-09-21 — Phase 7.6.2 compliance self-service
 
