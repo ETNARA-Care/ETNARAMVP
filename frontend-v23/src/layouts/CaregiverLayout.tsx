@@ -2,13 +2,18 @@ import { Outlet } from "react-router-dom";
 import { CalendarClock, MessageCircle, User } from "lucide-react";
 import { TopHeader } from "./TopHeader";
 import { MobileTabBar } from "./MobileTabBar";
+import { useAuth } from "@/auth/AuthProvider";
 
 // Rutas alineadas exactamente a las definidas en el brief de Fase 2:
 // /caregiver/shifts, /caregiver/shifts/:shiftId, /caregiver/messages, /caregiver/profile
 export function CaregiverLayout() {
+  const { activeWorkerProfile, user } = useAuth();
+  const caregiverName = activeWorkerProfile?.displayName
+    ?? user?.email
+    ?? "Cuidador/a";
   return (
     <div className="min-h-dvh flex flex-col">
-      <TopHeader title="ETNARA Care" userName="María Rivera" />
+      <TopHeader title="ETNARA Care" userName={caregiverName} />
       <main className="flex-1 max-w-[560px] w-full mx-auto px-[var(--spacing-md)] py-[var(--spacing-md)] pb-24">
         <Outlet />
       </main>

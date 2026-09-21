@@ -256,6 +256,15 @@ Acceptance criteria:
 
 ## Next
 
+### FPH7-008 — Caregiver self-identity correction
+- remove fixed María identity from caregiver header and profile
+- consume the authenticated tenant-scoped worker profile
+- display real initials, name and organization-specific role
+- local build, 43/43 tests and lint pass
+
+Status: Implemented locally; coordinated publication remains pending explicit
+authorization.
+
 ### FPH7-007 — Phase 7.6.1 platform credential verification
 - exclusive server-authorized platform route
 - real current-document review queue with private file access

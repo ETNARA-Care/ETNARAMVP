@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import * as authApi from "@/api/auth";
 import * as orgApi from "@/api/organizationContext";
 import type { ApiError } from "@/api/client";
-import type { MeUser, MeOrganization } from "@/api/organizationContext";
+import type { MeUser, MeOrganization, MyWorkerProfile } from "@/api/organizationContext";
 import { getToken, setToken, clearToken } from "./token";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
@@ -14,6 +14,7 @@ interface AuthContextValue {
   activeOrganization: MeOrganization | null;
   roles: string[]; // roles del usuario en `activeOrganization` únicamente
   isPlatformAdmin: boolean;
+  activeWorkerProfile: MyWorkerProfile | null;
   error: ApiError | null;
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [organizations, setOrganizations] = useState<MeOrganization[]>([]);
   const [activeOrganization, setActiveOrganizationState] = useState<MeOrganization | null>(null);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [activeWorkerProfile, setActiveWorkerProfile] = useState<MyWorkerProfile | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   const applyMeResult = useCallback((me: orgApi.MeResult) => {
@@ -60,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const only = orgs[0];
     await orgApi.setActiveOrganization(only.id, token);
     setActiveOrganizationState(only);
+    setActiveWorkerProfile(
+      only.roles.includes("WORKER") ? await orgApi.getMyWorkerProfile(only.id, token) : null,
+    );
   }, []);
 
   const bootstrap = useCallback(async () => {
@@ -79,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (apiErr.status === 401) {
         clearToken();
         setIsPlatformAdmin(false);
+        setActiveWorkerProfile(null);
         setStatus("unauthenticated");
       } else {
         // Error de red o del servidor -- NUNCA se interpreta como sesión
@@ -116,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setOrganizations([]);
       setActiveOrganizationState(null);
       setIsPlatformAdmin(false);
+      setActiveWorkerProfile(null);
       setStatus("unauthenticated");
       setError(null);
       throw err;
@@ -138,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setOrganizations([]);
     setActiveOrganizationState(null);
     setIsPlatformAdmin(false);
+    setActiveWorkerProfile(null);
     setError(null);
     setStatus("unauthenticated");
   }, []);
@@ -153,16 +161,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await orgApi.setActiveOrganization(organizationId, token);
     const org = organizations.find((o) => o.id === organizationId) ?? null;
     setActiveOrganizationState(org);
+    setActiveWorkerProfile(
+      org?.roles.includes("WORKER") ? await orgApi.getMyWorkerProfile(organizationId, token) : null,
+    );
   }, [organizations]);
 
   const roles = useMemo(() => activeOrganization?.roles ?? [], [activeOrganization]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      status, user, organizations, activeOrganization, roles, isPlatformAdmin, error,
+      status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error,
       login, logout, refreshSession, setActiveOrganization: setActiveOrganizationById,
     }),
-    [status, user, organizations, activeOrganization, roles, isPlatformAdmin, error, login, logout, refreshSession, setActiveOrganizationById]
+    [status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error, login, logout, refreshSession, setActiveOrganizationById]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
