@@ -283,9 +283,7 @@ frontend CI and GitHub Pages deployment passed.
 - real API only; no manual “mark apt” override
 - local typecheck, build, 45/45 tests and lint pass
 
-Status: Implemented and validated locally on
-`phase-7/7.6.2-compliance-self-service`; coordinated publication remains
-pending explicit authorization.
+Status: Complete — published and merged in PR #46 after backend PR #44; CI and\nGitHub Pages deployment passed.
 
 ### FPH7-005 — Phase 7.4 collaborative open-shift offers
 - Administration sends a privacy-safe first wave to three ranked caregivers
