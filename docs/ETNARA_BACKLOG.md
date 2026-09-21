@@ -275,6 +275,18 @@ GitHub Pages deployment passed.
 Status: Complete — published and merged in PR #42 after backend PR #40;
 frontend CI and GitHub Pages deployment passed.
 
+### FPH7-008 — Phase 7.6.2 compliance self-service
+- exact eligibility causes and direct worker remediation path
+- configurable credential requirements by caregiver role
+- existing access/invitation controls reachable from the same workflow
+- auditable policy and membership-status history
+- real API only; no manual “mark apt” override
+- local typecheck, build, 45/45 tests and lint pass
+
+Status: Implemented and validated locally on
+`phase-7/7.6.2-compliance-self-service`; coordinated publication remains
+pending explicit authorization.
+
 ### FPH7-005 — Phase 7.4 collaborative open-shift offers
 - Administration sends a privacy-safe first wave to three ranked caregivers
 - caregivers explicitly answer available or unavailable
