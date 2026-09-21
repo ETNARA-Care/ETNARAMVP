@@ -1,6 +1,6 @@
 import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AlertTriangle, ChevronDown, LogOut, Plus, Settings, ShieldCheck, UserCheck } from "lucide-react";
+import { AlertTriangle, ChevronDown, History, KeyRound, LogOut, Plus, Settings, ShieldCheck, SlidersHorizontal, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useAuth } from "@/auth/AuthProvider";
@@ -17,6 +17,12 @@ import { credentialState } from "./workerCredentialUtils";
 import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
 import {
   getWorkerCompliance,
+  getComplianceAudit,
+  getComplianceConfiguration,
+  saveCompliancePolicy,
+  type ComplianceAuditEntry,
+  type ComplianceConfiguration,
+  type CompliancePolicyRequirement,
   type ComplianceRequirement,
   type ComplianceSummary,
 } from "@/api/compliance";
@@ -243,15 +249,26 @@ export function AgencyCompliancePage() {
   const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
   const [rows, setRows] = useState<ComplianceWorker[] | null>(null);
+  const [configuration, setConfiguration] = useState<ComplianceConfiguration | null>(null);
+  const [audit, setAudit] = useState<ComplianceAuditEntry[]>([]);
   const [error, setError] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [editingRole, setEditingRole] = useState<string | null>(null);
+  const [draftRequirements, setDraftRequirements] = useState<CompliancePolicyRequirement[]>([]);
+  const [savingPolicy, setSavingPolicy] = useState(false);
+  const toast = useToast();
+  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !token) return;
     setError(false);
     try {
-      const memberships = await listWorkers(organizationId, token);
+      const [memberships, complianceConfiguration, auditResult] = await Promise.all([
+        listWorkers(organizationId, token),
+        getComplianceConfiguration(organizationId, token),
+        getComplianceAudit(organizationId, token),
+      ]);
       const details = await Promise.all(memberships.map(async (membership) => {
         const [profile, compliance] = await Promise.all([
           getWorkerProfile(organizationId, membership.id, token),
@@ -260,6 +277,8 @@ export function AgencyCompliancePage() {
         return { ...membership, credentials: profile.credentialsSummary, compliance };
       }));
       setRows(details);
+      setConfiguration(complianceConfiguration);
+      setAudit(auditResult.entries);
     } catch {
       setRows([]);
       setError(true);
@@ -275,6 +294,45 @@ export function AgencyCompliancePage() {
   const eligibleCount = activeRows.filter((row) => complianceTone(row) === "success").length;
   const attentionCount = activeRows.length - eligibleCount;
 
+  const openPolicy = (role: string) => {
+    const policy = configuration?.policies.find((item) => item.workerRole.toLowerCase() === role.toLowerCase());
+    setDraftRequirements(policy?.requirements ?? []);
+    setEditingRole(role);
+  };
+
+  const toggleCredential = (code: string, name: string, selected: boolean) => {
+    setDraftRequirements((current) => selected
+      ? [...current, { credentialTypeCode: code, credentialTypeName: name, isMandatory: true, requiresOrganizationReview: false }]
+      : current.filter((item) => item.credentialTypeCode !== code));
+  };
+
+  const updateDraft = (code: string, patch: Partial<CompliancePolicyRequirement>) => {
+    setDraftRequirements((current) => current.map((item) => item.credentialTypeCode === code ? { ...item, ...patch } : item));
+  };
+
+  const persistPolicy = async () => {
+    const token = getToken();
+    if (!organizationId || !token || !editingRole || draftRequirements.length === 0) return;
+    setSavingPolicy(true);
+    try {
+      await saveCompliancePolicy(organizationId, {
+        workerRole: editingRole,
+        requirements: draftRequirements.map(({ credentialTypeCode, isMandatory, requiresOrganizationReview }) => ({
+          credentialTypeCode,
+          isMandatory,
+          requiresOrganizationReview,
+        })),
+      }, token);
+      setEditingRole(null);
+      await load();
+      toast.show(`Requisitos de ${editingRole} actualizados.`, "success");
+    } catch {
+      toast.show("No pudimos guardar los requisitos.", "danger");
+    } finally {
+      setSavingPolicy(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Cumplimiento" description="Credenciales y verificaciones del equipo." />
@@ -284,6 +342,33 @@ export function AgencyCompliancePage() {
         <ComplianceMetric icon={<ShieldCheck size={20} />} label="Aptos" value={eligibleCount} tone="success" />
         <ComplianceMetric icon={<AlertTriangle size={20} />} label="Requieren atención" value={attentionCount} tone={attentionCount > 0 ? "warning" : "success"} />
       </div>
+
+      <Card>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2"><SlidersHorizontal size={20} className="text-[var(--color-text-muted)]" /><h2 className="font-display text-[var(--text-h3)]">Requisitos por tipo de cuidador</h2></div>
+            <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">Define qué credenciales hacen apto a cada rol. Los cambios quedan auditados.</p>
+          </div>
+        </div>
+        {configuration && configuration.workerRoles.length > 0 ? (
+          <div className="mt-4 flex flex-col gap-2">
+            {configuration.workerRoles.map((role) => {
+              const policy = configuration.policies.find((item) => item.workerRole.toLowerCase() === role.toLowerCase());
+              return (
+                <div key={role} className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
+                  <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{policy?.requirements.length ?? 0} requisito(s) · {policy?.source === "organization" ? "Política de tu organización" : "Política base de ETNARA"}</p></div>
+                  <Button variant="secondary" onClick={() => openPolicy(role)}>Configurar</Button>
+                </div>
+              );
+            })}
+          </div>
+        ) : <p className="mt-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">Añade un cuidador con su rol para poder configurar sus requisitos.</p>}
+      </Card>
+
+      <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-start gap-3"><KeyRound size={21} className="mt-0.5 text-[var(--color-text-muted)]" /><div><h2 className="font-display text-[var(--text-h3)]">Accesos e invitaciones</h2><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Abre el perfil de cada cuidador para invitar, renovar o revisar su acceso.</p></div></div>
+        <Button variant="secondary" onClick={() => navigate("/agency/workers")}>Administrar accesos</Button>
+      </Card>
 
       {rows.length === 0 ? (
         <EmptyState icon={<ShieldCheck size={28} />} title="No hay cuidadores para evaluar" description="Añade personal a la organización para ver su cumplimiento." />
@@ -315,6 +400,30 @@ export function AgencyCompliancePage() {
           })}
         </section>
       )}
+
+      <Card>
+        <div className="flex items-center gap-2"><History size={20} className="text-[var(--color-text-muted)]" /><h2 className="font-display text-[var(--text-h3)]">Historial auditable</h2></div>
+        {audit.length === 0 ? <p className="mt-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">Todavía no hay cambios administrativos registrados.</p> : (
+          <ul className="mt-3 flex flex-col divide-y divide-[var(--color-ivory-300)]">
+            {audit.slice(0, 10).map((entry) => <li key={entry.id} className="py-3"><p className="text-[var(--text-small)] font-medium">{entry.action === "COMPLIANCE_REQUIREMENTS_UPDATED" ? "Requisitos de cumplimiento actualizados" : "Estado laboral actualizado"}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{new Date(entry.occurredAt).toLocaleString("es-PR")}</p></li>)}
+          </ul>
+        )}
+      </Card>
+
+      <Modal
+        open={Boolean(editingRole)}
+        onClose={() => !savingPolicy && setEditingRole(null)}
+        title={`Requisitos para ${editingRole ?? "el rol"}`}
+        footer={<><Button variant="secondary" onClick={() => setEditingRole(null)} disabled={savingPolicy}>Cancelar</Button><Button onClick={() => void persistPolicy()} loading={savingPolicy} disabled={draftRequirements.length === 0}>Guardar política</Button></>}
+      >
+        <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">Selecciona al menos una credencial. “Obligatoria” afecta la aptitud; “Revisión de agencia” exige aprobación interna adicional.</p>
+        <div className="flex max-h-[55vh] flex-col gap-2 overflow-y-auto">
+          {configuration?.credentialTypes.map((type) => {
+            const selected = draftRequirements.find((item) => item.credentialTypeCode === type.code);
+            return <div key={type.code} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3"><label className="flex min-h-11 items-center gap-3 font-medium"><input type="checkbox" checked={Boolean(selected)} onChange={(event) => toggleCredential(type.code, type.name, event.target.checked)} />{type.name}</label>{selected && <div className="ml-7 mt-2 flex flex-col gap-2 text-[var(--text-small)]"><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={selected.isMandatory} onChange={(event) => updateDraft(type.code, { isMandatory: event.target.checked })} />Obligatoria para trabajar</label><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={selected.requiresOrganizationReview} onChange={(event) => updateDraft(type.code, { requiresOrganizationReview: event.target.checked })} />Requiere aprobación de la agencia</label></div>}</div>;
+          })}
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -376,7 +485,7 @@ function ComplianceDetails({ row }: { row: ComplianceWorker }) {
         </ul>
       )}
 
-      <Button variant="secondary" className="mt-4" onClick={() => navigate(`/agency/workers/${row.id}`)}>Ver perfil completo</Button>
+      <Button variant="secondary" className="mt-4" onClick={() => navigate(`/agency/workers/${row.id}`)}>Abrir perfil, credenciales y acceso</Button>
     </div>
   );
 }

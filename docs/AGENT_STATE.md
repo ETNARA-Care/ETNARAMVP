@@ -4,7 +4,26 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-7/platform-verification
+Branch: phase-7/7.6.2-compliance-self-service
+
+## 2026-09-21 — Phase 7.6.2 compliance self-service
+
+- The existing Cumplimiento page is now an operational center: it shows exact
+  worker causes, policies by caregiver role, access/invitation guidance and an
+  auditable administrative history.
+- Admin/Supervisor can select credential types, decide whether each is
+  mandatory and require an additional agency review; saving uses only the real
+  backend configuration endpoint.
+- Platform defaults are clearly distinguished from organization policies and
+  can be adopted as the starting point for a role-specific policy.
+- The worker detail action leads to the existing credential and secure-access
+  controls rather than duplicating invitation behavior.
+- Typecheck, production build, 45/45 tests and lint pass locally; lint retains
+  only the repository's existing warnings.
+- Credential-document upload remains intentionally deferred to the final
+  technical close and does not block this phase.
+- Exact next step: publish after the paired backend is live, then configure and
+  verify one role policy on mobile.
 
 ## 2026-09-20 — Caregiver identity hotfix
 
