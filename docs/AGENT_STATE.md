@@ -18,12 +18,10 @@ Branch: main
   can be adopted as the starting point for a role-specific policy.
 - The worker detail action leads to the existing credential and secure-access
   controls rather than duplicating invitation behavior.
-- Typecheck, production build, 45/45 tests and lint pass locally; lint retains
-  only the repository's existing warnings.
+- Frontend PR #46 was merged after typecheck, production build, 45/45 tests,\n  lint and every CI check passed; lint retained only existing warnings.
 - Credential-document upload remains intentionally deferred to the final
   technical close and does not block this phase.
-- Exact next step: publish after the paired backend is live, then configure and
-  verify one role policy on mobile.
+- GitHub Pages deployed successfully and the live bundle contains the new\n  requirements, audit and access surfaces.\n- Exact next step: configure and verify one role policy on mobile.
 
 ## 2026-09-20 — Caregiver identity hotfix
 
