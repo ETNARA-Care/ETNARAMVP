@@ -262,8 +262,8 @@ Acceptance criteria:
 - display real initials, name and organization-specific role
 - local build, 43/43 tests and lint pass
 
-Status: Implemented locally; coordinated publication remains pending explicit
-authorization.
+Status: Complete — published and merged in PR #44 after backend PR #42; CI and
+GitHub Pages deployment passed.
 
 ### FPH7-007 — Phase 7.6.1 platform credential verification
 - exclusive server-authorized platform route
