@@ -15,9 +15,11 @@ Branch: phase-7/platform-verification
   has been registered.
 - Credentials remain account-specific and continue using the existing real
   credential endpoint.
-- TypeScript/build, 43/43 tests and lint pass locally; lint retains only the
-  repository's existing warnings.
-- Exact next step: publish after the paired backend endpoint is live.
+- Frontend PR #44 was merged after typecheck/build, 43/43 tests, lint and diff
+  safety passed; lint retained only the repository's existing warnings.
+- GitHub Pages serves the new worker-profile contract and no longer contains
+  the fixed “Cuidadora certificada” profile label.
+- Exact next step: validate Carlos and Rafael after signing out and back in.
 
 ## 2026-09-20 — Phase 7.6.1 platform credential verification
 
