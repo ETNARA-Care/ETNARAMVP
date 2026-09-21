@@ -6,6 +6,19 @@ Project: ETNARA Care
 Repository: ETNARAMVP
 Branch: phase-7/platform-verification
 
+## 2026-09-20 — Caregiver identity hotfix
+
+- Removed the fixed “María Rivera” name and “Cuidadora certificada” label from
+  the caregiver header and profile.
+- The avatar, name and role now come from the authenticated worker profile for
+  the active organization; email is only a safe fallback when no display name
+  has been registered.
+- Credentials remain account-specific and continue using the existing real
+  credential endpoint.
+- TypeScript/build, 43/43 tests and lint pass locally; lint retains only the
+  repository's existing warnings.
+- Exact next step: publish after the paired backend endpoint is live.
+
 ## 2026-09-20 — Phase 7.6.1 platform credential verification
 
 - Added an exclusive platform-administration experience backed by the real

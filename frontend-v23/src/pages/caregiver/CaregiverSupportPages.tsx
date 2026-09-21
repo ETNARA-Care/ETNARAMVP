@@ -60,7 +60,9 @@ export function CaregiverMessagesPage() {
 }
 
 export function CaregiverProfilePage() {
-  const { user, activeOrganization, logout } = useAuth();
+  const { user, activeOrganization, activeWorkerProfile: workerProfile, logout } = useAuth();
+  const caregiverName = workerProfile?.displayName ?? user?.email ?? "Cuidador/a";
+  const caregiverRole = workerProfile?.internalRole ?? "Cuidador/a";
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState<CredentialSummary[] | null>(null);
   const [credentialError, setCredentialError] = useState(false);
@@ -164,10 +166,10 @@ export function CaregiverProfilePage() {
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Perfil" />
       <Card className="flex items-center gap-3">
-        <Avatar name="María Rivera" size={48} />
+        <Avatar name={caregiverName} size={48} />
         <div>
-          <p className="font-medium text-[var(--color-text-primary)]">María Rivera</p>
-          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Cuidadora certificada</p>
+          <p className="font-medium text-[var(--color-text-primary)]">{caregiverName}</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{caregiverRole}</p>
           {user?.email && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Sesión: {user.email}</p>}
         </div>
       </Card>

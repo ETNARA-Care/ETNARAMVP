@@ -18,6 +18,13 @@ export interface MeOrganization {
   roles: string[];
 }
 
+export interface MyWorkerProfile {
+  workerId: string;
+  membershipId: string;
+  displayName: string | null;
+  internalRole: string;
+}
+
 export interface MeResult {
   user: MeUser;
   platformAdmin: boolean;
@@ -26,6 +33,14 @@ export interface MeResult {
 
 export function getMe(token: string): Promise<MeResult> {
   return apiClient.get<MeResult>("/me", token);
+}
+
+export async function getMyWorkerProfile(organizationId: string, token: string): Promise<MyWorkerProfile | null> {
+  const result = await apiClient.get<{ workerProfile: MyWorkerProfile | null }>(
+    `/organizations/${organizationId}/me/worker-profile`,
+    token,
+  );
+  return result.workerProfile;
 }
 
 /**
