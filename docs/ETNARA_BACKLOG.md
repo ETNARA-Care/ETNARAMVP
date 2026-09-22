@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FPH7-012 — Phase 7.7 planning runtime hotfix
+
+- keep the analysis-period selector readable at mobile widths
+- avoid the ETNARA `xs` spacing-token collision in Tailwind
+- validate the real forecast after the backend hotfix is deployed
+
+Status: Implemented locally on `fix/phase-7-7-planning-runtime`; typecheck,
+production build, 50/50 tests and lint pass with existing warnings only.
+Publication requires explicit authorization.
+
+---
+
 ### FPH7-011 — Phase 7.7 predictive workforce planning
 
 - add a manager-only Planning destination in Agency

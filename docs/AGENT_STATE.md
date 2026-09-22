@@ -4,7 +4,19 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-7/7.7-predictive-workforce
+Branch: fix/phase-7-7-planning-runtime
+
+## 2026-09-22 — Phase 7.7 planning runtime hotfix
+
+- Replaced the ambiguous `max-w-xs` planning-selector constraint with a full
+  mobile width and an explicit 320 px desktop maximum.
+- The custom ETNARA spacing token named `xs` had caused Tailwind to compile
+  `max-w-xs` as 0.75 rem instead of the expected container width.
+- Added a regression that prevents the narrow class from returning.
+- Typecheck, production build, 50/50 tests and lint pass; lint retains only the
+  existing repository warnings.
+- Exact next step: publish after the backend hotfix is live, then validate the
+  selector and forecast response on mobile.
 
 ## 2026-09-21 — Phase 7.7 predictive workforce planning
 

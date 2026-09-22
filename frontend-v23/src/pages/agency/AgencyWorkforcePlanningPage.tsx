@@ -91,7 +91,7 @@ export function AgencyWorkforcePlanningPage() {
         {forecast?.assistantSummary.map((item) => <p key={item} className="text-[var(--text-body)] text-[var(--color-text-primary)]">• {item}</p>)}
       </Card>
 
-      <div className="max-w-xs">
+      <div className="w-full sm:max-w-[320px]">
         <Select label="Periodo de análisis" value={horizon} onChange={(event) => setHorizon(Number(event.target.value) as 7 | 14 | 30)}>
           <option value={7}>Próximos 7 días</option>
           <option value={14}>Próximos 14 días</option>
