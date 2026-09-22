@@ -9,6 +9,7 @@ export interface Shift {
   room_id: string | null;
   scheduled_start: string;
   scheduled_end: string;
+  required_role: string;
   status: ShiftStatus;
   assignment_count?: number;
   assignment_id?: string;
@@ -105,7 +106,7 @@ export async function getShift(organizationId: string, shiftId: string, token: s
 
 export async function createShift(
   organizationId: string,
-  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string },
+  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string },
   token: string,
 ): Promise<Shift> {
   const result = await apiClient.post<{ shift: Shift }>(`/organizations/${organizationId}/shifts`, input, token);
@@ -181,7 +182,7 @@ export async function assignShift(
 
 export async function getCoverageRecommendations(
   organizationId: string,
-  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string },
+  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string },
   token: string,
 ): Promise<CoverageCandidate[]> {
   const result = await apiClient.post<{ candidates: CoverageCandidate[] }>(

@@ -4,7 +4,23 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: fix/persistent-platform-navigation
+Branch: phase-7/7.7-predictive-workforce
+
+## 2026-09-21 — Phase 7.7 predictive workforce planning
+
+- Added a new Administration destination, “Planificación”, backed only by the
+  real manager-authorized workforce forecast API.
+- Administration can analyze 7, 14 or 30 days and see daily risk, required and
+  known available hours, role-specific gaps and uncovered shifts.
+- ETNARA explains uncertainty when eligible caregivers have not configured
+  availability and surfaces credentials that expire inside the horizon.
+- Recommended actions link to existing human workflows; the page never assigns
+  a caregiver or starts a coverage campaign automatically.
+- New shifts persist the selected caregiver role as forecast demand.
+- Typecheck, production build and 49/49 tests pass; lint retains only existing
+  repository warnings.
+- Exact next step: review the final diff and publish with the backend only after
+  explicit authorization.
 
 ## 2026-09-21 — Persistent platform navigation hotfix
 
@@ -16,7 +32,8 @@ Branch: fix/persistent-platform-navigation
   the link, and `/platform` remains protected by `PlatformGuard`.
 - Frontend validation passed: typecheck, production build, 45/45 tests and
   lint; lint retains only existing warnings. `git diff --check` also passed.
-- Exact next step: publish only after explicit authorization.
+- Published and merged in frontend PR #49; pull-request CI, post-merge CI and
+  GitHub Pages deployment passed.
 
 ## 2026-09-21 — Phase 7.6.2 compliance self-service
 

@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FPH7-011 — Phase 7.7 predictive workforce planning
+
+- add a manager-only Planning destination in Agency
+- compare real scheduled demand with eligible declared workforce capacity
+- explain role-specific gaps, uncovered shifts and incomplete availability
+- surface credential expirations within the selected horizon
+- keep every recommendation read-only and require human action
+
+Status: Implemented locally on `phase-7/7.7-predictive-workforce`; typecheck,
+production build, 49/49 tests and lint pass with existing warnings only.
+
+---
+
 ### FPH7-006 — Phase 7.5 staged coverage escalation
 
 - show current wave, queued candidates and automatic progression time
@@ -261,8 +274,8 @@ Acceptance criteria:
 - include the destination in both desktop sidebar and mobile drawer
 - preserve the independent `PlatformGuard` authorization boundary
 
-Status: Implemented locally on `fix/persistent-platform-navigation`;
-publication pending explicit authorization.
+Status: Complete — published and merged in frontend PR #49 after CI passed;
+post-merge CI and GitHub Pages deployment also passed.
 
 ### FPH7-008 — Caregiver self-identity correction
 - remove fixed María identity from caregiver header and profile
