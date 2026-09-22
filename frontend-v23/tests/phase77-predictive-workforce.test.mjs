@@ -22,6 +22,12 @@ test("planning consumes the manager-only real forecast contract", () => {
   assert.doesNotMatch(page, /DemoStore|mock|setTimeout\(/i);
 });
 
+test("the planning horizon selector remains readable on mobile", () => {
+  const page = read("src/pages/agency/AgencyWorkforcePlanningPage.tsx");
+  assert.match(page, /w-full sm:max-w-\[320px\]/);
+  assert.doesNotMatch(page, /className="max-w-xs"/);
+});
+
 test("the experience explains human control and does not auto-assign", () => {
   const page = read("src/pages/agency/AgencyWorkforcePlanningPage.tsx");
   assert.match(page, /Recomienda; Administración decide y confirma cualquier acción/);
