@@ -8,9 +8,8 @@
 - avoid the ETNARA `xs` spacing-token collision in Tailwind
 - validate the real forecast after the backend hotfix is deployed
 
-Status: Implemented locally on `fix/phase-7-7-planning-runtime`; typecheck,
-production build, 50/50 tests and lint pass with existing warnings only.
-Publication requires explicit authorization.
+Status: Complete — published and merged in frontend PR #51; CI and GitHub
+Pages deployment passed, and the public CSS contains the corrected width.
 
 ---
 
