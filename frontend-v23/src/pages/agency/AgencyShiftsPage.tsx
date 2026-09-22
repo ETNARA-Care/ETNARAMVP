@@ -154,7 +154,7 @@ export function AgencyShiftsPage() {
     setCreating(true);
   }
 
-  async function analyzeCoverage(careRecipientId: string, scheduledStart: string, scheduledEnd: string) {
+  async function analyzeCoverage(careRecipientId: string, scheduledStart: string, scheduledEnd: string, requiredRole?: string) {
     const token = getToken();
     if (!organizationId || !token || !careRecipientId) return;
     const start = new Date(scheduledStart);
@@ -169,6 +169,7 @@ export function AgencyShiftsPage() {
         careRecipientId,
         scheduledStart: start.toISOString(),
         scheduledEnd: end.toISOString(),
+        ...(requiredRole ? { requiredRole } : {}),
       }, token);
       setCoverageCandidates(candidates);
       const firstRecommended = candidates.find((candidate) => candidate.recommended);
@@ -185,7 +186,7 @@ export function AgencyShiftsPage() {
     setCoverageCandidates(null);
     setSelectedWorkerId(eligibleWorkers[0]?.id ?? "");
     if (shift.care_recipient_id) {
-      void analyzeCoverage(shift.care_recipient_id, shift.scheduled_start, shift.scheduled_end);
+      void analyzeCoverage(shift.care_recipient_id, shift.scheduled_start, shift.scheduled_end, shift.required_role);
     }
   }
 
@@ -200,6 +201,7 @@ export function AgencyShiftsPage() {
     try {
       const shift = await createShift(organizationId, {
         careRecipientId: effectiveRecipientId, scheduledStart: new Date(times.start).toISOString(), scheduledEnd: new Date(times.end).toISOString(),
+        requiredRole: workerById[effectiveWorkerId]?.internal_role ?? "Cuidador/a",
       }, token);
       await assignShift(organizationId, shift.id, effectiveWorkerId, token);
       setCreating(false);
@@ -299,7 +301,7 @@ export function AgencyShiftsPage() {
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
           <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => { setTimes((current) => ({ ...current, start: event.target.value })); setCoverageCandidates(null); }} required />
           <Input label="Salida" type="datetime-local" value={times.end} onChange={(event) => { setTimes((current) => ({ ...current, end: event.target.value })); setCoverageCandidates(null); }} required />
-          <Button variant="secondary" icon={<Sparkles size={18} />} loading={coverageLoading} onClick={() => void analyzeCoverage(effectiveRecipientId, times.start, times.end)} disabled={!effectiveRecipientId}>Analizar cobertura</Button>
+          <Button variant="secondary" icon={<Sparkles size={18} />} loading={coverageLoading} onClick={() => void analyzeCoverage(effectiveRecipientId, times.start, times.end, workerById[effectiveWorkerId]?.internal_role)} disabled={!effectiveRecipientId}>Analizar cobertura</Button>
           {coverageCandidates && <CoverageRecommendations candidates={coverageCandidates} selectedWorkerId={effectiveWorkerId} onSelect={setSelectedWorkerId} />}
         </div>
       </Modal>
