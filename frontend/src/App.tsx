@@ -8,6 +8,7 @@ import { AgencyDashboardRealPage } from "./pages/agency/AgencyDashboardRealPage"
 import { AgencyShiftsPage } from "./pages/agency/AgencyShiftsPage";
 import { AgencyRecipientsPage } from "./pages/agency/AgencyRecipientsPage";
 import { AgencyTeamPage } from "./pages/agency/AgencyTeamPage";
+import { AgencyTimesheetsPage } from "./pages/agency/AgencyTimesheetsPage";
 import { AgencyResidentProfilePage } from "./pages/agency/AgencyResidentProfilePage";
 import { CaregiverShiftsPage } from "./pages/caregiver/CaregiverShiftsPage";
 import { CaregiverShiftWorkspacePage } from "./pages/caregiver/CaregiverShiftWorkspacePage";
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="/agency/personas" element={<AgencyRecipientsPage />} />
               <Route path="/agency/personas/:residentId" element={<AgencyResidentProfilePage />} />
               <Route path="/agency/equipo" element={<AgencyTeamPage />} />
+              <Route path="/agency/horas" element={<AgencyTimesheetsPage />} />
               <Route path="/caregiver" element={<CaregiverShiftsPage />} />
               <Route path="/caregiver/shifts/:shiftId" element={<CaregiverShiftWorkspacePage />} />
               <Route path="/caregiver/shifts/:shiftId/care-events/:typeCode" element={<CaregiverCareEventFormPage />} />
