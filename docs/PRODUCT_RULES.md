@@ -134,6 +134,15 @@ Relevant sources may include:
 - The agent uses the real backend contract with no mock fallback.
 - Family has no route, navigation item or API dependency for this agent.
 
+## Assisted Coverage Agent
+
+- Only authorized Agency users may request and view the coverage briefing.
+- The UI must identify its output as advisory and keep human control visible.
+- Recommendations open existing shift workflows and never imply that an offer,
+  campaign, assignment, eligibility value or availability record changed.
+- The agent uses the real backend contract with no mock fallback.
+- Family has no route, navigation item or API dependency for this agent.
+
 ## Mock Data
 
 Never use mock/demo/local data as a silent replacement for a real backend request.

@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FPH9-003 — Phase 9.2 assisted Coverage Agent
+
+- explicit manager-requested briefing in the real shifts workflow
+- prioritized uncovered shifts using current campaign and eligibility data
+- visible advisory mode and authoritative shift destinations
+- no mock fallback, automatic offer/assignment or Family exposure
+
+Status: Implemented locally on `phase-9/9.2-coverage-agent`; typecheck,
+production build, all 62 tests and diff safety pass. Lint retains only existing
+warnings.
+
+---
+
 ### FPH9-002 — Phase 9.1 assisted Compliance Agent
 
 - explicit manager-requested briefing in the real compliance center
@@ -9,9 +22,8 @@
 - visible advisory mode, recommendations and existing workflow destinations
 - no mock fallback, automatic compliance decision or Family exposure
 
-Status: Implemented locally on `phase-9/9.1-compliance-agent`; typecheck,
-production build, all 59 tests and diff safety pass. Lint retains only existing
-warnings.
+Status: Complete — published and merged in frontend PR #60; CI and GitHub
+Pages deployment passed.
 
 ---
 
