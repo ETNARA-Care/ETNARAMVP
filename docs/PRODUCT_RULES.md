@@ -116,6 +116,15 @@ Relevant sources may include:
   but never performs the underlying decision.
 - Family routes never request or display the operational center.
 
+## Assisted Operations Agent
+
+- Only authorized Agency users may request and view an agent briefing.
+- The UI must identify the output as advisory and keep human control visible.
+- Recommendations open existing authoritative workflows; they never imply that
+  a shift, credential, incident or timesheet was changed.
+- The agent uses the real backend contract with no mock fallback.
+- Family has no route, navigation item or API dependency for the agent.
+
 ## Mock Data
 
 Never use mock/demo/local data as a silent replacement for a real backend request.

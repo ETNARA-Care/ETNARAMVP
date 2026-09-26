@@ -4,7 +4,21 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-8/8.0-operational-automation
+Branch: phase-9/9.0-operations-agent
+
+## 2026-09-26 — Phase 9.0 assisted Operations Agent
+
+- Added an “Agente de Operaciones” surface inside the real Agency operational
+  center.
+- Administration explicitly requests a briefing and receives up to five
+  ranked priorities with reasons, recommendations and authoritative actions.
+- The interface identifies advisory mode and human control; it never presents
+  a recommendation as an executed decision.
+- There is no mock fallback and Family has no agent route or API request.
+- Typecheck, production build, all 56 tests and diff safety pass; lint retains
+  only the repository's existing warnings.
+- Exact next step: run the full frontend test, build and lint suite, review the
+  diff and publish only after the backend is green and live.
 
 ## 2026-09-26 — Phase 8.0 agency operations and automation
 
@@ -15,9 +29,8 @@ Branch: phase-8/8.0-operational-automation
 - Alerts open existing workflows and can be escalated once to active
   Supervisors; no operational decision is performed automatically.
 - Family has no route or API dependency for organization-wide alerts.
-- Typecheck, production build and all 53 tests pass locally.
-- Exact next step: publish after backend migration 060 passes CI, only with
-  explicit authorization.
+- Published and merged in frontend PR #58 after typecheck, 53/53 tests, build
+  and CI passed; GitHub Pages serves the operational center bundle.
 
 ## 2026-09-22 — Phase 7.7 planning runtime hotfix
 
