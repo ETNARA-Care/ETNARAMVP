@@ -2,15 +2,27 @@
 
 ## In Progress
 
+### FPH9-001 — Phase 9.0 assisted Operations Agent
+
+- explicit manager-requested briefing on the real operational center
+- up to five ranked priorities with reasons and human workflow actions
+- visible advisory mode and human-control guardrails
+- no mock fallback, external model dependency or Family exposure
+
+Status: Implemented locally on `phase-9/9.0-operations-agent`; typecheck,
+production build, all 56 tests and diff safety pass. Lint retains only existing
+warnings.
+
+---
+
 ### FPH8-001 — Phase 8.0 agency operations and automation
 
 - real Agency operational center with five priority alert categories
 - daily summary, existing-workflow actions and Supervisor escalation
 - one-minute refresh with no mock fallback or Family exposure
 
-Status: Implemented locally on `phase-8/8.0-operational-automation`; typecheck,
-production build and 53/53 tests pass. Publication requires backend migration
-060 and explicit authorization.
+Status: Complete — published and merged in frontend PR #58; CI and GitHub
+Pages deployment passed.
 
 ---
 
