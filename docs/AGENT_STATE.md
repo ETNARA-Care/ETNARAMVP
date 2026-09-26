@@ -4,7 +4,20 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-9/9.1-compliance-agent
+Branch: phase-9/9.2-coverage-agent
+
+## 2026-09-26 — Phase 9.2 assisted Coverage Agent
+
+- Added an “Agente de Cobertura” briefing inside the real Agency shifts page.
+- Administration explicitly requests analysis and receives up to five ranked
+  uncovered shifts with urgency, eligible-option counts and authoritative links.
+- Advisory mode and human control remain visible; the UI never implies that an
+  offer, campaign or assignment changed.
+- There is no mock fallback and Family has no agent route or API request.
+- Typecheck, production build, all 62 tests and diff safety pass; lint retains
+  only the repository's existing warnings.
+- Exact next step: run full tests, production build and lint, then publish only
+  after the backend is green and live.
 
 ## 2026-09-26 — Phase 9.1 assisted Compliance Agent
 
@@ -15,10 +28,8 @@ Branch: phase-9/9.1-compliance-agent
 - Advisory mode and human control remain visible; the UI never implies that a
   credential, eligibility value, membership or policy changed.
 - There is no mock fallback and Family has no agent route or API request.
-- Typecheck, production build, all 59 tests and diff safety pass; lint retains
-  only the repository's existing warnings.
-- Exact next step: run full tests, production build and lint, then publish only
-  after the backend is green and live.
+- Published and merged in frontend PR #60 after typecheck, 59/59 tests, build
+  and CI passed; GitHub Pages serves the Compliance Agent bundle.
 
 ## 2026-09-26 — Phase 9.0 assisted Operations Agent
 
