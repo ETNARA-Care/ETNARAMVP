@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Sparkles } from "lucide-react";
+import { Bot, Plus, Sparkles } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
+import { generateCoverageAgentBriefing, type CoverageAgentBriefing } from "@/api/coverageAgent";
 import { listShiftCoverageOffers, openCoverageCampaign, type ShiftCoverageOffer } from "@/api/coverageOffers";
 import {
   assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
@@ -24,7 +25,7 @@ function initialTimes() {
   return { start: localDateTime(start), end: localDateTime(new Date(start.getTime() + 4 * 60 * 60_000)) };
 }
 
-function formatWindow(shift: Shift): string {
+function formatWindow(shift: Pick<Shift, "scheduled_start" | "scheduled_end">): string {
   const start = new Date(shift.scheduled_start);
   const end = new Date(shift.scheduled_end);
   return `${start.toLocaleDateString("es-PR", { weekday: "short", day: "numeric", month: "short" })} · ${start.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })} – ${end.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}`;
@@ -88,6 +89,8 @@ export function AgencyShiftsPage() {
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [offersByShift, setOffersByShift] = useState<Record<string, ShiftCoverageOffer[]>>({});
   const [offeringShiftId, setOfferingShiftId] = useState<string | null>(null);
+  const [agentBriefing, setAgentBriefing] = useState<CoverageAgentBriefing | null>(null);
+  const [agentBusy, setAgentBusy] = useState(false);
   const organizationId = activeOrganization?.id;
 
   const load = useCallback(async () => {
@@ -241,12 +244,82 @@ export function AgencyShiftsPage() {
     } finally { setOfferingShiftId(null); }
   }
 
+  async function runCoverageAgent() {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    setAgentBusy(true);
+    try {
+      setAgentBriefing(await generateCoverageAgentBriefing(organizationId, token));
+      show("El Agente de Cobertura preparó el briefing.", "success");
+    } catch {
+      show("El agente no pudo analizar la cobertura en este momento.", "danger");
+    } finally {
+      setAgentBusy(false);
+    }
+  }
+
   if (shifts === null) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Turnos" description="Asignaciones reales de la organización." actions={<Button icon={<Plus size={18} />} onClick={openCreate} disabled={eligibleWorkers.length === 0}>Crear turno</Button>} />
+      <Card className="border border-[var(--color-border)]">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="flex gap-3">
+            <div className="w-10 h-10 rounded-full bg-[var(--color-accent-100)] text-[var(--color-accent-700)] flex items-center justify-center shrink-0">
+              <Bot size={21} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-lg">Agente de Cobertura</h2>
+                <Badge tone="neutral">Asesor · control humano</Badge>
+              </div>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                Analiza turnos sin cubrir, campañas y opciones elegibles. No envía ofertas ni hace asignaciones.
+              </p>
+            </div>
+          </div>
+          <Button icon={<Sparkles size={18} />} loading={agentBusy} onClick={() => void runCoverageAgent()}>
+            {agentBriefing ? "Actualizar briefing" : "Generar briefing"}
+          </Button>
+        </div>
+
+        {agentBriefing && (
+          <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
+            <h3 className="font-medium text-base">{agentBriefing.headline}</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] mt-1">{agentBriefing.narrative}</p>
+            {agentBriefing.priorities.length === 0 ? (
+              <p className="text-sm text-[var(--color-text-secondary)] mt-4">No hay brechas prioritarias que atender.</p>
+            ) : (
+              <div className="flex flex-col gap-3 mt-4">
+                {agentBriefing.priorities.map((priority) => (
+                  <div key={priority.shiftId} className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-semibold text-[var(--color-text-muted)]">#{priority.rank}</span>
+                          <Badge tone={priority.severity === "critical" ? "danger" : "warning"}>
+                            {priority.severity === "critical" ? "Urgente" : "Atención"}
+                          </Badge>
+                          <span className="font-medium text-sm">{priority.recipientName}</span>
+                        </div>
+                        <p className="text-sm mt-2">{formatWindow({ scheduled_start: priority.scheduledStart, scheduled_end: priority.scheduledEnd })}</p>
+                        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                          {priority.eligibleCandidateCount} opción(es) elegible(s) · {priority.interestedCount} interesada(s)
+                        </p>
+                        <p className="text-sm text-[var(--color-text-secondary)] mt-1">Recomendación: {priority.recommendedAction}</p>
+                      </div>
+                      <Button variant="secondary" onClick={() => navigate(priority.actionPath)}>Revisar turno</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-[var(--color-text-muted)] mt-4">{agentBriefing.guardrails.join(" · ")}</p>
+          </div>
+        )}
+      </Card>
       {orderedShifts.length === 0 ? (
         <EmptyState title="No hay turnos activos" description="Crea un turno y asígnalo a una cuidadora." action={{ label: "Crear turno", onClick: openCreate }} />
       ) : (
