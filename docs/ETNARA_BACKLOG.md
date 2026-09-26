@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FPH9-002 — Phase 9.1 assisted Compliance Agent
+
+- explicit manager-requested briefing in the real compliance center
+- prioritized caregiver blockers and upcoming credential expirations
+- visible advisory mode, recommendations and existing workflow destinations
+- no mock fallback, automatic compliance decision or Family exposure
+
+Status: Implemented locally on `phase-9/9.1-compliance-agent`; typecheck,
+production build, all 59 tests and diff safety pass. Lint retains only existing
+warnings.
+
+---
+
 ### FPH9-001 — Phase 9.0 assisted Operations Agent
 
 - explicit manager-requested briefing on the real operational center
@@ -9,9 +22,8 @@
 - visible advisory mode and human-control guardrails
 - no mock fallback, external model dependency or Family exposure
 
-Status: Implemented locally on `phase-9/9.0-operations-agent`; typecheck,
-production build, all 56 tests and diff safety pass. Lint retains only existing
-warnings.
+Status: Complete — published and merged in frontend PR #59; CI and GitHub
+Pages deployment passed.
 
 ---
 

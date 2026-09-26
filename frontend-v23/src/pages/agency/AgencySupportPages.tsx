@@ -1,6 +1,6 @@
 import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AlertTriangle, ChevronDown, History, KeyRound, LogOut, Plus, Settings, ShieldCheck, SlidersHorizontal, UserCheck } from "lucide-react";
+import { AlertTriangle, Bot, ChevronDown, History, KeyRound, LogOut, Plus, Settings, ShieldCheck, SlidersHorizontal, Sparkles, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useAuth } from "@/auth/AuthProvider";
@@ -19,7 +19,9 @@ import {
   getWorkerCompliance,
   getComplianceAudit,
   getComplianceConfiguration,
+  generateComplianceAgentBriefing,
   saveCompliancePolicy,
+  type ComplianceAgentBriefing,
   type ComplianceAuditEntry,
   type ComplianceConfiguration,
   type CompliancePolicyRequirement,
@@ -256,6 +258,8 @@ export function AgencyCompliancePage() {
   const [editingRole, setEditingRole] = useState<string | null>(null);
   const [draftRequirements, setDraftRequirements] = useState<CompliancePolicyRequirement[]>([]);
   const [savingPolicy, setSavingPolicy] = useState(false);
+  const [agentBriefing, setAgentBriefing] = useState<ComplianceAgentBriefing | null>(null);
+  const [agentBusy, setAgentBusy] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -333,6 +337,20 @@ export function AgencyCompliancePage() {
     }
   };
 
+  const runComplianceAgent = async () => {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    setAgentBusy(true);
+    try {
+      setAgentBriefing(await generateComplianceAgentBriefing(organizationId, token));
+      toast.show("El Agente de Cumplimiento preparó el briefing.", "success");
+    } catch {
+      toast.show("El agente no pudo analizar el cumplimiento en este momento.", "danger");
+    } finally {
+      setAgentBusy(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Cumplimiento" description="Credenciales y verificaciones del equipo." />
@@ -342,6 +360,84 @@ export function AgencyCompliancePage() {
         <ComplianceMetric icon={<ShieldCheck size={20} />} label="Aptos" value={eligibleCount} tone="success" />
         <ComplianceMetric icon={<AlertTriangle size={20} />} label="Requieren atención" value={attentionCount} tone={attentionCount > 0 ? "warning" : "success"} />
       </div>
+
+      <Card className="border border-[var(--color-border)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent-100)] text-[var(--color-accent-700)]">
+              <Bot size={21} />
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-[var(--text-h3)]">Agente de Cumplimiento</h2>
+                <Badge tone="neutral">Asesor · control humano</Badge>
+              </div>
+              <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+                Analiza aptitud, verificaciones y vencimientos reales. No aprueba documentos ni cambia elegibilidad.
+              </p>
+            </div>
+          </div>
+          <Button
+            icon={<Sparkles size={18} />}
+            loading={agentBusy}
+            onClick={() => void runComplianceAgent()}
+          >
+            {agentBriefing ? "Actualizar briefing" : "Generar briefing"}
+          </Button>
+        </div>
+
+        {agentBriefing && (
+          <div className="mt-5 border-t border-[var(--color-border)] pt-5">
+            <h3 className="font-medium text-[var(--color-text-primary)]">{agentBriefing.headline}</h3>
+            <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+              {agentBriefing.narrative}
+            </p>
+
+            {agentBriefing.priorities.length === 0 ? (
+              <p className="mt-4 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+                No hay seguimientos prioritarios que recomendar.
+              </p>
+            ) : (
+              <div className="mt-4 flex flex-col gap-3">
+                {agentBriefing.priorities.map((priority) => (
+                  <div
+                    key={priority.membershipId}
+                    className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[var(--text-caption)] font-semibold text-[var(--color-text-muted)]">
+                            #{priority.rank}
+                          </span>
+                          <Badge tone={priority.severity === "critical" ? "danger" : "warning"}>
+                            {priority.severity === "critical" ? "Crítico" : "Atención"}
+                          </Badge>
+                          <span className="font-medium">{priority.workerName}</span>
+                          <span className="text-[var(--text-caption)] text-[var(--color-text-muted)]">
+                            {priority.workerRole}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-[var(--text-small)]">{priority.reason}</p>
+                        <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+                          Recomendación: {priority.recommendedAction}
+                        </p>
+                      </div>
+                      <Button variant="secondary" onClick={() => navigate(priority.actionPath)}>
+                        Revisar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <p className="mt-4 text-[var(--text-caption)] text-[var(--color-text-muted)]">
+              {agentBriefing.guardrails.join(" · ")}
+            </p>
+          </div>
+        )}
+      </Card>
 
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3">

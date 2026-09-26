@@ -4,7 +4,21 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-9/9.0-operations-agent
+Branch: phase-9/9.1-compliance-agent
+
+## 2026-09-26 — Phase 9.1 assisted Compliance Agent
+
+- Added an “Agente de Cumplimiento” briefing inside the real Agency compliance
+  center.
+- Administration explicitly requests analysis and receives up to five ranked
+  caregivers with reasons, recommendations and existing workflow actions.
+- Advisory mode and human control remain visible; the UI never implies that a
+  credential, eligibility value, membership or policy changed.
+- There is no mock fallback and Family has no agent route or API request.
+- Typecheck, production build, all 59 tests and diff safety pass; lint retains
+  only the repository's existing warnings.
+- Exact next step: run full tests, production build and lint, then publish only
+  after the backend is green and live.
 
 ## 2026-09-26 — Phase 9.0 assisted Operations Agent
 
@@ -15,10 +29,8 @@ Branch: phase-9/9.0-operations-agent
 - The interface identifies advisory mode and human control; it never presents
   a recommendation as an executed decision.
 - There is no mock fallback and Family has no agent route or API request.
-- Typecheck, production build, all 56 tests and diff safety pass; lint retains
-  only the repository's existing warnings.
-- Exact next step: run the full frontend test, build and lint suite, review the
-  diff and publish only after the backend is green and live.
+- Published and merged in frontend PR #59 after typecheck, 56/56 tests, build
+  and CI passed; GitHub Pages serves the Operations Agent bundle.
 
 ## 2026-09-26 — Phase 8.0 agency operations and automation
 

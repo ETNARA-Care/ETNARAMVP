@@ -63,6 +63,37 @@ export interface ComplianceAuditEntry {
   newValue: unknown;
 }
 
+export interface ComplianceAgentPriority {
+  rank: number;
+  membershipId: string;
+  workerName: string;
+  workerRole: string;
+  severity: "critical" | "warning";
+  title: string;
+  reason: string;
+  blockerCodes: string[];
+  nearestExpiry: string | null;
+  recommendedAction: string;
+  actionPath: string;
+  requiresHumanConfirmation: true;
+}
+
+export interface ComplianceAgentBriefing {
+  runId: string;
+  generatedAt: string;
+  mode: "advisory";
+  headline: string;
+  narrative: string;
+  summary: {
+    activeWorkers: number;
+    eligibleWorkers: number;
+    blockedWorkers: number;
+    expiringWorkers: number;
+  };
+  priorities: ComplianceAgentPriority[];
+  guardrails: string[];
+}
+
 export async function getComplianceConfiguration(
   organizationId: string,
   token: string,
@@ -90,4 +121,15 @@ export async function getComplianceAudit(
   token: string,
 ): Promise<{ entries: ComplianceAuditEntry[] }> {
   return apiClient.get(`/organizations/${organizationId}/compliance/audit`, token);
+}
+
+export async function generateComplianceAgentBriefing(
+  organizationId: string,
+  token: string,
+): Promise<ComplianceAgentBriefing> {
+  return apiClient.post(
+    `/organizations/${organizationId}/compliance/agent/briefing`,
+    {},
+    token,
+  );
 }

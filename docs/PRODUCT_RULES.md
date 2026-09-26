@@ -125,6 +125,15 @@ Relevant sources may include:
 - The agent uses the real backend contract with no mock fallback.
 - Family has no route, navigation item or API dependency for the agent.
 
+## Assisted Compliance Agent
+
+- Only authorized Agency users may request and view the compliance briefing.
+- The UI must identify its output as advisory and keep human control visible.
+- Recommendations open existing profiles or policy configuration and never
+  imply that a credential, eligibility value, membership or policy changed.
+- The agent uses the real backend contract with no mock fallback.
+- Family has no route, navigation item or API dependency for this agent.
+
 ## Mock Data
 
 Never use mock/demo/local data as a silent replacement for a real backend request.
