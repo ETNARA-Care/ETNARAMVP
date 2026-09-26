@@ -31,6 +31,7 @@ import { AgencyShiftsPage } from "@/pages/agency/AgencyShiftsPage";
 import { AgencyShiftDetailPage } from "@/pages/agency/AgencyShiftDetailPage";
 import { AgencyWorkforcePlanningPage } from "@/pages/agency/AgencyWorkforcePlanningPage";
 import { AgencyTimesheetsPage } from "@/pages/agency/AgencyTimesheetsPage";
+import { AgencyOperationsPage } from "@/pages/agency/AgencyOperationsPage";
 import { AgencyWorkerProfilePage } from "@/pages/agency/AgencyWorkerProfilePage";
 import { AgencyIncidentsPage } from "@/pages/agency/AgencyIncidentsPage";
 import { AgencyIncidentDetailPage } from "@/pages/agency/AgencyIncidentDetailPage";
@@ -126,6 +127,7 @@ export default function App() {
           <Route path="shifts/:shiftId" element={<AgencyShiftDetailPage />} />
           <Route path="planning" element={<AgencyWorkforcePlanningPage />} />
           <Route path="timesheets" element={<AgencyTimesheetsPage />} />
+          <Route path="operations" element={<AgencyOperationsPage />} />
           <Route path="incidents" element={<AgencyIncidentsPage />} />
           <Route path="incidents/:incidentId" element={<AgencyIncidentDetailPage />} />
           <Route path="messages" element={<AgencyMessagesPage />} />

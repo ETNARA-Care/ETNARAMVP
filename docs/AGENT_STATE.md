@@ -4,7 +4,20 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: fix/phase-7-7-planning-runtime
+Branch: phase-8/8.0-operational-automation
+
+## 2026-09-26 — Phase 8.0 agency operations and automation
+
+- Added “Centro operacional” to Agency with a real manager-authorized API and
+  automatic one-minute refresh.
+- The page prioritizes uncovered shifts, missed check-ins, expiring
+  credentials, unresolved incidents and hours requiring review.
+- Alerts open existing workflows and can be escalated once to active
+  Supervisors; no operational decision is performed automatically.
+- Family has no route or API dependency for organization-wide alerts.
+- Typecheck, production build and all 53 tests pass locally.
+- Exact next step: publish after backend migration 060 passes CI, only with
+  explicit authorization.
 
 ## 2026-09-22 — Phase 7.7 planning runtime hotfix
 

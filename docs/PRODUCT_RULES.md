@@ -108,6 +108,14 @@ Relevant sources may include:
 - incidents
 - meaningful shift/status changes
 
+## Operational Automation
+
+- Organization-wide alerts belong only to authorized Agency surfaces and use
+  the real backend contract.
+- “Atender” opens the authoritative workflow; “Escalar” notifies a Supervisor
+  but never performs the underlying decision.
+- Family routes never request or display the operational center.
+
 ## Mock Data
 
 Never use mock/demo/local data as a silent replacement for a real backend request.

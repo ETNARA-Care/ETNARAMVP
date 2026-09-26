@@ -53,6 +53,10 @@ export function NotificationBell() {
       navigate(`/agency/workers/${workerMembershipId}`);
       return;
     }
+    if (entityType === "operational_alert" && portal === "agency") {
+      navigate("/agency/operations");
+      return;
+    }
     if (type === "NEW_CARE_EVENT") {
       if (portal === "family") navigate("/family/activity");
       if (portal === "agency" && careRecipientId) navigate(`/agency/residents/${careRecipientId}`);
