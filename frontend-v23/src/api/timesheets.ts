@@ -1,0 +1,8 @@
+import { apiClient } from "@/api/client";
+export interface FinancialRate { membership_id:string; display_name:string|null; internal_role:string; membership_status:string; pay_rate_cents:number|null; bill_rate_cents:number|null; currency:string|null; updated_at:string|null }
+export interface Timesheet { id:string; worker_name:string|null; worker_role:string; recipient_name:string|null; recorded_minutes:number; approved_minutes:number|null; pay_amount_cents:number|null; bill_amount_cents:number|null; status:"pending"|"approved"|"disputed"; review_note:string|null }
+export interface TimesheetSummary { recordedMinutes:number; approvedMinutes:number; pendingCount:number; disputedCount:number; approvedPayCents:number; approvedBillCents:number }
+export async function listFinancialRates(org:string,token:string){return (await apiClient.get<{rates:FinancialRate[]}>(`/organizations/${org}/financial-rates`,token)).rates}
+export async function saveFinancialRate(org:string,id:string,payRateCents:number,billRateCents:number,token:string){return apiClient.put(`/organizations/${org}/financial-rates/${id}`,{payRateCents,billRateCents,currency:"USD"},token)}
+export async function listTimesheets(org:string,from:string,to:string,status:string,token:string){const q=new URLSearchParams({dateFrom:from,dateTo:to});if(status)q.set("status",status);return apiClient.get<{timesheets:Timesheet[];summary:TimesheetSummary}>(`/organizations/${org}/timesheets?${q}`,token)}
+export async function reviewTimesheet(org:string,id:string,decision:"approved"|"disputed",token:string,approvedMinutes?:number,note?:string){return apiClient.post(`/organizations/${org}/timesheets/${id}/review`,{decision,approvedMinutes,note},token)}
