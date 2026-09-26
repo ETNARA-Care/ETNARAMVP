@@ -41,6 +41,7 @@ function notificationSummary(type: string): string {
   if (type === "SHIFT_COMPLETED") return "La cuidadora finalizó el turno";
   if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";
   if (type === "CREDENTIAL_EXPIRED") return "Credencial vencida";
+  if (type === "OPERATIONAL_ALERT_ESCALATED") return "Alerta operacional escalada";
   return "Notificación";
 }
 

@@ -2,6 +2,18 @@
 
 ## In Progress
 
+### FPH8-001 — Phase 8.0 agency operations and automation
+
+- real Agency operational center with five priority alert categories
+- daily summary, existing-workflow actions and Supervisor escalation
+- one-minute refresh with no mock fallback or Family exposure
+
+Status: Implemented locally on `phase-8/8.0-operational-automation`; typecheck,
+production build and 53/53 tests pass. Publication requires backend migration
+060 and explicit authorization.
+
+---
+
 ### FPH7-012 — Phase 7.7 planning runtime hotfix
 
 - keep the analysis-period selector readable at mobile widths
