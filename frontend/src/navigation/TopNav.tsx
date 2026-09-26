@@ -15,6 +15,7 @@ export function TopNav() {
     links.push({ to: "/agency/turnos", label: "Turnos" });
     links.push({ to: "/agency/personas", label: "Personas" });
     links.push({ to: "/agency/equipo", label: "Equipo" });
+    links.push({ to: "/agency/horas", label: "Horas y facturación" });
   }
   if (isFamily) {
     links.push({ to: "/family", label: "Inicio" });
