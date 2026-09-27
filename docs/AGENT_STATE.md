@@ -4,7 +4,23 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-9/9.3-care-quality-agent
+Branch: phase-9/9.4-agent-center
+
+## 2026-09-26 — Phase 9.4 B2B Agent Center
+
+- Added one “Centro de agentes” destination for the four existing Agency
+  briefings: Operations, Compliance, Coverage and Care Quality.
+- A combined manager-requested analysis uses each existing protected contract
+  and preserves successful cards when another agent fails.
+- The product map makes Compliance, Workforce, Care and Family explicit while
+  keeping Family outside organization-wide agent requests.
+- The center performs no operational mutation and keeps advisory mode and
+  human control visible.
+- Added dedicated regressions for the Agent Center and the existing Phase 7.9
+  pay-period surface.
+- Typecheck, all 68 tests, production build and diff safety pass; lint retains
+  only the repository's existing warnings.
+- Exact next step: publish after the backend stability PR is green.
 
 ## 2026-09-26 — Phase 9.3 assisted Care Quality Agent
 
@@ -14,10 +30,8 @@ Branch: phase-9/9.3-care-quality-agent
 - Advisory mode and human control remain visible; the UI never implies that a
   note, verification, observation or incident changed.
 - There is no mock fallback and Family has no quality route or API request.
-- Typecheck, production build, all 65 tests and diff safety pass; lint retains
-  only the repository's existing warnings.
-- Exact next step: run full tests, production build and lint, then publish only
-  after the backend is green and live.
+- Published and merged in frontend PR #62 after typecheck, all 65 tests,
+  production build and CI passed; GitHub Pages serves the quality workspace.
 
 ## 2026-09-26 — Phase 9.2 assisted Coverage Agent
 
