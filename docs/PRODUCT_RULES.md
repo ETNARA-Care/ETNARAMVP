@@ -143,6 +143,16 @@ Relevant sources may include:
 - The agent uses the real backend contract with no mock fallback.
 - Family has no route, navigation item or API dependency for this agent.
 
+## Assisted Care Quality Agent
+
+- Only authorized Agency users may request and view the quality briefing.
+- The UI must present objective documentation gaps without claiming that care
+  did or did not occur and must keep human control visible.
+- Recommendations open existing shift, resident or incident workflows and
+  never imply that a note, verification, observation or incident changed.
+- The agent uses the real backend contract with no mock fallback.
+- Family has no route, navigation item or API dependency for this agent.
+
 ## Mock Data
 
 Never use mock/demo/local data as a silent replacement for a real backend request.
