@@ -32,6 +32,7 @@ import { AgencyShiftDetailPage } from "@/pages/agency/AgencyShiftDetailPage";
 import { AgencyWorkforcePlanningPage } from "@/pages/agency/AgencyWorkforcePlanningPage";
 import { AgencyTimesheetsPage } from "@/pages/agency/AgencyTimesheetsPage";
 import { AgencyOperationsPage } from "@/pages/agency/AgencyOperationsPage";
+import { AgencyAgentCenterPage } from "@/pages/agency/AgencyAgentCenterPage";
 import { AgencyCareQualityPage } from "@/pages/agency/AgencyCareQualityPage";
 import { AgencyWorkerProfilePage } from "@/pages/agency/AgencyWorkerProfilePage";
 import { AgencyIncidentsPage } from "@/pages/agency/AgencyIncidentsPage";
@@ -129,6 +130,7 @@ export default function App() {
           <Route path="planning" element={<AgencyWorkforcePlanningPage />} />
           <Route path="timesheets" element={<AgencyTimesheetsPage />} />
           <Route path="operations" element={<AgencyOperationsPage />} />
+          <Route path="agents" element={<AgencyAgentCenterPage />} />
           <Route path="quality" element={<AgencyCareQualityPage />} />
           <Route path="incidents" element={<AgencyIncidentsPage />} />
           <Route path="incidents/:incidentId" element={<AgencyIncidentDetailPage />} />

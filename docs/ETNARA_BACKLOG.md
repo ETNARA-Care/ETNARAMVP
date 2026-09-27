@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FPH9-005 — Phase 9.4 B2B Agent Center
+
+- one Agency destination coordinating the four existing agent briefings
+- resilient combined analysis that preserves successful results if one agent fails
+- explicit product mapping for Compliance, Workforce, Care and Family
+- existing authoritative workflows only, with no duplicate logic or Family agent
+- dedicated regression coverage for the Phase 7.9 pay-period surface
+
+Status: Implemented locally on `phase-9/9.4-agent-center`; typecheck, all 68
+tests, production build and diff safety pass. Lint retains only existing warnings.
+
+---
+
 ### FPH9-004 — Phase 9.3 assisted Care Quality Agent
 
 - dedicated Agency quality destination backed by the real agent contract
@@ -9,9 +22,8 @@
 - visible advisory mode and authoritative workflow destinations
 - no mock fallback, clinical conclusion, automatic mutation or Family exposure
 
-Status: Implemented locally on `phase-9/9.3-care-quality-agent`; typecheck,
-production build, all 65 tests and diff safety pass. Lint retains only existing
-warnings.
+Status: Complete — published and merged in frontend PR #62; CI and GitHub
+Pages deployment passed.
 
 ---
 
