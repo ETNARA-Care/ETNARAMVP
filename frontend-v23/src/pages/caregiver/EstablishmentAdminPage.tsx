@@ -1,84 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarClock, ChevronRight, FileCheck2, Mail, MapPin, ShieldAlert, UserRound, Users } from "lucide-react";
-import { Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
-import { useAuth } from "@/auth/AuthProvider";
-import { getToken } from "@/auth/token";
-import { getEstablishmentWorkspace, type EstablishmentWorkspace } from "@/api/establishments";
-
-type Section = "overview" | "residents" | "personnel";
-
-export function EstablishmentAdminPage() {
-  const { establishmentId = "" } = useParams();
-  const { activeOrganization } = useAuth();
-  const navigate = useNavigate();
-  const [workspace, setWorkspace] = useState<EstablishmentWorkspace | null>(null);
-  const [error, setError] = useState(false);
-  const [section, setSection] = useState<Section>("overview");
-  const [selectedResident, setSelectedResident] = useState<string | null>(null);
-  const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    const token = getToken();
-    if (!token || !activeOrganization?.id || !establishmentId) return;
-    setError(false);
-    try { setWorkspace(await getEstablishmentWorkspace(activeOrganization.id, establishmentId, token)); }
-    catch { setError(true); }
-  }, [activeOrganization?.id, establishmentId]);
-
-  useEffect(() => { void load(); }, [load]);
-  if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
-  if (!workspace) return <div className="flex flex-col gap-3"><Skeleton className="h-24" /><Skeleton className="h-36" /></div>;
-
-  const resident = workspace.residents.find((item) => item.id === selectedResident);
-  const person = workspace.personnel.find((item) => item.membership_id === selectedPerson);
-  const backToOverview = () => { setSection("overview"); setSelectedResident(null); setSelectedPerson(null); };
-
-  if (resident) return <div className="flex flex-col gap-6">
-    <button className="flex items-center gap-2 text-sm font-medium" onClick={() => setSelectedResident(null)}><ArrowLeft size={17}/>Volver a residentes</button>
-    <PageHeader title={`${resident.first_name} ${resident.last_name}`} description="Expediente del residente" />
-    <Card className="flex flex-col gap-3">
-      <div><p className="text-sm text-[var(--color-text-muted)]">Estado</p><p className="font-semibold">{resident.status === "active" ? "Activo" : resident.status}</p></div>
-      {resident.preferred_name && <div><p className="text-sm text-[var(--color-text-muted)]">Nombre preferido</p><p>{resident.preferred_name}</p></div>}
-      <div><p className="text-sm text-[var(--color-text-muted)]">Habitación</p><p>{resident.room_id || "Sin habitación asignada"}</p></div>
-    </Card>
-    <Card><p className="font-semibold">Documentos y expediente</p><p className="mt-1 text-sm text-[var(--color-text-muted)]">Este residente pertenece a {workspace.establishment.name}. Los documentos clínicos y de admisión se conectarán aquí en el módulo de Compliance.</p></Card>
-  </div>;
-
-  if (person) return <div className="flex flex-col gap-6">
-    <button className="flex items-center gap-2 text-sm font-medium" onClick={() => setSelectedPerson(null)}><ArrowLeft size={17}/>Volver a personal</button>
-    <PageHeader title={person.display_name || "Personal"} description={person.role || "Personal del establecimiento"} />
-    <Card className="flex flex-col gap-3">
-      <div><p className="text-sm text-[var(--color-text-muted)]">Estado</p><p className="font-semibold">{person.status === "active" ? "Activo" : person.status}</p></div>
-      {person.email && <div className="flex items-center gap-2"><Mail size={17}/><span>{person.email}</span></div>}
-      <div className="flex items-center gap-2"><MapPin size={17}/><span>{workspace.establishment.name}</span></div>
-    </Card>
-    <Card><p className="font-semibold">Credenciales y elegibilidad</p><p className="mt-1 text-sm text-[var(--color-text-muted)]">Las credenciales, vencimientos y autorización para trabajar se integrarán aquí con Compliance.</p></Card>
-  </div>;
-
-  if (section === "residents") return <div className="flex flex-col gap-6">
-    <button className="flex items-center gap-2 text-sm font-medium" onClick={backToOverview}><ArrowLeft size={17}/>Volver al panel</button>
-    <PageHeader title="Residentes" description={`${workspace.establishment.name} · ${workspace.residents.length} asignado${workspace.residents.length === 1 ? "" : "s"}`} />
-    {workspace.residents.length === 0 ? <EmptyState title="No hay residentes asignados"/> : <div className="flex flex-col gap-3">{workspace.residents.map((item) => <button key={item.id} className="text-left" onClick={() => setSelectedResident(item.id)}><Card className="flex items-center gap-3"><UserRound size={22}/><div className="flex-1"><p className="font-semibold">{item.first_name} {item.last_name}</p><p className="text-sm text-[var(--color-text-muted)]">{item.status === "active" ? "Activo" : item.status}</p></div><ChevronRight size={20}/></Card></button>)}</div>}
-  </div>;
-
-  if (section === "personnel") return <div className="flex flex-col gap-6">
-    <button className="flex items-center gap-2 text-sm font-medium" onClick={backToOverview}><ArrowLeft size={17}/>Volver al panel</button>
-    <PageHeader title="Personal" description={`${workspace.establishment.name} · ${workspace.personnel.length} asignado${workspace.personnel.length === 1 ? "" : "s"}`} />
-    {workspace.personnel.length === 0 ? <EmptyState title="No hay personal asignado"/> : <div className="flex flex-col gap-3">{workspace.personnel.map((item) => <button key={item.membership_id} className="text-left" onClick={() => setSelectedPerson(item.membership_id)}><Card className="flex items-center gap-3"><Users size={22}/><div className="flex-1"><p className="font-semibold">{item.display_name || "Personal"}</p><p className="text-sm text-[var(--color-text-muted)]">{item.role || (item.status === "active" ? "Activo" : item.status)}</p></div><ChevronRight size={20}/></Card></button>)}</div>}
-  </div>;
-
-  const modules = [
-    { label:"Residentes", detail:`${workspace.residents.length} asignado${workspace.residents.length === 1 ? "" : "s"}`, icon:<UserRound size={22}/>, action:() => setSection("residents"), enabled:true },
-    { label:"Personal", detail:`${workspace.personnel.length} asignado${workspace.personnel.length === 1 ? "" : "s"}`, icon:<Users size={22}/>, action:() => setSection("personnel"), enabled:true },
-    { label:"Turnos", detail:"Programación del establecimiento", icon:<CalendarClock size={22}/>, enabled:false },
-    { label:"Documentos / Compliance", detail:"Credenciales y requisitos", icon:<FileCheck2 size={22}/>, enabled:false },
-    { label:"Incidentes", detail:"Seguimiento del establecimiento", icon:<ShieldAlert size={22}/>, enabled:false },
-  ];
-
-  return <div className="flex flex-col gap-6">
-    <button className="flex items-center gap-2 text-sm font-medium" onClick={() => navigate("/caregiver/shifts")}><ArrowLeft size={17}/>Volver a mi portal</button>
-    <PageHeader title={workspace.establishment.name} description={`Panel de administración · ${workspace.establishment.address || "Dirección no registrada"}`} />
-    <div className="grid gap-3">{modules.map((module) => module.enabled ? <button key={module.label} className="text-left" onClick={module.action}><Card className="flex items-center gap-4"><div>{module.icon}</div><div className="flex-1"><p className="font-semibold">{module.label}</p><p className="text-sm text-[var(--color-text-muted)]">{module.detail}</p></div><ChevronRight size={20}/></Card></button> : <Card key={module.label} className="flex items-center gap-4"><div>{module.icon}</div><div className="flex-1"><p className="font-semibold">{module.label}</p><p className="text-sm text-[var(--color-text-muted)]">{module.detail}</p></div><span className="text-xs text-[var(--color-text-muted)]">Próximamente</span></Card>)}</div>
-  </div>;
-}
+import { useCallback,useEffect,useState } from "react";import{useNavigate,useParams}from"react-router-dom";import{ArrowLeft,CalendarClock,ChevronRight,FileCheck2,Mail,MapPin,Plus,ShieldAlert,UserRound,Users}from"lucide-react";import{Card,EmptyState,ErrorState,PageHeader,Skeleton}from"@/components/ui";import{useAuth}from"@/auth/AuthProvider";import{getToken}from"@/auth/token";import{createEstablishmentShift,getEstablishmentWorkspace,listEstablishmentShifts,type EstablishmentShift,type EstablishmentWorkspace}from"@/api/establishments";
+type Section="overview"|"residents"|"personnel"|"shifts";const local=(d:Date)=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+export function EstablishmentAdminPage(){const{establishmentId=""}=useParams();const{activeOrganization}=useAuth();const navigate=useNavigate();const[workspace,setWorkspace]=useState<EstablishmentWorkspace|null>(null);const[error,setError]=useState(false);const[section,setSection]=useState<Section>("overview");const[selectedResident,setSelectedResident]=useState<string|null>(null);const[selectedPerson,setSelectedPerson]=useState<string|null>(null);const[shifts,setShifts]=useState<EstablishmentShift[]>([]);const[creating,setCreating]=useState(false);const[saving,setSaving]=useState(false);const[start,setStart]=useState(()=>local(new Date(Date.now()+3600000)));const[end,setEnd]=useState(()=>local(new Date(Date.now()+5*3600000)));const[recipientId,setRecipientId]=useState("");const[membershipId,setMembershipId]=useState("");
+const load=useCallback(async()=>{const token=getToken();if(!token||!activeOrganization?.id||!establishmentId)return;setError(false);try{const[w,s]=await Promise.all([getEstablishmentWorkspace(activeOrganization.id,establishmentId,token),listEstablishmentShifts(activeOrganization.id,establishmentId,token)]);setWorkspace(w);setShifts(s.shifts);setRecipientId(v=>v||w.residents[0]?.id||"");}catch{setError(true);}},[activeOrganization?.id,establishmentId]);useEffect(()=>{void load();},[load]);if(error)return <ErrorState kind="server" onRetry={()=>void load()}/>;if(!workspace)return <div className="flex flex-col gap-3"><Skeleton className="h-24"/><Skeleton className="h-36"/></div>;
+const resident=workspace.residents.find(i=>i.id===selectedResident);const person=workspace.personnel.find(i=>i.membership_id===selectedPerson);const back=()=>{setSection("overview");setSelectedResident(null);setSelectedPerson(null);};const residentName=(id:string|null)=>{const r=workspace.residents.find(x=>x.id===id);return r?`${r.first_name} ${r.last_name}`:"Residente";};
+async function saveShift(){const token=getToken();if(!token||!activeOrganization?.id||!recipientId)return;setSaving(true);try{await createEstablishmentShift(activeOrganization.id,establishmentId,{recipientId,scheduledStart:new Date(start).toISOString(),scheduledEnd:new Date(end).toISOString(),...(membershipId?{membershipId}: {})},token);setCreating(false);await load();}finally{setSaving(false);}}
+if(resident)return <div className="flex flex-col gap-6"><button className="flex items-center gap-2 text-sm font-medium" onClick={()=>setSelectedResident(null)}><ArrowLeft size={17}/>Volver a residentes</button><PageHeader title={`${resident.first_name} ${resident.last_name}`} description="Expediente del residente"/><Card><p className="font-semibold">Estado: {resident.status==="active"?"Activo":resident.status}</p>{resident.preferred_name&&<p>Nombre preferido: {resident.preferred_name}</p>}<p>Habitación: {resident.room_id||"Sin habitación asignada"}</p></Card><Card><p className="font-semibold">Documentos y expediente</p><p className="text-sm text-[var(--color-text-muted)]">Se conectarán aquí en Compliance.</p></Card></div>;
+if(person)return <div className="flex flex-col gap-6"><button className="flex items-center gap-2 text-sm font-medium" onClick={()=>setSelectedPerson(null)}><ArrowLeft size={17}/>Volver a personal</button><PageHeader title={person.display_name||"Personal"} description={person.role||"Personal del establecimiento"}/><Card><p className="font-semibold">Estado: {person.status==="active"?"Activo":person.status}</p>{person.email&&<div className="flex gap-2"><Mail size={17}/>{person.email}</div>}<div className="flex gap-2"><MapPin size={17}/>{workspace.establishment.name}</div></Card></div>;
+if(section==="residents")return <div className="flex flex-col gap-6"><button onClick={back} className="flex items-center gap-2"><ArrowLeft size={17}/>Volver al panel</button><PageHeader title="Residentes" description={`${workspace.establishment.name} · ${workspace.residents.length} asignados`}/>{workspace.residents.length===0?<EmptyState title="No hay residentes asignados"/>:<div className="flex flex-col gap-3">{workspace.residents.map(i=><button key={i.id} className="text-left" onClick={()=>setSelectedResident(i.id)}><Card className="flex items-center gap-3"><UserRound/><div className="flex-1"><p className="font-semibold">{i.first_name} {i.last_name}</p></div><ChevronRight/></Card></button>)}</div>}</div>;
+if(section==="personnel")return <div className="flex flex-col gap-6"><button onClick={back} className="flex items-center gap-2"><ArrowLeft size={17}/>Volver al panel</button><PageHeader title="Personal" description={`${workspace.establishment.name} · ${workspace.personnel.length} asignados`}/>{workspace.personnel.length===0?<EmptyState title="No hay personal asignado"/>:<div className="flex flex-col gap-3">{workspace.personnel.map(i=><button key={i.membership_id} className="text-left" onClick={()=>setSelectedPerson(i.membership_id)}><Card className="flex items-center gap-3"><Users/><div className="flex-1"><p className="font-semibold">{i.display_name||"Personal"}</p></div><ChevronRight/></Card></button>)}</div>}</div>;
+if(section==="shifts")return <div className="flex flex-col gap-6"><button onClick={back} className="flex items-center gap-2"><ArrowLeft size={17}/>Volver al panel</button><PageHeader title="Turnos" description={`${workspace.establishment.name} · programación aislada por establecimiento`}/><button className="rounded-xl bg-[var(--color-primary)] p-3 font-semibold text-white flex items-center justify-center gap-2" onClick={()=>setCreating(!creating)}><Plus size={18}/>Crear turno</button>{creating&&<Card className="flex flex-col gap-3"><label className="text-sm font-medium">Residente<select className="mt-1 w-full rounded-lg border p-3" value={recipientId} onChange={e=>setRecipientId(e.target.value)}>{workspace.residents.map(r=><option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>)}</select></label><label className="text-sm font-medium">Inicio<input className="mt-1 w-full rounded-lg border p-3" type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/></label><label className="text-sm font-medium">Fin<input className="mt-1 w-full rounded-lg border p-3" type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)}/></label><label className="text-sm font-medium">Asignar personal (opcional)<select className="mt-1 w-full rounded-lg border p-3" value={membershipId} onChange={e=>setMembershipId(e.target.value)}><option value="">Dejar sin asignar</option>{workspace.personnel.map(p=><option key={p.membership_id} value={p.membership_id}>{p.display_name||"Personal"}</option>)}</select></label><button disabled={saving||!recipientId} className="rounded-xl bg-[var(--color-primary)] p-3 font-semibold text-white disabled:opacity-50" onClick={()=>void saveShift()}>{saving?"Guardando…":"Guardar turno"}</button></Card>}{shifts.length===0?<EmptyState title="No hay turnos para este establecimiento"/>:<div className="flex flex-col gap-3">{shifts.map(s=><Card key={s.id}><p className="font-semibold">{residentName(s.care_recipient_id)}</p><p className="text-sm">{new Date(s.scheduled_start).toLocaleString("es-PR")} – {new Date(s.scheduled_end).toLocaleTimeString("es-PR",{hour:"numeric",minute:"2-digit"})}</p><p className="text-sm text-[var(--color-text-muted)]">Estado: {s.status}</p></Card>)}</div>}</div>;
+const modules=[{label:"Residentes",detail:`${workspace.residents.length} asignados`,icon:<UserRound/>,action:()=>setSection("residents"),enabled:true},{label:"Personal",detail:`${workspace.personnel.length} asignados`,icon:<Users/>,action:()=>setSection("personnel"),enabled:true},{label:"Turnos",detail:`${shifts.length} activos/programados`,icon:<CalendarClock/>,action:()=>setSection("shifts"),enabled:true},{label:"Documentos / Compliance",detail:"Credenciales y requisitos",icon:<FileCheck2/>,enabled:false},{label:"Incidentes",detail:"Seguimiento del establecimiento",icon:<ShieldAlert/>,enabled:false}];return <div className="flex flex-col gap-6"><button className="flex items-center gap-2" onClick={()=>navigate("/caregiver/shifts")}><ArrowLeft size={17}/>Volver a mi portal</button><PageHeader title={workspace.establishment.name} description={`Panel de administración · ${workspace.establishment.address||"Dirección no registrada"}`}/><div className="grid gap-3">{modules.map(m=>m.enabled?<button key={m.label} className="text-left" onClick={m.action}><Card className="flex items-center gap-4">{m.icon}<div className="flex-1"><p className="font-semibold">{m.label}</p><p className="text-sm text-[var(--color-text-muted)]">{m.detail}</p></div><ChevronRight/></Card></button>:<Card key={m.label} className="flex items-center gap-4">{m.icon}<div className="flex-1"><p className="font-semibold">{m.label}</p><p className="text-sm text-[var(--color-text-muted)]">{m.detail}</p></div><span className="text-xs">Próximamente</span></Card>)}</div></div>}
