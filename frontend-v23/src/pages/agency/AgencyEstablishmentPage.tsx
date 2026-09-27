@@ -42,9 +42,12 @@ export function AgencyEstablishmentPage() {
 
   const assignedWorkerIds = new Set(workspace?.personnel.map((item) => item.membership_id) ?? []);
   const assignedResidentIds = new Set(workspace?.residents.map((item) => item.id) ?? []);
+  const assignedAdminIds = new Set(workspace?.administrators.map((item) => item.membership_id) ?? []);
   const options = assignment === "resident"
     ? recipients.filter((item) => !assignedResidentIds.has(item.id)).map((item) => ({ id: item.id, label: `${item.first_name} ${item.last_name}` }))
-    : workers.filter((item) => !assignedWorkerIds.has(item.id)).map((item) => ({ id: item.id, label: `${item.display_name} — ${item.internal_role}` }));
+    : assignment === "admin"
+      ? (workspace?.administratorCandidates ?? []).filter((item) => !assignedAdminIds.has(item.membership_id)).map((item) => ({ id: item.membership_id, label: `${item.email ?? "Usuario"} — ${item.role ?? "Administrador"}` }))
+      : workers.filter((item) => !assignedWorkerIds.has(item.id)).map((item) => ({ id: item.id, label: `${item.display_name} — ${item.internal_role}` }));
 
   async function saveAssignment() {
     const token = getToken();
