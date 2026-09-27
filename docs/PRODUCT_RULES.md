@@ -153,6 +153,18 @@ Relevant sources may include:
 - The agent uses the real backend contract with no mock fallback.
 - Family has no route, navigation item or API dependency for this agent.
 
+## B2B Agent Center
+
+- The center coordinates the existing Operations, Compliance, Coverage and
+  Care Quality contracts; it does not introduce a second decision engine.
+- A combined run must preserve successful results when another agent fails.
+- Every underlying briefing keeps its own manager authority, audit record and
+  human-confirmation guardrails.
+- The product may identify Compliance, Workforce, Care and Family as pillars,
+  but Family must not receive or initiate organization-wide agent analysis.
+- The center never assigns workers, approves documents, changes care records
+  or represents a recommendation as an executed action.
+
 ## Mock Data
 
 Never use mock/demo/local data as a silent replacement for a real backend request.
