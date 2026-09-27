@@ -16,219 +16,44 @@ export interface Shift {
   assignment_response_status?: "pending" | "accepted";
 }
 
-export interface CareRecipient {
-  id: string;
-  organization_id: string;
-  first_name: string;
-  last_name: string;
-  preferred_name: string | null;
-  date_of_birth: string | null;
-  allergies: string[] | null;
-  preferences: unknown;
-  routines: unknown;
-  status: string;
-  room_id: string | null;
-  created_at: string;
-  updated_at: string;
-  archived_at: string | null;
-}
+export interface CareRecipient { id:string; organization_id:string; first_name:string; last_name:string; preferred_name:string|null; date_of_birth:string|null; allergies:string[]|null; preferences:unknown; routines:unknown; status:string; room_id:string|null; created_at:string; updated_at:string; archived_at:string|null; }
+export interface WorkerMembership { id:string; worker_id:string; status:string; internal_role:string; display_name:string|null; hired_at?:string|null; ended_at?:string|null; created_at?:string; }
+export interface WorkerCredentialSummary { id:string; type_code:string; status:string; expires_at:string|null; }
+export interface WorkerProfile { membership:Omit<WorkerMembership,"display_name">; credentialsSummary:WorkerCredentialSummary[]; }
+export interface Assignment { id:string; shift_id:string; organization_worker_membership_id:string; response_status:"pending"|"accepted"|"rejected"; responded_at:string|null; response_reason:string|null; created_at?:string; }
+export interface VisitVerification { shiftId:string; events:Array<{id:string;eventType:string;occurredAt:string}>; status:"not_started"|"in_progress"|"completed"; }
+export interface CoverageCandidate { membershipId:string;displayName:string|null;internalRole:string;eligibility:"eligible"|"not_eligible";hasScheduleConflict:boolean;continuityCount:number;scheduledMinutesNext7Days:number;availabilityConfigured:boolean;matchesDeclaredAvailability:boolean;hasUnavailabilityPeriod:boolean;recommended:boolean;rank:number|null;reasons:string[];blockers:string[]; }
 
-export interface WorkerMembership {
-  id: string;
-  worker_id: string;
-  status: string;
-  internal_role: string;
-  display_name: string | null;
-  hired_at?: string | null;
-  ended_at?: string | null;
-  created_at?: string;
-}
-
-export interface WorkerCredentialSummary {
-  id: string;
-  type_code: string;
-  status: string;
-  expires_at: string | null;
-}
-
-export interface WorkerProfile {
-  membership: Omit<WorkerMembership, "display_name">;
-  credentialsSummary: WorkerCredentialSummary[];
-}
-
-export interface Assignment {
-  id: string;
-  shift_id: string;
-  organization_worker_membership_id: string;
-  response_status: "pending" | "accepted" | "rejected";
-  responded_at: string | null;
-  response_reason: string | null;
-  created_at?: string;
-}
-
-export interface VisitVerification {
-  shiftId: string;
-  events: Array<{ id: string; eventType: string; occurredAt: string }>;
-  status: "not_started" | "in_progress" | "completed";
-}
-
-export interface CoverageCandidate {
-  membershipId: string;
-  displayName: string | null;
-  internalRole: string;
-  eligibility: "eligible" | "not_eligible";
-  hasScheduleConflict: boolean;
-  continuityCount: number;
-  scheduledMinutesNext7Days: number;
-  availabilityConfigured: boolean;
-  matchesDeclaredAvailability: boolean;
-  hasUnavailabilityPeriod: boolean;
-  recommended: boolean;
-  rank: number | null;
-  reasons: string[];
-  blockers: string[];
-}
-
-export async function listShifts(organizationId: string, token: string): Promise<Shift[]> {
-  const result = await apiClient.get<{ shifts: Shift[] }>(`/organizations/${organizationId}/shifts`, token);
-  return result.shifts;
-}
-
-export async function listMyShifts(organizationId: string, token: string): Promise<Shift[]> {
-  const result = await apiClient.get<{ shifts: Shift[] }>(`/organizations/${organizationId}/me/shifts`, token);
-  return result.shifts;
-}
-
-export async function getShift(organizationId: string, shiftId: string, token: string): Promise<Shift> {
-  const result = await apiClient.get<{ shift: Shift }>(`/organizations/${organizationId}/shifts/${shiftId}`, token);
-  return result.shift;
-}
-
+export async function listShifts(organizationId:string,token:string):Promise<Shift[]>{const r=await apiClient.get<{shifts:Shift[]}>(`/organizations/${organizationId}/shifts`,token);return r.shifts;}
+export async function listMyShifts(organizationId:string,token:string):Promise<Shift[]>{const r=await apiClient.get<{shifts:Shift[]}>(`/organizations/${organizationId}/me/shifts`,token);return r.shifts;}
+export async function getShift(organizationId:string,shiftId:string,token:string):Promise<Shift>{const r=await apiClient.get<{shift:Shift}>(`/organizations/${organizationId}/shifts/${shiftId}`,token);return r.shift;}
 export async function createShift(
   organizationId: string,
   input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string },
   token: string,
 ): Promise<Shift> {
-  const result = await apiClient.post<{ shift: Shift }>(`/organizations/${organizationId}/shifts`, input, token);
-  return result.shift;
+  const r = await apiClient.post<{ shift: Shift }>(`/organizations/${organizationId}/shifts`, input, token);
+  return r.shift;
 }
-
-export async function cancelShift(organizationId: string, shiftId: string, token: string): Promise<Shift> {
-  const result = await apiClient.post<{ shift: Shift }>(
-    `/organizations/${organizationId}/shifts/${shiftId}/cancel`,
-    {},
-    token,
-  );
-  return result.shift;
-}
-
-export async function listCareRecipients(organizationId: string, token: string): Promise<CareRecipient[]> {
-  const result = await apiClient.get<{ recipients: CareRecipient[] }>(
-    `/organizations/${organizationId}/care-recipients`,
-    token,
-  );
-  return result.recipients;
-}
-
-export async function getCareRecipient(
-  organizationId: string,
-  recipientId: string,
-  token: string,
-): Promise<CareRecipient> {
-  const result = await apiClient.get<{ recipient: CareRecipient }>(
-    `/organizations/${organizationId}/care-recipients/${recipientId}`,
-    token,
-  );
-  return result.recipient;
-}
-
-export async function listWorkers(organizationId: string, token: string): Promise<WorkerMembership[]> {
-  const result = await apiClient.get<{ memberships: WorkerMembership[] }>(
-    `/organizations/${organizationId}/workers`,
-    token,
-  );
-  return result.memberships;
-}
-
-export async function getWorkerProfile(
-  organizationId: string,
-  membershipId: string,
-  token: string,
-): Promise<WorkerProfile> {
-  return apiClient.get(`/organizations/${organizationId}/workers/${membershipId}`, token);
-}
-
-export async function listAssignments(organizationId: string, shiftId: string, token: string): Promise<Assignment[]> {
-  const result = await apiClient.get<{ assignments: Assignment[] }>(
-    `/organizations/${organizationId}/shifts/${shiftId}/assignments`,
-    token,
-  );
-  return result.assignments;
-}
-
-export async function assignShift(
+export async function updateShift(
   organizationId: string,
   shiftId: string,
-  organizationWorkerMembershipId: string,
+  input: { scheduledStart?: string; scheduledEnd?: string; requiredRole?: string },
   token: string,
-): Promise<Assignment> {
-  const result = await apiClient.post<{ assignment: Assignment }>(
-    `/organizations/${organizationId}/shifts/${shiftId}/assignments`,
-    { organizationWorkerMembershipId },
-    token,
-  );
-  return result.assignment;
+): Promise<Shift> {
+  const r = await apiClient.patch<{ shift: Shift }>(`/organizations/${organizationId}/shifts/${shiftId}`, input, token);
+  return r.shift;
 }
-
-export async function getCoverageRecommendations(
-  organizationId: string,
-  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string },
-  token: string,
-): Promise<CoverageCandidate[]> {
-  const result = await apiClient.post<{ candidates: CoverageCandidate[] }>(
-    `/organizations/${organizationId}/coverage/recommendations`,
-    input,
-    token,
-  );
-  return result.candidates;
-}
-
-export async function respondToAssignment(
-  organizationId: string,
-  shiftId: string,
-  decision: "accepted" | "rejected",
-  reason: string | undefined,
-  token: string,
-): Promise<Assignment> {
-  const result = await apiClient.post<{ assignment: Assignment }>(
-    `/organizations/${organizationId}/me/shifts/${shiftId}/respond`,
-    { decision, ...(reason?.trim() ? { reason: reason.trim() } : {}) },
-    token,
-  );
-  return result.assignment;
-}
-
-export async function getVisitVerification(
-  organizationId: string,
-  shiftId: string,
-  token: string,
-): Promise<VisitVerification> {
-  return apiClient.get(`/organizations/${organizationId}/shifts/${shiftId}/visit-verification`, token);
-}
-
-export async function checkIn(organizationId: string, shiftId: string, token: string): Promise<void> {
-  await apiClient.post(
-    `/organizations/${organizationId}/shifts/${shiftId}/check-in`,
-    { verificationMethodCode: "CAREGIVER_SESSION" },
-    token,
-  );
-}
-
-export async function checkOut(organizationId: string, shiftId: string, token: string): Promise<void> {
-  await apiClient.post(`/organizations/${organizationId}/shifts/${shiftId}/check-out`, {}, token);
-}
-
-export function recipientName(recipient: CareRecipient | undefined): string {
-  if (!recipient) return "Persona atendida";
-  return recipient.preferred_name || `${recipient.first_name} ${recipient.last_name}`.trim();
-}
+export async function cancelShift(organizationId:string,shiftId:string,token:string):Promise<Shift>{const r=await apiClient.post<{shift:Shift}>(`/organizations/${organizationId}/shifts/${shiftId}/cancel`,{},token);return r.shift;}
+export async function listCareRecipients(organizationId:string,token:string):Promise<CareRecipient[]>{const r=await apiClient.get<{recipients:CareRecipient[]}>(`/organizations/${organizationId}/care-recipients`,token);return r.recipients;}
+export async function getCareRecipient(organizationId:string,recipientId:string,token:string):Promise<CareRecipient>{const r=await apiClient.get<{recipient:CareRecipient}>(`/organizations/${organizationId}/care-recipients/${recipientId}`,token);return r.recipient;}
+export async function listWorkers(organizationId:string,token:string):Promise<WorkerMembership[]>{const r=await apiClient.get<{memberships:WorkerMembership[]}>(`/organizations/${organizationId}/workers`,token);return r.memberships;}
+export async function getWorkerProfile(organizationId:string,membershipId:string,token:string):Promise<WorkerProfile>{return apiClient.get(`/organizations/${organizationId}/workers/${membershipId}`,token);}
+export async function listAssignments(organizationId:string,shiftId:string,token:string):Promise<Assignment[]>{const r=await apiClient.get<{assignments:Assignment[]}>(`/organizations/${organizationId}/shifts/${shiftId}/assignments`,token);return r.assignments;}
+export async function assignShift(organizationId:string,shiftId:string,organizationWorkerMembershipId:string,token:string):Promise<Assignment>{const r=await apiClient.post<{assignment:Assignment}>(`/organizations/${organizationId}/shifts/${shiftId}/assignments`,{organizationWorkerMembershipId},token);return r.assignment;}
+export async function getCoverageRecommendations(organizationId:string,input:{careRecipientId:string;scheduledStart:string;scheduledEnd:string;requiredRole?: string},token:string):Promise<CoverageCandidate[]>{const r=await apiClient.post<{candidates:CoverageCandidate[]}>(`/organizations/${organizationId}/coverage/recommendations`,input,token);return r.candidates;}
+export async function respondToAssignment(organizationId:string,shiftId:string,decision:"accepted"|"rejected",reason:string|undefined,token:string):Promise<Assignment>{const r=await apiClient.post<{assignment:Assignment}>(`/organizations/${organizationId}/me/shifts/${shiftId}/respond`,{decision,...(reason?.trim()?{reason:reason.trim()}:{})},token);return r.assignment;}
+export async function getVisitVerification(organizationId:string,shiftId:string,token:string):Promise<VisitVerification>{return apiClient.get(`/organizations/${organizationId}/shifts/${shiftId}/visit-verification`,token);}
+export async function checkIn(organizationId:string,shiftId:string,token:string):Promise<void>{await apiClient.post(`/organizations/${organizationId}/shifts/${shiftId}/check-in`,{verificationMethodCode:"CAREGIVER_SESSION"},token);}
+export async function checkOut(organizationId:string,shiftId:string,token:string):Promise<void>{await apiClient.post(`/organizations/${organizationId}/shifts/${shiftId}/check-out`,{},token);}
+export function recipientName(recipient:CareRecipient|undefined):string{return recipient?.preferred_name||`${recipient?.first_name||"Persona"} ${recipient?.last_name||"atendida"}`.trim();}
