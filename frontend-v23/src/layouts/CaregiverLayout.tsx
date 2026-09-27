@@ -1,19 +1,46 @@
-import { Outlet } from "react-router-dom";
-import { CalendarClock, MessageCircle, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { Building2, CalendarClock, MessageCircle, User } from "lucide-react";
 import { TopHeader } from "./TopHeader";
 import { MobileTabBar } from "./MobileTabBar";
 import { useAuth } from "@/auth/AuthProvider";
+import { getToken } from "@/auth/token";
+import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
 
-// Rutas alineadas exactamente a las definidas en el brief de Fase 2:
-// /caregiver/shifts, /caregiver/shifts/:shiftId, /caregiver/messages, /caregiver/profile
 export function CaregiverLayout() {
-  const { activeWorkerProfile, user } = useAuth();
-  const caregiverName = activeWorkerProfile?.displayName
-    ?? user?.email
-    ?? "Cuidador/a";
+  const { activeWorkerProfile, activeOrganization, user } = useAuth();
+  const navigate = useNavigate();
+  const [adminEstablishments, setAdminEstablishments] = useState<MyEstablishmentAdminAssignment[]>([]);
+  const caregiverName = activeWorkerProfile?.displayName ?? user?.email ?? "Cuidador/a";
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token || !activeOrganization) return;
+    listMyEstablishmentAdminAssignments(activeOrganization.id, token)
+      .then((result) => setAdminEstablishments(result.establishments))
+      .catch(() => setAdminEstablishments([]));
+  }, [activeOrganization]);
+
   return (
     <div className="min-h-dvh flex flex-col">
       <TopHeader title="ETNARA Care" userName={caregiverName} />
+      {adminEstablishments.length > 0 && (
+        <div className="max-w-[560px] w-full mx-auto px-[var(--spacing-md)] pt-[var(--spacing-md)]">
+          <button
+            type="button"
+            className="w-full rounded-2xl border border-[var(--color-border)] bg-white p-4 text-left shadow-sm"
+            onClick={() => navigate(`/agency/settings/establishments/${adminEstablishments[0].id}`)}
+          >
+            <div className="flex items-center gap-3">
+              <Building2 size={24} />
+              <div>
+                <div className="font-semibold">Administrar {adminEstablishments[0].name}</div>
+                <div className="text-sm opacity-70">Acceso de administrador del establecimiento</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
       <main className="flex-1 max-w-[560px] w-full mx-auto px-[var(--spacing-md)] py-[var(--spacing-md)] pb-24">
         <Outlet />
       </main>
