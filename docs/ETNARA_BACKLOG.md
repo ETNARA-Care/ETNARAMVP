@@ -2,6 +2,19 @@
 
 ## In Progress
 
+### FPH9-004 — Phase 9.3 assisted Care Quality Agent
+
+- dedicated Agency quality destination backed by the real agent contract
+- objective shift-documentation, observation and incident follow-up priorities
+- visible advisory mode and authoritative workflow destinations
+- no mock fallback, clinical conclusion, automatic mutation or Family exposure
+
+Status: Implemented locally on `phase-9/9.3-care-quality-agent`; typecheck,
+production build, all 65 tests and diff safety pass. Lint retains only existing
+warnings.
+
+---
+
 ### FPH9-003 — Phase 9.2 assisted Coverage Agent
 
 - explicit manager-requested briefing in the real shifts workflow
@@ -9,9 +22,8 @@
 - visible advisory mode and authoritative shift destinations
 - no mock fallback, automatic offer/assignment or Family exposure
 
-Status: Implemented locally on `phase-9/9.2-coverage-agent`; typecheck,
-production build, all 62 tests and diff safety pass. Lint retains only existing
-warnings.
+Status: Complete — published and merged in frontend PR #61; CI and GitHub
+Pages deployment passed.
 
 ---
 
