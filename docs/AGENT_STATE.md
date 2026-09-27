@@ -4,7 +4,20 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-9/9.2-coverage-agent
+Branch: phase-9/9.3-care-quality-agent
+
+## 2026-09-26 — Phase 9.3 assisted Care Quality Agent
+
+- Added a dedicated “Calidad” destination for authorized Agency users.
+- Administration explicitly requests a briefing and receives real counts plus
+  up to five ranked documentation or follow-up gaps with authoritative links.
+- Advisory mode and human control remain visible; the UI never implies that a
+  note, verification, observation or incident changed.
+- There is no mock fallback and Family has no quality route or API request.
+- Typecheck, production build, all 65 tests and diff safety pass; lint retains
+  only the repository's existing warnings.
+- Exact next step: run full tests, production build and lint, then publish only
+  after the backend is green and live.
 
 ## 2026-09-26 — Phase 9.2 assisted Coverage Agent
 
@@ -14,10 +27,8 @@ Branch: phase-9/9.2-coverage-agent
 - Advisory mode and human control remain visible; the UI never implies that an
   offer, campaign or assignment changed.
 - There is no mock fallback and Family has no agent route or API request.
-- Typecheck, production build, all 62 tests and diff safety pass; lint retains
-  only the repository's existing warnings.
-- Exact next step: run full tests, production build and lint, then publish only
-  after the backend is green and live.
+- Published and merged in frontend PR #61 after typecheck, 62/62 tests, build
+  and CI passed; GitHub Pages serves the Coverage Agent bundle.
 
 ## 2026-09-26 — Phase 9.1 assisted Compliance Agent
 
