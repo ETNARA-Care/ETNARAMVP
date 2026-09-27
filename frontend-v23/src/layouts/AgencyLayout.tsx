@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
   LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle,
-  BadgeCheck, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, Menu, X,
+  BadgeCheck, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, Menu, X,
 } from "lucide-react";
 import { Avatar, IconButton, NavigationItem } from "@/components/ui";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -18,6 +18,7 @@ const NAV = [
   { to: "/agency/planning", icon: <TrendingUp size={18} />, label: "Planificación" },
   { to: "/agency/timesheets", icon: <DollarSign size={18} />, label: "Horas y facturación" },
   { to: "/agency/operations", icon: <Siren size={18} />, label: "Centro operacional" },
+  { to: "/agency/quality", icon: <ClipboardCheck size={18} />, label: "Calidad" },
   { to: "/agency/incidents", icon: <AlertTriangle size={18} />, label: "Incidentes" },
   { to: "/agency/messages", icon: <MessageCircle size={18} />, label: "Mensajes" },
   { to: "/agency/compliance", icon: <ShieldCheck size={18} />, label: "Cumplimiento" },
