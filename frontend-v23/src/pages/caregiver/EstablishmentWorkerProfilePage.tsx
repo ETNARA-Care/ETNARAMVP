@@ -6,6 +6,8 @@ import { getToken } from "@/auth/token";
 import { getEstablishmentWorkspace, updateManagedPerson, type EstablishmentWorkspace } from "@/api/establishments";
 import { Button, Card, ErrorState, Input, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 
+type WorkerStatus = "active" | "inactive";
+
 export function EstablishmentWorkerProfilePage() {
   const { establishmentId = "", membershipId = "" } = useParams();
   const { activeOrganization } = useAuth();
@@ -15,7 +17,7 @@ export function EstablishmentWorkerProfilePage() {
   const [error, setError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ displayName: "", internalRole: "CAREGIVER", status: "active" });
+  const [form, setForm] = useState<{ displayName: string; internalRole: string; status: WorkerStatus }>({ displayName: "", internalRole: "CAREGIVER", status: "active" });
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -32,10 +34,11 @@ export function EstablishmentWorkerProfilePage() {
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
   if (!workspace) return <Skeleton className="h-40" />;
   const worker = workspace.personnel.find((row) => row.membership_id === membershipId);
-  if (!worker) return <ErrorState kind="not-found" />;
+  if (!worker) return <ErrorState kind="not_found" />;
 
   const openEdit = () => {
-    setForm({ displayName: worker.display_name ?? "", internalRole: worker.role ?? "CAREGIVER", status: worker.status ?? "active" });
+    const status: WorkerStatus = worker.status === "inactive" ? "inactive" : "active";
+    setForm({ displayName: worker.display_name ?? "", internalRole: worker.role ?? "CAREGIVER", status });
     setEditing(true);
   };
   const save = async () => {
@@ -71,7 +74,7 @@ export function EstablishmentWorkerProfilePage() {
     {editing && <Card className="flex flex-col gap-3">
       <Input label="Nombre" value={form.displayName} onChange={(e) => setForm(v => ({...v, displayName:e.target.value}))}/>
       <Input label="Rol" value={form.internalRole} onChange={(e) => setForm(v => ({...v, internalRole:e.target.value}))}/>
-      <Select label="Estado" value={form.status} onChange={(e) => setForm(v => ({...v,status:e.target.value}))}><option value="active">Activo</option><option value="inactive">Inactivo</option></Select>
+      <Select label="Estado" value={form.status} onChange={(e) => setForm(v => ({...v,status:e.target.value as WorkerStatus}))}><option value="active">Activo</option><option value="inactive">Inactivo</option></Select>
       <div className="flex gap-2"><Button onClick={() => void save()} disabled={saving}>{saving ? "Guardando…" : "Guardar"}</Button><Button variant="secondary" onClick={() => setEditing(false)}>Cancelar</Button></div>
     </Card>}
   </div>;
