@@ -4,7 +4,20 @@
 
 Project: ETNARA Care
 Repository: ETNARAMVP
-Branch: phase-9/9.4-agent-center
+Branch: phase-10/10.0-multi-agency-compliance
+
+## 2026-09-27 — Phase 10.0 multi-agency establishments
+
+- Replaced the empty organization-settings placeholder with a real
+  manager-facing establishment workspace backed by the existing API tenant.
+- The screen names the active organization and explains that residents,
+  personnel, shifts and documents remain exclusive to it.
+- Users with multiple memberships can return to the existing organization
+  selector; no combined or cross-agency view was introduced.
+- Managers can add, edit, archive and reactivate establishments with loading,
+  empty, error and mutation feedback states and no mock fallback.
+- Exact next step: complete validation, publish after the backend PR, then
+  verify the deployed GitHub Pages interface against Railway.
 
 ## 2026-09-26 — Phase 9.4 B2B Agent Center
 
@@ -18,9 +31,8 @@ Branch: phase-9/9.4-agent-center
   human control visible.
 - Added dedicated regressions for the Agent Center and the existing Phase 7.9
   pay-period surface.
-- Typecheck, all 68 tests, production build and diff safety pass; lint retains
-  only the repository's existing warnings.
-- Exact next step: publish after the backend stability PR is green.
+- Published and merged in frontend PR #63 after typecheck, all 68 tests,
+  production build and CI passed.
 
 ## 2026-09-26 — Phase 9.3 assisted Care Quality Agent
 
