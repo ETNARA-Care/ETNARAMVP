@@ -46,7 +46,7 @@ export function AgencyEstablishmentPage() {
   const options = assignment === "resident"
     ? recipients.filter((item) => !assignedResidentIds.has(item.id)).map((item) => ({ id: item.id, label: `${item.first_name} ${item.last_name}` }))
     : assignment === "admin"
-      ? (workspace?.administratorCandidates ?? []).filter((item) => !assignedAdminIds.has(item.membership_id)).map((item) => ({ id: item.membership_id, label: `${item.email ?? "Usuario"} — ${item.role ?? "Administrador"}` }))
+      ? (workspace?.administratorCandidates ?? []).filter((item) => !assignedAdminIds.has(item.membership_id)).map((item) => ({ id: item.membership_id, label: `${item.display_name || item.email || "Usuario"} — ${item.role ?? "Administrador"}` }))
       : workers.filter((item) => !assignedWorkerIds.has(item.id)).map((item) => ({ id: item.id, label: `${item.display_name} — ${item.internal_role}` }));
 
   async function saveAssignment() {
@@ -76,7 +76,7 @@ export function AgencyEstablishmentPage() {
       {workspace.residents.length === 0 ? <EmptyState title="No hay residentes asignados" /> : workspace.residents.map((item) => <WorkspaceRow key={item.id} title={`${item.first_name} ${item.last_name}`} detail={item.status} />)}
     </WorkspaceSection>
     <WorkspaceSection title="Administración" icon={<ShieldCheck size={20} />} action="Añadir administrador" onAdd={() => setAssignment("admin")}>
-      {workspace.administrators.length === 0 ? <EmptyState title="No hay administradores asignados" /> : workspace.administrators.map((item) => <WorkspaceRow key={item.membership_id} title={item.email || "Administrador"} detail={item.role || item.status} />)}
+      {workspace.administrators.length === 0 ? <EmptyState title="No hay administradores asignados" /> : workspace.administrators.map((item) => <WorkspaceRow key={item.membership_id} title={item.display_name || item.email || "Administrador"} detail={item.role || item.status} />)}
     </WorkspaceSection>
     <Modal open={assignment !== null} onClose={() => !saving && (setAssignment(null), setSelected(""))} title={assignment === "resident" ? "Asignar residente" : assignment === "admin" ? "Asignar administrador" : "Asignar personal"} footer={<><Button variant="secondary" disabled={saving} onClick={() => setAssignment(null)}>Cancelar</Button><Button loading={saving} disabled={!selected} onClick={() => void saveAssignment()}>Asignar</Button></>}>
       <Select label="Seleccionar de la organización" value={selected} onChange={(event) => setSelected(event.target.value)}><option value="">Seleccionar…</option>{options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</Select>
