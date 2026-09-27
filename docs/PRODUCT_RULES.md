@@ -193,6 +193,18 @@ Backend permissions remain authoritative.
 
 Never expose data merely because it exists in client state.
 
+## Multi-agency organization context
+
+- Settings must always identify the organization whose data is being managed.
+- A user with multiple organization memberships changes context through the
+  existing selector; screens never merge records from multiple agencies.
+- Establishment requests always use the active organization ID and rely on the
+  backend for authoritative membership and manager authorization.
+- Establishment records are archived or reactivated, never presented as
+  physically deleted.
+- No interface may imply that an unvalidated legal requirement is an
+  automatic Compliance obligation.
+
 ## Visual Rule
 
 Do not redesign ETNARA while doing connectivity/data fixes.

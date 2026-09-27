@@ -2,6 +2,16 @@
 
 ## In Progress
 
+### FPH10-001 — Phase 10.0 multi-agency establishments
+- identify the active organization in Settings
+- reuse the existing organization selector for multi-agency accounts
+- manage real establishments through organization-scoped endpoints
+- support create, edit, archive and reactivate without mock fallback
+- never show a combined cross-organization establishment list
+
+Status: Implemented locally on `phase-10/10.0-multi-agency-compliance`;
+validation and coordinated publication are pending.
+
 ### FPH9-005 — Phase 9.4 B2B Agent Center
 
 - one Agency destination coordinating the four existing agent briefings
@@ -10,7 +20,7 @@
 - existing authoritative workflows only, with no duplicate logic or Family agent
 - dedicated regression coverage for the Phase 7.9 pay-period surface
 
-Status: Implemented locally on `phase-9/9.4-agent-center`; typecheck, all 68
+Status: Complete — published and merged in PR #63; typecheck, all 68
 tests, production build and diff safety pass. Lint retains only existing warnings.
 
 ---
