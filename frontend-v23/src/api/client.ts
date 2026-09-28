@@ -1,6 +1,13 @@
 /** Cliente HTTP mínimo para el backend real de ETNARA. */
 export interface ApiError { status:number; code?:string; message?:string; isNetworkError?:boolean; }
-function apiBase():string{const raw=import.meta.env.VITE_API_URL;if(!raw){const err:ApiError={status:0,message:"VITE_API_URL no está configurada."};throw err;}return raw.replace(/\/+$/,"");}
+function apiBase():string{
+  const raw=import.meta.env.VITE_API_URL;
+  if (!raw) {
+    const err:ApiError={status:0,message:"VITE_API_URL no está configurada."};
+    throw err;
+  }
+  return raw.replace(/\/+$/,"");
+}
 function buildUrl(path:string):string{const normalized=path.startsWith("/")?path:`/${path}`;return `${apiBase()}${normalized}`;}
 async function parseJsonSafely(response:Response):Promise<unknown>{const text=await response.text();if(!text)return null;try{return JSON.parse(text);}catch{return null;}}
 interface RequestOptions{method:"GET"|"POST"|"PUT"|"PATCH"|"DELETE";body?:unknown;token?:string|null;}
