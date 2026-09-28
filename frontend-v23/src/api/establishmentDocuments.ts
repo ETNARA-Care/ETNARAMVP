@@ -1,0 +1,7 @@
+import { apiClient } from "./client";
+export interface EstablishmentDocument{id:string;document_type:string;title:string;file_name:string;content_type:string;size_bytes:number;issued_on:string|null;expires_on:string|null;notes:string|null;created_at:string;}
+const base=(o:string,e:string)=>`/organizations/${o}/establishments/${e}/documents`;
+export function listEstablishmentDocuments(o:string,e:string,t:string):Promise<{documents:EstablishmentDocument[]}>{return apiClient.get(base(o,e),t);}
+export function uploadEstablishmentDocument(o:string,e:string,t:string,file:File,meta:{documentType:string;title:string;issuedOn?:string;expiresOn?:string;notes?:string}){const q=new URLSearchParams({documentType:meta.documentType,title:meta.title,fileName:file.name});if(meta.issuedOn)q.set("issuedOn",meta.issuedOn);if(meta.expiresOn)q.set("expiresOn",meta.expiresOn);if(meta.notes)q.set("notes",meta.notes);return apiClient.postBinary<{document:EstablishmentDocument}>(`${base(o,e)}?${q}`,file,file.type||"application/octet-stream",t);}
+export function getEstablishmentDocumentDownload(o:string,e:string,d:string,t:string):Promise<{url:string}>{return apiClient.get(`${base(o,e)}/${d}/download`,t);}
+export function archiveEstablishmentDocument(o:string,e:string,d:string,t:string){return apiClient.delete(`${base(o,e)}/${d}`,t);}

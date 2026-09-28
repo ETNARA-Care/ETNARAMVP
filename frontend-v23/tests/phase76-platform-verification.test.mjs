@@ -34,7 +34,7 @@ test("review communicates automatic eligibility and requires a rejection reason"
   const page = read("src/pages/platform/PlatformCredentialVerificationPage.tsx");
   const compliance = read("src/api/compliance.ts");
   assert.match(page, /aptitud se recalcula automáticamente/);
-  assert.match(page, /status === "rejected" && !notes\.trim\(\)/);
+  assert.match(page, /status\s*===?\s*["']rejected["']\s*&&\s*!notes\.trim\(\)/);
   assert.match(page, /Ver documento/);
   assert.match(compliance, /PLATFORM_VERIFICATION_REJECTED/);
 });
