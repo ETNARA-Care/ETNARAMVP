@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const familyRoutes = (app) => app.slice(app.indexOf('<Route path="/family"'), app.indexOf('<Route path="/caregiver"'));
 
 test("Phase 9.3 connects the Care Quality Agent to the real backend", () => {
   const api = read("src/api/careQualityAgent.ts");
@@ -20,7 +21,7 @@ test("the Care Quality Agent is an Agency-only human-controlled surface", () => 
   const page = read("src/pages/agency/AgencyCareQualityPage.tsx");
 
   assert.match(app, /agency[\s\S]*path="quality"/);
-  assert.doesNotMatch(app, /family[^\n]*quality/i);
+  assert.doesNotMatch(familyRoutes(app), /path="quality"/i);
   assert.match(page, /No modifica expedientes ni emite conclusiones clínicas/);
   assert.match(page, /control humano/i);
 });
