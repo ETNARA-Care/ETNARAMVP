@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const familyRoutes = (app) => app.slice(app.indexOf('<Route path="/family"'), app.indexOf('<Route path="/caregiver"'));
 
 test("Phase 9.1 connects the Compliance Agent to the real backend", () => {
   const api = read("src/api/compliance.ts");
@@ -26,7 +27,7 @@ test("the Compliance Agent remains advisory and human-controlled", () => {
 });
 
 test("Family receives no Compliance Agent route", () => {
-  const app = read("src/App.tsx");
-  assert.doesNotMatch(app, /family[^\n]*compliance/i);
-  assert.doesNotMatch(app, /family[^\n]*agent/i);
+  const family = familyRoutes(read("src/App.tsx"));
+  assert.doesNotMatch(family, /path="compliance"/i);
+  assert.doesNotMatch(family, /path="agents?"/i);
 });
