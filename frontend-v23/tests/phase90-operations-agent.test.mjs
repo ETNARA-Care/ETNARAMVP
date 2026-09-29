@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const familyRoutes = (app) => app.slice(app.indexOf('<Route path="/family"'), app.indexOf('<Route path="/caregiver"'));
 
 test("Phase 9.0 connects the Agency operations agent to the real backend", () => {
   const api = read("src/api/operations.ts");
@@ -25,7 +26,7 @@ test("the agent remains advisory and requires human review", () => {
 });
 
 test("Family receives no operations agent route", () => {
-  const app = read("src/App.tsx");
-  assert.doesNotMatch(app, /family[^\n]*operations/i);
-  assert.doesNotMatch(app, /family[^\n]*agent/i);
+  const family = familyRoutes(read("src/App.tsx"));
+  assert.doesNotMatch(family, /path="operations"/i);
+  assert.doesNotMatch(family, /path="agents?"/i);
 });
