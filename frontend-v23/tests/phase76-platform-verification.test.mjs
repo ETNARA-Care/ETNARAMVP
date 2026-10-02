@@ -7,15 +7,17 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 test("platform review is protected by independent server authority", () => {
   const auth = read("src/auth/AuthProvider.tsx");
   const guard = read("src/auth/PlatformGuard.tsx");
+  const roleGuard = read("src/auth/RoleGuard.tsx");
   const app = read("src/App.tsx");
-  const agencyLayout = read("src/layouts/AgencyLayout.tsx");
+  const platformLayout = read("src/layouts/PlatformLayout.tsx");
   assert.match(auth, /platformAdmin/);
   assert.match(guard, /isPlatformAdmin/);
   assert.match(app, /<PlatformGuard>/);
   assert.match(app, /path="\/platform"/);
-  assert.match(agencyLayout, /isPlatformAdmin/);
-  assert.match(agencyLayout, /to="\/platform"/);
-  assert.match(agencyLayout, /label="Plataforma"/);
+  assert.match(roleGuard, /isPlatformAdmin/);
+  assert.match(roleGuard, /to="\/platform"/);
+  assert.doesNotMatch(platformLayout, /to="\/agency"/);
+  assert.doesNotMatch(platformLayout, /activeOrganization/);
 });
 
 test("credential queue uses only real platform APIs", () => {
