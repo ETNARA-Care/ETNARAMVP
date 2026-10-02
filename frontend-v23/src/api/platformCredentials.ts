@@ -1,58 +1,10 @@
 import { apiClient } from "./client";
-
-export type PlatformVerificationStatus = "pending" | "verified" | "rejected";
-
-export interface PlatformCredentialQueueItem {
-  credential_id: string;
-  worker_id: string;
-  worker_name: string;
-  credential_type_code: string;
-  credential_type_name: string;
-  issuing_entity_name: string | null;
-  issued_at: string | null;
-  expires_at: string | null;
-  credential_status: string;
-  file_id: string;
-  original_filename: string;
-  content_type: string;
-  uploaded_at: string;
-  verification_status: PlatformVerificationStatus;
-  verified_at: string | null;
-  verification_notes: string | null;
-  organization_names: string[];
-}
-
-export async function listPlatformCredentialQueue(token: string) {
-  const result = await apiClient.get<{ credentials: PlatformCredentialQueueItem[] }>(
-    "/platform/credentials/verification-queue",
-    token,
-  );
-  return result.credentials;
-}
-
-export async function verifyPlatformCredential(
-  credentialId: string,
-  status: "verified" | "rejected",
-  notes: string,
-  token: string,
-) {
-  const result = await apiClient.post<{ verification: { id: string; status: string } }>(
-    `/platform/credentials/${credentialId}/verifications`,
-    { status, ...(notes.trim() ? { notes: notes.trim() } : {}) },
-    token,
-  );
-  return result.verification;
-}
-
-export async function openPlatformCredentialDocument(
-  credentialId: string,
-  fileId: string,
-  token: string,
-) {
-  const result = await apiClient.post<{ download: { downloadUrl: string; expiresInSeconds: number } }>(
-    `/platform/credentials/${credentialId}/documents/${fileId}/download-url`,
-    {},
-    token,
-  );
-  return result.download.downloadUrl;
-}
+export type PlatformVerificationStatus="pending"|"verified"|"rejected";
+export interface PlatformCredentialQueueItem{credential_id:string;worker_id:string;worker_name:string;credential_type_code:string;credential_type_name:string;issuing_entity_name:string|null;issued_at:string|null;expires_at:string|null;credential_status:string;file_id:string;original_filename:string;content_type:string;uploaded_at:string;verification_status:PlatformVerificationStatus;verified_at:string|null;verification_notes:string|null;organization_names:string[];}
+export interface PlatformEstablishmentDocument{ id:string;organization_id:string;organization_name:string;establishment_id:string;establishment_name:string;document_type:string;title:string;file_name:string;content_type:string;issued_on:string|null;expires_on:string|null;review_status:"pending"|"approved"|"rejected";reviewed_at:string|null;review_reason:string|null;created_at:string;}
+export async function listPlatformCredentialQueue(token:string){const r=await apiClient.get<{credentials:PlatformCredentialQueueItem[]}>("/platform/credentials/verification-queue",token);return r.credentials;}
+export async function verifyPlatformCredential(id:string,status:"verified"|"rejected",notes:string,token:string){const r=await apiClient.post<{verification:{id:string;status:string}}>(`/platform/credentials/${id}/verifications`,{status,...(notes.trim()?{notes:notes.trim()}:{})},token);return r.verification;}
+export async function openPlatformCredentialDocument(id:string,fileId:string,token:string){const r=await apiClient.post<{download:{downloadUrl:string;expiresInSeconds:number}}>(`/platform/credentials/${id}/documents/${fileId}/download-url`,{},token);return r.download.downloadUrl;}
+export async function listPlatformEstablishmentDocuments(token:string){const r=await apiClient.get<{documents:PlatformEstablishmentDocument[]}>("/platform/establishment-documents/verification-queue",token);return r.documents;}
+export async function openPlatformEstablishmentDocument(id:string,token:string){const r=await apiClient.get<{url:string}>(`/platform/establishment-documents/${id}/download`,token);return r.url;}
+export async function reviewPlatformEstablishmentDocument(id:string,status:"approved"|"rejected",reason:string,token:string){return apiClient.patch(`/platform/establishment-documents/${id}/review`,{status,...(reason.trim()?{reason:reason.trim()}:{})},token);}
