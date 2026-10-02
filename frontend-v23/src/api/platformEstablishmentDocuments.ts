@@ -1,0 +1,6 @@
+import { apiClient } from "./client";
+export type PlatformEstablishmentReviewStatus="pending"|"approved"|"rejected";
+export interface PlatformEstablishmentDocument{ id:string;organization_id:string;organization_name:string;establishment_id:string;establishment_name:string;document_type:string;title:string;file_name:string;content_type:string;issued_on:string|null;expires_on:string|null;review_status:PlatformEstablishmentReviewStatus;reviewed_at:string|null;review_reason:string|null;created_at:string; }
+export async function listPlatformEstablishmentDocuments(token:string){return (await apiClient.get<{documents:PlatformEstablishmentDocument[]}>("/platform/establishment-documents/verification-queue",token)).documents;}
+export async function getPlatformEstablishmentDocumentDownload(id:string,token:string){return apiClient.get<{url:string}>(`/platform/establishment-documents/${id}/download`,token);}
+export async function reviewPlatformEstablishmentDocument(id:string,status:"approved"|"rejected",reason:string,token:string){return apiClient.patch<{document:PlatformEstablishmentDocument}>(`/platform/establishment-documents/${id}/review`,{status,...(reason.trim()?{reason:reason.trim()}:{})},token);}
