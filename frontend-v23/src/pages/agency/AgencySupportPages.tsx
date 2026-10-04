@@ -297,7 +297,7 @@ export function AgencyCompliancePage() {
 
   const activeRows = rows.filter((row) => row.status === "active");
   const eligibleCount = activeRows.filter((row) => complianceTone(row) === "success").length;
-  const attentionCount = activeRows.length - eligibleCount;
+  const attentionCount = activeRows.filter(workerRequiresComplianceAttention).length;
 
   const openPolicy = (role: string) => {
     const policy = configuration?.policies.find((item) => item.workerRole.toLowerCase() === role.toLowerCase());
@@ -533,6 +533,12 @@ type ComplianceWorker = WorkerMembership & {
 function ComplianceMetric({ icon, label, value, tone = "neutral" }: { icon: ReactNode; label: string; value: number; tone?: "neutral" | "success" | "warning" }) {
   const toneClass = tone === "success" ? "text-[var(--color-success-700)]" : tone === "warning" ? "text-[var(--color-warning-700)]" : "text-[var(--color-text-muted)]";
   return <Card className="flex items-center gap-3"><span className={toneClass}>{icon}</span><div><p className="text-[var(--text-h3)] font-semibold text-[var(--color-text-primary)]">{value}</p><p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">{label}</p></div></Card>;
+}
+
+function workerRequiresComplianceAttention(row: ComplianceWorker): boolean {
+  if (row.status !== "active") return false;
+  if (row.compliance.eligibility !== "eligible") return true;
+  return row.credentials.some((credential) => credentialState(credential) !== "active");
 }
 
 function complianceTone(row: ComplianceWorker): "success" | "warning" | "neutral" {
