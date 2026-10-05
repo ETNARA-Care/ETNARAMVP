@@ -61,7 +61,7 @@ export function AgencyOverviewPage() {
           {unassigned.length?unassigned.slice(0,4).map((s,i)=><div key={s.id} className="relative flex flex-col gap-3 border-b border-[#e5dfd2] py-4 pl-6 pr-5 last:border-0 sm:flex-row sm:items-center">
             <span className="absolute bottom-4 left-0 top-4 w-[3px] rounded-r bg-[#9e3b32]"/>
             <div className="min-w-0 flex-1"><div className="flex flex-wrap gap-2 text-xs"><span className="font-semibold text-[#9e3b32]">{i===0?"Urgente":"Atención"}</span><span className="text-[#808894]">Workforce</span></div>
-              <p className="mt-1 font-medium text-[#17202e]">Turno sin cubrir para {recipientName(s)}</p><p className="mt-0.5 text-sm text-[#545e6e]">{fmt(s.scheduled_start)} – {fmt(s.scheduled_end)}</p></div>
+              <p className="mt-1 font-medium text-[#17202e]">Turno sin cubrir para {s.recipient ? recipientName(s.recipient) : "Residente"}</p><p className="mt-0.5 text-sm text-[#545e6e]">{fmt(s.scheduled_start)} – {fmt(s.scheduled_end)}</p></div>
             <button onClick={()=>navigate("/agency/shifts")} className="inline-flex h-9 items-center gap-1 self-start rounded-lg bg-[#13294b] px-3.5 text-sm font-medium text-white sm:self-center">Asignar <ArrowRight size={15}/></button>
           </div>):<div className="flex items-center gap-3 px-6 py-8"><CheckCircle2 className="text-[#567a60]"/><div><p className="font-medium text-[#17202e]">No hay turnos descubiertos</p><p className="text-sm text-[#545e6e]">La cobertura programada para hoy está completa.</p></div></div>}
         </div>
@@ -79,7 +79,7 @@ export function AgencyOverviewPage() {
         <PanelTitle title="Turnos de hoy" sub={`${covered} de ${todayShifts.length} cubiertos · ${activeNow} en curso`} action={<Button icon={<CalendarPlus size={16}/>} onClick={()=>navigate("/agency/shifts?create=1")}>Crear turno</Button>}/>
         {todayShifts.length?<div className="mt-5 grid gap-0 border-t border-[#e5dfd2] md:grid-cols-2 xl:grid-cols-3">{todayShifts.slice(0,9).map(s=><button key={s.id} onClick={()=>navigate("/agency/shifts")} className={`min-w-0 border-b border-[#e5dfd2] p-5 text-left transition hover:bg-[#faf8f3] md:border-r ${!s.caregiver?"bg-[#f6e2de]/40":""}`}>
           <div className="flex items-center justify-between gap-2"><span className={`text-xs font-semibold ${!s.caregiver?"text-[#9e3b32]":s.status==="in_progress"?"text-[#567a60]":"text-[#808894]"}`}>{!s.caregiver?"SIN CUBRIR":s.status==="in_progress"?"EN CURSO":"PROGRAMADO"}</span><Clock3 size={15} className="text-[#808894]"/></div>
-          <p className="mt-3 truncate font-medium text-[#17202e]">{recipientName(s)}</p><p className="mt-1 truncate text-sm text-[#545e6e]">{caregiverName(s)}</p><p className="mt-3 text-xs text-[#808894]">{fmt(s.scheduled_start)} – {fmt(s.scheduled_end)}</p>
+          <p className="mt-3 truncate font-medium text-[#17202e]">{s.recipient ? recipientName(s.recipient) : "Residente"}</p><p className="mt-1 truncate text-sm text-[#545e6e]">{caregiverName(s)}</p><p className="mt-3 text-xs text-[#808894]">{fmt(s.scheduled_start)} – {fmt(s.scheduled_end)}</p>
         </button>)}</div>:<div className="p-5"><EmptyState title="No hay turnos para hoy" description="Los turnos programados aparecerán aquí."/></div>}
       </Panel>
 
@@ -89,7 +89,7 @@ export function AgencyOverviewPage() {
       </Panel>
 
       <Panel className="xl:col-span-7"><PanelTitle title="Actividad reciente" sub="Registros de cuidado de hoy"/>
-        {recent.length?<ul className="mt-3 divide-y divide-[#e5dfd2] border-t border-[#e5dfd2]">{recent.map(e=><li key={e.id} className="px-5 py-3.5 sm:px-6"><div className="flex items-start gap-3"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#567a60]"/><div className="min-w-0"><p className="text-sm font-medium text-[#17202e]">{eventLabel[e.event_type]??"Registro de cuidado"}</p>{eventDetail(e)&&<p className="mt-0.5 truncate text-sm text-[#545e6e]">{eventDetail(e)}</p>}<p className="mt-1 text-xs text-[#808894]">{new Intl.DateTimeFormat("es-PR",{hour:"numeric",minute:"2-digit"}).format(new Date(e.occurred_at))}</p></div></div></li>)}</ul>:<div className="p-5"><EmptyState title="Sin actividad reciente" description="Los registros de cuidado de hoy aparecerán aquí."/></div>}
+        {recent.length?<ul className="mt-3 divide-y divide-[#e5dfd2] border-t border-[#e5dfd2]">{recent.map(e=><li key={e.id} className="px-5 py-3.5 sm:px-6"><div className="flex items-start gap-3"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#567a60]"/><div className="min-w-0"><p className="text-sm font-medium text-[#17202e]">{eventLabel[e.type_code]??"Registro de cuidado"}</p>{eventDetail(e)&&<p className="mt-0.5 truncate text-sm text-[#545e6e]">{eventDetail(e)}</p>}<p className="mt-1 text-xs text-[#808894]">{new Intl.DateTimeFormat("es-PR",{hour:"numeric",minute:"2-digit"}).format(new Date(e.occurred_at))}</p></div></div></li>)}</ul>:<div className="p-5"><EmptyState title="Sin actividad reciente" description="Los registros de cuidado de hoy aparecerán aquí."/></div>}
       </Panel>
 
       <div className="grid grid-cols-2 gap-3 xl:col-span-12 sm:grid-cols-4">
