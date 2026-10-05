@@ -94,7 +94,7 @@ export function AgencyOverviewPage() {
       </Panel>
 
       <div className="xl:col-span-12"><p className="mb-3 text-xs font-semibold uppercase tracking-[.14em] text-[#808894]">Acciones rápidas</p><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[["Crear turno",CalendarPlus,"/agency/shifts?create=1"],["Personal",UserPlus,"/agency/workers"],["Residentes",Users,"/agency/residents"],["Incidentes",AlertTriangle,"/agency/incidents"]].map(([label,Icon,to])=><DashboardAction key={String(label)} label={String(label)} Icon={Icon} to={String(to)} onNavigate={navigate}/>)}
+        {([{label:"Crear turno",Icon:CalendarPlus,to:"/agency/shifts?create=1"},{label:"Personal",Icon:UserPlus,to:"/agency/workers"},{label:"Residentes",Icon:Users,to:"/agency/residents"},{label:"Incidentes",Icon:AlertTriangle,to:"/agency/incidents"}]).map(({label,Icon,to})=><DashboardAction key={label} label={label} Icon={Icon} to={to} onNavigate={navigate}/>)}
       </div></div>
     </div>
   </div>;
