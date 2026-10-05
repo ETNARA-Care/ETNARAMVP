@@ -43,12 +43,22 @@ export function AgencyOverviewPage() {
     .slice(0, 6);
 
   return (
-    <div className="flex flex-col gap-[var(--spacing-lg)]">
-      <PageHeader title="Resumen" description="Supervisión operacional en tiempo real · hoy" actions={<Button icon={<CalendarPlus size={18} />} onClick={() => navigate("/agency/shifts?create=1")}>Crear turno</Button>} />
+    <div className="flex flex-col gap-7 md:gap-8">
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-[linear-gradient(135deg,#fff_0%,#f7f2e8_58%,#e6efe8_100%)] p-6 shadow-[var(--shadow-raised)] md:p-8">
+        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[rgba(62,107,75,0.10)] blur-2xl" aria-hidden />
+        <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <p className="mb-2 text-[var(--text-small)] font-semibold uppercase tracking-[0.16em] text-[var(--color-success-700)]">Panel de administración</p>
+            <h1 className="font-display text-[2.25rem] leading-[1.05] text-[var(--color-navy-950)] md:text-[3rem]">Buenos días</h1>
+            <p className="mt-3 max-w-xl text-[var(--text-body-lg)] leading-relaxed text-[var(--color-text-secondary)]">Todo lo importante de tu organización, en una vista clara para supervisar cuidado, personal y operaciones.</p>
+          </div>
+          <Button icon={<CalendarPlus size={18} />} onClick={() => navigate("/agency/shifts?create=1")}>Crear turno</Button>
+        </div>
+      </section>
 
       <div>
-        <SectionHeader title="Acciones rápidas" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        <div className="mb-3 flex items-end justify-between gap-3"><SectionHeader title="Acciones rápidas" /><span className="hidden text-[var(--text-caption)] font-medium uppercase tracking-[0.14em] text-[var(--color-text-muted)] sm:block">Acceso inmediato</span></div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Button variant="secondary" icon={<CalendarPlus size={18} />} onClick={() => navigate("/agency/shifts?create=1")}>Crear turno</Button>
           <Button variant="secondary" icon={<UserPlus size={18} />} onClick={() => navigate("/agency/residents")}>Residentes</Button>
           <Button variant="secondary" icon={<Users size={18} />} onClick={() => navigate("/agency/workers")}>Cuidadores</Button>
@@ -56,7 +66,7 @@ export function AgencyOverviewPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <DashboardAction label="Abrir turnos cubiertos" onClick={() => navigate("/agency/shifts")}><StatCard label="Turnos cubiertos" value={covered} tone="success" hint="Ver turnos" icon={<UserCheck size={18} />} /></DashboardAction>
         <DashboardAction label="Abrir turnos sin cubrir" onClick={() => navigate("/agency/shifts")}><StatCard label="Turnos sin cubrir" value={unassigned} tone={unassigned > 0 ? "warning" : "neutral"} hint={unassigned > 0 ? "Asignar ahora" : "Ver turnos"} icon={<Users size={18} />} /></DashboardAction>
         <DashboardAction label="Abrir turnos en curso" onClick={() => navigate("/agency/shifts")}><StatCard label="Turnos en curso" value={activeNow} tone={activeNow > 0 ? "success" : "neutral"} hint="Ver seguimiento" icon={<Clock3 size={18} />} /></DashboardAction>
@@ -64,7 +74,7 @@ export function AgencyOverviewPage() {
       </div>
 
       <div>
-        <SectionHeader title="Turnos de hoy" />
+        <div className="mb-3"><SectionHeader title="Turnos de hoy" /></div>
         {todayShifts.length === 0 ? (
           <EmptyState title="No hay turnos programados para hoy" action={{ label: "Crear turno", onClick: () => navigate("/agency/shifts?create=1") }} />
         ) : (
@@ -75,7 +85,7 @@ export function AgencyOverviewPage() {
       </div>
 
       <div id="actividad-reciente">
-        <SectionHeader title="Actividad reciente" />
+        <div className="mb-3"><SectionHeader title="Actividad reciente" /></div>
         {recentEvents.length === 0 ? (
           <EmptyState icon={<Activity size={28} />} title="No hay actividad registrada hoy" />
         ) : (
