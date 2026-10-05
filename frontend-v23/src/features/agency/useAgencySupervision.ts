@@ -115,5 +115,4 @@ export function useAgencySupervision(): AgencySupervisionState {
     };
   }, [reload]);
  return useMemo(() => ({ loading, error, recipients, workers, shifts, events, reload }), [loading, error, recipients, workers, shifts, events, reload]);
-  return useMemo(() => ({ loading, error, recipients, shifts, events, reload }), [loading, error, recipients, shifts, events, reload]);
 }
