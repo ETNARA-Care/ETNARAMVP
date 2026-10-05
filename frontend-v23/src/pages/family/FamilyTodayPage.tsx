@@ -112,7 +112,7 @@ export function FamilyTodayPage() {
               </div>
             </button>
           ))}
-        </div> : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]">Todavía no hay actividad registrada hoy.</div>}
+        </div> : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]">Todavía no hay actualizaciones hoy.</div>}
       </section>
 
       <button onClick={() => navigate("/family/history")} className="flex w-full items-center justify-between rounded-[20px] border border-[#102b57]/10 bg-[#f1eee6] px-4 py-3 text-left">
