@@ -1,6 +1,6 @@
 import { Activity, AlertTriangle, CalendarPlus, Clock3, UserCheck, UserPlus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { PageHeader, StatCard, Card, SectionHeader, StatusBadge, EmptyState, ErrorState, Skeleton, Button } from "@/components/ui";
+import { StatCard, Card, SectionHeader, StatusBadge, EmptyState, ErrorState, Skeleton, Button } from "@/components/ui";
 import { recipientName } from "@/api/shifts";
 import { isToday, useAgencySupervision, type AdminCareEvent, type AdminShift } from "@/features/agency/useAgencySupervision";
 
