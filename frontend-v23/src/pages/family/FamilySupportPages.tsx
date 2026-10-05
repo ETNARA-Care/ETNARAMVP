@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { PageHeader, EmptyState, ErrorState, Card, Timeline, Avatar, Badge, Button, Skeleton } from "@/components/ui";
+import { PageHeader, EmptyState, ErrorState, Card, Avatar, Badge, Button, Skeleton } from "@/components/ui";
 import { CheckCircle2, MessageCircle, Clock3, LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
@@ -15,10 +15,6 @@ function isToday(iso: string): boolean {
   return event.getFullYear() === now.getFullYear() && event.getMonth() === now.getMonth() && event.getDate() === now.getDate();
 }
 
-function familyEntryTitle(item: FamilyTimelineItem): string {
-  const caregiver = item.caregiver.displayName ? ` · ${item.caregiver.displayName}` : "";
-  return `${item.title}: ${item.summary}${caregiver}`;
-}
 
 export function FamilyActivityPage() {
   const { activeOrganization } = useAuth();
@@ -34,35 +30,62 @@ export function FamilyActivityPage() {
       const recipient = activeOrganization
         ? recipients.find((item) => item.organizationId === activeOrganization.id) ?? recipients[0]
         : recipients[0];
-      if (!recipient) {
-        setItems([]);
-        return;
-      }
+      if (!recipient) { setItems([]); return; }
       setItems(await getFamilyTimeline(recipient.organizationId, recipient.recipientId, token));
-    } catch {
-      setError(true);
-      setItems([]);
-    }
+    } catch { setError(true); setItems([]); }
   }, [activeOrganization]);
 
   useEffect(() => { void load(); }, [load]);
 
-  if (items === null) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
+  if (items === null) return <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-32" /><Skeleton className="h-32" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
 
-  const entries = items.filter((item) => isToday(item.occurredAt)).map((item) => ({
-    id: item.id,
-    time: new Date(item.occurredAt).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" }),
-    title: familyEntryTitle(item),
-  }));
+  const today = items.filter((item) => isToday(item.occurredAt));
+
   return (
-    <div>
-      <PageHeader title="Actividad" description="Lo que ha pasado hoy, en lenguaje simple." />
-      {entries.length === 0 ? (
-        <EmptyState icon={<Clock3 size={28} />} title="No hay actividad registrada todavía." />
+    <div className="space-y-5">
+      <section>
+        <p className="text-sm font-medium text-[#66845f]">Cuidado</p>
+        <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">Actividad de hoy</h1>
+        <p className="mt-1 text-sm text-[#667085]">Actualizaciones compartidas sobre el cuidado de tu familiar.</p>
+      </section>
+
+      <section className="rounded-[22px] bg-[#102b57] px-5 py-4 text-white shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#b8c9ad]">Resumen</p>
+        <div className="mt-2 flex items-end justify-between gap-4">
+          <div><span className="font-display text-4xl">{today.length}</span><span className="ml-2 text-sm text-white/70">{today.length === 1 ? "actualización hoy" : "actualizaciones hoy"}</span></div>
+          <Clock3 size={22} className="text-[#b8c9ad]" />
+        </div>
+      </section>
+
+      {today.length === 0 ? (
+        <div className="rounded-[22px] border border-[#102b57]/10 bg-white p-6 text-center shadow-[0_8px_28px_rgba(16,43,87,.05)]">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#eef3e9] text-[#66845f]"><Clock3 size={20} /></div>
+          <h2 className="mt-3 font-display text-xl text-[#102b57]">Todavía no hay actualizaciones hoy</h2>
+          <p className="mt-1 text-sm text-[#667085]">Cuando el equipo registre actividad autorizada, aparecerá aquí.</p>
+        </div>
       ) : (
-        <Timeline entries={entries} />
+        <section className="overflow-hidden rounded-[22px] border border-[#102b57]/10 bg-white px-4 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
+          {today.map((item, index) => (
+            <article key={item.id} className={`flex gap-3 py-4 ${index ? "border-t border-[#102b57]/8" : ""}`}>
+              <div className="flex flex-col items-center">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef3e9] text-[#66845f]"><CheckCircle2 size={17} /></div>
+                {index < today.length - 1 ? <div className="mt-1 w-px flex-1 bg-[#102b57]/10" /> : null}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="font-medium text-[#173154]">{item.title}</h2>
+                  <time className="shrink-0 text-xs text-[#98a2b3]">{new Date(item.occurredAt).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}</time>
+                </div>
+                <p className="mt-1 text-sm leading-6 text-[#667085]">{item.summary}</p>
+                {item.caregiver.displayName ? <p className="mt-2 text-xs font-medium text-[#66845f]">{item.caregiver.displayName}</p> : null}
+              </div>
+            </article>
+          ))}
+        </section>
       )}
+
+      <p className="px-1 text-xs leading-5 text-[#98a2b3]">Solo se muestran actualizaciones autorizadas para familiares. La información interna del personal permanece protegida.</p>
     </div>
   );
 }
