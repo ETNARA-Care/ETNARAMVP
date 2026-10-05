@@ -16,7 +16,8 @@ function eventDetail(event: AdminCareEvent) {
   const value = d.label ?? d.mealType ?? d.amount ?? d.result ?? d.activity ?? d.mood;
   return typeof value === "string" ? value : null;
 }
-function DashboardAction({label,Icon,to,onNavigate}:{label:string;Icon:typeof CalendarPlus;to:string;onNavigate:(to:string)=>void}) { return <button onClick={()=>onNavigate(to)} className="flex min-h-24 flex-col justify-between rounded-[18px] border border-[#e5dfd2] bg-white p-4 text-left shadow-[0_8px_24px_rgba(19,41,75,.04)] transition hover:-translate-y-0.5"><Icon size={19} className="text-[#567a60]"/><span className="text-sm font-medium text-[#17202e]">{label}</span></button>; }\nfunction Panel({children,className=""}:{children:React.ReactNode;className?:string}) {
+function DashboardAction({label,Icon,to,onNavigate}:{label:string;Icon:typeof CalendarPlus;to:string;onNavigate:(to:string)=>void}) { return <button onClick={()=>onNavigate(to)} className="flex min-h-24 flex-col justify-between rounded-[18px] border border-[#e5dfd2] bg-white p-4 text-left shadow-[0_8px_24px_rgba(19,41,75,.04)] transition hover:-translate-y-0.5"><Icon size={19} className="text-[#567a60]"/><span className="text-sm font-medium text-[#17202e]">{label}</span></button>; }
+function Panel({children,className=""}:{children:React.ReactNode;className?:string}) {
   return <section className={`min-w-0 overflow-hidden rounded-[22px] border border-[#e5dfd2] bg-white shadow-[0_10px_35px_rgba(19,41,75,.055)] ${className}`}>{children}</section>;
 }
 function PanelTitle({title,sub,action}:{title:string;sub?:string;action?:React.ReactNode}) {
