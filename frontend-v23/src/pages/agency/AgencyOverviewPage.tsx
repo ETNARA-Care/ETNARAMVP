@@ -92,9 +92,9 @@ export function AgencyOverviewPage() {
         {recent.length?<ul className="mt-3 divide-y divide-[#e5dfd2] border-t border-[#e5dfd2]">{recent.map(e=><li key={e.id} className="px-5 py-3.5 sm:px-6"><div className="flex items-start gap-3"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#567a60]"/><div className="min-w-0"><p className="text-sm font-medium text-[#17202e]">{eventLabel[e.type_code]??"Registro de cuidado"}</p>{eventDetail(e)&&<p className="mt-0.5 truncate text-sm text-[#545e6e]">{eventDetail(e)}</p>}<p className="mt-1 text-xs text-[#808894]">{new Intl.DateTimeFormat("es-PR",{hour:"numeric",minute:"2-digit"}).format(new Date(e.occurred_at))}</p></div></div></li>)}</ul>:<div className="p-5"><EmptyState title="Sin actividad reciente" description="Los registros de cuidado de hoy aparecerán aquí."/></div>}
       </Panel>
 
-      <div className="grid grid-cols-2 gap-3 xl:col-span-12 sm:grid-cols-4">
+      <div className="xl:col-span-12"><p className="mb-3 text-xs font-semibold uppercase tracking-[.14em] text-[#808894]">Acciones rápidas</p><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[["Crear turno",CalendarPlus,"/agency/shifts?create=1"],["Personal",UserPlus,"/agency/workers"],["Residentes",Users,"/agency/residents"],["Incidentes",AlertTriangle,"/agency/incidents"]].map(([label,Icon,to])=><button key={String(label)} onClick={()=>navigate(String(to))} className="flex min-h-24 flex-col justify-between rounded-[18px] border border-[#e5dfd2] bg-white p-4 text-left shadow-[0_8px_24px_rgba(19,41,75,.04)] transition hover:-translate-y-0.5"><Icon size={19} className="text-[#567a60]"/><span className="text-sm font-medium text-[#17202e]">{String(label)}</span></button>)}
-      </div>
+      </div></div>
     </div>
   </div>;
 }
