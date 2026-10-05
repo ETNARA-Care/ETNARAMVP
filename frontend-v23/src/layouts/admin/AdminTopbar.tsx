@@ -25,9 +25,9 @@ export function AdminTopbar({ organizationName, canSwitchOrganization, userLabel
  const navigate = useNavigate();
  return (
  <header className="sticky top-0 z-[var(--z-header)] border-b border-[var(--color-border)]/70 bg-[var(--color-bg)]/85 backdrop-blur-md">
- <div className="flex h-16 items-center gap-2 px-4 sm:px-6 lg:px-10">
- <Link to="/agency" className="shrink-0 lg:hidden" aria-label="ETNARA Care, ir al resumen"><AdminLogo compact /></Link>
- <div className="flex min-w-0 flex-1 items-center gap-2.5 px-1">
+ <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:px-6 lg:px-10">
+ <Link to="/agency" className="shrink-0 lg:hidden" aria-label="ETNARA Care, ir al resumen"><AdminLogo /></Link>
+ <div className="hidden min-w-0 flex-1 items-center gap-2.5 px-1 sm:flex">
  <span className="hidden h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--color-success-100)] text-[var(--color-success-700)] sm:grid"><Building2 size={16} aria-hidden /></span>
  <div className="min-w-0">
  <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">{organizationName}</p>
