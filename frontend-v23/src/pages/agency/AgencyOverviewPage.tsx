@@ -46,8 +46,8 @@ export function AgencyOverviewPage() {
     <div className="flex flex-col gap-7 md:gap-8">
       <section className="relative overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-[linear-gradient(135deg,#fff_0%,#f7f2e8_58%,#e6efe8_100%)] p-6 shadow-[var(--shadow-raised)] md:p-8">
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[rgba(62,107,75,0.10)] blur-2xl" aria-hidden />
-        <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-2xl">
+        <div className="relative grid min-w-0 grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <div className="min-w-0 w-full">
             <p className="mb-2 text-[var(--text-small)] font-semibold uppercase tracking-[0.16em] text-[var(--color-success-700)]">Panel de administración</p>
             <h1 className="font-display text-[2.25rem] leading-[1.05] text-[var(--color-navy-950)] md:text-[3rem]">Buenos días</h1>
             <p className="mt-3 max-w-xl text-[var(--text-body-lg)] leading-relaxed text-[var(--color-text-secondary)]">Todo lo importante de tu organización, en una vista clara para supervisar cuidado, personal y operaciones.</p>
