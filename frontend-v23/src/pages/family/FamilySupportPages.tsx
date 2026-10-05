@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { PageHeader, EmptyState, ErrorState, Card, Timeline, Avatar, Badge, Button, Skeleton } from "@/components/ui";
+import { PageHeader, EmptyState, ErrorState, Card, Avatar, Badge, Button, Skeleton } from "@/components/ui";
 import { CheckCircle2, MessageCircle, Clock3, LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
@@ -15,10 +15,6 @@ function isToday(iso: string): boolean {
   return event.getFullYear() === now.getFullYear() && event.getMonth() === now.getMonth() && event.getDate() === now.getDate();
 }
 
-function familyEntryTitle(item: FamilyTimelineItem): string {
-  const caregiver = item.caregiver.displayName ? ` · ${item.caregiver.displayName}` : "";
-  return `${item.title}: ${item.summary}${caregiver}`;
-}
 
 export function FamilyActivityPage() {
   const { activeOrganization } = useAuth();
