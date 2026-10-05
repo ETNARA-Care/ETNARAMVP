@@ -22,7 +22,8 @@ function DashboardAction({ label, Icon, to, primary = false, onNavigate }: { lab
  <span className="min-w-0 leading-tight">{label}</span>
  </button>
  );
-  return typeof value === "string" ? value : null;
+}
+
 const QUICK_ACTIONS = [
  { label: "Crear turno", Icon: CalendarPlus, to: "/agency/shifts?create=1", primary: true },
  { label: "Revisar Compliance", Icon: ShieldCheck, to: "/agency/compliance" },
