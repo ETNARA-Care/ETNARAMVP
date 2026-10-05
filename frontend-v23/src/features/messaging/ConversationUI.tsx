@@ -27,7 +27,7 @@ function ordered(messages: ConversationMessage[]): ConversationMessage[] {
 }
 
 /** Mensajería real compartida por Familiar, Cuidador y Agencia. */
-export function RealMessagingPanel({ conversationTitle = "Cuidado de Carmen Rivera" }: { conversationTitle?: string }) {
+export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado" }: { conversationTitle?: string }) {
   const { activeOrganization, user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, ConversationMessage[]>>({});
@@ -127,7 +127,7 @@ export function RealMessagingPanel({ conversationTitle = "Cuidado de Carmen Rive
         const unread = !!last && last.sender_user_id !== user.id;
         return (
           <button key={conversation.id} onClick={() => { setError(null); setOpenId(conversation.id); }} className="text-left">
-            <Card className="flex items-center gap-3">
+            <Card className="flex items-center gap-3 rounded-[22px] border-[#102b57]/10 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
               <Avatar name={conversationTitle} size={44} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ function ConversationThread({
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-220px)]">
+    <div className="flex flex-col h-[calc(100dvh-250px)] min-h-[420px] rounded-[22px] border border-[#102b57]/10 bg-white p-4 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
       <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-border)]">
         <IconButton icon={<ArrowLeft size={18} />} label="Volver" onClick={onBack} />
         <p className="font-display text-[var(--text-h3)]">{title}</p>
