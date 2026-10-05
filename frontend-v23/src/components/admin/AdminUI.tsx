@@ -62,11 +62,10 @@ export function ReadinessRing({ value, caption, size = 164 }: { value: number | 
  );
 }
 
-/** Marca oficial del proyecto (public/favicon.svg) + wordmark tipográfico. */
+/** Wordmark ETNARA Care. El favicon no forma parte del logo institucional. */
 export function AdminLogo({ inverted = false, compact = false }: { inverted?: boolean; compact?: boolean }) {
  return (
  <span className="inline-flex items-center gap-2.5">
- <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={32} height={32} className={`h-8 w-8 shrink-0 rounded-[9px] ${inverted ? "ring-1 ring-white/20" : ""}`} />
  {!compact && (
  <span className="whitespace-nowrap leading-none">
  <span className={`font-display text-[1.3rem] font-semibold tracking-[0.04em] ${inverted ? "text-white" : "text-[var(--color-navy-900)]"}`}>ETNARA</span>
