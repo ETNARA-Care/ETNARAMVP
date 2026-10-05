@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listMyCareRecipients, type FamilyRecipient } from "@/api/familyTimeline";
 import { listFamilyIncidents, type FamilyIncident } from "@/api/incidents";
-import { Badge, Button, Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
+import { Badge, Button, Card, ErrorState, Skeleton } from "@/components/ui";
 
 const statusLabels: Record<string, string> = {
   open: "Reportado",
@@ -50,18 +50,18 @@ export function FamilyIncidentDetailPage() {
 
   const recipientName = recipient.preferredName || `${recipient.firstName} ${recipient.lastName}`.trim();
   return (
-    <div className="flex flex-col gap-[var(--spacing-md)]">
+    <div className="space-y-5">
       <Button variant="ghost" icon={<ArrowLeft size={18} />} onClick={() => navigate(-1)} className="self-start">
         Volver
       </Button>
-      <PageHeader title="Detalle del incidente" description={`Información autorizada sobre ${recipientName}.`} />
-      <Card>
+      <section><p className="text-sm font-medium text-[#66845f]">Incidentes</p><h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">Detalle del incidente</h1><p className="mt-1 text-sm text-[#667085]">Información autorizada sobre {recipientName}.</p></section>
+      <Card className="rounded-[22px] border-[#102b57]/10 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle size={22} className="text-[var(--color-danger-700)] shrink-0" />
+            <AlertTriangle size={22} className="shrink-0 text-[#b86f52]" />
             <p className="font-medium text-[var(--color-text-primary)]">Incidente reportado</p>
           </div>
-          <Badge tone="danger">Severidad {incident.severity}</Badge>
+          <Badge tone={incident.status === "resolved" ? "success" : "warning"}>{statusLabels[incident.status] ?? incident.status}</Badge>
         </div>
         <dl className="flex flex-col gap-3">
           <div>
@@ -80,15 +80,16 @@ export function FamilyIncidentDetailPage() {
           </div>
         </dl>
       </Card>
-      <Card className="flex items-start gap-3">
+      <Card className="flex items-start gap-3 rounded-[22px] border-[#66845f]/20 bg-[#f8f5ee]">
         <ShieldCheck size={22} className="text-[var(--color-success-700)] shrink-0" />
         <div>
-          <p className="font-medium text-[var(--color-text-primary)]">Administración fue notificada</p>
+          <p className="font-medium text-[#173154]">El equipo de cuidado fue notificado</p>
           <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-1">
-            El equipo administrativo recibió el reporte y dará seguimiento conforme al protocolo de cuidado.
+            El reporte fue recibido y se dará seguimiento conforme al protocolo de cuidado.
           </p>
         </div>
       </Card>
+      <div className="flex items-start gap-2 rounded-2xl bg-white px-4 py-3 text-sm text-[#667085] shadow-sm"><CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#66845f]" /><p>No necesitas realizar ninguna acción en este momento.</p></div>
       <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">
         Por privacidad, esta vista no muestra notas internas, documentos ni datos del proceso administrativo.
       </p>
