@@ -1,5 +1,5 @@
 name: Validate and deploy ETNARA V23 to GitHub Pages
-# deployment refresh — Family shell rollout
+# deployment refresh — Family shell rollout retry
 
 on:
   push:
