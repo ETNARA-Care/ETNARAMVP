@@ -58,6 +58,7 @@ export function FamilyTodayPage() {
   const shift = useMemo(() => shifts?.find(x => isToday(x.scheduledStart) && !x.checkedOutAt && x.status !== "cancelled")
     ?? shifts?.find(x => isToday(x.scheduledStart)), [shifts]);
   const entries = timeline.filter(x => isToday(x.occurredAt));
+  const lastEntry = entries[0];
   const caredFor = recipientName(recipient);
   const caregiver = shift?.caregiver;
   const status = shiftStatus(shift);
@@ -71,7 +72,7 @@ export function FamilyTodayPage() {
         <p className="text-sm font-medium text-[#66845f]">Tu espacio de cuidado</p>
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">{caredFor}</h1>
         <p className="mt-1 text-sm text-[#667085]">
-          {entries.length > 0 ? "Tienes nuevas actualizaciones de cuidado hoy." : "Te mantendremos al día con su cuidado."}
+          {lastEntry ? lastEntry.title : "Te mantendremos al día con su cuidado."}
         </p>
       </section>
 
