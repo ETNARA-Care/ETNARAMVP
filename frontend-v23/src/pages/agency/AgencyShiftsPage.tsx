@@ -354,12 +354,12 @@ export function AgencyShiftsPage() {
                   {campaign?.campaignStatus === "exhausted" && <p className="text-[var(--text-caption)] text-[var(--color-warning-700)]">Se consultó a todo el personal elegible sin encontrar disponibilidad.</p>}
                   {interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Interesadas: {interestedNames.join(", ")}</p>}
                 </div>
-                <div className="flex items-center gap-2">
+ <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge status={shift.status} />
                   {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
                   {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
-                  {shift.status === "unassigned" && !assignment && canStartCoverage && <Button variant="secondary" size="md" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>{campaign?.campaignStatus === "exhausted" ? "Reintentar cobertura" : "Ofrecer turno"}</Button>}
-                  {shift.status === "unassigned" && !assignment && <Button size="md" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
+ {shift.status === "unassigned" && !assignment && canStartCoverage && <Button variant="secondary" size="md" className="whitespace-nowrap" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>{campaign?.campaignStatus === "exhausted" ? "Reintentar cobertura" : "Ofrecer turno"}</Button>}
+ {shift.status === "unassigned" && !assignment && <Button size="md" className="whitespace-nowrap" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
                 </div>
               </Card>
             );

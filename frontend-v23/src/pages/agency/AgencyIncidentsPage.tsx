@@ -58,7 +58,7 @@ export function AgencyIncidentsPage() {
         <div className="flex flex-col gap-2">
           {openIncidents.map((incident) => (
             <button key={incident.id} type="button" className="text-left" onClick={() => navigate(`/agency/incidents/${incident.id}`)}>
-            <Card className="flex items-start justify-between gap-3 hover:bg-[var(--color-ivory-100)] transition-colors">
+ <Card className="flex flex-col-reverse items-start gap-2 sm:flex-row sm:justify-between sm:gap-3 hover:bg-[var(--color-ivory-100)] transition-colors">
               <div className="min-w-0">
                 <p className="font-medium text-[var(--color-text-primary)]">Incidente reportado</p>
                 <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">

@@ -3,9 +3,35 @@
 ## Current Status
 
 Project: ETNARA Care
-Repository: ETNARAMVP
-Branch: phase-10/10.0-multi-agency-compliance
+Branch: design/claude-admin-full-integration
 
+## 2026-10-05 — Admin Portal visual system (design/claude-admin-full-integration)
+
+- Applied the approved Claude Admin Portal design to the whole Agency
+ experience, not only the Overview: new app shell (navy sidebar with
+ Operación / Cuidado / Administración groups, topbar with active
+ organization, organization switch link, notifications and account menu),
+ mobile bottom navigation (Inicio, Compliance, Turnos, Residentes, Más) and
+ a “Más” sheet with every Agency section.
+- Visual tokens live in `src/styles/admin-theme.css`, scoped to
+ `[data-portal="admin"]` (set by AgencyLayout). Family and Caregiver keep the
+ base tokens; shared primitives only gained inert `data-ui` attributes.
+- Overview is an action-oriented command center built only on existing
+ contracts: Operations Center alerts (“Hoy hay X asuntos urgentes y Y por
+ planificar”), resident record readiness, today’s shift timeline, workforce
+ alerts, expiring documents, incidents, care activity and quick actions.
+ No mock data and no new endpoints.
+- Resident document readiness moved unchanged into
+ `features/agency/useResidentCompliance.ts`, shared by Compliance and Overview.
+- Platform access stays limited to `isPlatformAdmin`; no backend, auth, role or
+ tenant-isolation change.
+- Fixed Tailwind v4 named-size conflicts with ETNARA spacing tokens
+ (`max-w-lg` resolved to 2rem) by using explicit widths.
+- Reviewed Overview, Compliance, Personal, Residentes, Turnos and Incidentes at
+ 390 px and 1440 px with intercepted API fixtures: no horizontal overflow.
+- Exact next step: apply the patch on a branch, open the PR, verify the GitHub
+ Pages preview against Railway with a real organization admin account.
+Branch: phase-10/10.0-multi-agency-compliance
 ## 2026-09-27 — Phase 10.0 multi-agency establishments
 
 - Replaced the empty organization-settings placeholder with a real
