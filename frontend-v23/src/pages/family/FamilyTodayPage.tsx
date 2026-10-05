@@ -58,6 +58,7 @@ export function FamilyTodayPage() {
   const shift = useMemo(() => shifts?.find(x => isToday(x.scheduledStart) && !x.checkedOutAt && x.status !== "cancelled")
     ?? shifts?.find(x => isToday(x.scheduledStart)), [shifts]);
   const entries = timeline.filter(x => isToday(x.occurredAt));
+  const lastEntry = entries[0];
   const caredFor = recipientName(recipient);
   const caregiver = shift?.caregiver;
   const status = shiftStatus(shift);
@@ -71,7 +72,7 @@ export function FamilyTodayPage() {
         <p className="text-sm font-medium text-[#66845f]">Tu espacio de cuidado</p>
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">{caredFor}</h1>
         <p className="mt-1 text-sm text-[#667085]">
-          {entries.length > 0 ? "Tienes nuevas actualizaciones de cuidado hoy." : "Te mantendremos al día con su cuidado."}
+          {lastEntry ? lastEntry.title : "Te mantendremos al día con su cuidado."}
         </p>
       </section>
 
@@ -112,7 +113,7 @@ export function FamilyTodayPage() {
               </div>
             </button>
           ))}
-        </div> : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]">Todavía no hay actividad registrada hoy.</div>}
+        </div> : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]">Todavía no hay actualizaciones hoy.</div>}
       </section>
 
       <button onClick={() => navigate("/family/history")} className="flex w-full items-center justify-between rounded-[20px] border border-[#102b57]/10 bg-[#f1eee6] px-4 py-3 text-left">
