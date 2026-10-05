@@ -46,10 +46,16 @@ export function AgencyOverviewPage() {
  const credentialAlerts = alerts.filter((a) => a.category === "expiring_credential");
  const activeRecipients = supervision.recipients.filter((r) => r.status === "active").length;
  return (
- <div className="space-y-6 lg:space-y-8">
+ <div className="space-y-4 sm:space-y-6 lg:space-y-8">
  <Briefing organizationName={activeOrganization?.name ?? "tu organización"} center={operations.data} centerLoading={operations.loading} centerError={operations.error}
  todayShifts={todayShifts} recipients={activeRecipients} careEventsToday={todayEvents.length} />
- <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+ <section className="xl:hidden">
+ <h2 className="font-display text-[1.15rem] text-[var(--color-text-primary)]">Acciones rápidas</h2>
+ <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+ {QUICK_ACTIONS.slice(0, 4).map(({ label, Icon, to, primary }) => <DashboardAction key={label} label={label} Icon={Icon} to={to} primary={primary} onNavigate={navigate} />)}
+ </div>
+ </section>
+ <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-12">
  <AttentionQueue center={operations.data} loading={operations.loading} error={operations.error} onRetry={() => void operations.reload()} className="xl:col-span-8" />
  <ReadinessPanel rows={compliance.rows} places={compliance.places} error={compliance.error} credentialAlerts={credentialAlerts.length} className="xl:col-span-4" />
  <ShiftBoard shifts={todayShifts} onCreate={() => navigate("/agency/shifts?create=1")} className="xl:col-span-12" />
@@ -57,10 +63,10 @@ export function AgencyOverviewPage() {
  <ExpiringDocuments rows={compliance.rows} credentialAlerts={credentialAlerts} className="xl:col-span-8" />
  <ResidentsPanel recipients={activeRecipients} rows={compliance.rows} places={compliance.places} className="xl:col-span-4" />
  <IncidentsPanel alerts={alerts} className="xl:col-span-4" />
- <div className="grid content-start gap-6 xl:col-span-4">
+ <div className="hidden content-start gap-4 sm:gap-6 xl:col-span-4 xl:grid">
  <section className="min-w-0">
  <h2 className="font-display text-[1.3rem] text-[var(--color-text-primary)]">Acciones rápidas</h2>
- <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-1">
+ <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:grid-cols-3 xl:grid-cols-1">
  {QUICK_ACTIONS.map(({ label, Icon, to, primary }) => <DashboardAction key={label} label={label} Icon={Icon} to={to} primary={primary} onNavigate={navigate} />)}
  </div>
  </section>

@@ -76,17 +76,17 @@ function CompactList({ shifts }: { shifts: AdminShift[] }) {
  const period = (s: AdminShift) => { const h = new Date(s.scheduled_start).getHours(); return h < 12 ? "Mañana" : h < 18 ? "Tarde" : "Noche"; };
  const groups = ["Mañana", "Tarde", "Noche"].map((label) => ({ label, items: shifts.filter((s) => period(s) === label) })).filter((g) => g.items.length);
  return (
- <div className="px-4 pb-4 pt-3 md:hidden">
+ <div className="px-4 pb-3 pt-2 md:hidden">
  {groups.map((g) => (
- <div key={g.label} className="mt-2">
+ <div key={g.label} className="mt-1.5">
  <p className="px-1 pb-1.5 text-xs text-[var(--color-text-muted)]">{g.label}</p>
  <ul className="divide-y divide-[var(--color-border)] overflow-hidden rounded-[12px] border border-[var(--color-border)]">
  {g.items.map((s) => {
  const who = caregiverLabel(s);
  return (
  <li key={s.id}>
- <button type="button" onClick={() => navigate(`/agency/shifts/${s.id}`)} className={`flex w-full items-center gap-3 px-3.5 py-3 text-left ${who ? "" : "bg-[var(--color-danger-100)]/60"}`}>
- {who ? <Avatar name={who} size={30} /> : <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-[var(--color-danger-100)] text-[var(--color-danger-700)]"><UserPlus size={15} aria-hidden /></span>}
+ <button type="button" onClick={() => navigate(`/agency/shifts/${s.id}`)} className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left ${who ? "" : "bg-[var(--color-danger-100)]/60"}`}>
+ {who ? <Avatar name={who} size={28} /> : <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--color-danger-100)] text-[var(--color-danger-700)]"><UserPlus size={15} aria-hidden /></span>}
  <span className="min-w-0 flex-1">
  <span className={`block truncate text-sm font-medium ${who ? "text-[var(--color-text-primary)]" : "text-[var(--color-danger-700)]"}`}>{who ?? "Sin cubrir"}</span>
  <span className="block truncate text-xs text-[var(--color-text-muted)]">{s.recipient ? recipientName(s.recipient) : "Sin persona asignada"}, {timeFmt(s.scheduled_start)} – {timeFmt(s.scheduled_end)}</span>

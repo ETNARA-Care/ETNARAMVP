@@ -30,7 +30,7 @@ export function AttentionQueue({ center, loading, error, onRetry, className = ""
  return (
  <li key={a.key} className="relative">
  <span className={`absolute bottom-4 left-0 top-4 w-[3px] rounded-r-full ${s.dot}`} aria-hidden />
- <div className="flex flex-col gap-3 py-4 pl-5 pr-5 sm:flex-row sm:items-center sm:gap-5 sm:pl-6 sm:pr-6">
+ <div className="flex flex-col gap-2 py-3 pl-4 pr-4 sm:gap-3 sm:py-4 sm:pl-5 sm:pr-5 sm:flex-row sm:items-center sm:gap-5 sm:pl-6 sm:pr-6">
  <div className="min-w-0 flex-1">
  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
  <span className={`font-medium ${s.text}`}>{s.label}</span>
@@ -39,10 +39,10 @@ export function AttentionQueue({ center, loading, error, onRetry, className = ""
  {a.escalatedAt && <span className="text-[var(--color-text-muted)]">Escalado</span>}
  </div>
  <p className="mt-1 font-medium text-[var(--color-text-primary)]">{a.title}</p>
- <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{a.detail}</p>
+ <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-text-secondary)] sm:text-sm">{a.detail}</p>
  </div>
  <button type="button" onClick={() => navigate(a.actionPath)}
- className={`inline-flex min-h-10 shrink-0 items-center justify-center gap-1 self-start rounded-[10px] px-3.5 text-sm font-medium transition-colors sm:self-center ${a.severity === "critical" ? "bg-[var(--color-navy-900)] text-white hover:bg-[var(--color-navy-800)]" : "border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-text-primary)]/25"}`}>
+ className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1 self-start rounded-[10px] px-3.5 text-sm font-medium transition-colors sm:self-center ${a.severity === "critical" ? "bg-[var(--color-navy-900)] text-white hover:bg-[var(--color-navy-800)]" : "border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-text-primary)]/25"}`}>
  {categoryAction[a.category]}<ChevronRight size={16} className="-mr-1 opacity-70" aria-hidden />
  </button>
  </div>

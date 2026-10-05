@@ -25,23 +25,23 @@ export function ReadinessPanel({ rows, places, error, credentialAlerts, classNam
  return (
  <AdminPanel tone="navy" className={className}>
  <AdminPanelHeader inverted title="ETNARA Compliance" description="Preparación de expedientes de residentes" />
- <div className="flex flex-col items-center gap-5 px-5 pb-6 pt-5 sm:px-6">
+ <div className="grid grid-cols-[auto_1fr] items-center gap-4 px-4 pb-4 pt-3 sm:flex sm:flex-col sm:gap-5 sm:px-6 sm:pb-6 sm:pt-5">
  {rows === null && !error ? <Skeleton className="h-40 w-40 rounded-full opacity-20" /> : (
- <ReadinessRing value={score} caption={total ? `${complete} de ${total} expedientes completos` : "Sin residentes activos"} />
+ <ReadinessRing value={score} caption={total ? `${complete} de ${total} expedientes completos` : "Sin residentes activos"} size={118} />
  )}
  {error && <p className="text-center text-sm text-white/75">No se pudieron leer los expedientes. Ábrelos desde Compliance.</p>}
- <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-3 py-1 text-xs text-white/85">
+ <span className="col-start-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px] text-white/85 sm:text-xs">
  <Building2 size={14} aria-hidden />{places.length === 1 ? "1 establecimiento activo" : `${places.length} establecimientos activos`}
  </span>
- <ul className="w-full divide-y divide-white/10 border-t border-white/10">
+ <ul className="col-span-2 w-full divide-y divide-white/10 border-t border-white/10">
  {lines.map((l) => (
- <li key={l.label} className="flex items-baseline justify-between gap-3 py-2.5 text-sm">
+ <li key={l.label} className="flex items-baseline justify-between gap-3 py-2 text-xs sm:py-2.5 sm:text-sm">
  <span className="min-w-0 text-white/85">{l.label}</span>
  <span className={`shrink-0 font-display text-xl tabular-nums ${l.warn ? "text-[#E6B877]" : "text-[var(--color-sage-300)]"}`}>{l.value}</span>
  </li>
  ))}
  </ul>
- <button type="button" onClick={() => navigate("/agency/compliance")} className="min-h-11 w-full rounded-[10px] bg-white/10 px-4 text-sm font-medium text-white hover:bg-white/15">Abrir Compliance</button>
+ <button type="button" onClick={() => navigate("/agency/compliance")} className="col-span-2 min-h-10 w-full rounded-[10px] sm:min-h-11 bg-white/10 px-4 text-sm font-medium text-white hover:bg-white/15">Abrir Compliance</button>
  </div>
  </AdminPanel>
  );
