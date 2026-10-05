@@ -150,7 +150,7 @@ export function FamilyProfilePage() {
             <>
               <div className="flex items-center gap-3 rounded-2xl bg-[#f8f5ee] p-3">
                 <Avatar name={caregiver.displayName} size={42} />
-                <div><p className="font-medium text-[#173154]">{caregiver.displayName}</p><p className="text-xs text-[#98a2b3]">{caregiver.credentials.length ? "Credenciales autorizadas disponibles" : "Cuidador asignado"}</p></div>
+                <div><p className="font-medium text-[#173154]">{caregiver.displayName}</p><p className="text-xs text-[#98a2b3]">{caregiver.credentials.length ? "Credenciales verificadas" : "Cuidador asignado"}</p></div>
               </div>
               {caregiver.credentials.length > 0 ? <div className="mt-4 divide-y divide-[#102b57]/10">{caregiver.credentials.map((credential) => (
                 <div key={credential.typeCode} className="flex items-center gap-2 py-3 first:pt-0 last:pb-0">
