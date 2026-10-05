@@ -3,6 +3,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 export function Card({ className = "", children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
+ data-ui="card"
       className={`bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border)]
         shadow-[var(--shadow-card)] p-[var(--spacing-md)] ${className}`}
       {...rest}

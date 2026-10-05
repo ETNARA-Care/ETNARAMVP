@@ -26,6 +26,7 @@ interface AgencySupervisionState {
   loading: boolean;
   error: boolean;
   recipients: CareRecipient[];
+ workers: WorkerMembership[];
   shifts: AdminShift[];
   events: AdminCareEvent[];
   reload: () => Promise<void>;
@@ -45,6 +46,7 @@ export function useAgencySupervision(): AgencySupervisionState {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [recipients, setRecipients] = useState<CareRecipient[]>([]);
+ const [workers, setWorkers] = useState<WorkerMembership[]>([]);
   const [shifts, setShifts] = useState<AdminShift[]>([]);
   const [events, setEvents] = useState<AdminCareEvent[]>([]);
 
@@ -79,6 +81,7 @@ export function useAgencySupervision(): AgencySupervisionState {
         )?.organization_worker_membership_id ?? ""],
       ]));
 
+ setWorkers(workerRows);
       setRecipients(recipientRows);
       setShifts(shiftRows.map((shift) => ({
         ...shift,
@@ -92,6 +95,7 @@ export function useAgencySupervision(): AgencySupervisionState {
       }))));
     } catch {
       setRecipients([]);
+ setWorkers([]);
       setShifts([]);
       setEvents([]);
       setError(true);
@@ -110,6 +114,6 @@ export function useAgencySupervision(): AgencySupervisionState {
       window.removeEventListener("focus", onFocus);
     };
   }, [reload]);
-
+ return useMemo(() => ({ loading, error, recipients, workers, shifts, events, reload }), [loading, error, recipients, workers, shifts, events, reload]);
   return useMemo(() => ({ loading, error, recipients, shifts, events, reload }), [loading, error, recipients, shifts, events, reload]);
 }

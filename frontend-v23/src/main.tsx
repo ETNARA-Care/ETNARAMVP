@@ -7,6 +7,7 @@ import { ToastProvider } from "@/components/ui";
 import { DemoStoreProvider } from "@/mocks/DemoStoreContext";
 import { AuthProvider } from "@/auth/AuthProvider";
 import "@/styles/tokens.css";
+import "@/styles/admin-theme.css";
 
 const queryClient = new QueryClient();
 

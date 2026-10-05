@@ -28,8 +28,8 @@ export function PageHeader({ title, description, breadcrumbs, actions }: PageHea
       )}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-[var(--text-h1)] text-[var(--color-text-primary)]">{title}</h1>
-          {description && <p className="text-[var(--text-body)] text-[var(--color-text-secondary)] mt-1">{description}</p>}
+ <h1 data-ui="page-title" className="font-display text-[var(--text-h1)] text-[var(--color-text-primary)]">{title}</h1>
+ {description && <p data-ui="page-description" className="text-[var(--text-body)] text-[var(--color-text-secondary)] mt-1">{description}</p>}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
