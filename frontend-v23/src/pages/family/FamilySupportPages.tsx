@@ -158,7 +158,7 @@ export function FamilyProfilePage() {
                   <div className="flex-1"><p className="text-sm text-[#173154]">{credential.typeName}</p>{credential.expiresAt && <p className="text-xs text-[#98a2b3]">Vigente hasta {new Date(`${credential.expiresAt}T00:00:00`).toLocaleDateString("es-PR")}</p>}</div>
                 </div>
               ))}</div> : null}
-              <p className="mt-4 text-xs leading-5 text-[#98a2b3]">Solo mostramos el estado y las credenciales autorizadas. Los documentos y datos internos del personal permanecen protegidos.</p>
+              <p className="mt-4 text-xs leading-5 text-[#98a2b3]">Se muestra únicamente el estado verificado; los documentos y datos privados permanecen protegidos.</p>
             </>
           )}
         </Card>
