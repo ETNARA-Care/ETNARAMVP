@@ -102,7 +102,8 @@ export function CaregiverShiftDetailPage() {
   const [incidentSeverity, setIncidentSeverity] = useState("Moderado");
   const [incidentDescription, setIncidentDescription] = useState("");
   const [incidentActions, setIncidentActions] = useState("");
-  const [rejectionOpen, setRejectionOpen] = useState(false);\n  const [finishOpen, setFinishOpen] = useState(false);
+  const [rejectionOpen, setRejectionOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const organizationId = activeOrganization?.id;
 
