@@ -415,7 +415,9 @@ export function CaregiverShiftDetailPage() {
           </Select>
           <Textarea label="¿Qué ocurrió?" value={incidentDescription} onChange={(event) => setIncidentDescription(event.target.value)} required placeholder="Describe lo ocurrido con claridad..." />
           <Textarea label="Acciones tomadas (opcional)" value={incidentActions} onChange={(event) => setIncidentActions(event.target.value)} placeholder="Ej. Se notificó al supervisor..." />
-          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Este reporte quedará registrado y notificará a Administración.</p>
+          <div className="rounded-[var(--radius-sm)] bg-[var(--color-ivory-100)] p-3">
+            <p className="text-[var(--text-caption)] font-medium text-[var(--color-text-secondary)]">Al confirmar, ETNARA guardará el incidente usando el registro real de la organización. No se añadirá información que no hayas escrito.</p>
+          </div>
         </div>
       </BottomSheet>
 
