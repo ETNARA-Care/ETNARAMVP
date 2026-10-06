@@ -173,35 +173,41 @@ export function CaregiverProfilePage() {
           {user?.email && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Sesión: {user.email}</p>}
         </div>
       </Card>
-      <Card>
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={20} className="text-[var(--color-success-700)]" />
-            <p className="font-medium text-[var(--color-text-primary)]">Mis credenciales</p>
+      <Card className="overflow-hidden p-0">
+        <div className="bg-[var(--color-navy-900)] p-5 text-white">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2"><ShieldCheck size={20} /><p className="font-semibold">Mis credenciales</p></div>
+            {credentials && credentials.some((item) => item.verificationStatus === "verified") && <Badge tone="success">Verificada</Badge>}
           </div>
-          {credentials && credentials.some((item) => item.verificationStatus === "verified") && <Badge tone="success">Verificada</Badge>}
+          <p className="mt-2 text-sm text-white/70">Consulta el estado de los requisitos que tu organización mantiene en tu expediente.</p>
         </div>
-        {credentials === null ? <Skeleton className="h-24" /> : credentialError ? (
-          <button className="text-[var(--text-small)] text-[var(--color-danger-700)]" onClick={() => void loadCredentials()}>No pudimos cargar las credenciales. Toca para reintentar.</button>
-        ) : credentials.length === 0 ? (
-          <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">No hay credenciales registradas todavía.</p>
-        ) : (
-          <div className="flex flex-col divide-y divide-[var(--color-border)]">
-            {credentials.map((credential) => {
-              const state = credentialState(credential);
-              return (
-                <div key={credential.id} className="flex items-center gap-2 py-2.5 first:pt-0 last:pb-0">
-                  <CheckCircle2 size={18} className="text-[var(--color-success-700)] shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[var(--text-small)] text-[var(--color-text-primary)]">{credential.typeName}</p>
-                    {credential.expiresAt && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Vence {new Date(`${credential.expiresAt}T00:00:00`).toLocaleDateString("es-PR")}</p>}
+        <div className="p-4 sm:p-5">
+          {credentials === null ? <Skeleton className="h-24" /> : credentialError ? (
+            <button className="text-[var(--text-small)] text-[var(--color-danger-700)]" onClick={() => void loadCredentials()}>No pudimos cargar las credenciales. Toca para reintentar.</button>
+          ) : credentials.length === 0 ? (
+            <div className="rounded-[var(--radius-sm)] bg-[var(--color-ivory-100)] p-4">
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">No hay credenciales registradas todavía.</p>
+              <p className="mt-1 text-[var(--text-caption)] text-[var(--color-text-muted)]">La carga de documentos por el cuidador todavía no está habilitada. Administración gestiona tu expediente.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {credentials.map((credential) => {
+                const state = credentialState(credential);
+                return (
+                  <div key={credential.id} className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] p-3">
+                    <CheckCircle2 size={18} className="text-[var(--color-success-700)] shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[var(--text-small)] font-medium text-[var(--color-text-primary)]">{credential.typeName}</p>
+                      {credential.expiresAt && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Vence {new Date(`${credential.expiresAt}T00:00:00`).toLocaleDateString("es-PR")}</p>}
+                    </div>
+                    <Badge tone={state.tone}>{state.label}</Badge>
                   </div>
-                  <Badge tone={state.tone}>{state.label}</Badge>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+          <p className="mt-4 text-[var(--text-caption)] text-[var(--color-text-muted)]">Los documentos y datos privados del expediente permanecen protegidos según tus permisos.</p>
+        </div>
       </Card>
       <Card className="overflow-hidden p-0">
         <div className="bg-[var(--color-navy-900)] p-5 text-white">
