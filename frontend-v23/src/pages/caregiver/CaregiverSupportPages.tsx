@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PageHeader, Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
+import { Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
 import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useAuth } from "@/auth/AuthProvider";
