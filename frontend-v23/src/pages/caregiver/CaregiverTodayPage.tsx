@@ -77,7 +77,7 @@ export function CaregiverTodayPage() {
               <p className={`text-xs font-semibold uppercase tracking-[0.12em] ${main.status === "in_progress" ? "text-white/65" : "text-[var(--color-text-muted)]"}`}>Turno de hoy</p>
               <h2 className={`mt-1 text-xl font-semibold ${main.status === "in_progress" ? "text-white" : "text-[var(--color-navy-900)]"}`}>{recipientName(recipientById[main.care_recipient_id ?? ""])}</h2>
             </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${main.assignment_response_status === "pending" ? "bg-amber-100 text-amber-800" : main.status === "in_progress" ? "bg-white/15 text-white" : "bg-[var(--color-sage-100)] text-[var(--color-navy-900)]"}`}>{shiftLabel(main)}</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${main.assignment_response_status === "pending" ? "bg-amber-100 text-amber-800" : main.status === "in_progress" ? "bg-white/15 text-white" : "bg-[var(--color-success-100)] text-[var(--color-navy-900)]"}`}>{shiftLabel(main)}</span>
           </div>
           <div className={`flex items-center justify-between border-t pt-4 ${main.status === "in_progress" ? "border-white/15" : "border-[var(--color-border)]"}`}>
             <div><p className={`text-xs ${main.status === "in_progress" ? "text-white/60" : "text-[var(--color-text-muted)]"}`}>Horario</p><p className="mt-1 font-medium">{windowLabel(main)}</p></div>
