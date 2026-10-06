@@ -203,15 +203,15 @@ export function CaregiverProfilePage() {
           </div>
         )}
       </Card>
-      <Card>
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <CalendarClock size={20} className="text-[var(--color-accent-700)]" />
-            <p className="font-medium text-[var(--color-text-primary)]">Mi disponibilidad</p>
+      <Card className="overflow-hidden p-0">
+        <div className="bg-[var(--color-navy-900)] p-5 text-white">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2"><CalendarClock size={20} /><p className="font-semibold">Mi disponibilidad</p></div>
+            {availability?.configured ? <Badge tone="success">Configurada</Badge> : <Badge tone="warning">Pendiente</Badge>}
           </div>
-          {availability?.configured ? <Badge tone="success">Configurada</Badge> : <Badge tone="warning">Pendiente</Badge>}
+          <p className="mt-2 text-sm text-white/70">Indica cuándo puedes trabajar. Administración verá esta información al analizar la cobertura de un turno.</p>
         </div>
-        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-4">Indica cuándo puedes trabajar. Administración verá esta información al analizar la cobertura de un turno.</p>
+        <div className="p-4 sm:p-5">
         {availabilityError ? (
           <button className="text-[var(--text-small)] text-[var(--color-danger-700)]" onClick={() => void loadAvailability()}>No pudimos cargar la disponibilidad. Toca para reintentar.</button>
         ) : availability === null ? <Skeleton className="h-40" /> : (
@@ -253,9 +253,10 @@ export function CaregiverProfilePage() {
                 </div>
               )}
             </div>
-            <Button onClick={() => void saveAvailability()} loading={availabilitySaving}>Guardar disponibilidad</Button>
+            <div className="sticky bottom-20 z-10 bg-white/95 pt-2 backdrop-blur sm:static sm:bg-transparent sm:pt-0"><Button fullWidth onClick={() => void saveAvailability()} loading={availabilitySaving}>Guardar disponibilidad</Button></div>
           </div>
         )}
+        </div>
       </Card>
       <Button variant="secondary" icon={<LogOut size={18} />} onClick={onLogout}>Cerrar sesión</Button>
     </div>
