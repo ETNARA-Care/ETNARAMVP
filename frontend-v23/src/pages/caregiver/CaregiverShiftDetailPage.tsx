@@ -103,6 +103,7 @@ export function CaregiverShiftDetailPage() {
   const [incidentDescription, setIncidentDescription] = useState("");
   const [incidentActions, setIncidentActions] = useState("");
   const [rejectionOpen, setRejectionOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const organizationId = activeOrganization?.id;
 
@@ -327,7 +328,7 @@ export function CaregiverShiftDetailPage() {
 
       <div className="grid grid-cols-2 gap-3">
         <Button variant="secondary" size="lg" icon={<LogIn size={18} />} disabled={!canStart || saving} onClick={() => void startShift()}>Comenzar turno</Button>
-        <Button variant="secondary" size="lg" icon={<LogOut size={18} />} disabled={!canFinish || saving} onClick={() => void finishShift()}>Finalizar turno</Button>
+        <Button variant="secondary" size="lg" icon={<LogOut size={18} />} disabled={!canFinish || saving} onClick={() => setFinishOpen(true)}>Finalizar turno</Button>
       </div>
 
       <div>
@@ -364,6 +365,23 @@ export function CaregiverShiftDetailPage() {
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>
         {timelineEntries.length > 0 ? <Timeline entries={timelineEntries} /> : <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Aún no se ha registrado la llegada.</p>}
       </Card>
+
+      <BottomSheet
+        open={finishOpen}
+        onClose={() => !saving && setFinishOpen(false)}
+        title="Finalizar turno"
+        footer={<><Button variant="secondary" fullWidth disabled={saving} onClick={() => setFinishOpen(false)}>Volver</Button><Button fullWidth disabled={saving} onClick={() => void finishShift()}>{saving ? "Finalizando..." : "Confirmar y finalizar"}</Button></>}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Resumen del turno</p>
+            <p className="mt-2 font-semibold text-[var(--color-navy-900)]">{careEvents.length} registro{careEvents.length === 1 ? "" : "s"} de cuidado</p>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{timelineEntries.length} evento{timelineEntries.length === 1 ? "" : "s"} en la actividad del turno.</p>
+          </div>
+          {carePlan && carePlan.plan_details.tasks.length > 0 && <div><p className="font-medium text-[var(--color-navy-900)]">Plan de cuidado</p><p className="mt-1 text-sm text-[var(--color-text-secondary)]">{carePlan.plan_details.tasks.length} tarea{carePlan.plan_details.tasks.length === 1 ? "" : "s"} publicada{carePlan.plan_details.tasks.length === 1 ? "" : "s"} para este cuidado.</p><p className="mt-1 text-xs text-[var(--color-text-muted)]">ETNARA no marcará tareas como completadas automáticamente si no existe un registro que lo confirme.</p></div>}
+          <p className="text-sm text-[var(--color-text-secondary)]">Al confirmar, se registrará tu salida real y el turno quedará finalizado.</p>
+        </div>
+      </BottomSheet>
 
       <BottomSheet
         open={!!activeAction}
