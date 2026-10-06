@@ -18,15 +18,15 @@ import {
   checkIn, checkOut, getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
-import { Badge, BottomSheet, Button, Card, ErrorState, Input, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
+import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 
 const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }> = [
   { code: "MEAL", label: "Comida", icon: <Utensils size={22} /> },
-  { code: "HYDRATION", label: "Agua", icon: <GlassWater size={22} /> },
-  { code: "TOILETING", label: "Baño / aseo", icon: <Bath size={22} /> },
+  { code: "HYDRATION", label: "Hidratación", icon: <GlassWater size={22} /> },
+  { code: "TOILETING", label: "Higiene", icon: <Bath size={22} /> },
   { code: "MOBILITY", label: "Movilidad", icon: <Footprints size={22} /> },
   { code: "ACTIVITY", label: "Actividad", icon: <Activity size={22} /> },
-  { code: "MOOD", label: "Estado de ánimo", icon: <Smile size={22} /> },
+  { code: "MOOD", label: "Ánimo", icon: <Smile size={22} /> },
   { code: "NOTE", label: "Observación", icon: <Eye size={22} /> },
 ];
 
@@ -269,14 +269,20 @@ export function CaregiverShiftDetailPage() {
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
-      <PageHeader title={recipientName(recipient)} breadcrumbs={[{ label: "Turnos", href: "/caregiver/shifts" }, { label: "Detalle" }]} actions={<StatusBadge status={status} />} />
-
-      <Card>
-        <p className="font-medium text-[var(--color-text-primary)]">{new Date(shift.scheduled_start).toLocaleDateString("es-PR", { weekday: "long", day: "numeric", month: "long" })}</p>
-        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
+      <button type="button" onClick={() => navigate("/caregiver/shifts")} className="w-fit text-sm font-medium text-[var(--color-text-secondary)]">← Turnos</button>
+      <section className={`rounded-[var(--radius-lg)] p-5 shadow-sm ${canFinish ? "bg-[var(--color-navy-900)] text-white" : "border border-[var(--color-border)] bg-white"}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${canFinish ? "text-white/60" : "text-[var(--color-text-muted)]"}`}>{canFinish ? "Turno activo" : "Detalle del turno"}</p>
+            <h1 className="mt-1 truncate font-[var(--font-serif)] text-2xl">{recipientName(recipient)}</h1>
+          </div>
+          <StatusBadge status={status} />
+        </div>
+        <p className={`mt-4 font-medium ${canFinish ? "text-white" : "text-[var(--color-text-primary)]"}`}>{new Date(shift.scheduled_start).toLocaleDateString("es-PR", { weekday: "long", day: "numeric", month: "long" })}</p>
+        <p className={`text-sm ${canFinish ? "text-white/70" : "text-[var(--color-text-secondary)]"}`}>
           {new Date(shift.scheduled_start).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })} – {new Date(shift.scheduled_end).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}
         </p>
-      </Card>
+      </section>
 
       <Card>
         <div className="flex items-start justify-between gap-3 mb-3">
