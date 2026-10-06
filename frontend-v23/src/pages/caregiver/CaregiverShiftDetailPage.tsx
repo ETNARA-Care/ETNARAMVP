@@ -331,7 +331,7 @@ export function CaregiverShiftDetailPage() {
       </div>
 
       <div>
-        <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Registrar cuidado</p>
+        <div className="mb-3"><p className="font-semibold text-[var(--color-navy-900)]">Registrar cuidado</p><p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Siete categorías respaldadas por ETNARA</p></div>
         <div className="grid grid-cols-3 gap-2.5">
           {ACTIONS.map((action) => (
             <button
