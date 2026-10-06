@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PageHeader, Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
+import { Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
 import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useAuth } from "@/auth/AuthProvider";
@@ -52,8 +52,12 @@ function credentialState(credential: CredentialSummary): { tone: "success" | "wa
 
 export function CaregiverMessagesPage() {
   return (
-    <div>
-      <PageHeader title="Mensajes" />
+    <div className="flex flex-col gap-4">
+      <div className="rounded-[var(--radius-lg)] bg-[var(--color-navy-900)] p-5 text-white">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">Comunicación</p>
+        <h1 className="mt-1 font-[var(--font-serif)] text-2xl">Mensajes</h1>
+        <p className="mt-2 text-sm text-white/70">Coordina con tu equipo desde las conversaciones disponibles para tu cuenta.</p>
+      </div>
       <RealMessagingPanel />
     </div>
   );
@@ -164,7 +168,10 @@ export function CaregiverProfilePage() {
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
-      <PageHeader title="Perfil" />
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Cuenta y herramientas</p>
+        <h1 className="mt-1 font-[var(--font-serif)] text-2xl text-[var(--color-navy-900)]">Más</h1>
+      </div>
       <Card className="flex items-center gap-3">
         <Avatar name={caregiverName} size={48} />
         <div>
