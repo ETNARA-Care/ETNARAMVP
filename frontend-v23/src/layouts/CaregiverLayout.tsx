@@ -7,7 +7,8 @@ import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
 
 export function CaregiverLayout() {
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, activeWorkerProfile, user } = useAuth();
+  const caregiverName = activeWorkerProfile?.displayName ?? user?.email ?? "Cuidador/a";
   const navigate = useNavigate();
   const [adminEstablishments, setAdminEstablishments] = useState<MyEstablishmentAdminAssignment[]>([]);
 
@@ -25,7 +26,7 @@ export function CaregiverLayout() {
         <img src="/etnara-mark.svg" alt="" className="h-9 w-9 rounded-lg" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-[var(--color-text-secondary)]">{activeOrganization?.name ?? "ETNARA Care"}</p>
-          <p className="text-xs text-[var(--color-text-muted)]">Portal del cuidador</p>
+          <p className="truncate text-xs text-[var(--color-text-muted)]">Portal del cuidador · {caregiverName}</p>
         </div>
       </div>
     </header>
