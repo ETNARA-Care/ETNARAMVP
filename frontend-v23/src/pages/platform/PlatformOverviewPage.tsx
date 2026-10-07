@@ -38,7 +38,7 @@ export function PlatformOverviewPage() {
   );
   const pendingTotal = pendingCredentials === null || pendingDocuments === null ? null : pendingCredentials + pendingDocuments;
 
-  if (error) return <ErrorState title="No pudimos cargar el Centro Administrativo" description="La información de plataforma no está disponible en este momento." action={<Button onClick={() => void load()}>Reintentar</Button>} />;
+  if (error) return <ErrorState kind="network" onRetry={() => void load()} />;
 
   return (
     <div className="space-y-6">
