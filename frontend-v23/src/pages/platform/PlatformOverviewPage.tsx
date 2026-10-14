@@ -14,8 +14,11 @@ export function PlatformOverviewPage() {
 
   const load = useCallback(async () => {
     const token = getToken();
-    if (!token) return;
+    if (!token) { setError(true); return; }
     setError(false);
+    setOrganizations(null);
+    setPendingCredentials(null);
+    setPendingDocuments(null);
     try {
       const [orgs, credentials, documents] = await Promise.all([
         listPlatformOrganizations(token),
@@ -68,7 +71,7 @@ export function PlatformOverviewPage() {
           </div>
           {organizations === null ? <div className="p-5"><Skeleton className="h-40" /></div> : organizations.length === 0 ? <EmptyState icon={<Building2 size={30} />} title="Aún no hay organizaciones" description="Las organizaciones cliente creadas en ETNARA aparecerán aquí." /> : (
             <div className="divide-y divide-[var(--color-border)]">
-              {organizations.slice(0, 6).map((org) => <div key={org.id} className="flex items-center justify-between gap-4 px-5 py-4"><div className="min-w-0"><p className="truncate font-semibold text-[var(--color-text-primary)]">{org.name}</p><p className="mt-1 text-xs text-[var(--color-text-secondary)]">{org.type === "agency" ? "Agencia de cuidado" : "Establecimiento residencial"}</p></div><span className="shrink-0 rounded-full bg-[var(--color-sage-100)] px-2.5 py-1 text-xs font-semibold text-[var(--color-navy-900)]">{org.status}</span></div>)}
+              {organizations.slice(0, 6).map((org) => <div key={org.id} className="flex items-center justify-between gap-4 px-5 py-4"><div className="min-w-0"><p className="truncate font-semibold text-[var(--color-text-primary)]">{org.name}</p><p className="mt-1 text-xs text-[var(--color-text-secondary)]">{org.type === "agency" ? "Agencia de cuidado" : "Establecimiento residencial"}</p></div><div className="flex shrink-0 items-center gap-2"><span className="rounded-full bg-[var(--color-sage-100)] px-2.5 py-1 text-xs font-semibold text-[var(--color-navy-900)]">{org.status}</span><Link to="/platform/organizations" aria-label={`Administrar ${org.name}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-navy-900)]"><ArrowRight size={16}/></Link></div></div>)}
             </div>
           )}
         </Card>
