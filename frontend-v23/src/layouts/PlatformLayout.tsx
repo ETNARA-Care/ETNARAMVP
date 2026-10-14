@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { ArrowLeft, Building2, FileCheck2, LogOut } from "lucide-react";
+import { ArrowLeft, Building2, FileCheck2, LayoutDashboard, LogOut } from "lucide-react";
 import { Avatar, IconButton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 
@@ -26,8 +26,8 @@ export function PlatformLayout() {
 
           <div className="flex items-center gap-2">
             {activeOrganization && (
-              <Link to="/agency" className="hidden min-h-11 items-center gap-2 rounded-[var(--radius-md)] border border-white/20 px-3 text-[var(--text-small)] font-medium text-white/80 hover:bg-white/10 sm:inline-flex">
-                <ArrowLeft size={16} /> Organización
+              <Link to="/agency" className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] border border-white/20 px-2.5 text-[var(--text-small)] font-medium text-white/80 hover:bg-white/10 sm:px-3">
+                <ArrowLeft size={16} /> <span className="hidden sm:inline">Organización</span>
               </Link>
             )}
             <Avatar name={user?.email ?? "ETNARA"} size={32} />
@@ -36,6 +36,7 @@ export function PlatformLayout() {
         </div>
 
         <nav className="mx-auto flex max-w-[1280px] gap-1 overflow-x-auto px-[var(--spacing-md)]" aria-label="Centro Administrativo ETNARA">
+          <NavLink to="/platform" end className={navClass}><LayoutDashboard size={16} />Resumen</NavLink>
           <NavLink to="/platform/organizations" className={navClass}><Building2 size={16} />Organizaciones</NavLink>
           <NavLink to="/platform/credentials" className={navClass}><FileCheck2 size={16} />Verificación</NavLink>
         </nav>
