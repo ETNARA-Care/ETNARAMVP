@@ -45,6 +45,8 @@ export function PlatformTowerPage() {
   const [taskInbox, setTaskInbox] = useState<PersistedTask[]>([]);
   const [taskInboxLoading, setTaskInboxLoading] = useState(false);
   const [taskInboxError, setTaskInboxError] = useState("");
+  const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
+  const [reviewMessage, setReviewMessage] = useState("");
   const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
   const load = useCallback(async () => {
     const token = getToken();
@@ -67,6 +69,20 @@ export function PlatformTowerPage() {
       setTaskInboxError("No fue posible consultar las tareas guardadas. Comprueba que el backend y la migración estén disponibles.");
     } finally { setTaskInboxLoading(false); }
   }, []);
+  const reviewTask = async (task: PersistedTask, nextStatus: string) => {
+    const token = getToken();
+    if (!token) { setReviewMessage("Inicia sesión nuevamente."); return; }
+    setReviewBusyId(task.id); setReviewMessage("");
+    try {
+      await apiClient.post(`/platform/tower/tasks/${encodeURIComponent(task.id)}/review`, {
+        expectedStatus: task.status, nextStatus,
+      }, token);
+      setReviewMessage("Decisión guardada con auditoría. Actualiza la bandeja para confirmar.");
+      await loadTaskInbox();
+    } catch {
+      setReviewMessage("No se pudo registrar la decisión. Actualiza la bandeja y verifica el estado de la tarea.");
+    } finally { setReviewBusyId(null); }
+  };
   const departments = data?.departments ?? defaultDepartments;
   const roster = data?.corporateAgents ?? data?.agents ?? [];
   // Keep WebGL geometry stable while opening agent cards and changing directory filters.
@@ -167,11 +183,20 @@ export function PlatformTowerPage() {
         </div>
         <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Bandeja real de PostgreSQL, disponible únicamente para administración de plataforma. Solo lectura: no asigna, aprueba ni ejecuta tareas.</p>
         {taskInboxError && <p role="alert" className="mt-3 rounded-lg border p-3 text-sm">{taskInboxError}</p>}
+        {reviewMessage && <p role="status" className="mt-3 text-sm">{reviewMessage}</p>}
         {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
           {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{task.title}</h3><span className="rounded-full border px-3 py-1 text-xs">{task.status}</span></div>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId} · Prioridad: {task.priority}</p>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Registrada: {new Date(task.createdAt).toLocaleString("es-PR")}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(task.status === "draft" ? [{status:"submitted",label:"Enviar a revisión"}] :
+                task.status === "submitted" ? [{status:"in_review",label:"Iniciar revisión"},{status:"rejected",label:"Rechazar"}] :
+                task.status === "in_review" ? [{status:"approved",label:"Aprobar"},{status:"rejected",label:"Rechazar"}] : []
+              ).map(action => <button key={action.status} type="button" disabled={reviewBusyId !== null}
+                onClick={() => void reviewTask(task, action.status)}
+                className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-semibold disabled:opacity-50">{reviewBusyId === task.id ? "Guardando…" : action.label}</button>)}
+            </div>
           </article>)}
         </div>}
         {!taskInboxLoaded && !taskInboxLoading && <p className="mt-4 text-sm text-[var(--color-text-secondary)]">Pulsa «Consultar tareas guardadas» para cargar la bandeja desde el servidor.</p>}
