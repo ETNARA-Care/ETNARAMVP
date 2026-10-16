@@ -74,6 +74,7 @@ export function PlatformTowerPage() {
       setTaskInboxError("No fue posible consultar las tareas guardadas. Comprueba que el backend y la migración estén disponibles.");
     } finally { setTaskInboxLoading(false); }
   }, []);
+  useEffect(() => { void loadTaskInbox(); }, [loadTaskInbox]);
   const reviewTask = async (task: PersistedTask, nextStatus: string) => {
     const token = getToken();
     if (!token) { setReviewMessage("Inicia sesión nuevamente."); return; }
@@ -84,6 +85,10 @@ export function PlatformTowerPage() {
       }, token);
       setReviewMessage("Decisión guardada con auditoría. Actualiza la bandeja para confirmar.");
       await loadTaskInbox();
+      if (auditTaskId === task.id) {
+        const updatedAudit = await apiClient.get<{events: TaskAuditEvent[]}>(`/platform/tower/tasks/${encodeURIComponent(task.id)}/audit`, token);
+        setAuditEvents(updatedAudit.events);
+      }
     } catch {
       setReviewMessage("No se pudo registrar la decisión. Actualiza la bandeja y verifica el estado de la tarea.");
     } finally { setReviewBusyId(null); }
@@ -197,7 +202,7 @@ export function PlatformTowerPage() {
           <div><p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Administración · Tower</p><h2 className="mt-2 font-display text-2xl">Centro de tareas</h2></div>
           <button type="button" onClick={() => void loadTaskInbox()} disabled={taskInboxLoading} className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-5 text-sm font-semibold text-white disabled:opacity-50">{taskInboxLoading ? "Consultando…" : "Consultar tareas guardadas"}</button>
         </div>
-        <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Bandeja real de PostgreSQL, disponible únicamente para administración de plataforma. Solo lectura: no asigna, aprueba ni ejecuta tareas.</p>
+        <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Bandeja real de PostgreSQL, disponible únicamente para administración de plataforma. Puedes enviar, revisar, aprobar o rechazar tareas; aprobar no ejecuta ninguna acción automáticamente.</p>
         {taskInboxError && <p role="alert" className="mt-3 rounded-lg border p-3 text-sm">{taskInboxError}</p>}
         {reviewMessage && <p role="status" className="mt-3 text-sm">{reviewMessage}</p>}
         {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
@@ -229,7 +234,7 @@ export function PlatformTowerPage() {
             </div>}
           </article>)}
         </div>}
-        {!taskInboxLoaded && !taskInboxLoading && <p className="mt-4 text-sm text-[var(--color-text-secondary)]">Pulsa «Consultar tareas guardadas» para cargar la bandeja desde el servidor.</p>}
+        {!taskInboxLoaded && !taskInboxLoading && <p className="mt-4 text-sm text-[var(--color-text-secondary)]">Las tareas se consultan automáticamente al abrir Tower. Puedes actualizarlas manualmente.</p>}
       </section>
       <section aria-label="Borradores de instrucciones" className="rounded-xl border border-[var(--color-border)] bg-white p-6">
         <h2 className="font-display text-2xl">Borradores de instrucciones ({drafts.length})</h2>
