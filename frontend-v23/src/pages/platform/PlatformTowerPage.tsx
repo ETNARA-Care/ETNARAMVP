@@ -30,6 +30,7 @@ export function PlatformTowerPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState("all");
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const load = useCallback(async () => {
     const token = getToken();
     if (!token) { setError("Inicia sesión para acceder a Tower."); setLoading(false); return; }
@@ -42,6 +43,7 @@ export function PlatformTowerPage() {
   const departments = data?.departments ?? defaultDepartments;
   const roster = data?.corporateAgents ?? data?.agents ?? [];
   const filtered = useMemo(() => selected === "all" ? roster : roster.filter(agent => agent.department === selected), [roster, selected]);
+  const selectedAgent = roster.find(agent => agent.id === selectedAgentId);
   const secretariat = roster.find(agent => agent.department === "secretariat" && agent.name.includes("Secretaria"));
   return <div className="space-y-6">
     <section className="rounded-[var(--radius-xl)] bg-[var(--color-navy-950)] p-6 text-white md:p-9">
@@ -84,6 +86,12 @@ export function PlatformTowerPage() {
           {departments.map(dept => <button key={dept.id} type="button" aria-pressed={selected === dept.id} onClick={() => setSelected(dept.id)} className={`min-h-11 rounded-full border px-4 text-sm ${selected === dept.id ? "bg-[var(--color-navy-950)] text-white" : "bg-white"}`}>{dept.name}</button>)}
         </div>
       </section>
+      {selectedAgent && <section aria-label="Ficha del agente" className="rounded-xl border border-[var(--color-border)] bg-white p-6" aria-live="polite">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Ficha de personal virtual</p><h2 className="mt-2 font-display text-3xl">{selectedAgent.name}</h2></div><button type="button" onClick={() => setSelectedAgentId(null)} className="min-h-11 rounded-lg border px-4 text-sm">Cerrar ficha</button></div>
+        <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Departamento: {departments.find(d => d.id === selectedAgent.department)?.name ?? "Tecnología e Ingeniería"}</p>
+        <h3 className="mt-5 font-semibold">Responsabilidades propuestas</h3><ul className="mt-2 list-inside list-disc text-sm text-[var(--color-text-secondary)]">{selectedAgent.responsibilities.map(item => <li key={item}>{item}</li>)}</ul>
+        <p className="mt-5 rounded-lg bg-[var(--color-navy-950)] p-4 text-sm text-white">Estado: en planificación. Este puesto todavía no puede recibir instrucciones, acceder a expedientes, publicar contenido ni ejecutar tareas autónomas.</p>
+      </section>}
       <section aria-label="Personal virtual">
         <h2 className="font-display text-3xl">Equipo Tower</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Roles virtuales en planificación. No ejecutan cambios, publican contenido ni acceden a expedientes.</p>
@@ -93,6 +101,7 @@ export function PlatformTowerPage() {
             <h3 className="mt-2 font-display text-xl">{agent.name}</h3>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{agent.responsibilities.join(" · ")}</p>
             <p className="mt-3 text-xs text-[var(--color-text-secondary)]">En planificación · Sin ejecución autónoma</p>
+            <button type="button" onClick={() => setSelectedAgentId(agent.id)} aria-label={`Ver ficha de ${agent.name}`} className="mt-4 min-h-11 rounded-lg border border-[var(--color-border)] px-4 text-sm font-semibold hover:bg-[var(--color-sage-100)]">Ver ficha</button>
           </article>)}
           {filtered.length === 0 && <p className="text-sm text-[var(--color-text-secondary)]">Este departamento estará disponible cuando se publique el nuevo catálogo.</p>}
         </div>
