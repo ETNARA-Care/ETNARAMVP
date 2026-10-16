@@ -109,10 +109,10 @@ export function PlatformTowerPage() {
   const filtered = useMemo(() => selected === "all" ? roster : roster.filter(agent => agent.department === selected), [roster, selected]);
   const selectedAgent = roster.find(agent => agent.id === selectedAgentId);
   const secretariat = roster.find(agent => agent.department === "secretariat" && agent.name.includes("Secretaria"));
-  return <div className="space-y-6">
-    <section className="rounded-[var(--radius-xl)] bg-[var(--color-navy-950)] p-6 text-white md:p-9">
+  return <div className="min-w-0 space-y-6">
+    <section className="min-w-0 rounded-[var(--radius-xl)] bg-[var(--color-navy-950)] p-5 text-white sm:p-6 md:p-9">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-sage-300)]">ETNARA · Oficina ejecutiva</p>
-      <h1 className="mt-3 font-display text-4xl md:text-5xl">ETNARA Tower</h1>
+      <h1 className="mt-3 font-display text-3xl leading-tight sm:text-4xl md:text-5xl">ETNARA Tower</h1>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">Tu sede corporativa digital: ocho departamentos, equipo virtual y supervisión de infraestructura. Acceso exclusivo de administración.</p>
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => void load()} disabled={loading} className="min-h-11 rounded-lg border border-white/30 px-5 text-sm font-semibold hover:bg-white/10 disabled:opacity-50">Actualizar estados</button>
