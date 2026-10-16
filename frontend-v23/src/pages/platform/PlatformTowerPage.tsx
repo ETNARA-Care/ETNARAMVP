@@ -38,6 +38,10 @@ export function PlatformTowerPage() {
   const [draftInstruction, setDraftInstruction] = useState("");
   const [drafts, setDrafts] = useState<{ id: number; agentId: string; agentName: string; instruction: string }[]>([]);
   const [nextDraftId, setNextDraftId] = useState(1);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskPriority, setTaskPriority] = useState<"low" | "normal" | "high">("normal");
+  const [savingTask, setSavingTask] = useState(false);
+  const [saveTaskMessage, setSaveTaskMessage] = useState("");
   const [taskInbox, setTaskInbox] = useState<PersistedTask[]>([]);
   const [taskInboxLoading, setTaskInboxLoading] = useState(false);
   const [taskInboxError, setTaskInboxError] = useState("");
@@ -125,6 +129,35 @@ export function PlatformTowerPage() {
           <textarea id="tower-task-draft" value={draftInstruction} aria-label={`Borrador para ${selectedAgent.name}`} onChange={event => setDraftInstruction(event.target.value)} maxLength={1200} rows={3} placeholder="Ej.: Preparar una propuesta de calendario de publicaciones para ETNARA Care" className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm" />
           <p className="text-xs text-[var(--color-text-secondary)]">Borrador temporal en esta pantalla. No se guarda en el servidor, no se envía a ninguna IA y desaparece al recargar. No incluyas información confidencial.</p>
           <button type="submit" disabled={!draftInstruction.trim()} className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-5 text-sm font-semibold text-white disabled:opacity-50">Añadir a borradores</button>
+        </form>
+      </section>}
+      {selectedAgent && <section aria-label="Guardar tarea en PostgreSQL" className="rounded-xl border border-[var(--color-border)] bg-white p-6">
+        <h2 className="font-display text-2xl">Crear tarea para {selectedAgent.displayName ?? selectedAgent.name}</h2>
+        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Se guardará como borrador en el servidor. No se envía a ninguna IA ni se ejecuta automáticamente.</p>
+        <form className="mt-4 space-y-3" onSubmit={async event => {
+          event.preventDefault();
+          const token = getToken();
+          if (!token) { setSaveTaskMessage("Inicia sesión nuevamente."); return; }
+          setSavingTask(true); setSaveTaskMessage("");
+          try {
+            await apiClient.post("/platform/tower/tasks", {
+              agentId: selectedAgent.id, title: taskTitle.trim(),
+              instructions: draftInstruction.trim(), priority: taskPriority,
+            }, token);
+            setSaveTaskMessage("Borrador guardado en PostgreSQL. Consulta la bandeja para verlo.");
+            setTaskTitle(""); setDraftInstruction("");
+            setTaskInboxLoaded(false);
+          } catch {
+            setSaveTaskMessage("No se pudo guardar. Comprueba tu acceso y la disponibilidad de la base de datos.");
+          } finally { setSavingTask(false); }
+        }}>
+          <label htmlFor="tower-persist-title" className="block text-sm font-semibold">Título de la tarea</label>
+          <input id="tower-persist-title" required minLength={3} maxLength={120} value={taskTitle} onChange={event => setTaskTitle(event.target.value)} className="w-full rounded-lg border border-[var(--color-border)] p-3 text-sm" />
+          <label htmlFor="tower-persist-priority" className="block text-sm font-semibold">Prioridad</label>
+          <select id="tower-persist-priority" value={taskPriority} onChange={event => setTaskPriority(event.target.value as "low" | "normal" | "high")} className="w-full rounded-lg border border-[var(--color-border)] p-3 text-sm"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select>
+          <p className="text-sm text-[var(--color-text-secondary)]">Instrucciones: utiliza el campo «Preparar una instrucción» de la ficha del agente ({draftInstruction.trim().length}/1200 caracteres).</p>
+          <button type="submit" disabled={savingTask || taskTitle.trim().length < 3 || draftInstruction.trim().length < 5} className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-5 text-sm font-semibold text-white disabled:opacity-50">{savingTask ? "Guardando…" : "Guardar borrador en servidor"}</button>
+          {saveTaskMessage && <p role="status" className="text-sm">{saveTaskMessage}</p>}
         </form>
       </section>}
       <section aria-label="Centro de tareas corporativas" className="rounded-xl border border-[var(--color-border)] bg-white p-6">
