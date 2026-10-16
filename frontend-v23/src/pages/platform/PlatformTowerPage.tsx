@@ -9,6 +9,7 @@ interface Agent { id: string; name: string; displayName?: string; mode: string; 
 interface Department { id: string; name: string }
 interface PersistedTask { id: string; agentId: string; title: string; priority: string; status: string; createdAt: string }
 interface TaskInboxResponse { mode: "read-only"; tasks: PersistedTask[] }
+interface TaskAuditEvent { id: string; taskId: string; fromStatus: string; toStatus: string; actorId: string; occurredAt: string; reason: string | null }
 interface TowerOverview {
   mode: string;
   liveMonitoringEnabled: boolean;
@@ -47,6 +48,10 @@ export function PlatformTowerPage() {
   const [taskInboxError, setTaskInboxError] = useState("");
   const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
   const [reviewMessage, setReviewMessage] = useState("");
+  const [auditTaskId, setAuditTaskId] = useState<string | null>(null);
+  const [auditEvents, setAuditEvents] = useState<TaskAuditEvent[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState("");
   const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
   const load = useCallback(async () => {
     const token = getToken();
@@ -82,6 +87,17 @@ export function PlatformTowerPage() {
     } catch {
       setReviewMessage("No se pudo registrar la decisión. Actualiza la bandeja y verifica el estado de la tarea.");
     } finally { setReviewBusyId(null); }
+  };
+  const showTaskAudit = async (taskId: string) => {
+    if (auditTaskId === taskId) { setAuditTaskId(null); return; }
+    setAuditTaskId(taskId); setAuditLoading(true); setAuditError(""); setAuditEvents([]);
+    const token = getToken();
+    if (!token) { setAuditError("Inicia sesión nuevamente."); setAuditLoading(false); return; }
+    try {
+      const result = await apiClient.get<{events: TaskAuditEvent[]}>(`/platform/tower/tasks/${encodeURIComponent(taskId)}/audit`, token);
+      setAuditEvents(result.events);
+    } catch { setAuditError("No se pudo cargar el historial de auditoría."); }
+    finally { setAuditLoading(false); }
   };
   const departments = data?.departments ?? defaultDepartments;
   const roster = data?.corporateAgents ?? data?.agents ?? [];
@@ -196,7 +212,21 @@ export function PlatformTowerPage() {
               ).map(action => <button key={action.status} type="button" disabled={reviewBusyId !== null}
                 onClick={() => void reviewTask(task, action.status)}
                 className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-semibold disabled:opacity-50">{reviewBusyId === task.id ? "Guardando…" : action.label}</button>)}
+              <button type="button" onClick={() => void showTaskAudit(task.id)}
+                className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-semibold"
+                aria-expanded={auditTaskId === task.id}> {auditTaskId === task.id ? "Ocultar historial" : "Ver historial"} </button>
             </div>
+            {auditTaskId === task.id && <div className="mt-3 rounded-lg border border-[var(--color-border)] p-3" aria-live="polite">
+              <h4 className="font-semibold">Historial de decisiones</h4>
+              {auditLoading ? <p className="text-sm">Cargando historial…</p> :
+                auditError ? <p role="alert" className="text-sm">{auditError}</p> :
+                auditEvents.length === 0 ? <p className="text-sm">Sin cambios de estado registrados.</p> :
+                <ol className="mt-2 space-y-2">{auditEvents.map(event => <li key={event.id} className="text-sm">
+                  <span className="font-semibold">{event.fromStatus} → {event.toStatus}</span>
+                  <span className="block text-[var(--color-text-secondary)]">{new Date(event.occurredAt).toLocaleString("es-PR")} · Administrador: {event.actorId}</span>
+                  {event.reason && <span className="block">{event.reason}</span>}
+                </li>)}</ol>}
+            </div>}
           </article>)}
         </div>}
         {!taskInboxLoaded && !taskInboxLoading && <p className="mt-4 text-sm text-[var(--color-text-secondary)]">Pulsa «Consultar tareas guardadas» para cargar la bandeja desde el servidor.</p>}
