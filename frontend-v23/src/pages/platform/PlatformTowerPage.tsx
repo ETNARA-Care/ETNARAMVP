@@ -53,6 +53,26 @@ export function PlatformTowerPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState("");
   const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
+  const [repairSignal, setRepairSignal] = useState("frontend_unavailable");
+  const [repairLoading, setRepairLoading] = useState(false);
+  const [repairError, setRepairError] = useState("");
+  const [repairPlan, setRepairPlan] = useState<{
+    signal: string; diagnosis: string; suggestedChecks: string[]; suggestedFiles: string[];
+    nextStep: string; pullRequestCreated: false; changesApplied: false;
+  } | null>(null);
+  const requestRepairPlan = async () => {
+    const token = getToken();
+    if (!token) { setRepairError("Inicia sesión nuevamente."); return; }
+    setRepairLoading(true); setRepairError(""); setRepairPlan(null);
+    try {
+      const result = await apiClient.post<{ plan: NonNullable<typeof repairPlan> }>(
+        "/platform/tower/pilot/repair-plan",
+        { agentId: "technology-2", signal: repairSignal }, token);
+      setRepairPlan(result.plan);
+    } catch {
+      setRepairError("No fue posible obtener el plan. Verifica que el backend esté actualizado.");
+    } finally { setRepairLoading(false); }
+  };
   const [pilotLoading, setPilotLoading] = useState(false);
   const [pilotError, setPilotError] = useState("");
   const [pilotResult, setPilotResult] = useState<{ agentId: string; checkedAt: string; board: TowerOverview["board"] } | null>(null);
@@ -190,6 +210,30 @@ export function PlatformTowerPage() {
               <strong>{labels[service.service] ?? service.service}: {healthLabels[service.health]}</strong>
               <p className="mt-1 text-[var(--color-text-secondary)]">{service.summary}</p>
             </li>)}</ul>
+          </div>}
+        </div>}
+        {selectedAgent.id === "technology-2" && <div className="mt-4 space-y-3 rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="font-semibold">LEO · Planificador de reparaciones</h3>
+          <p className="text-sm text-[var(--color-text-secondary)]">Selecciona un problema conocido para obtener un plan técnico. No modifica código ni crea PR automáticamente.</p>
+          <label htmlFor="tower-repair-signal" className="block text-sm font-semibold">Problema a investigar</label>
+          <select id="tower-repair-signal" value={repairSignal} onChange={event => setRepairSignal(event.target.value)}
+            className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm">
+            <option value="frontend_unavailable">Portal web no disponible</option>
+            <option value="database_unavailable">Base de datos no disponible</option>
+            <option value="backend_degraded">Backend degradado</option>
+          </select>
+          <button type="button" disabled={repairLoading} onClick={() => void requestRepairPlan()}
+            className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white disabled:opacity-50">
+            {repairLoading ? "Preparando…" : "Preparar plan de reparación"}
+          </button>
+          {repairError && <p role="alert" className="text-sm">{repairError}</p>}
+          {repairPlan && <div role="status" className="space-y-3 rounded-lg bg-[var(--color-cream-50,#f8f7f2)] p-3 text-sm">
+            <p><strong>Diagnóstico:</strong> {repairPlan.diagnosis}</p>
+            <h4 className="font-semibold">Comprobaciones recomendadas</h4>
+            <ul className="list-inside list-disc space-y-1">{repairPlan.suggestedChecks.map(item => <li key={item}>{item}</li>)}</ul>
+            <h4 className="font-semibold">Archivos sugeridos</h4>
+            <ul className="list-inside list-disc break-words">{repairPlan.suggestedFiles.map(item => <li key={item}>{item}</li>)}</ul>
+            <p className="font-semibold">Pendiente de revisión humana. No se creó ningún PR ni se aplicaron cambios.</p>
           </div>}
         </div>}
         <form className="mt-5 space-y-3" onSubmit={event => { event.preventDefault(); const instruction = draftInstruction.trim(); if (!instruction || !selectedAgent) return; setDrafts(current => [...current, { id: nextDraftId, agentId: selectedAgent.id, agentName: selectedAgent.name, instruction }]); setNextDraftId(id => id + 1); setDraftInstruction(""); }}>
