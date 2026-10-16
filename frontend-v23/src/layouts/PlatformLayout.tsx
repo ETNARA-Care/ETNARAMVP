@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { ArrowLeft, Building2, FileCheck2, LayoutDashboard, LogOut } from "lucide-react";
+import { ArrowLeft, Building2, FileCheck2, LayoutDashboard, LogOut, RadioTower } from "lucide-react";
 import { Avatar, IconButton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 
@@ -39,6 +39,7 @@ export function PlatformLayout() {
           <NavLink to="/platform" end className={navClass}><LayoutDashboard size={16} />Resumen</NavLink>
           <NavLink to="/platform/organizations" className={navClass}><Building2 size={16} />Organizaciones</NavLink>
           <NavLink to="/platform/credentials" className={navClass}><FileCheck2 size={16} />Verificación</NavLink>
+          <NavLink to="/platform/tower" className={navClass}><RadioTower size={16} />ETNARA Tower</NavLink>
         </nav>
       </header>
 
