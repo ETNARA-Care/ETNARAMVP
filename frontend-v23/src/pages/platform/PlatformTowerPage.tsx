@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getToken } from "@/auth/token";
 import { apiClient } from "@/api/client";
+import { TowerBuilding } from "./TowerBuilding";
 
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
 interface Agent { id: string; name: string; displayName?: string; mode: string; department?: string; responsibilities: readonly string[] }
@@ -58,6 +59,7 @@ export function PlatformTowerPage() {
         {data?.corporateAgents && <span className="text-sm text-white/70">{data.corporateAgents.length} puestos virtuales · {departments.length} departamentos</span>}
       </div>
     </section>
+    {data && <TowerBuilding floors={departments.map(dept => ({ id: dept.id, name: dept.name, agents: roster.filter(agent => agent.department === dept.id).length }))} onSelect={id => { setSelected(id); setSelectedAgentId(null); }} />}
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
