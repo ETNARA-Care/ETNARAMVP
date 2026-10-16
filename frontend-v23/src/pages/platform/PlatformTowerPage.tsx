@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getToken } from "@/auth/token";
 import { apiClient } from "@/api/client";
+import { TowerTaskDraft } from "./TowerTaskDraft";
 
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
 interface Agent { id: string; name: string; mode: string; department?: string; responsibilities: readonly string[] }
