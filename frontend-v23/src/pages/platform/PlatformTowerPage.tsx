@@ -7,6 +7,8 @@ import { TowerPremiumFacade } from "@/features/tower/TowerPremiumFacade";
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
 interface Agent { id: string; name: string; displayName?: string; mode: string; department?: string; responsibilities: readonly string[] }
 interface Department { id: string; name: string }
+interface PersistedTask { id: string; agentId: string; title: string; priority: string; status: string; createdAt: string }
+interface TaskInboxResponse { mode: "read-only"; tasks: PersistedTask[] }
 interface TowerOverview {
   mode: string;
   liveMonitoringEnabled: boolean;
@@ -36,6 +38,10 @@ export function PlatformTowerPage() {
   const [draftInstruction, setDraftInstruction] = useState("");
   const [drafts, setDrafts] = useState<{ id: number; agentId: string; agentName: string; instruction: string }[]>([]);
   const [nextDraftId, setNextDraftId] = useState(1);
+  const [taskInbox, setTaskInbox] = useState<PersistedTask[]>([]);
+  const [taskInboxLoading, setTaskInboxLoading] = useState(false);
+  const [taskInboxError, setTaskInboxError] = useState("");
+  const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
   const load = useCallback(async () => {
     const token = getToken();
     if (!token) { setError("Inicia sesión para acceder a Tower."); setLoading(false); return; }
@@ -45,6 +51,18 @@ export function PlatformTowerPage() {
     finally { setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  const loadTaskInbox = useCallback(async () => {
+    const token = getToken();
+    if (!token) { setTaskInboxError("Inicia sesión para consultar las tareas."); return; }
+    setTaskInboxLoading(true); setTaskInboxError("");
+    try {
+      const response = await apiClient.get<TaskInboxResponse>("/platform/tower/tasks?limit=50", token);
+      setTaskInbox(response.tasks);
+      setTaskInboxLoaded(true);
+    } catch {
+      setTaskInboxError("No fue posible consultar las tareas guardadas. Comprueba que el backend y la migración estén disponibles.");
+    } finally { setTaskInboxLoading(false); }
+  }, []);
   const departments = data?.departments ?? defaultDepartments;
   const roster = data?.corporateAgents ?? data?.agents ?? [];
   // Keep WebGL geometry stable while opening agent cards and changing directory filters.
@@ -109,6 +127,22 @@ export function PlatformTowerPage() {
           <button type="submit" disabled={!draftInstruction.trim()} className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-5 text-sm font-semibold text-white disabled:opacity-50">Añadir a borradores</button>
         </form>
       </section>}
+      <section aria-label="Centro de tareas corporativas" className="rounded-xl border border-[var(--color-border)] bg-white p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Administración · Tower</p><h2 className="mt-2 font-display text-2xl">Centro de tareas</h2></div>
+          <button type="button" onClick={() => void loadTaskInbox()} disabled={taskInboxLoading} className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-5 text-sm font-semibold text-white disabled:opacity-50">{taskInboxLoading ? "Consultando…" : "Consultar tareas guardadas"}</button>
+        </div>
+        <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Bandeja real de PostgreSQL, disponible únicamente para administración de plataforma. Solo lectura: no asigna, aprueba ni ejecuta tareas.</p>
+        {taskInboxError && <p role="alert" className="mt-3 rounded-lg border p-3 text-sm">{taskInboxError}</p>}
+        {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
+          {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{task.title}</h3><span className="rounded-full border px-3 py-1 text-xs">{task.status}</span></div>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId} · Prioridad: {task.priority}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Registrada: {new Date(task.createdAt).toLocaleString("es-PR")}</p>
+          </article>)}
+        </div>}
+        {!taskInboxLoaded && !taskInboxLoading && <p className="mt-4 text-sm text-[var(--color-text-secondary)]">Pulsa «Consultar tareas guardadas» para cargar la bandeja desde el servidor.</p>}
+      </section>
       <section aria-label="Borradores de instrucciones" className="rounded-xl border border-[var(--color-border)] bg-white p-6">
         <h2 className="font-display text-2xl">Borradores de instrucciones ({drafts.length})</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Planificación local únicamente: estas instrucciones no se han asignado ni ejecutado.</p>
