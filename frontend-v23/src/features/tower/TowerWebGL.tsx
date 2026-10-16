@@ -35,18 +35,39 @@ function geometry(floors: readonly TowerFloor[]) {
     quad([x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1],color.map(v=>v*.9));
     quad([x0,y1,z1],[x1,y1,z1],[x1,y1,z0],[x0,y1,z0],color.map(v=>Math.min(1,v*1.2)));
   }
-  box(0,-.9,0,8,.9,6,[.72,.69,.59]);
+  // Elevated travertine plaza and entrance canopy.
+  box(0,-.9,0,9,.4,7.5,[.68,.66,.59]);
+  box(0,-.48,0,7.8,.4,5.7,[.79,.76,.67]);
+  box(0,-.08,3.05,4.5,.18,1.7,[.74,.61,.42]);
+  for(const x of [-1.95,1.95]) box(x,-.08,3.55,.14,1.2,.14,[.73,.62,.46]);
+  box(0,-.06,2.91,2.6,1.05,.06,[.19,.35,.42]);
+  for(const x of [-4.05,4.05]) {
+    box(x,-.08,0,.28,.62,4.9,[.30,.43,.37]);
+    for(let z=-2;z<=2;z+=.8)box(x,-.08,z,.45,.88,.35,[.24,.40,.30]);
+  }
   floors.forEach((floor,i)=>{
     const width=6.1-i*.12,depth=4.6-i*.07,y=i*1.28;
     box(0,y,0,width,1.15,depth,[.10+i*.006,.21+i*.008,.32+i*.007]);
     box(0,y,0,width+.18,.09,depth+.18,[.48,.66,.52]);
     box(0,y+1.06,0,width+.18,.09,depth+.18,[.48,.66,.52]);
-    for(let j=1;j<7;j++){const x=-width/2+j*width/7;box(x,y+.1,depth/2+.035,.035,.93,.04,[.66,.71,.72]);}
+    // Reflective blue-glass bays with metallic mullions on every elevation.
+    for(let j=1;j<7;j++){const x=-width/2+j*width/7;
+      box(x,y+.1,depth/2+.035,.035,.93,.04,[.66,.71,.72]);
+      box(x,y+.1,-depth/2-.035,.035,.93,.04,[.56,.64,.66]);
+    }
+    for(let j=1;j<5;j++){const z=-depth/2+j*depth/5;
+      box(-width/2-.035,y+.1,z,.04,.93,.035,[.58,.66,.67]);
+      box(width/2+.035,y+.1,z,.04,.93,.035,[.58,.66,.67]);
+    }
     // Subtle illuminated windows: emissive-looking warm bands in the front elevation.
     for(let j=0;j<5;j++){const x=-width/2+(j+.5)*width/5;box(x,y+.4,depth/2+.06,width/9,.18,.025,[.78,.60,.39]);}
     void floor;
   });
-  box(0,floors.length*1.28,0,4.5,.7,3.6,[.75,.65,.43]);
+  const crownY=floors.length*1.28;
+  box(0,crownY,0,5.0,.35,3.8,[.75,.65,.43]);
+  box(0,crownY+.35,0,4.4,.48,3.4,[.16,.27,.38]);
+  for(const x of [-2.1,2.1])box(x,crownY+.8,0,.1,.48,3.4,[.78,.65,.42]);
+  box(0,crownY+1.24,0,4.7,.12,3.7,[.78,.65,.42]);
   return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
 }
 /** True WebGL-rendered geometric exterior; no external CDN or runtime dependencies. */
