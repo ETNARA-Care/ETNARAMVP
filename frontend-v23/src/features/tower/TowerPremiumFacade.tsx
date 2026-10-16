@@ -18,7 +18,7 @@ export function TowerPremiumFacade({ floors, onSelect, onSelectAgent }: Props) {
     <div className="mb-4 flex gap-2"><button type="button" aria-pressed={show3D} onClick={() => setShow3D(true)} className="min-h-11 rounded-lg border border-[#9db89e]/50 px-4 text-sm">Vista 3D</button><button type="button" aria-pressed={!show3D} onClick={() => setShow3D(false)} className="min-h-11 rounded-lg border border-[#9db89e]/50 px-4 text-sm">Vista 2D</button></div>
     {show3D && <Suspense fallback={<p role="status">Cargando modelo 3D…</p>}><TowerWebGL floors={floors} onSelect={departmentId => { const floor = floors.find(item => item.departmentId === departmentId); if (floor) selectFloor(floor); }} onUnsupported={() => setShow3D(false)} /></Suspense>}
     <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.9fr)]">
-      <div className={`${show3D ? "hidden " : ""}relative flex min-h-[500px] items-end justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#172d48] via-[#0c1b30] to-[#070f1b] pb-8">
+      <div className={`${show3D ? "hidden " : ""}relative flex min-h-[500px] items-end justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#172d48] via-[#0c1b30] to-[#070f1b] pb-8`}>
         <div aria-hidden="true" className="absolute bottom-3 left-1/2 h-6 w-4/5 -translate-x-1/2 rounded-[50%] bg-[#9db89e]/10 blur-xl" />
         <div className="relative w-[min(78%,300px)] drop-shadow-2xl">
           <div className="rounded-t-2xl border-x border-t border-[#c9ae7c]/70 bg-[#17273d] py-5 text-center"><span className="font-display text-2xl tracking-[0.23em] text-[#efe9dc]">ETNARA</span><p className="mt-1 text-[10px] tracking-[0.3em] text-[#c9ae7c]">TOWER</p></div>
