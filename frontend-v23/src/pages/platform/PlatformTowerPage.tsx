@@ -65,7 +65,7 @@ export function PlatformTowerPage() {
         {data?.corporateAgents && <span className="text-sm text-white/70">{data.corporateAgents.length} puestos virtuales · {departments.length} departamentos</span>}
       </div>
     </section>
-    {data?.corporateAgents && <TowerPremiumFacade floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} />}
+    {data?.corporateAgents && <TowerPremiumFacade floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-task-draft")?.focus(), 0); }} />}
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
@@ -104,7 +104,7 @@ export function PlatformTowerPage() {
         <p className="mt-5 rounded-lg bg-[var(--color-navy-950)] p-4 text-sm text-white">Estado: en planificación. Este puesto todavía no ejecuta instrucciones ni accede a servicios externos.</p>
         <form className="mt-5 space-y-3" onSubmit={event => { event.preventDefault(); const instruction = draftInstruction.trim(); if (!instruction || !selectedAgent) return; setDrafts(current => [...current, { id: nextDraftId, agentId: selectedAgent.id, agentName: selectedAgent.name, instruction }]); setNextDraftId(id => id + 1); setDraftInstruction(""); }}>
           <label htmlFor="tower-task-draft" className="block text-sm font-semibold">Preparar una instrucción para este puesto</label>
-          <textarea id="tower-task-draft" value={draftInstruction} onChange={event => setDraftInstruction(event.target.value)} maxLength={1200} rows={3} placeholder="Ej.: Preparar una propuesta de calendario de publicaciones para ETNARA Care" className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm" />
+          <textarea id="tower-task-draft" value={draftInstruction} aria-label={`Borrador para ${selectedAgent.name}`} onChange={event => setDraftInstruction(event.target.value)} maxLength={1200} rows={3} placeholder="Ej.: Preparar una propuesta de calendario de publicaciones para ETNARA Care" className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm" />
           <p className="text-xs text-[var(--color-text-secondary)]">Borrador temporal en esta pantalla. No se guarda en el servidor, no se envía a ninguna IA y desaparece al recargar. No incluyas información confidencial.</p>
           <button type="submit" disabled={!draftInstruction.trim()} className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-5 text-sm font-semibold text-white disabled:opacity-50">Añadir a borradores</button>
         </form>
