@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
+const TowerWebGL = lazy(() => import("./TowerWebGL"));
 import type { TowerFloor } from "./floors";
 
 interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void }
@@ -6,6 +7,7 @@ interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string
 export function TowerPremiumFacade({ floors, onSelect, onSelectAgent }: Props) {
   const [active, setActive] = useState<number | null>(null);
   const [office, setOffice] = useState(false);
+  const [show3D, setShow3D] = useState(false);
   const selectedFloor = floors.find(floor => floor.number === active);
   const selectFloor = (floor: TowerFloor) => { setActive(floor.number); setOffice(false); onSelect(floor.departmentId); };
   return <section aria-label="ETNARA Tower: fachada arquitectónica interactiva" className="overflow-hidden rounded-2xl bg-[#0b1626] p-5 text-[#ece8de] md:p-8">
@@ -13,6 +15,8 @@ export function TowerPremiumFacade({ floors, onSelect, onSelectAgent }: Props) {
       <div><p className="text-xs uppercase tracking-[0.2em] text-[#9db89e]">Sede corporativa virtual</p><h2 className="mt-2 font-display text-3xl">La Torre Salvia</h2><p className="mt-2 max-w-xl text-sm text-[#9da9bb]">Ocho departamentos · {floors.reduce((sum, floor) => sum + floor.agents.length, 0)} puestos virtuales. Selecciona un piso para explorar su equipo.</p></div>
       <span className="rounded-full border border-[#c9ae7c]/40 px-3 py-2 text-xs text-[#e2a74c]">Agentes en preparación</span>
     </div>
+    <div className="mb-4 flex gap-2"><button type="button" aria-pressed={show3D} onClick={() => setShow3D(true)} className="min-h-11 rounded-lg border border-[#9db89e]/50 px-4 text-sm">Vista 3D</button><button type="button" aria-pressed={!show3D} onClick={() => setShow3D(false)} className="min-h-11 rounded-lg border border-[#9db89e]/50 px-4 text-sm">Vista 2D</button></div>
+    {show3D && <Suspense fallback={<p role="status">Cargando modelo 3D…</p>}><TowerWebGL floors={floors} onSelect={onSelect} /></Suspense>}
     <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.9fr)]">
       <div className="relative flex min-h-[500px] items-end justify-center overflow-hidden rounded-xl bg-gradient-to-b from-[#172d48] via-[#0c1b30] to-[#070f1b] pb-8">
         <div aria-hidden="true" className="absolute bottom-3 left-1/2 h-6 w-4/5 -translate-x-1/2 rounded-[50%] bg-[#9db89e]/10 blur-xl" />
