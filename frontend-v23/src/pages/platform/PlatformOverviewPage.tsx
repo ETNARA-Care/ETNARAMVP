@@ -50,7 +50,7 @@ export function PlatformOverviewPage() {
           <div className="w-full min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-sage-300)]">ETNARA · Plataforma B2B</p>
             <h1 className="max-w-full break-words font-display text-[clamp(1.9rem,7vw,3.5rem)] leading-[1.08] mt-2">Centro Administrativo</h1>
-            <p className="mt-3 w-full max-w-2xl text-sm leading-6 text-white/65">Supervisión de organizaciones cliente y de las verificaciones que requieren intervención de ETNARA.</p>
+            <p className="mt-3 w-full max-w-[42rem] text-sm leading-6 text-white/65">Supervisión de organizaciones cliente y de las verificaciones que requieren intervención de ETNARA.</p>
           </div>
           <button type="button" onClick={() => void load()} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-white/30 bg-white px-5 py-3 text-sm font-semibold text-[var(--color-navy-950)] hover:bg-white/90 md:w-auto"><RefreshCw size={17} />Actualizar</button>
         </div>
