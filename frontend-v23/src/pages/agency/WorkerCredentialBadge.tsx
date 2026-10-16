@@ -24,13 +24,14 @@ export function WorkerCredentialBadge({ credential }: { credential: ReviewAwareC
     return <Badge tone="warning">Pendiente de revisión</Badge>;
   }
 
+  // An approaching expiry must remain visible even after independent verification.
+  if (state === "expiring") return <Badge tone="warning">Por vencer (30 días)</Badge>;
+
   // ETNARA verification is intentionally distinct from an organization's own
   // review. Only an independently verified credential gets the Verified label.
   if (credential.verification_status === "verified" || credential.document_status === "verified") {
     return <Badge tone="success">ETNARA Verified</Badge>;
   }
-
-  if (state === "expiring") return <Badge tone="warning">Por vencer</Badge>;
 
   // Metadata may be current while its evidence has not yet been independently
   // verified. Do not imply that merely having an active record equals compliance.
