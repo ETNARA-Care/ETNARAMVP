@@ -3,7 +3,7 @@ import { getToken } from "@/auth/token";
 import { apiClient } from "@/api/client";
 
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
-interface Agent { id: string; name: string; mode: string; department?: string; responsibilities: readonly string[] }
+interface Agent { id: string; name: string; displayName?: string; mode: string; department?: string; responsibilities: readonly string[] }
 interface Department { id: string; name: string }
 interface TowerOverview {
   mode: string;
@@ -77,7 +77,7 @@ export function PlatformTowerPage() {
         </article>
         <article className="rounded-xl border border-[var(--color-border)] bg-white p-6">
           <p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Secretaría ejecutiva</p>
-          <h2 className="mt-2 font-display text-2xl">{secretariat?.name ?? "Secretaria Ejecutiva Virtual"}</h2>
+          <h2 className="mt-2 font-display text-2xl">{secretariat?.displayName ? `${secretariat.displayName} — ${secretariat.name}` : "NORA — Secretaria Ejecutiva Virtual"}</h2>
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Puesto en planificación para coordinar agenda, correspondencia y tareas entre departamentos. Todavía no recibe instrucciones ni envía mensajes.</p>
         </article>
       </section>
@@ -90,7 +90,7 @@ export function PlatformTowerPage() {
         </div>
       </section>
       {selectedAgent && <section aria-label="Ficha del agente" className="rounded-xl border border-[var(--color-border)] bg-white p-6" aria-live="polite">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Ficha de personal virtual</p><h2 className="mt-2 font-display text-3xl">{selectedAgent.name}</h2></div><button type="button" onClick={() => setSelectedAgentId(null)} className="min-h-11 rounded-lg border px-4 text-sm">Cerrar ficha</button></div>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Ficha de personal virtual</p><h2 className="mt-2 font-display text-3xl">{selectedAgent.displayName ? `${selectedAgent.displayName} — ` : ""}{selectedAgent.name}</h2></div><button type="button" onClick={() => setSelectedAgentId(null)} className="min-h-11 rounded-lg border px-4 text-sm">Cerrar ficha</button></div>
         <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Departamento: {departments.find(d => d.id === selectedAgent.department)?.name ?? "Tecnología e Ingeniería"}</p>
         <h3 className="mt-5 font-semibold">Responsabilidades propuestas</h3><ul className="mt-2 list-inside list-disc text-sm text-[var(--color-text-secondary)]">{selectedAgent.responsibilities.map(item => <li key={item}>{item}</li>)}</ul>
         <p className="mt-5 rounded-lg bg-[var(--color-navy-950)] p-4 text-sm text-white">Estado: en planificación. Este puesto todavía no ejecuta instrucciones ni accede a servicios externos.</p>
@@ -112,7 +112,7 @@ export function PlatformTowerPage() {
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map(agent => <article key={agent.id} className="rounded-xl border border-[var(--color-border)] bg-white p-5">
             <p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">{departments.find(d => d.id === agent.department)?.name ?? "Tecnología"}</p>
-            <h3 className="mt-2 font-display text-xl">{agent.name}</h3>
+            <h3 className="mt-2 font-display text-xl">{agent.displayName ? `${agent.displayName} — ` : ""}{agent.name}</h3>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{agent.responsibilities.join(" · ")}</p>
             <p className="mt-3 text-xs text-[var(--color-text-secondary)]">En planificación · Sin ejecución autónoma</p>
             <button type="button" onClick={() => setSelectedAgentId(agent.id)} aria-label={`Ver ficha de ${agent.name}`} className="mt-4 min-h-11 rounded-lg border border-[var(--color-border)] px-4 text-sm font-semibold hover:bg-[var(--color-sage-100)]">Ver ficha</button>
