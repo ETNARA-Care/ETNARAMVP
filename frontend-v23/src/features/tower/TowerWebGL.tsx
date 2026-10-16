@@ -22,7 +22,7 @@ function multiply(a: number[], b: number[]) {
   for(let col=0;col<4;col++)for(let row=0;row<4;row++)for(let k=0;k<4;k++)o[col*4+row]+=a[k*4+row]*b[col*4+k];
   return o;
 }
-function geometry(floors: readonly TowerFloor[]) {
+function geometry(floors: readonly TowerFloor[], interior: TowerFloor | null) {
   const positions:number[]=[], colors:number[]=[];
   function quad(a:number[],b:number[],c:number[],d:number[],color:number[]) {
     for(const p of [a,b,c,a,c,d]) {positions.push(...p);colors.push(...color);}
@@ -34,6 +34,25 @@ function geometry(floors: readonly TowerFloor[]) {
     quad([x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0],color.map(v=>v*.82));
     quad([x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1],color.map(v=>v*.9));
     quad([x0,y1,z1],[x1,y1,z1],[x1,y1,z0],[x0,y1,z0],color.map(v=>Math.min(1,v*1.2)));
+  }
+  if (interior) {
+    // Architectural cutaway: floor slab, rear glazing, desk islands and meeting area.
+    box(0,-.75,0,9,.32,7,[.72,.68,.58]);
+    box(0,-.42,-3.35,9,3.8,.2,[.14,.30,.40]);
+    box(-4.4,-.42,0,.18,3.8,6.7,[.20,.38,.46]);
+    box(4.4,-.42,0,.18,3.8,6.7,[.20,.38,.46]);
+    for (const x of [-3.4,-1.7,0,1.7,3.4]) box(x,-.4,-3.17,.045,3.3,.07,[.68,.71,.67]);
+    box(0,3.3,-.3,9,.2,6.2,[.57,.63,.54]);
+    interior.agents.forEach((agent,i)=>{
+      const x=-2.8+(i%3)*2.8,z=-1.55+Math.floor(i/3)*2.45;
+      box(x,-.4,z,1.65,.72,.85,[.65,.52,.38]);
+      box(x,-.4,z-.38,1.65,.05,.12,[.81,.68,.49]);
+      box(x,-.1,z-.12,.78,.48,.09,[.10,.19,.28]);
+      box(x,-.35,z+1,.65,.46,.65,[.34,.51,.43]);
+      void agent;
+    });
+    box(0,-.4,2.65,2.4,.25,.95,[.74,.64,.46]);
+    return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
   }
   // Elevated travertine plaza and entrance canopy.
   box(0,-.9,0,9,.4,7.5,[.68,.66,.59]);
@@ -74,6 +93,8 @@ function geometry(floors: readonly TowerFloor[]) {
 export default function TowerWebGL({floors,onSelect,onUnsupported}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null), [failed,setFailed]=useState(false);
   const rotation=useRef(.46);
+  const [interiorId,setInteriorId]=useState<string | null>(null);
+  const interior=floors.find(floor=>floor.departmentId===interiorId) ?? null;
   useEffect(()=>{
     const element=canvas.current;if(!element)return;
     const gl=element.getContext("webgl",{antialias:true,alpha:false});
@@ -86,7 +107,7 @@ export default function TowerWebGL({floors,onSelect,onUnsupported}:Props) {
       gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);
       gl.deleteShader(vs);gl.deleteShader(fs);
       if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error("WebGL link failed");
-      const g=geometry(floors);
+      const g=geometry(floors,interior);
       positionBuffer=gl.createBuffer();colorBuffer=gl.createBuffer();
       if(!positionBuffer||!colorBuffer)throw Error("WebGL buffer unavailable");
       gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);gl.bufferData(gl.ARRAY_BUFFER,g.positions,gl.STATIC_DRAW);
@@ -105,7 +126,7 @@ export default function TowerWebGL({floors,onSelect,onUnsupported}:Props) {
         const a=rotation.current,co=Math.cos(a),si=Math.sin(a);
         const turn=[co,0,-si,0,0,1,0,0,si,0,co,0,0,0,0,1];
         const tilt=[1,0,0,0,0,.94,.34,0,0,-.34,.94,0,0,0,0,1];
-        const move=[1,0,0,0,0,1,0,0,0,0,1,0,0,-5.4,-24,1];
+        const move=[1,0,0,0,0,1,0,0,0,0,1,0,0,interior ? -1 : -5.4,interior ? -15 : -24,1];
         gl.uniformMatrix4fv(m,false,new Float32Array(multiply(proj,multiply(move,multiply(tilt,turn)))));
         gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);gl.enableVertexAttribArray(p);gl.vertexAttribPointer(p,3,gl.FLOAT,false,0,0);
         gl.bindBuffer(gl.ARRAY_BUFFER,colorBuffer);gl.enableVertexAttribArray(c);gl.vertexAttribPointer(c,3,gl.FLOAT,false,0,0);
@@ -121,7 +142,7 @@ export default function TowerWebGL({floors,onSelect,onUnsupported}:Props) {
       render();
       return ()=>{cancelAnimationFrame(frame);observer.disconnect();element.removeEventListener("pointerdown",down);element.removeEventListener("pointermove",movePointer);element.removeEventListener("pointerup",up);element.removeEventListener("pointercancel",up);if(positionBuffer)gl.deleteBuffer(positionBuffer);if(colorBuffer)gl.deleteBuffer(colorBuffer);if(program)gl.deleteProgram(program);};
     }catch{setFailed(true);if(positionBuffer)gl.deleteBuffer(positionBuffer);if(colorBuffer)gl.deleteBuffer(colorBuffer);if(program)gl.deleteProgram(program);}
-  },[floors]);
+  },[floors,interior]);
   if(failed)return <div role="status" className="rounded-lg border p-4">El visor 3D no está disponible en este dispositivo. <button type="button" onClick={onUnsupported} className="underline">Abrir vista 2D</button></div>;
-  return <div className="relative overflow-hidden rounded-xl bg-[#0b1626]"><canvas ref={canvas} aria-label="Modelo tridimensional de ETNARA Tower. Arrastra para girar." className="h-[480px] w-full touch-pan-y cursor-grab" /><div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">{floors.map(f=><button key={f.departmentId} type="button" onClick={()=>onSelect(f.departmentId)} className="rounded-md border border-white/25 bg-[#0b1626]/85 px-2 py-1 text-xs text-white hover:bg-[#294b45]">{f.number}</button>)}</div></div>;
+  return <div className="relative overflow-hidden rounded-xl bg-[#0b1626]">{interior && <div className="absolute left-3 top-3 z-10 flex items-center gap-3 rounded-lg bg-[#0b1626]/90 p-2 text-xs text-white"><button type="button" onClick={()=>setInteriorId(null)} className="rounded border border-white/30 px-3 py-2">← Edificio</button><span>Oficina 3D · {interior.name}</span></div>}<canvas ref={canvas} aria-label={interior ? `Modelo 3D de la oficina de ${interior.name}. Arrastra para girar.` : "Modelo tridimensional de ETNARA Tower. Arrastra para girar."} className="h-[480px] w-full touch-pan-y cursor-grab" /><div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">{floors.map(f=><button key={f.departmentId} type="button" onClick={()=>{setInteriorId(f.departmentId);rotation.current=.46;onSelect(f.departmentId);}} aria-label={`Entrar a la oficina 3D del piso ${f.number}: ${f.name}`} className="rounded-md border border-white/25 bg-[#0b1626]/85 px-2 py-1 text-xs text-white hover:bg-[#294b45]">{f.number}</button>)}</div></div>;
 }
