@@ -44,7 +44,7 @@ export function PlatformOverviewPage() {
   if (error) return <ErrorState kind="network" onRetry={() => void load()} />;
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <section className="rounded-[var(--radius-xl)] bg-[var(--color-navy-950)] px-5 py-6 text-white md:px-8 md:py-8">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
@@ -56,7 +56,7 @@ export function PlatformOverviewPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid min-w-0 grid-cols-1 gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
         <Metric label="Organizaciones" value={organizations?.length ?? null} icon={<Building2 size={18} />} />
         <Metric label="Activas" value={activeOrganizations} icon={<ShieldCheck size={18} />} />
         <Metric label="Credenciales pendientes" value={pendingCredentials} icon={<FileCheck2 size={18} />} />
