@@ -47,6 +47,11 @@ export function PlatformTowerPage() {
   useEffect(() => { void load(); }, [load]);
   const departments = data?.departments ?? defaultDepartments;
   const roster = data?.corporateAgents ?? data?.agents ?? [];
+  // Keep WebGL geometry stable while opening agent cards and changing directory filters.
+  const towerFloors = useMemo(
+    () => buildTowerFloors(departments, data?.corporateAgents ?? []),
+    [data?.departments, data?.corporateAgents],
+  );
   const filtered = useMemo(() => selected === "all" ? roster : roster.filter(agent => agent.department === selected), [roster, selected]);
   const selectedAgent = roster.find(agent => agent.id === selectedAgentId);
   const secretariat = roster.find(agent => agent.department === "secretariat" && agent.name.includes("Secretaria"));
@@ -60,7 +65,7 @@ export function PlatformTowerPage() {
         {data?.corporateAgents && <span className="text-sm text-white/70">{data.corporateAgents.length} puestos virtuales · {departments.length} departamentos</span>}
       </div>
     </section>
-    {data?.corporateAgents && <TowerPremiumFacade floors={buildTowerFloors(departments, data.corporateAgents)} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} />}
+    {data?.corporateAgents && <TowerPremiumFacade floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} />}
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
