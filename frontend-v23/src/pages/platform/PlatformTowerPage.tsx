@@ -53,6 +53,21 @@ export function PlatformTowerPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState("");
   const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
+  const [pilotLoading, setPilotLoading] = useState(false);
+  const [pilotError, setPilotError] = useState("");
+  const [pilotResult, setPilotResult] = useState<{ agentId: string; checkedAt: string; board: TowerOverview["board"] } | null>(null);
+  const runHealthPilot = async (agentId: string) => {
+    const token = getToken();
+    if (!token) { setPilotError("Inicia sesión nuevamente."); return; }
+    setPilotLoading(true); setPilotError(""); setPilotResult(null);
+    try {
+      const result = await apiClient.get<{ agentId: string; checkedAt: string; board: TowerOverview["board"] }>(
+        `/platform/tower/pilot/health/${encodeURIComponent(agentId)}`, token);
+      setPilotResult(result);
+    } catch {
+      setPilotError("No fue posible consultar el diagnóstico. Verifica el despliegue del backend e inténtalo nuevamente.");
+    } finally { setPilotLoading(false); }
+  };
   const load = useCallback(async () => {
     const token = getToken();
     if (!token) { setError("Inicia sesión para acceder a Tower."); setLoading(false); return; }
@@ -160,7 +175,23 @@ export function PlatformTowerPage() {
         <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Ficha de personal virtual</p><h2 className="mt-2 font-display text-3xl">{selectedAgent.displayName ? `${selectedAgent.displayName} — ` : ""}{selectedAgent.name}</h2></div><button type="button" onClick={() => setSelectedAgentId(null)} className="min-h-11 rounded-lg border px-4 text-sm">Cerrar ficha</button></div>
         <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Departamento: {departments.find(d => d.id === selectedAgent.department)?.name ?? "Tecnología e Ingeniería"}</p>
         <h3 className="mt-5 font-semibold">Responsabilidades propuestas</h3><ul className="mt-2 list-inside list-disc text-sm text-[var(--color-text-secondary)]">{selectedAgent.responsibilities.map(item => <li key={item}>{item}</li>)}</ul>
-        <p className="mt-5 rounded-lg bg-[var(--color-navy-950)] p-4 text-sm text-white">Estado: en planificación. Este puesto todavía no ejecuta instrucciones ni accede a servicios externos.</p>
+        <p className="mt-5 rounded-lg bg-[var(--color-navy-950)] p-4 text-sm text-white">{["technology-3", "technology-4"].includes(selectedAgent.id) ? "Piloto disponible: consulta manual de estado de servicios, sin cambios ni ejecución autónoma." : "Estado: en planificación. Este puesto todavía no ejecuta instrucciones ni accede a servicios externos."}</p>
+        {["technology-3", "technology-4"].includes(selectedAgent.id) && <div className="mt-4 space-y-3 rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="font-semibold">Diagnóstico de infraestructura · Solo lectura</h3>
+          <button type="button" disabled={pilotLoading} onClick={() => void runHealthPilot(selectedAgent.id)}
+            className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white disabled:opacity-50">
+            {pilotLoading ? "Consultando…" : "Ejecutar diagnóstico"}
+          </button>
+          {pilotError && <p role="alert" className="text-sm">{pilotError}</p>}
+          {pilotResult?.agentId === selectedAgent.id && <div role="status" className="space-y-2 text-sm">
+            <p>Consulta realizada: {new Date(pilotResult.checkedAt).toLocaleString("es-PR")}</p>
+            <p>Estado general: {pilotResult.board.overall}</p>
+            <ul className="space-y-2">{pilotResult.board.services.map(service => <li key={service.service} className="rounded-lg border p-3">
+              <strong>{labels[service.service] ?? service.service}: {healthLabels[service.health]}</strong>
+              <p className="mt-1 text-[var(--color-text-secondary)]">{service.summary}</p>
+            </li>)}</ul>
+          </div>}
+        </div>}
         <form className="mt-5 space-y-3" onSubmit={event => { event.preventDefault(); const instruction = draftInstruction.trim(); if (!instruction || !selectedAgent) return; setDrafts(current => [...current, { id: nextDraftId, agentId: selectedAgent.id, agentName: selectedAgent.name, instruction }]); setNextDraftId(id => id + 1); setDraftInstruction(""); }}>
           <label htmlFor="tower-task-draft" className="block text-sm font-semibold">Preparar una instrucción para este puesto</label>
           <textarea id="tower-task-draft" value={draftInstruction} aria-label={`Borrador para ${selectedAgent.name}`} onChange={event => setDraftInstruction(event.target.value)} maxLength={1200} rows={3} placeholder="Ej.: Preparar una propuesta de calendario de publicaciones para ETNARA Care" className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm" />
