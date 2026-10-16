@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TowerFloor } from "./floors";
 
-interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void }
+interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onUnsupported: () => void }
 const vertex = `attribute vec3 aPosition;
 attribute vec3 aColor;
 uniform mat4 uMatrix;
@@ -50,7 +50,7 @@ function geometry(floors: readonly TowerFloor[]) {
   return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
 }
 /** True WebGL-rendered geometric exterior; no external CDN or runtime dependencies. */
-export default function TowerWebGL({floors,onSelect}:Props) {
+export default function TowerWebGL({floors,onSelect,onUnsupported}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null), [failed,setFailed]=useState(false);
   const rotation=useRef(.46);
   useEffect(()=>{
@@ -101,6 +101,6 @@ export default function TowerWebGL({floors,onSelect}:Props) {
       return ()=>{cancelAnimationFrame(frame);observer.disconnect();element.removeEventListener("pointerdown",down);element.removeEventListener("pointermove",movePointer);element.removeEventListener("pointerup",up);element.removeEventListener("pointercancel",up);if(positionBuffer)gl.deleteBuffer(positionBuffer);if(colorBuffer)gl.deleteBuffer(colorBuffer);if(program)gl.deleteProgram(program);};
     }catch{setFailed(true);if(positionBuffer)gl.deleteBuffer(positionBuffer);if(colorBuffer)gl.deleteBuffer(colorBuffer);if(program)gl.deleteProgram(program);}
   },[floors]);
-  if(failed)return <p role="status" className="rounded-lg border p-4">El visor 3D no está disponible en este dispositivo. Utiliza el directorio 2D para navegar.</p>;
+  if(failed)return <div role="status" className="rounded-lg border p-4">El visor 3D no está disponible en este dispositivo. <button type="button" onClick={onUnsupported} className="underline">Abrir vista 2D</button></div>;
   return <div className="relative overflow-hidden rounded-xl bg-[#0b1626]"><canvas ref={canvas} aria-label="Modelo tridimensional de ETNARA Tower. Arrastra para girar." className="h-[480px] w-full touch-pan-y cursor-grab" /><div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">{floors.map(f=><button key={f.departmentId} type="button" onClick={()=>onSelect(f.departmentId)} className="rounded-md border border-white/25 bg-[#0b1626]/85 px-2 py-1 text-xs text-white hover:bg-[#294b45]">{f.number}</button>)}</div></div>;
 }
