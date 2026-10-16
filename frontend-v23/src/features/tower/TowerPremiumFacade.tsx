@@ -15,8 +15,8 @@ export function TowerPremiumFacade({ floors, tasks, tasksLoaded, tasksLoading, t
   const profile = selectedFloor?.agents.find(agent => agent.id === profileId);
   const selectFloor = (floor: TowerFloor) => { setActive(floor.number); setOffice(true); setProfileId(null); setWorkspaceTab("profile"); onSelect(floor.departmentId); };
   return <section aria-label="ETNARA Tower: fachada arquitectónica interactiva" className="min-w-0 overflow-hidden rounded-2xl bg-[#0b1626] p-4 text-[#ece8de] sm:p-5 md:p-8">
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div><p className="text-xs uppercase tracking-[0.2em] text-[#9db89e]">Sede corporativa virtual</p><h2 className="mt-2 font-display text-3xl">La Torre Salvia</h2><p className="mt-2 max-w-xl text-sm text-[#9da9bb]">Ocho departamentos · {floors.reduce((sum, floor) => sum + floor.agents.length, 0)} puestos virtuales. Selecciona un piso para explorar su equipo.</p></div>
+    <div className="mb-6 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+      <div className="w-full min-w-0"><p className="text-xs uppercase tracking-[0.2em] text-[#9db89e]">Sede corporativa virtual</p><h2 className="mt-2 font-display text-3xl">La Torre Salvia</h2><p className="mt-2 w-full max-w-[36rem] text-sm leading-6 text-[#9da9bb]">Ocho departamentos · {floors.reduce((sum, floor) => sum + floor.agents.length, 0)} puestos virtuales. Selecciona un piso para explorar su equipo.</p></div>
       <span className="rounded-full border border-[#c9ae7c]/40 px-3 py-2 text-xs text-[#e2a74c]">Agentes en preparación</span>
     </div>
     <div className="mb-4 flex gap-2"><button type="button" aria-pressed={show3D} onClick={() => setShow3D(true)} className="min-h-11 rounded-lg border border-[#9db89e]/50 px-4 text-sm">Vista 3D</button><button type="button" aria-pressed={!show3D} onClick={() => setShow3D(false)} className="min-h-11 rounded-lg border border-[#9db89e]/50 px-4 text-sm">Vista 2D</button></div>
