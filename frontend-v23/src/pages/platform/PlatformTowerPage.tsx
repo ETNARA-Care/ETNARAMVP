@@ -119,7 +119,7 @@ export function PlatformTowerPage() {
         {data?.corporateAgents && <span className="text-sm text-white/70">{data.corporateAgents.length} puestos virtuales · {departments.length} departamentos</span>}
       </div>
     </section>
-    {data?.corporateAgents && <TowerPremiumFacade tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-task-title")?.focus(), 0); }} />}
+    {data?.corporateAgents && <TowerPremiumFacade tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
@@ -178,7 +178,7 @@ export function PlatformTowerPage() {
             }, token);
             setSaveTaskMessage("Borrador guardado en PostgreSQL. Consulta la bandeja para verlo.");
             setTaskTitle(""); setDraftInstruction("");
-            setTaskInboxLoaded(false);
+            await loadTaskInbox();
           } catch {
             setSaveTaskMessage("No se pudo guardar. Comprueba tu acceso y la disponibilidad de la base de datos.");
           } finally { setSavingTask(false); }
