@@ -4,7 +4,7 @@ import { Avatar, IconButton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-[var(--text-small)] font-medium transition-colors ${isActive ? "border-[var(--color-sage-300)] text-white" : "border-transparent text-white/65 hover:text-white"}`;
+  `inline-flex shrink-0 min-h-11 items-center gap-2 whitespace-nowrap border-b-2 px-3 text-[var(--text-small)] font-medium transition-colors ${isActive ? "border-[var(--color-sage-300)] text-white" : "border-transparent text-white/65 hover:text-white"}`;
 
 export function PlatformLayout() {
   const { user, activeOrganization, logout } = useAuth();
@@ -35,7 +35,7 @@ export function PlatformLayout() {
           </div>
         </div>
 
-        <nav className="mx-auto flex max-w-[1280px] gap-1 overflow-x-auto px-[var(--spacing-md)]" aria-label="Centro Administrativo ETNARA">
+        <nav className="mx-auto flex max-w-[1280px] gap-1 overflow-x-auto px-[var(--spacing-md)] pb-1 [scrollbar-width:thin] sm:pb-0" aria-label="Centro Administrativo ETNARA">
           <NavLink to="/platform" end className={navClass}><LayoutDashboard size={16} />Resumen</NavLink>
           <NavLink to="/platform/organizations" className={navClass}><Building2 size={16} />Organizaciones</NavLink>
           <NavLink to="/platform/credentials" className={navClass}><FileCheck2 size={16} />Verificación</NavLink>
