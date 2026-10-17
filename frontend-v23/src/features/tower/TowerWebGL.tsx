@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TowerFloor } from "./floors";
 
 interface DeskTask { id: string; agentId: string; title: string; status: string; priority: string }
-interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; onUnsupported: () => void }
+interface Props { onAgentMessage?: (agentId: string, message: string) => Promise<string>; floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; onUnsupported: () => void }
 const vertex = `attribute vec3 aPosition;
 attribute vec3 aColor;
 uniform mat4 uMatrix;
@@ -91,12 +91,25 @@ function geometry(floors: readonly TowerFloor[], interior: TowerFloor | null) {
   return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
 }
 /** True WebGL-rendered geometric exterior; no external CDN or runtime dependencies. */
-export default function TowerWebGL({floors,onSelect,onSelectAgent,onPrepareInstruction,tasks,tasksLoaded,tasksLoading,tasksError,onRefreshTasks,onUnsupported}:Props) {
+export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage,onPrepareInstruction,tasks,tasksLoaded,tasksLoading,tasksError,onRefreshTasks,onUnsupported}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null), [failed,setFailed]=useState(false);
   const rotation=useRef(.46);
   const [interiorId,setInteriorId]=useState<string | null>(null);
   const [activeAgentId,setActiveAgentId]=useState<string | null>(null);
-  const [deskTab,setDeskTab]=useState<"profile" | "tasks">("profile");
+  const [deskTab,setDeskTab]=useState<"profile" | "tasks" | "chat">("profile");
+  const [chatDraft,setChatDraft]=useState("");
+  const [chatBusy,setChatBusy]=useState(false);
+  const [chatHistory,setChatHistory]=useState<Record<string,{role:"user"|"agent";text:string}[]>>({});
+  const sendChat=async(agentId:string)=>{
+    const message=chatDraft.trim();if(!message||chatBusy||message.length>1000)return;
+    setChatDraft("");setChatBusy(true);
+    setChatHistory(old=>({...old,[agentId]:[...(old[agentId]??[]),{role:"user",text:message}]}));
+    try {
+      const answer=onAgentMessage ? await onAgentMessage(agentId,message) : "Este agente aún no tiene un motor conversacional conectado. Puedes preparar una tarea para revisión.";
+      setChatHistory(old=>({...old,[agentId]:[...(old[agentId]??[]),{role:"agent",text:answer}]}));
+    }catch{setChatHistory(old=>({...old,[agentId]:[...(old[agentId]??[]),{role:"agent",text:"No se pudo completar la consulta. No se realizaron acciones."}]}));}
+    finally{setChatBusy(false);}
+  };
   const interior=floors.find(floor=>floor.departmentId===interiorId) ?? null;
   useEffect(()=>{
     const element=canvas.current;if(!element)return;
@@ -158,7 +171,7 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onPrepareInstr
     {!interior && <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2" aria-label="Seleccionar piso 3D">{floors.map(f=><button key={f.departmentId} type="button" onClick={()=>enterFloor(f)} aria-label={`Entrar a la oficina 3D del piso ${f.number}: ${f.name}`} className="min-h-10 min-w-10 rounded-md border border-white/25 bg-[#0b1626]/90 px-2 py-1 text-xs text-white hover:bg-[#294b45]">{f.number}</button>)}</div>}
     {interior && <div className="border-t border-[#9db89e]/30 bg-[#10253a] p-3 text-white sm:p-4" aria-label={`Personal de ${interior.name}`}>
       <p className="text-xs uppercase tracking-widest text-[#c9ae7c]">Piso {interior.number} · Puestos virtuales ({interior.agents.length})</p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">{interior.agents.map(agent=><button key={agent.id} type="button" aria-pressed={activeAgentId===agent.id} onClick={()=>{setActiveAgentId(agent.id);setDeskTab("profile");onSelectAgent?.(agent.id);}} className={`min-h-12 rounded-lg border px-3 py-2 text-left text-sm ${activeAgentId===agent.id ? "border-[#9db89e] bg-[#254339]" : "border-white/20 bg-white/5 hover:bg-white/10"}`}>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">{interior.agents.map(agent=><button key={agent.id} type="button" aria-pressed={activeAgentId===agent.id} onClick={()=>{setActiveAgentId(agent.id);setDeskTab("chat");onSelectAgent?.(agent.id);}} className={`min-h-12 rounded-lg border px-3 py-2 text-left text-sm ${activeAgentId===agent.id ? "border-[#9db89e] bg-[#254339]" : "border-white/20 bg-white/5 hover:bg-white/10"}`}>
         <span className="block font-semibold">{agent.displayName ?? agent.name}</span><span className="block text-xs text-[#b9cfc5]">{agent.name}</span>
       </button>)}</div>
       {activeAgent && <div className="mt-3 rounded-lg border border-[#c9ae7c]/40 bg-[#0b1626] p-3" aria-label={`Escritorio virtual de ${activeAgent.displayName ?? activeAgent.name}`}>
@@ -167,8 +180,20 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onPrepareInstr
         <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Secciones del escritorio 3D">
           <button type="button" aria-pressed={deskTab==="profile"} onClick={()=>setDeskTab("profile")} className={`min-h-11 rounded-lg border px-3 text-xs ${deskTab==="profile"?"border-[#9db89e] bg-[#254339]":"border-white/25"}`}>Perfil</button>
           <button type="button" aria-pressed={deskTab==="tasks"} onClick={()=>setDeskTab("tasks")} className={`min-h-11 rounded-lg border px-3 text-xs ${deskTab==="tasks"?"border-[#9db89e] bg-[#254339]":"border-white/25"}`}>Tareas y herramientas</button>
+          <button type="button" aria-pressed={deskTab==="chat"} onClick={()=>setDeskTab("chat")} className={`min-h-11 rounded-lg border px-3 text-xs ${deskTab==="chat"?"border-[#9db89e] bg-[#254339]":"border-white/25"}`}>Conversar</button>
         </div>
-        {deskTab==="profile" ? <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-[#e0e5e3]">{activeAgent.responsibilities.map((item,i)=><li key={i}>{item}</li>)}</ul> : <div className="mt-3 space-y-3">
+        {deskTab==="chat" ? <div className="mt-3 space-y-3" aria-label={`Conversación con ${activeAgent.displayName ?? activeAgent.name}`}>
+          <p className="text-xs text-[#c9ae7c]">Piloto supervisado · No es un chat de IA autónoma. AXEL y ORION pueden consultar diagnósticos reales; los demás agentes aún no tienen motor conversacional.</p>
+          <div role="log" aria-live="polite" className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-white/15 p-3">
+            {(chatHistory[activeAgent.id]??[]).length===0 && <p className="text-xs text-[#9da9bb]">Escribe una pregunta. No incluyas datos de pacientes ni información sensible.</p>}
+            {(chatHistory[activeAgent.id]??[]).map((msg,i)=><div key={i} className={`rounded-lg p-2 text-sm ${msg.role==="user"?"ml-6 bg-[#254339]":"mr-6 bg-white/10"}`}><span className="block text-xs text-[#c9ae7c]">{msg.role==="user"?"Tú":activeAgent.displayName??activeAgent.name}</span>{msg.text}</div>)}
+          </div>
+          <form onSubmit={event=>{event.preventDefault();void sendChat(activeAgent.id);}} className="flex flex-col gap-2 sm:flex-row">
+            <input aria-label="Mensaje al agente" maxLength={1000} value={chatDraft} onChange={event=>setChatDraft(event.target.value)} placeholder="Escribe tu pregunta…" className="min-h-11 min-w-0 flex-1 rounded-lg border border-white/30 bg-[#142b3b] px-3 text-sm text-white placeholder:text-white/50" />
+            <button type="submit" disabled={chatBusy||!chatDraft.trim()} className="min-h-11 rounded-lg bg-[#9db89e] px-4 text-sm font-semibold text-[#0b1626] disabled:opacity-50">{chatBusy?"Consultando…":"Enviar"}</button>
+          </form>
+          <p className="text-xs text-[#9da9bb]">Mensajes temporales en esta sesión; no se guardan en el servidor.</p>
+        </div> : deskTab==="profile" ? <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-[#e0e5e3]">{activeAgent.responsibilities.map((item,i)=><li key={i}>{item}</li>)}</ul> : <div className="mt-3 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold text-[#c9ae7c]">Bandeja de tareas · Solo lectura</p><button type="button" onClick={onRefreshTasks} disabled={tasksLoading} className="min-h-10 rounded border border-white/30 px-3 text-xs disabled:opacity-50">{tasksLoading?"Consultando…":"Actualizar"}</button></div>
           {tasksError && <p role="alert" className="text-xs">{tasksError}</p>}
           {!tasksLoaded && !tasksLoading && <p className="text-xs text-[#9da9bb]">Actualiza para consultar las tareas guardadas.</p>}
