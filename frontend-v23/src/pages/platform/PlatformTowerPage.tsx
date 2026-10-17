@@ -129,6 +129,19 @@ export function PlatformTowerPage() {
       setPilotError("No fue posible consultar el diagnóstico. Verifica el despliegue del backend e inténtalo nuevamente.");
     } finally { setPilotLoading(false); }
   };
+  const handleAgentMessage = async (agentId: string, message: string): Promise<string> => {
+    if (message.length > 1000) return "El mensaje excede el límite permitido.";
+    if (agentId !== "technology-3" && agentId !== "technology-4") {
+      return "Recibí tu mensaje, pero este puesto todavía no tiene un modelo de IA conectado. No he ejecutado ninguna instrucción. Utiliza «Preparar instrucción» para crear una tarea administrativa.";
+    }
+    const token=getToken();
+    if(!token)return "Tu sesión ha expirado. Inicia sesión nuevamente.";
+    try {
+      const result=await apiClient.get<{agentId:string;checkedAt:string;board:TowerOverview["board"]}>(`/platform/tower/pilot/health/${encodeURIComponent(agentId)}`,token);
+      const services=result.board.services.map(service=>`${labels[service.service]??service.service}: ${healthLabels[service.health]} — ${service.summary}`).join("\\n");
+      return `Consulta de diagnóstico realizada (${new Date(result.checkedAt).toLocaleString("es-PR")}). Estado general: ${result.board.overall}.\\n${services}\\nEste es un resultado del diagnóstico disponible, no una respuesta generada por IA. No se realizaron cambios.`;
+    } catch {return "No pude completar el diagnóstico. No se realizaron cambios. Verifica tu sesión y el servicio de ETNARA Tower.";}
+  };
   const load = useCallback(async () => {
     const token = getToken();
     if (!token) { setError("Inicia sesión para acceder a Tower."); setLoading(false); return; }
@@ -200,7 +213,7 @@ export function PlatformTowerPage() {
         {data?.corporateAgents && <span className="text-sm text-white/70">{data.corporateAgents.length} puestos virtuales · {departments.length} departamentos</span>}
       </div>
     </section>
-    {data?.corporateAgents && <TowerPremiumFacade tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
+    {data?.corporateAgents && <TowerPremiumFacade onAgentMessage={handleAgentMessage} tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
