@@ -3,7 +3,7 @@ const TowerWebGL = lazy(() => import("./TowerWebGL"));
 import type { TowerFloor } from "./floors";
 
 interface DeskTask { id: string; agentId: string; title: string; status: string; priority: string }
-interface Props { onAgentMessage?: (agentId: string, message: string) => Promise<string>; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void }
+interface Props { onSaveAgentTask?: (agentId: string, title: string, instructions: string, priority: "low" | "normal" | "high") => Promise<string>; onAgentMessage?: (agentId: string, message: string) => Promise<string>; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void }
 /** Accessible premium architectural fallback. Future WebGL scene shares this exact floor contract. */
 export function TowerPremiumFacade({ floors, tasks, tasksLoaded, tasksLoading, tasksError, onRefreshTasks, onSelect, onSelectAgent, onPrepareInstruction, onAgentMessage, onSaveAgentTask }: Props) {
   const [active, setActive] = useState<number | null>(null);
