@@ -91,7 +91,7 @@ function geometry(floors: readonly TowerFloor[], interior: TowerFloor | null) {
   return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
 }
 /** True WebGL-rendered geometric exterior; no external CDN or runtime dependencies. */
-export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage,onPrepareInstruction,onSaveAgentTask,tasks,tasksLoaded,tasksLoading,tasksError,onRefreshTasks,onUnsupported}:Props) {
+export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage,onSaveAgentTask,tasks,tasksLoaded,tasksLoading,tasksError,onRefreshTasks,onUnsupported}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null), [failed,setFailed]=useState(false);
   const rotation=useRef(.46);
   const [interiorId,setInteriorId]=useState<string | null>(null);
