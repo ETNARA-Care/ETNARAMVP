@@ -1,6 +1,32 @@
 import { useEffect, useRef, useState } from "react";
 import type { TowerFloor } from "./floors";
 
+const departmentTools: Record<string, { title: string; purpose: string; templates: readonly { title: string; instructions: string }[] }> = {
+  compliance: { title: "Cumplimiento y expedientes", purpose: "Preparación administrativa; no accede a expedientes clínicos ni certifica cumplimiento.", templates: [
+    { title: "Revisar documentos próximos a vencer", instructions: "Preparar una revisión administrativa de documentos y credenciales próximos a vencer en la organización autorizada. No modificar expedientes." },
+    { title: "Preparar lista de inspección", instructions: "Preparar una lista de verificación documental para inspección del establecimiento, sin afirmar cumplimiento sin evidencia." }] },
+  care: { title: "Operaciones de cuidado", purpose: "Planificación operativa sin acceder a información clínica ni ejecutar cambios.", templates: [
+    { title: "Revisar cobertura de turnos", instructions: "Preparar una revisión de cobertura de turnos y posibles vacantes dentro de la organización autorizada." },
+    { title: "Preparar seguimiento de incidentes", instructions: "Preparar una revisión administrativa de incidentes pendientes sin incluir datos identificables de pacientes." }] },
+  finance: { title: "Finanzas y crecimiento", purpose: "Análisis y propuestas; no autoriza pagos ni consulta cuentas bancarias.", templates: [
+    { title: "Preparar reporte de suscripciones", instructions: "Preparar una propuesta de reporte de suscripciones y facturación de la organización autorizada; no procesar pagos." },
+    { title: "Revisar indicadores comerciales", instructions: "Preparar una lista de indicadores comerciales para revisión administrativa sin inventar cifras." }] },
+  support: { title: "Experiencia y soporte", purpose: "Clasificación de solicitudes; no responde a usuarios ni modifica tickets automáticamente.", templates: [
+    { title: "Clasificar solicitudes pendientes", instructions: "Preparar criterios para clasificar solicitudes de soporte por urgencia y categoría." },
+    { title: "Preparar guía de atención", instructions: "Preparar un borrador de guía para responder consultas frecuentes de usuarios de ETNARA Care." }] },
+  secretariat: { title: "Secretaría ejecutiva", purpose: "Borradores y coordinación; no envía mensajes ni modifica calendarios.", templates: [
+    { title: "Preparar agenda administrativa", instructions: "Preparar una agenda de seguimiento para los asuntos pendientes de la administración." },
+    { title: "Preparar minuta de reunión", instructions: "Preparar una plantilla de minuta para revisión y aprobación de la administración." }] },
+  marketing: { title: "Mercadeo y redes sociales", purpose: "Propuestas editoriales; no publica contenido en redes sociales.", templates: [
+    { title: "Preparar calendario de contenido", instructions: "Preparar una propuesta de calendario editorial para ETNARA Care sin publicar contenidos." },
+    { title: "Revisar mensajes de marca", instructions: "Preparar una revisión de mensajes de marca y propuestas de mejora para aprobación administrativa." }] },
+  executive: { title: "Dirección ejecutiva", purpose: "Priorización estratégica; no toma decisiones ni aprueba tareas automáticamente.", templates: [
+    { title: "Preparar prioridades semanales", instructions: "Preparar una lista de prioridades estratégicas y decisiones pendientes para la dirección." },
+    { title: "Revisar avances de departamentos", instructions: "Preparar una propuesta de revisión de avances y bloqueos por departamento." }] },
+  technology: { title: "Tecnología y sistemas", purpose: "Planificación técnica; los diagnósticos reales requieren herramientas autorizadas.", templates: [
+    { title: "Preparar revisión de despliegue", instructions: "Preparar una lista de comprobación para revisar un despliegue de ETNARA Care sin modificar infraestructura." },
+    { title: "Preparar análisis de incidencia", instructions: "Preparar una investigación técnica de incidencia con pasos de diagnóstico y sin ejecutar cambios." }] },
+};
 interface DeskTask { id: string; agentId: string; title: string; status: string; priority: string }
 interface Props { onAgentMessage?: (agentId: string, message: string) => Promise<string>; floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void; onSaveAgentTask?: (agentId: string, title: string, instructions: string, priority: "low" | "normal" | "high") => Promise<string>; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; onUnsupported: () => void }
 const vertex = `attribute vec3 aPosition;
@@ -211,6 +237,14 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage
           {!tasksLoaded && !tasksLoading && <p className="text-xs text-[#9da9bb]">Actualiza para consultar las tareas guardadas.</p>}
           {tasksLoaded && tasks.filter(task=>task.agentId===activeAgent.id).length===0 && <p className="text-xs text-[#9da9bb]">No hay tareas guardadas para este agente.</p>}
           {tasksLoaded && <ul className="space-y-2">{tasks.filter(task=>task.agentId===activeAgent.id).map(task=><li key={task.id} className="rounded border border-white/20 p-2 text-xs"><span className="font-semibold">{task.title}</span><span className="mt-1 block text-[#9da9bb]">{task.status} · {task.priority}</span></li>)}</ul>}
+          <div className="rounded-lg border border-white/20 p-3">
+            <p className="text-sm font-semibold">{departmentTools[interior.departmentId]?.title ?? "Herramientas del departamento"}</p>
+            <p className="mt-1 text-xs text-[#9da9bb]">{departmentTools[interior.departmentId]?.purpose}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(departmentTools[interior.departmentId]?.templates ?? []).map(template=><button key={template.title} type="button" onClick={()=>{setTaskDraftTitle(template.title);setTaskDraftInstructions(template.instructions);setTaskFeedback("");}} className="min-h-11 rounded-lg border border-[#9db89e]/60 px-3 text-left text-xs hover:bg-white/10">{template.title}</button>)}
+            </div>
+            <p className="mt-2 text-xs text-[#9da9bb]">Estas herramientas preparan borradores. No consultan datos operativos ni ejecutan acciones.</p>
+          </div>
           <form className="space-y-2 rounded-lg border border-white/20 p-3" onSubmit={event=>{event.preventDefault();void saveDeskTask(activeAgent.id);}}>
             <p className="text-sm font-semibold">Nueva tarea para {activeAgent.displayName??activeAgent.name}</p>
             <label className="block text-xs" htmlFor="tower-desk-task-title">Título</label>
