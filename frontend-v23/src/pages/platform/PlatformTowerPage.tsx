@@ -129,6 +129,15 @@ export function PlatformTowerPage() {
       setPilotError("No fue posible consultar el diagnóstico. Verifica el despliegue del backend e inténtalo nuevamente.");
     } finally { setPilotLoading(false); }
   };
+  const saveAgentDeskTask = async (agentId: string, title: string, instructions: string, priority: "low"|"normal"|"high"): Promise<string> => {
+    const token=getToken();
+    if(!token)return "Inicia sesión nuevamente para guardar la tarea.";
+    try {
+      await apiClient.post("/platform/tower/tasks",{agentId,title,instructions,priority},token);
+      await loadTaskInbox();
+      return "Borrador guardado en PostgreSQL para revisión administrativa. No se ejecutó ninguna instrucción.";
+    } catch {return "No se pudo guardar la tarea. Comprueba tu acceso y el estado del servidor.";}
+  };
   const handleAgentMessage = async (agentId: string, message: string): Promise<string> => {
     if (message.length > 1000) return "El mensaje excede el límite permitido.";
     if (agentId !== "technology-3" && agentId !== "technology-4") {
@@ -213,7 +222,7 @@ export function PlatformTowerPage() {
         {data?.corporateAgents && <span className="text-sm text-white/70">{data.corporateAgents.length} puestos virtuales · {departments.length} departamentos</span>}
       </div>
     </section>
-    {data?.corporateAgents && <TowerPremiumFacade onAgentMessage={handleAgentMessage} tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
+    {data?.corporateAgents && <TowerPremiumFacade onSaveAgentTask={saveAgentDeskTask} onAgentMessage={handleAgentMessage} tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
