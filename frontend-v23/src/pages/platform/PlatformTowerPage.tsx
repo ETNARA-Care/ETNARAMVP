@@ -57,6 +57,8 @@ export function PlatformTowerPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState("");
   const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
+  const [taskStatusFilter, setTaskStatusFilter] = useState("all");
+  const [taskSearch, setTaskSearch] = useState("");
   const [repairSignal, setRepairSignal] = useState("frontend_unavailable");
   const [repairLoading, setRepairLoading] = useState(false);
   const [repairError, setRepairError] = useState("");
@@ -414,8 +416,14 @@ export function PlatformTowerPage() {
         <p className="mt-3 text-sm text-[var(--color-text-secondary)]">Bandeja real de PostgreSQL, disponible únicamente para administración de plataforma. Puedes enviar, revisar, aprobar o rechazar tareas; aprobar no ejecuta ninguna acción automáticamente.</p>
         {taskInboxError && <p role="alert" className="mt-3 rounded-lg border p-3 text-sm">{taskInboxError}</p>}
         {reviewMessage && <p role="status" className="mt-3 text-sm">{reviewMessage}</p>}
+        {taskInboxLoaded && <div className="mt-4 flex flex-wrap gap-3">
+          <label className="text-sm">Buscar tarea <input aria-label="Buscar tarea" value={taskSearch} onChange={event => setTaskSearch(event.target.value)} placeholder="Título o agente" className="ml-2 min-h-11 rounded-lg border px-3" /></label>
+          <label className="text-sm">Estado <select aria-label="Filtrar por estado" value={taskStatusFilter} onChange={event => setTaskStatusFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
+            <option value="all">Todos</option><option value="draft">Borrador</option><option value="submitted">Enviada</option><option value="in_review">En revisión</option><option value="approved">Aprobada</option><option value="rejected">Rechazada</option>
+          </select></label>
+        </div>}
         {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
-          {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
+          {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.filter(task => (taskStatusFilter === "all" || task.status === taskStatusFilter) && (task.title.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()) || (roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId).toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))).map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{task.title}</h3><span className="rounded-full border px-3 py-1 text-xs">{task.status}</span></div>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId} · Prioridad: {task.priority}</p>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Registrada: {new Date(task.createdAt).toLocaleString("es-PR")}</p>
