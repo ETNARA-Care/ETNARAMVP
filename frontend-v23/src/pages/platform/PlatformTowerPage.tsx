@@ -91,6 +91,29 @@ export function PlatformTowerPage() {
       setPreflightError("La validación no fue aceptada o el backend no está actualizado.");
     } finally { setPreflightLoading(false); }
   };
+  const [versionPath, setVersionPath] = useState("src/modules/etnaraTower/liveHealthCollector.ts");
+  const [expectedBlobSha, setExpectedBlobSha] = useState("");
+  const [versionLoading, setVersionLoading] = useState(false);
+  const [versionStatus, setVersionStatus] = useState("");
+  const verifyGithubVersion = async () => {
+    const token = getToken();
+    if (!token) { setVersionStatus("Inicia sesión nuevamente."); return; }
+    if (!/^[a-f0-9]{40}$/.test(expectedBlobSha)) {
+      setVersionStatus("Ingresa el SHA de 40 caracteres hexadecimales en minúsculas."); return;
+    }
+    setVersionLoading(true); setVersionStatus("");
+    try {
+      const result = await apiClient.post<{ status: string; currentGithubVersionVerified: boolean; githubWriteEnabled: boolean }>(
+        "/platform/tower/pilot/live-repair-version-preflight",
+        { agentId: "technology-2", signal: repairSignal, repository: repairRepository, branch: repairBranch,
+          files: [{ path: versionPath, expectedBlobSha }] }, token);
+      setVersionStatus(result.status === "match" && result.currentGithubVersionVerified && !result.githubWriteEnabled
+        ? "Versión verificada en GitHub. No se ha modificado código ni autorizado una reparación."
+        : "No se pudo confirmar la versión; no se permite continuar.");
+    } catch {
+      setVersionStatus("Verificación no disponible, versión desactualizada o solicitud rechazada. No se realizaron cambios.");
+    } finally { setVersionLoading(false); }
+  };
   const [pilotLoading, setPilotLoading] = useState(false);
   const [pilotError, setPilotError] = useState("");
   const [pilotResult, setPilotResult] = useState<{ agentId: string; checkedAt: string; board: TowerOverview["board"] } | null>(null);
@@ -247,7 +270,7 @@ export function PlatformTowerPage() {
           <div className="space-y-2 rounded-lg border border-[var(--color-border)] p-3">
             <h4 className="font-semibold">Validar borrador de PR · Sin escritura</h4>
             <label htmlFor="tower-repair-repository" className="block text-sm">Repositorio</label>
-            <select id="tower-repair-repository" value={repairRepository} onChange={event => { setRepairRepository(event.target.value); setPreflightPassed(false); }}
+            <select id="tower-repair-repository" value={repairRepository} onChange={event => { setRepairRepository(event.target.value); setVersionPath(event.target.value === "ETNARA-Care/ETNARA-Backend" ? "src/modules/etnaraTower/liveHealthCollector.ts" : "frontend-v23/src/pages/platform/PlatformTowerPage.tsx"); setExpectedBlobSha(""); setVersionStatus(""); setPreflightPassed(false); }}
               className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm">
               <option value="ETNARA-Care/ETNARA-Backend">ETNARA Backend</option>
               <option value="ETNARA-Care/ETNARAMVP">ETNARA Frontend</option>
@@ -261,6 +284,27 @@ export function PlatformTowerPage() {
             </button>
             {preflightError && <p role="alert" className="text-sm">{preflightError}</p>}
             {preflightPassed && <p role="status" className="text-sm font-semibold">Validación preliminar aceptada. No se creó ninguna rama, PR ni modificación de código. Se requiere aprobación administrativa.</p>}
+          </div>
+          <div className="space-y-2 rounded-lg border border-[var(--color-border)] p-3">
+            <h4 className="font-semibold">LEO · Verificar versión real en GitHub</h4>
+            <p className="text-sm">Solo lectura. Requiere credencial de GitHub configurada en el servidor y acceso administrativo.</p>
+            <label htmlFor="tower-version-path" className="block text-sm">Archivo permitido</label>
+            <select id="tower-version-path" value={versionPath} onChange={event => { setVersionPath(event.target.value); setVersionStatus(""); }}
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm">
+              {repairRepository === "ETNARA-Care/ETNARA-Backend" ? <>
+                <option value="src/modules/etnaraTower/liveHealthCollector.ts">Diagnóstico del backend</option>
+                <option value="src/modules/etnaraTower/tower.routes.ts">Rutas de Tower</option>
+              </> : <option value="frontend-v23/src/pages/platform/PlatformTowerPage.tsx">Panel ETNARA Tower</option>}
+            </select>
+            <label htmlFor="tower-version-sha" className="block text-sm">SHA esperado del archivo (40 caracteres)</label>
+            <input id="tower-version-sha" value={expectedBlobSha} onChange={event => { setExpectedBlobSha(event.target.value.trim()); setVersionStatus(""); }}
+              placeholder="SHA del archivo en GitHub" maxLength={40} autoComplete="off" spellCheck={false}
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm font-mono" />
+            <button type="button" disabled={versionLoading} onClick={() => void verifyGithubVersion()}
+              className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white disabled:opacity-50">
+              {versionLoading ? "Comprobando…" : "Verificar versión en GitHub"}
+            </button>
+            {versionStatus && <p role="status" className="text-sm">{versionStatus}</p>}
           </div>
           {repairError && <p role="alert" className="text-sm">{repairError}</p>}
           {repairPlan && <div role="status" className="space-y-3 rounded-lg bg-[var(--color-cream-50,#f8f7f2)] p-3 text-sm">
