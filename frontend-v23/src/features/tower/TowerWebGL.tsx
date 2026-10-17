@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TowerFloor } from "./floors";
 
-interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onUnsupported: () => void }
+interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onUnsupported: () => void }
 const vertex = `attribute vec3 aPosition;
 attribute vec3 aColor;
 uniform mat4 uMatrix;
@@ -90,10 +90,11 @@ function geometry(floors: readonly TowerFloor[], interior: TowerFloor | null) {
   return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
 }
 /** True WebGL-rendered geometric exterior; no external CDN or runtime dependencies. */
-export default function TowerWebGL({floors,onSelect,onUnsupported}:Props) {
+export default function TowerWebGL({floors,onSelect,onSelectAgent,onUnsupported}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null), [failed,setFailed]=useState(false);
   const rotation=useRef(.46);
   const [interiorId,setInteriorId]=useState<string | null>(null);
+  const [activeAgentId,setActiveAgentId]=useState<string | null>(null);
   const interior=floors.find(floor=>floor.departmentId===interiorId) ?? null;
   useEffect(()=>{
     const element=canvas.current;if(!element)return;
@@ -144,5 +145,26 @@ export default function TowerWebGL({floors,onSelect,onUnsupported}:Props) {
     }catch{setFailed(true);if(positionBuffer)gl.deleteBuffer(positionBuffer);if(colorBuffer)gl.deleteBuffer(colorBuffer);if(program)gl.deleteProgram(program);}
   },[floors,interior]);
   if(failed)return <div role="status" className="rounded-lg border p-4">El visor 3D no está disponible en este dispositivo. <button type="button" onClick={onUnsupported} className="underline">Abrir vista 2D</button></div>;
-  return <div className="relative overflow-hidden rounded-xl bg-[#0b1626]">{interior && <div className="absolute left-3 top-3 z-10 flex items-center gap-3 rounded-lg bg-[#0b1626]/90 p-2 text-xs text-white"><button type="button" onClick={()=>setInteriorId(null)} className="rounded border border-white/30 px-3 py-2">← Edificio</button><span>Oficina 3D · {interior.name}</span></div>}<canvas ref={canvas} aria-label={interior ? `Modelo 3D de la oficina de ${interior.name}. Arrastra para girar.` : "Modelo tridimensional de ETNARA Tower. Arrastra para girar."} className="h-[480px] w-full touch-pan-y cursor-grab" /><div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">{floors.map(f=><button key={f.departmentId} type="button" onClick={()=>{setInteriorId(f.departmentId);rotation.current=.46;onSelect(f.departmentId);}} aria-label={`Entrar a la oficina 3D del piso ${f.number}: ${f.name}`} className="rounded-md border border-white/25 bg-[#0b1626]/85 px-2 py-1 text-xs text-white hover:bg-[#294b45]">{f.number}</button>)}</div></div>;
+  const activeAgent=interior?.agents.find(agent=>agent.id===activeAgentId);
+  const enterFloor=(floor:TowerFloor)=>{setInteriorId(floor.departmentId);setActiveAgentId(null);rotation.current=.46;onSelect(floor.departmentId);};
+  return <div className="relative min-w-0 overflow-hidden rounded-xl bg-[#0b1626]">
+    {interior && <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-lg bg-[#0b1626]/95 p-2 text-xs text-white">
+      <button type="button" onClick={()=>{setInteriorId(null);setActiveAgentId(null);}} className="min-h-10 shrink-0 rounded border border-white/30 px-3">← Edificio</button>
+      <span className="truncate">Oficina 3D · {interior.name}</span>
+    </div>}
+    <canvas ref={canvas} aria-label={interior ? `Modelo 3D de la oficina de ${interior.name}. Arrastra para girar.` : "Modelo tridimensional de ETNARA Tower. Arrastra para girar."} className="h-[360px] w-full cursor-grab touch-pan-y sm:h-[480px]" />
+    {!interior && <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2" aria-label="Seleccionar piso 3D">{floors.map(f=><button key={f.departmentId} type="button" onClick={()=>enterFloor(f)} aria-label={`Entrar a la oficina 3D del piso ${f.number}: ${f.name}`} className="min-h-10 min-w-10 rounded-md border border-white/25 bg-[#0b1626]/90 px-2 py-1 text-xs text-white hover:bg-[#294b45]">{f.number}</button>)}</div>}
+    {interior && <div className="border-t border-[#9db89e]/30 bg-[#10253a] p-3 text-white sm:p-4" aria-label={`Personal de ${interior.name}`}>
+      <p className="text-xs uppercase tracking-widest text-[#c9ae7c]">Piso {interior.number} · Puestos virtuales ({interior.agents.length})</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">{interior.agents.map(agent=><button key={agent.id} type="button" aria-pressed={activeAgentId===agent.id} onClick={()=>{setActiveAgentId(agent.id);onSelectAgent?.(agent.id);}} className={`min-h-12 rounded-lg border px-3 py-2 text-left text-sm ${activeAgentId===agent.id ? "border-[#9db89e] bg-[#254339]" : "border-white/20 bg-white/5 hover:bg-white/10"}`}>
+        <span className="block font-semibold">{agent.displayName ?? agent.name}</span><span className="block text-xs text-[#b9cfc5]">{agent.name}</span>
+      </button>)}</div>
+      {activeAgent && <div role="status" className="mt-3 rounded-lg border border-[#c9ae7c]/40 bg-[#0b1626] p-3">
+        <p className="text-sm font-semibold">{activeAgent.displayName ?? activeAgent.name} · {activeAgent.name}</p>
+        <p className="mt-1 text-xs text-[#b9cfc5]">Puesto en preparación · sin ejecución autónoma</p>
+        <p className="mt-2 text-xs text-[#e0e5e3]">{activeAgent.responsibilities[0] ?? "Responsabilidades en preparación"}</p>
+        <p className="mt-2 text-xs text-[#9db89e]">Ficha del agente seleccionada en el panel administrativo.</p>
+      </div>}
+    </div>}
+  </div>;
 }
