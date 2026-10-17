@@ -186,7 +186,7 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage
           <p className="text-xs text-[#c9ae7c]">Piloto supervisado · No es un chat de IA autónoma. AXEL y ORION pueden consultar diagnósticos reales; los demás agentes aún no tienen motor conversacional.</p>
           <div role="log" aria-live="polite" className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-white/15 p-3">
             {(chatHistory[activeAgent.id]??[]).length===0 && <p className="text-xs text-[#9da9bb]">Escribe una pregunta. No incluyas datos de pacientes ni información sensible.</p>}
-            {(chatHistory[activeAgent.id]??[]).map((msg,i)=><div key={i} className={`rounded-lg p-2 text-sm ${msg.role==="user"?"ml-6 bg-[#254339]":"mr-6 bg-white/10"}`}><span className="block text-xs text-[#c9ae7c]">{msg.role==="user"?"Tú":activeAgent.displayName??activeAgent.name}</span>{msg.text}</div>)}
+            {(chatHistory[activeAgent.id]??[]).map((msg,i)=><div key={i} className={`whitespace-pre-wrap break-words rounded-lg p-2 text-sm ${msg.role==="user"?"ml-6 bg-[#254339]":"mr-6 bg-white/10"}`}><span className="block text-xs text-[#c9ae7c]">{msg.role==="user"?"Tú":activeAgent.displayName??activeAgent.name}</span>{msg.text}</div>)}
           </div>
           <form onSubmit={event=>{event.preventDefault();void sendChat(activeAgent.id);}} className="flex flex-col gap-2 sm:flex-row">
             <input aria-label="Mensaje al agente" maxLength={1000} value={chatDraft} onChange={event=>setChatDraft(event.target.value)} placeholder="Escribe tu pregunta…" className="min-h-11 min-w-0 flex-1 rounded-lg border border-white/30 bg-[#142b3b] px-3 text-sm text-white placeholder:text-white/50" />
