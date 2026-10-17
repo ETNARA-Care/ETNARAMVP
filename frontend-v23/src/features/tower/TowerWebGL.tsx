@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TowerFloor } from "./floors";
 
 interface DeskTask { id: string; agentId: string; title: string; status: string; priority: string }
-interface Props { onAgentMessage?: (agentId: string, message: string) => Promise<string>; floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; onUnsupported: () => void }
+interface Props { onAgentMessage?: (agentId: string, message: string) => Promise<string>; floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void; onSaveAgentTask?: (agentId: string, title: string, instructions: string, priority: "low" | "normal" | "high") => Promise<string>; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; onUnsupported: () => void }
 const vertex = `attribute vec3 aPosition;
 attribute vec3 aColor;
 uniform mat4 uMatrix;
@@ -91,12 +91,24 @@ function geometry(floors: readonly TowerFloor[], interior: TowerFloor | null) {
   return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
 }
 /** True WebGL-rendered geometric exterior; no external CDN or runtime dependencies. */
-export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage,onPrepareInstruction,tasks,tasksLoaded,tasksLoading,tasksError,onRefreshTasks,onUnsupported}:Props) {
+export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage,onSaveAgentTask,tasks,tasksLoaded,tasksLoading,tasksError,onRefreshTasks,onUnsupported}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null), [failed,setFailed]=useState(false);
   const rotation=useRef(.46);
   const [interiorId,setInteriorId]=useState<string | null>(null);
   const [activeAgentId,setActiveAgentId]=useState<string | null>(null);
   const [deskTab,setDeskTab]=useState<"profile" | "tasks" | "chat">("profile");
+  const [taskDraftTitle,setTaskDraftTitle]=useState("");
+  const [taskDraftInstructions,setTaskDraftInstructions]=useState("");
+  const [taskDraftPriority,setTaskDraftPriority]=useState<"low"|"normal"|"high">("normal");
+  const [taskSaving,setTaskSaving]=useState(false);
+  const [taskFeedback,setTaskFeedback]=useState("");
+  const saveDeskTask=async(agentId:string)=>{
+    if(!onSaveAgentTask||taskSaving||taskDraftTitle.trim().length<3||taskDraftInstructions.trim().length<5)return;
+    setTaskSaving(true);setTaskFeedback("");
+    try{const result=await onSaveAgentTask(agentId,taskDraftTitle.trim(),taskDraftInstructions.trim(),taskDraftPriority);setTaskFeedback(result);if(result.startsWith("Borrador guardado")){setTaskDraftTitle("");setTaskDraftInstructions("");}}
+    catch{setTaskFeedback("No se pudo guardar la tarea. No se realizó ninguna acción.");}
+    finally{setTaskSaving(false);}
+  };
   const [chatDraft,setChatDraft]=useState("");
   const [chatBusy,setChatBusy]=useState(false);
   const [chatHistory,setChatHistory]=useState<Record<string,{role:"user"|"agent";text:string}[]>>({});
@@ -199,7 +211,17 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage
           {!tasksLoaded && !tasksLoading && <p className="text-xs text-[#9da9bb]">Actualiza para consultar las tareas guardadas.</p>}
           {tasksLoaded && tasks.filter(task=>task.agentId===activeAgent.id).length===0 && <p className="text-xs text-[#9da9bb]">No hay tareas guardadas para este agente.</p>}
           {tasksLoaded && <ul className="space-y-2">{tasks.filter(task=>task.agentId===activeAgent.id).map(task=><li key={task.id} className="rounded border border-white/20 p-2 text-xs"><span className="font-semibold">{task.title}</span><span className="mt-1 block text-[#9da9bb]">{task.status} · {task.priority}</span></li>)}</ul>}
-          <button type="button" onClick={()=>onPrepareInstruction?.(activeAgent.id)} className="min-h-11 rounded-lg bg-[#9db89e] px-4 text-sm font-semibold text-[#0b1626]">Preparar instrucción</button>
+          <form className="space-y-2 rounded-lg border border-white/20 p-3" onSubmit={event=>{event.preventDefault();void saveDeskTask(activeAgent.id);}}>
+            <p className="text-sm font-semibold">Nueva tarea para {activeAgent.displayName??activeAgent.name}</p>
+            <label className="block text-xs" htmlFor="tower-desk-task-title">Título</label>
+            <input id="tower-desk-task-title" required minLength={3} maxLength={120} value={taskDraftTitle} onChange={event=>setTaskDraftTitle(event.target.value)} className="min-h-11 w-full rounded-lg border border-white/30 bg-[#142b3b] px-3 text-sm text-white" placeholder="Ej. Revisar credenciales pendientes"/>
+            <label className="block text-xs" htmlFor="tower-desk-task-instructions">Instrucciones</label>
+            <textarea id="tower-desk-task-instructions" required minLength={5} maxLength={1200} rows={3} value={taskDraftInstructions} onChange={event=>setTaskDraftInstructions(event.target.value)} className="w-full rounded-lg border border-white/30 bg-[#142b3b] p-3 text-sm text-white" placeholder="Describe el trabajo que deseas preparar"/>
+            <label className="block text-xs" htmlFor="tower-desk-task-priority">Prioridad</label>
+            <select id="tower-desk-task-priority" value={taskDraftPriority} onChange={event=>setTaskDraftPriority(event.target.value as "low"|"normal"|"high")} className="min-h-11 w-full rounded-lg border border-white/30 bg-[#142b3b] px-3 text-sm text-white"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select>
+            <button type="submit" disabled={taskSaving||!onSaveAgentTask||taskDraftTitle.trim().length<3||taskDraftInstructions.trim().length<5} className="min-h-11 rounded-lg bg-[#9db89e] px-4 text-sm font-semibold text-[#0b1626] disabled:opacity-50">{taskSaving?"Guardando…":"Guardar tarea para revisión"}</button>
+            {taskFeedback&&<p role="status" className="whitespace-pre-wrap text-xs">{taskFeedback}</p>}
+          </form>
           <p className="text-xs text-[#9da9bb]">La instrucción se prepara para revisión administrativa. No se ejecuta automáticamente.</p>
         </div>}
       </div>}
