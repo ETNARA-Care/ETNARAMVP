@@ -58,6 +58,8 @@ export function PlatformTowerPage() {
   const [auditError, setAuditError] = useState("");
   const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
   const [taskStatusFilter, setTaskStatusFilter] = useState("all");
+  const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("all");
+  const [taskPriorityFilter, setTaskPriorityFilter] = useState("all");
   const [taskSearch, setTaskSearch] = useState("");
   const [repairSignal, setRepairSignal] = useState("frontend_unavailable");
   const [repairLoading, setRepairLoading] = useState(false);
@@ -421,9 +423,15 @@ export function PlatformTowerPage() {
           <label className="text-sm">Estado <select aria-label="Filtrar por estado" value={taskStatusFilter} onChange={event => setTaskStatusFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
             <option value="all">Todos</option><option value="draft">Borrador</option><option value="submitted">Enviada</option><option value="in_review">En revisión</option><option value="approved">Aprobada</option><option value="rejected">Rechazada</option>
           </select></label>
+          <label className="text-sm">Departamento <select aria-label="Filtrar por departamento" value={taskDepartmentFilter} onChange={event => setTaskDepartmentFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
+            <option value="all">Todos</option>{(data?.departments ?? defaultDepartments).map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
+          </select></label>
+          <label className="text-sm">Prioridad <select aria-label="Filtrar por prioridad" value={taskPriorityFilter} onChange={event => setTaskPriorityFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
+            <option value="all">Todas</option><option value="high">Alta</option><option value="medium">Media</option><option value="low">Baja</option>
+          </select></label>
         </div>}
         {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
-          {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.filter(task => (taskStatusFilter === "all" || task.status === taskStatusFilter) && (task.title.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()) || (roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId).toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))).map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
+          {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.filter(task => (taskStatusFilter === "all" || task.status === taskStatusFilter) && (taskPriorityFilter === "all" || task.priority === taskPriorityFilter) && (taskDepartmentFilter === "all" || roster.find(agent => agent.id === task.agentId)?.department === taskDepartmentFilter) && (task.title.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()) || (roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId).toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))).map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{task.title}</h3><span className="rounded-full border px-3 py-1 text-xs">{task.status}</span></div>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId} · Prioridad: {task.priority}</p>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Registrada: {new Date(task.createdAt).toLocaleString("es-PR")}</p>
