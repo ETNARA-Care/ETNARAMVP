@@ -3,6 +3,7 @@ import { getToken } from "@/auth/token";
 import { apiClient } from "@/api/client";
 import { buildTowerFloors } from "@/features/tower/floors";
 import { TowerPremiumFacade } from "@/features/tower/TowerPremiumFacade";
+import { TowerCompliancePanel } from "@/features/tower/TowerCompliancePanel";
 
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
 interface Agent { id: string; name: string; displayName?: string; mode: string; department?: string; responsibilities: readonly string[] }
@@ -241,6 +242,7 @@ export function PlatformTowerPage() {
       </div>
     </section>
     {data?.corporateAgents && <TowerPremiumFacade onSaveAgentTask={saveAgentDeskTask} onAgentMessage={handleAgentMessage} tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
+    <TowerCompliancePanel />
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
