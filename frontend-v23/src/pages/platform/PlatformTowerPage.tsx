@@ -132,15 +132,33 @@ export function PlatformTowerPage() {
   const handleAgentMessage = async (agentId: string, message: string): Promise<string> => {
     if (message.length > 1000) return "El mensaje excede el límite permitido.";
     if (agentId !== "technology-3" && agentId !== "technology-4") {
-      return "Recibí tu mensaje, pero este puesto todavía no tiene un modelo de IA conectado. No he ejecutado ninguna instrucción. Utiliza «Preparar instrucción» para crear una tarea administrativa.";
+      return "Este puesto todavía no tiene un modelo conversacional conectado. Puedo ayudarte a preparar una tarea administrativa, pero no ejecutar instrucciones.";
     }
-    const token=getToken();
-    if(!token)return "Tu sesión ha expirado. Inicia sesión nuevamente.";
+    const token = getToken();
+    if (!token) return "Tu sesión ha expirado. Inicia sesión nuevamente.";
     try {
-      const result=await apiClient.get<{agentId:string;checkedAt:string;board:TowerOverview["board"]}>(`/platform/tower/pilot/health/${encodeURIComponent(agentId)}`,token);
-      const services=result.board.services.map(service=>`${labels[service.service]??service.service}: ${healthLabels[service.health]} — ${service.summary}`).join("\\n");
-      return `Consulta de diagnóstico realizada (${new Date(result.checkedAt).toLocaleString("es-PR")}). Estado general: ${result.board.overall}.\\n${services}\\nEste es un resultado del diagnóstico disponible, no una respuesta generada por IA. No se realizaron cambios.`;
-    } catch {return "No pude completar el diagnóstico. No se realizaron cambios. Verifica tu sesión y el servicio de ETNARA Tower.";}
+      const result = await apiClient.get<{agentId:string;checkedAt:string;board:TowerOverview["board"]}>(`/platform/tower/pilot/health/${encodeURIComponent(agentId)}`, token);
+      const services = result.board.services;
+      const unknown = services.filter(service => service.health === "unknown");
+      const problematic = services.filter(service => service.health === "degraded" || service.health === "unavailable");
+      const question = message.toLocaleLowerCase("es");
+      const wantsDns = /dns|dominio|cloudflare/.test(question);
+      const wantsProblems = /problema|error|falla|riesgo|alerta|preocup|unknown|desconocid|por qu[eé]|qué pasa/.test(question);
+      const wantsDatabase = /base de datos|postgres|database/.test(question);
+      const wantsBackend = /backend|api|servidor/.test(question);
+      const wantsFrontend = /frontend|portal|página|web/.test(question);
+      const focused = wantsDns ? services.filter(service => service.service === "dns") :
+        wantsDatabase ? services.filter(service => service.service === "database") :
+        wantsBackend ? services.filter(service => service.service === "backend") :
+        wantsFrontend ? services.filter(service => service.service === "frontend") : services;
+      const summary = focused.map(service => `${labels[service.service] ?? service.service}: ${healthLabels[service.health]} — ${service.summary}`).join("\n");
+      const note = wantsDns ? "No tengo observaciones DNS disponibles. Esto no demuestra una falla; hace falta integrar una comprobación DNS para verificarlo." :
+        wantsProblems ? (problematic.length ? "Hay servicios con señales de degradación o indisponibilidad. Recomiendo revisar sus registros antes de proponer cambios." : unknown.length ? "No detecté fallos en los servicios comprobados, pero faltan observaciones para algunos componentes; por eso el estado general puede ser desconocido." : "Los servicios comprobados no reportaron fallos en esta consulta.") :
+        "Puedo consultar el estado de los servicios, pero aún no puedo investigar registros ni ejecutar reparaciones.";
+      return `AXEL / ORION · Diagnóstico de solo lectura (${new Date(result.checkedAt).toLocaleString("es-PR")})\n\n${summary}\n\n${note}\n\n¿Quieres revisar un servicio concreto (backend, portal web, base de datos o DNS)?\n\nRespuesta guiada por reglas y datos reales; todavía no es IA conversacional. No se realizaron cambios.`;
+    } catch {
+      return "No pude completar el diagnóstico. No se realizaron cambios. Comprueba tu sesión y el servicio de ETNARA Tower.";
+    }
   };
   const load = useCallback(async () => {
     const token = getToken();
