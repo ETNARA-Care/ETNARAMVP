@@ -6,6 +6,7 @@ import { TowerPremiumFacade } from "@/features/tower/TowerPremiumFacade";
 import { TowerCompliancePanel } from "@/features/tower/TowerCompliancePanel";
 import { TowerCarePanel } from "@/features/tower/TowerCarePanel";
 import { TowerExecutiveSummary } from "@/features/tower/TowerExecutiveSummary";
+import { TowerBusinessDepartments } from "@/features/tower/TowerBusinessDepartments";
 
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
 interface Agent { id: string; name: string; displayName?: string; mode: string; department?: string; responsibilities: readonly string[] }
@@ -246,6 +247,7 @@ export function PlatformTowerPage() {
     {data?.corporateAgents && <TowerPremiumFacade onSaveAgentTask={saveAgentDeskTask} onAgentMessage={handleAgentMessage} tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
     <TowerCompliancePanel />
     <TowerCarePanel />
+    <TowerBusinessDepartments tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} />
     <TowerExecutiveSummary tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} loading={taskInboxLoading} onRefresh={() => { void loadTaskInbox(); }} />
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
