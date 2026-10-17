@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { TowerFloor } from "./floors";
 
-interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onUnsupported: () => void }
+interface DeskTask { id: string; agentId: string; title: string; status: string; priority: string }
+interface Props { floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; onUnsupported: () => void }
 const vertex = `attribute vec3 aPosition;
 attribute vec3 aColor;
 uniform mat4 uMatrix;
@@ -90,11 +91,12 @@ function geometry(floors: readonly TowerFloor[], interior: TowerFloor | null) {
   return {positions:new Float32Array(positions),colors:new Float32Array(colors)};
 }
 /** True WebGL-rendered geometric exterior; no external CDN or runtime dependencies. */
-export default function TowerWebGL({floors,onSelect,onSelectAgent,onUnsupported}:Props) {
+export default function TowerWebGL({floors,onSelect,onSelectAgent,onPrepareInstruction,tasks,tasksLoaded,tasksLoading,tasksError,onRefreshTasks,onUnsupported}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null), [failed,setFailed]=useState(false);
   const rotation=useRef(.46);
   const [interiorId,setInteriorId]=useState<string | null>(null);
   const [activeAgentId,setActiveAgentId]=useState<string | null>(null);
+  const [deskTab,setDeskTab]=useState<"profile" | "tasks">("profile");
   const interior=floors.find(floor=>floor.departmentId===interiorId) ?? null;
   useEffect(()=>{
     const element=canvas.current;if(!element)return;
@@ -146,7 +148,7 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onUnsupported}
   },[floors,interior]);
   if(failed)return <div role="status" className="rounded-lg border p-4">El visor 3D no está disponible en este dispositivo. <button type="button" onClick={onUnsupported} className="underline">Abrir vista 2D</button></div>;
   const activeAgent=interior?.agents.find(agent=>agent.id===activeAgentId);
-  const enterFloor=(floor:TowerFloor)=>{setInteriorId(floor.departmentId);setActiveAgentId(null);rotation.current=.46;onSelect(floor.departmentId);};
+  const enterFloor=(floor:TowerFloor)=>{setInteriorId(floor.departmentId);setActiveAgentId(null);setDeskTab("profile");rotation.current=.46;onSelect(floor.departmentId);};
   return <div className="relative min-w-0 overflow-hidden rounded-xl bg-[#0b1626]">
     {interior && <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-lg bg-[#0b1626]/95 p-2 text-xs text-white">
       <button type="button" onClick={()=>{setInteriorId(null);setActiveAgentId(null);}} className="min-h-10 shrink-0 rounded border border-white/30 px-3">← Edificio</button>
@@ -156,14 +158,25 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onUnsupported}
     {!interior && <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2" aria-label="Seleccionar piso 3D">{floors.map(f=><button key={f.departmentId} type="button" onClick={()=>enterFloor(f)} aria-label={`Entrar a la oficina 3D del piso ${f.number}: ${f.name}`} className="min-h-10 min-w-10 rounded-md border border-white/25 bg-[#0b1626]/90 px-2 py-1 text-xs text-white hover:bg-[#294b45]">{f.number}</button>)}</div>}
     {interior && <div className="border-t border-[#9db89e]/30 bg-[#10253a] p-3 text-white sm:p-4" aria-label={`Personal de ${interior.name}`}>
       <p className="text-xs uppercase tracking-widest text-[#c9ae7c]">Piso {interior.number} · Puestos virtuales ({interior.agents.length})</p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">{interior.agents.map(agent=><button key={agent.id} type="button" aria-pressed={activeAgentId===agent.id} onClick={()=>{setActiveAgentId(agent.id);onSelectAgent?.(agent.id);}} className={`min-h-12 rounded-lg border px-3 py-2 text-left text-sm ${activeAgentId===agent.id ? "border-[#9db89e] bg-[#254339]" : "border-white/20 bg-white/5 hover:bg-white/10"}`}>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">{interior.agents.map(agent=><button key={agent.id} type="button" aria-pressed={activeAgentId===agent.id} onClick={()=>{setActiveAgentId(agent.id);setDeskTab("profile");onSelectAgent?.(agent.id);}} className={`min-h-12 rounded-lg border px-3 py-2 text-left text-sm ${activeAgentId===agent.id ? "border-[#9db89e] bg-[#254339]" : "border-white/20 bg-white/5 hover:bg-white/10"}`}>
         <span className="block font-semibold">{agent.displayName ?? agent.name}</span><span className="block text-xs text-[#b9cfc5]">{agent.name}</span>
       </button>)}</div>
-      {activeAgent && <div role="status" className="mt-3 rounded-lg border border-[#c9ae7c]/40 bg-[#0b1626] p-3">
+      {activeAgent && <div className="mt-3 rounded-lg border border-[#c9ae7c]/40 bg-[#0b1626] p-3" aria-label={`Escritorio virtual de ${activeAgent.displayName ?? activeAgent.name}`}>
         <p className="text-sm font-semibold">{activeAgent.displayName ?? activeAgent.name} · {activeAgent.name}</p>
         <p className="mt-1 text-xs text-[#b9cfc5]">Puesto en preparación · sin ejecución autónoma</p>
-        <p className="mt-2 text-xs text-[#e0e5e3]">{activeAgent.responsibilities[0] ?? "Responsabilidades en preparación"}</p>
-        <p className="mt-2 text-xs text-[#9db89e]">Ficha del agente seleccionada en el panel administrativo.</p>
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Secciones del escritorio 3D">
+          <button type="button" aria-pressed={deskTab==="profile"} onClick={()=>setDeskTab("profile")} className={`min-h-11 rounded-lg border px-3 text-xs ${deskTab==="profile"?"border-[#9db89e] bg-[#254339]":"border-white/25"}`}>Perfil</button>
+          <button type="button" aria-pressed={deskTab==="tasks"} onClick={()=>setDeskTab("tasks")} className={`min-h-11 rounded-lg border px-3 text-xs ${deskTab==="tasks"?"border-[#9db89e] bg-[#254339]":"border-white/25"}`}>Tareas y herramientas</button>
+        </div>
+        {deskTab==="profile" ? <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-[#e0e5e3]">{activeAgent.responsibilities.map((item,i)=><li key={i}>{item}</li>)}</ul> : <div className="mt-3 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold text-[#c9ae7c]">Bandeja de tareas · Solo lectura</p><button type="button" onClick={onRefreshTasks} disabled={tasksLoading} className="min-h-10 rounded border border-white/30 px-3 text-xs disabled:opacity-50">{tasksLoading?"Consultando…":"Actualizar"}</button></div>
+          {tasksError && <p role="alert" className="text-xs">{tasksError}</p>}
+          {!tasksLoaded && !tasksLoading && <p className="text-xs text-[#9da9bb]">Actualiza para consultar las tareas guardadas.</p>}
+          {tasksLoaded && tasks.filter(task=>task.agentId===activeAgent.id).length===0 && <p className="text-xs text-[#9da9bb]">No hay tareas guardadas para este agente.</p>}
+          {tasksLoaded && <ul className="space-y-2">{tasks.filter(task=>task.agentId===activeAgent.id).map(task=><li key={task.id} className="rounded border border-white/20 p-2 text-xs"><span className="font-semibold">{task.title}</span><span className="mt-1 block text-[#9da9bb]">{task.status} · {task.priority}</span></li>)}</ul>}
+          <button type="button" onClick={()=>onPrepareInstruction?.(activeAgent.id)} className="min-h-11 rounded-lg bg-[#9db89e] px-4 text-sm font-semibold text-[#0b1626]">Preparar instrucción</button>
+          <p className="text-xs text-[#9da9bb]">La instrucción se prepara para revisión administrativa. No se ejecuta automáticamente.</p>
+        </div>}
       </div>}
     </div>}
   </div>;
