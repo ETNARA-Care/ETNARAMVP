@@ -245,10 +245,16 @@ export function PlatformTowerPage() {
       </div>
     </section>
     {data?.corporateAgents && <TowerPremiumFacade onSaveAgentTask={saveAgentDeskTask} onAgentMessage={handleAgentMessage} tasks={taskInbox} tasksLoaded={taskInboxLoaded} tasksLoading={taskInboxLoading} tasksError={taskInboxError} onRefreshTasks={() => void loadTaskInbox()} floors={towerFloors} onSelect={departmentId => { setSelected(departmentId); setSelectedAgentId(null); }} onSelectAgent={agentId => setSelectedAgentId(agentId)} onPrepareInstruction={agentId => { setSelectedAgentId(agentId); window.setTimeout(() => document.getElementById("tower-persist-title")?.focus(), 0); }} />}
-    <TowerCompliancePanel />
-    <TowerCarePanel />
-    <TowerBusinessDepartments tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} />
-    <TowerExecutiveSummary tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} loading={taskInboxLoading} onRefresh={() => { void loadTaskInbox(); }} />
+    <section aria-label="Herramientas departamentales de Tower" className="rounded-xl border border-[var(--color-border)] bg-white/90 p-4">
+      <h2 className="font-display text-2xl">Herramientas por departamento</h2>
+      <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Selecciona un área para abrir sus consultas. Las herramientas no ejecutan cambios.</p>
+      <div className="mt-4 space-y-3">
+        <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Cumplimiento documental</summary><div className="mt-3"><TowerCompliancePanel /></div></details>
+        <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Operaciones de Cuidado</summary><div className="mt-3"><TowerCarePanel /></div></details>
+        <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Secretaría y Dirección</summary><div className="mt-3"><TowerExecutiveSummary tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} loading={taskInboxLoading} onRefresh={() => { void loadTaskInbox(); }} /></div></details>
+        <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Finanzas, Soporte y Mercadeo</summary><div className="mt-3"><TowerBusinessDepartments tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} /></div></details>
+      </div>
+    </section>
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
