@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TowerFloor } from "./floors";
 
+const departmentTemplates: Record<string, string[]> = {compliance:["Revisión documental","Lista de inspección"],care:["Cobertura de turnos","Seguimiento de incidentes"],finance:["Reporte de suscripciones","Indicadores comerciales"],support:["Solicitudes pendientes","Guía de atención"],secretariat:["Agenda administrativa","Minuta de reunión"],marketing:["Calendario editorial","Mensajes de marca"],executive:["Prioridades semanales","Avances de departamentos"],technology:["Revisión de despliegue","Análisis de incidencia"]};
 interface DeskTask { id: string; agentId: string; title: string; status: string; priority: string }
 interface Props { onAgentMessage?: (agentId: string, message: string) => Promise<string>; floors: readonly TowerFloor[]; onSelect: (departmentId: string) => void; onSelectAgent?: (agentId: string) => void; onPrepareInstruction?: (agentId: string) => void; onSaveAgentTask?: (agentId: string, title: string, instructions: string, priority: "low" | "normal" | "high") => Promise<string>; tasks: readonly DeskTask[]; tasksLoaded: boolean; tasksLoading: boolean; tasksError: string; onRefreshTasks: () => void; onUnsupported: () => void }
 const vertex = `attribute vec3 aPosition;
@@ -211,6 +212,7 @@ export default function TowerWebGL({floors,onSelect,onSelectAgent,onAgentMessage
           {!tasksLoaded && !tasksLoading && <p className="text-xs text-[#9da9bb]">Actualiza para consultar las tareas guardadas.</p>}
           {tasksLoaded && tasks.filter(task=>task.agentId===activeAgent.id).length===0 && <p className="text-xs text-[#9da9bb]">No hay tareas guardadas para este agente.</p>}
           {tasksLoaded && <ul className="space-y-2">{tasks.filter(task=>task.agentId===activeAgent.id).map(task=><li key={task.id} className="rounded border border-white/20 p-2 text-xs"><span className="font-semibold">{task.title}</span><span className="mt-1 block text-[#9da9bb]">{task.status} · {task.priority}</span></li>)}</ul>}
+          <div className="flex flex-wrap gap-2">{(departmentTemplates[interior.departmentId]??[]).map(title=><button key={title} type="button" onClick={()=>{setTaskDraftTitle(title);setTaskDraftInstructions("Preparar para revisión administrativa: "+title+". No ejecutar cambios.");}} className="min-h-11 rounded-lg border border-white/30 px-3 text-xs">{title}</button>)}</div>
           <form className="space-y-2 rounded-lg border border-white/20 p-3" onSubmit={event=>{event.preventDefault();void saveDeskTask(activeAgent.id);}}>
             <p className="text-sm font-semibold">Nueva tarea para {activeAgent.displayName??activeAgent.name}</p>
             <label className="block text-xs" htmlFor="tower-desk-task-title">Título</label>
