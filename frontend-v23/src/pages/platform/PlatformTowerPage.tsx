@@ -73,6 +73,24 @@ export function PlatformTowerPage() {
       setRepairError("No fue posible obtener el plan. Verifica que el backend esté actualizado.");
     } finally { setRepairLoading(false); }
   };
+  const [repairRepository, setRepairRepository] = useState("ETNARA-Care/ETNARA-Backend");
+  const [repairBranch, setRepairBranch] = useState("repair/tower-health-check");
+  const [preflightLoading, setPreflightLoading] = useState(false);
+  const [preflightError, setPreflightError] = useState("");
+  const [preflightPassed, setPreflightPassed] = useState(false);
+  const runRepairPrPreflight = async () => {
+    const token = getToken();
+    if (!token) { setPreflightError("Inicia sesión nuevamente."); return; }
+    setPreflightLoading(true); setPreflightError(""); setPreflightPassed(false);
+    try {
+      const result = await apiClient.post<{ mode: string; githubWriteEnabled: boolean }>(
+        "/platform/tower/pilot/repair-pr-preflight",
+        { agentId: "technology-2", signal: repairSignal, repository: repairRepository, branch: repairBranch }, token);
+      setPreflightPassed(result.mode === "dry-run" && result.githubWriteEnabled === false);
+    } catch {
+      setPreflightError("La validación no fue aceptada o el backend no está actualizado.");
+    } finally { setPreflightLoading(false); }
+  };
   const [pilotLoading, setPilotLoading] = useState(false);
   const [pilotError, setPilotError] = useState("");
   const [pilotResult, setPilotResult] = useState<{ agentId: string; checkedAt: string; board: TowerOverview["board"] } | null>(null);
@@ -226,6 +244,24 @@ export function PlatformTowerPage() {
             className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white disabled:opacity-50">
             {repairLoading ? "Preparando…" : "Preparar plan de reparación"}
           </button>
+          <div className="space-y-2 rounded-lg border border-[var(--color-border)] p-3">
+            <h4 className="font-semibold">Validar borrador de PR · Sin escritura</h4>
+            <label htmlFor="tower-repair-repository" className="block text-sm">Repositorio</label>
+            <select id="tower-repair-repository" value={repairRepository} onChange={event => { setRepairRepository(event.target.value); setPreflightPassed(false); }}
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm">
+              <option value="ETNARA-Care/ETNARA-Backend">ETNARA Backend</option>
+              <option value="ETNARA-Care/ETNARAMVP">ETNARA Frontend</option>
+            </select>
+            <label htmlFor="tower-repair-branch" className="block text-sm">Rama propuesta (repair/...)</label>
+            <input id="tower-repair-branch" value={repairBranch} onChange={event => { setRepairBranch(event.target.value); setPreflightPassed(false); }}
+              maxLength={56} className="w-full rounded-lg border border-[var(--color-border)] bg-white p-3 text-sm" />
+            <button type="button" disabled={preflightLoading} onClick={() => void runRepairPrPreflight()}
+              className="min-h-11 rounded-lg bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white disabled:opacity-50">
+              {preflightLoading ? "Validando…" : "Validar propuesta"}
+            </button>
+            {preflightError && <p role="alert" className="text-sm">{preflightError}</p>}
+            {preflightPassed && <p role="status" className="text-sm font-semibold">Validación preliminar aceptada. No se creó ninguna rama, PR ni modificación de código. Se requiere aprobación administrativa.</p>}
+          </div>
           {repairError && <p role="alert" className="text-sm">{repairError}</p>}
           {repairPlan && <div role="status" className="space-y-3 rounded-lg bg-[var(--color-cream-50,#f8f7f2)] p-3 text-sm">
             <p><strong>Diagnóstico:</strong> {repairPlan.diagnosis}</p>
