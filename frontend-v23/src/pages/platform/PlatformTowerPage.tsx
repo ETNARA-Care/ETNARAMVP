@@ -260,7 +260,7 @@ export function PlatformTowerPage() {
         <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Finanzas, Soporte y Mercadeo</summary><div className="mt-3"><TowerBusinessDepartments tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} /></div></details>
       </div>
     </section>
-    <TowerReviewQueue tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} onReview={(task, status) => { if (reviewBusyId === null) void reviewTask(task, status); }} />
+    <TowerReviewQueue tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} busy={reviewBusyId !== null} onReview={(task, status) => { if (reviewBusyId === null) void reviewTask(task, status); }} />
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
@@ -429,7 +429,7 @@ export function PlatformTowerPage() {
             <option value="all">Todos</option>{(data?.departments ?? defaultDepartments).map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
           </select></label>
           <label className="text-sm">Prioridad <select aria-label="Filtrar por prioridad" value={taskPriorityFilter} onChange={event => setTaskPriorityFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
-            <option value="all">Todas</option><option value="high">Alta</option><option value="medium">Media</option><option value="low">Baja</option>
+            <option value="all">Todas</option><option value="high">Alta</option><option value="normal">Normal</option><option value="low">Baja</option>
           </select></label>
         </div>}
         {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
