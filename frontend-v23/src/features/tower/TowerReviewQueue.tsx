@@ -1,4 +1,4 @@
-interface Task { id: string; agentId: string; title: string; priority: string; status: string }
+interface Task { id: string; agentId: string; title: string; priority: string; status: string; createdAt: string }
 interface Agent { id: string; displayName?: string; department?: string }
 export function TowerReviewQueue({tasks,agents,loaded,onReview}:{tasks:Task[];agents:Agent[];loaded:boolean;onReview:(task:Task,status:string)=>void}) {
   const queue=tasks.filter(task=>task.status==="submitted"||task.status==="in_review").sort((a,b)=>(a.priority==="high"?0:1)-(b.priority==="high"?0:1));
