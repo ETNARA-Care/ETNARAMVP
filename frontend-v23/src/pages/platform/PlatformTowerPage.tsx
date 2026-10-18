@@ -7,6 +7,7 @@ import { TowerCompliancePanel } from "@/features/tower/TowerCompliancePanel";
 import { TowerCarePanel } from "@/features/tower/TowerCarePanel";
 import { TowerExecutiveSummary } from "@/features/tower/TowerExecutiveSummary";
 import { TowerBusinessDepartments } from "@/features/tower/TowerBusinessDepartments";
+import { TowerReviewQueue } from "@/features/tower/TowerReviewQueue";
 
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
 interface Agent { id: string; name: string; displayName?: string; mode: string; department?: string; responsibilities: readonly string[] }
@@ -259,6 +260,7 @@ export function PlatformTowerPage() {
         <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Finanzas, Soporte y Mercadeo</summary><div className="mt-3"><TowerBusinessDepartments tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} /></div></details>
       </div>
     </section>
+    <TowerReviewQueue tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} onReview={(task, status) => { if (reviewBusyId === null) void reviewTask(task, status); }} />
     {loading && <p role="status">Consultando Tower…</p>}
     {error && <p role="alert" className="rounded-lg border border-[var(--color-border)] p-4">{error}</p>}
     {data && <>
