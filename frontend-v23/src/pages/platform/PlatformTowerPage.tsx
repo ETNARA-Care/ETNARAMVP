@@ -15,6 +15,7 @@ interface Department { id: string; name: string }
 interface PersistedTask { id: string; agentId: string; title: string; priority: string; status: string; createdAt: string }
 interface TaskInboxResponse { mode: "read-only"; tasks: PersistedTask[] }
 interface TaskAuditEvent { id: string; taskId: string; fromStatus: string; toStatus: string; actorId: string; occurredAt: string; reason: string | null }
+interface AssignmentEvent { id: string; fromAgentId: string; toAgentId: string; actorId: string; reason: string; occurredAt: string }
 interface TowerOverview {
   mode: string;
   liveMonitoringEnabled: boolean;
@@ -52,6 +53,15 @@ export function PlatformTowerPage() {
   const [taskInboxLoading, setTaskInboxLoading] = useState(false);
   const [taskInboxError, setTaskInboxError] = useState("");
   const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
+  const [transferTaskId, setTransferTaskId] = useState<string | null>(null);
+  const [transferAgentId, setTransferAgentId] = useState("");
+  const [transferReason, setTransferReason] = useState("");
+  const [transferBusy, setTransferBusy] = useState(false);
+  const [transferMessage, setTransferMessage] = useState("");
+  const [assignmentTaskId, setAssignmentTaskId] = useState<string | null>(null);
+  const [assignmentEvents, setAssignmentEvents] = useState<AssignmentEvent[]>([]);
+  const [assignmentError, setAssignmentError] = useState("");
+  const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [reviewMessage, setReviewMessage] = useState("");
   const [auditTaskId, setAuditTaskId] = useState<string | null>(null);
   const [auditEvents, setAuditEvents] = useState<TaskAuditEvent[]>([]);
@@ -229,6 +239,36 @@ export function PlatformTowerPage() {
       setAuditEvents(result.events);
     } catch { setAuditError("No se pudo cargar el historial de auditoría."); }
     finally { setAuditLoading(false); }
+  };
+  const submitTransfer = async (task: PersistedTask) => {
+    if (transferBusy || transferReason.trim().length < 5 || !transferAgentId || transferAgentId === task.agentId) return;
+    const token = getToken();
+    if (!token) { setTransferMessage("Inicia sesión nuevamente."); return; }
+    setTransferBusy(true); setTransferMessage("");
+    try {
+      await apiClient.post(`/platform/tower/tasks/${encodeURIComponent(task.id)}/reassign`, {
+        expectedAgentId: task.agentId, nextAgentId: transferAgentId, reason: transferReason.trim(),
+      }, token);
+      setTransferMessage("Transferencia registrada. El historial conserva el cambio de responsable.");
+      setTransferTaskId(null); setTransferReason(""); setTransferAgentId("");
+      await loadTaskInbox();
+      if (assignmentTaskId === task.id) {
+        const result = await apiClient.get<{events: AssignmentEvent[]}>(`/platform/tower/tasks/${encodeURIComponent(task.id)}/assignments`, token);
+        setAssignmentEvents(result.events);
+      }
+    } catch { setTransferMessage("No fue posible transferir la tarea. Comprueba el estado y el responsable actual."); }
+    finally { setTransferBusy(false); }
+  };
+  const showAssignmentHistory = async (taskId: string) => {
+    if (assignmentTaskId === taskId) { setAssignmentTaskId(null); return; }
+    setAssignmentTaskId(taskId); setAssignmentLoading(true); setAssignmentError(""); setAssignmentEvents([]);
+    const token = getToken();
+    if (!token) { setAssignmentError("Inicia sesión nuevamente."); setAssignmentLoading(false); return; }
+    try {
+      const result = await apiClient.get<{events: AssignmentEvent[]}>(`/platform/tower/tasks/${encodeURIComponent(taskId)}/assignments`, token);
+      setAssignmentEvents(result.events);
+    } catch { setAssignmentError("No se pudo cargar el historial de transferencias."); }
+    finally { setAssignmentLoading(false); }
   };
   const departments = data?.departments ?? defaultDepartments;
   const roster = data?.corporateAgents ?? data?.agents ?? [];
@@ -441,6 +481,7 @@ export function PlatformTowerPage() {
             <option value="all">Todas</option><option value="high">Alta</option><option value="normal">Normal</option><option value="low">Baja</option>
           </select></label>
         </div>}
+        {transferMessage && <p role="status" className="mt-3 text-sm">{transferMessage}</p>}
         {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
           {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.filter(task => (taskStatusFilter === "all" || task.status === taskStatusFilter) && (taskPriorityFilter === "all" || task.priority === taskPriorityFilter) && (taskAgentFilter === "all" || task.agentId === taskAgentFilter) && (taskDepartmentFilter === "all" || roster.find(agent => agent.id === task.agentId)?.department === taskDepartmentFilter) && (task.title.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()) || (roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId).toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))).map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{task.title}</h3><span className="rounded-full border px-3 py-1 text-xs">{task.status}</span></div>
@@ -453,10 +494,48 @@ export function PlatformTowerPage() {
               ).map(action => <button key={action.status} type="button" disabled={reviewBusyId !== null}
                 onClick={() => void reviewTask(task, action.status)}
                 className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-semibold disabled:opacity-50">{reviewBusyId === task.id ? "Guardando…" : action.label}</button>)}
+              {["draft", "submitted", "in_review"].includes(task.status) && <button type="button"
+                disabled={transferBusy || reviewBusyId !== null}
+                onClick={() => { setTransferTaskId(transferTaskId === task.id ? null : task.id); setTransferAgentId(""); setTransferReason(""); setTransferMessage(""); }}
+                className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-semibold disabled:opacity-50">
+                {transferTaskId === task.id ? "Cancelar transferencia" : "Transferir"}
+              </button>}
+              <button type="button" onClick={() => void showAssignmentHistory(task.id)}
+                className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-semibold"
+                aria-expanded={assignmentTaskId === task.id}>{assignmentTaskId === task.id ? "Ocultar transferencias" : "Historial de responsables"}</button>
               <button type="button" onClick={() => void showTaskAudit(task.id)}
                 className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-semibold"
                 aria-expanded={auditTaskId === task.id}> {auditTaskId === task.id ? "Ocultar historial" : "Ver historial"} </button>
             </div>
+            {transferTaskId === task.id && <div className="mt-3 space-y-3 rounded-lg border border-[var(--color-border)] p-3">
+              <h4 className="font-semibold">Transferir tarea</h4>
+              <label className="block text-sm">Nuevo agente responsable
+                <select aria-label="Nuevo agente responsable" value={transferAgentId} onChange={event => setTransferAgentId(event.target.value)}
+                  className="mt-1 block w-full rounded-lg border p-3">
+                  <option value="">Seleccionar agente</option>
+                  {roster.filter(agent => agent.id !== task.agentId).map(agent => <option key={agent.id} value={agent.id}>{agent.displayName ?? agent.name} · {departments.find(dept => dept.id === agent.department)?.name ?? "Sin departamento"}</option>)}
+                </select>
+              </label>
+              <label className="block text-sm">Motivo de transferencia
+                <textarea aria-label="Motivo de transferencia" value={transferReason} onChange={event => setTransferReason(event.target.value)}
+                  maxLength={500} rows={2} className="mt-1 block w-full rounded-lg border p-3" />
+              </label>
+              <button type="button" disabled={transferBusy || !transferAgentId || transferReason.trim().length < 5}
+                onClick={() => void submitTransfer(task)} className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">
+                {transferBusy ? "Guardando…" : "Confirmar transferencia"}
+              </button>
+            </div>}
+            {assignmentTaskId === task.id && <div className="mt-3 rounded-lg border border-[var(--color-border)] p-3" aria-live="polite">
+              <h4 className="font-semibold">Historial de responsables</h4>
+              {assignmentLoading ? <p className="text-sm">Cargando…</p> :
+                assignmentError ? <p role="alert" className="text-sm">{assignmentError}</p> :
+                assignmentEvents.length === 0 ? <p className="text-sm">Sin transferencias registradas.</p> :
+                <ol className="mt-2 space-y-2">{assignmentEvents.map(event => <li key={event.id} className="text-sm">
+                  <span className="font-semibold">{roster.find(agent => agent.id === event.fromAgentId)?.displayName ?? event.fromAgentId} → {roster.find(agent => agent.id === event.toAgentId)?.displayName ?? event.toAgentId}</span>
+                  <span className="block text-[var(--color-text-secondary)]">{new Date(event.occurredAt).toLocaleString("es-PR")} · Administrador: {event.actorId}</span>
+                  <span className="block">{event.reason}</span>
+                </li>)}</ol>}
+            </div>}
             {auditTaskId === task.id && <div className="mt-3 rounded-lg border border-[var(--color-border)] p-3" aria-live="polite">
               <h4 className="font-semibold">Historial de decisiones</h4>
               {auditLoading ? <p className="text-sm">Cargando historial…</p> :
