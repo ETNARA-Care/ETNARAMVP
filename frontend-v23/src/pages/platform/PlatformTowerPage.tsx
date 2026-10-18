@@ -404,6 +404,11 @@ export function PlatformTowerPage() {
             setSaveTaskMessage("No se pudo guardar. Comprueba tu acceso y la disponibilidad de la base de datos.");
           } finally { setSavingTask(false); }
         }}>
+          <label htmlFor="tower-task-assignee" className="block text-sm font-semibold">Agente responsable</label>
+          <select id="tower-task-assignee" value={selectedAgent.id} onChange={event => setSelectedAgentId(event.target.value)} className="w-full rounded-lg border border-[var(--color-border)] p-3 text-sm">
+            {roster.map(agent => <option key={agent.id} value={agent.id}>{agent.displayName ?? agent.name} · {(data?.departments ?? defaultDepartments).find(department => department.id === agent.department)?.name ?? "Sin departamento"}</option>)}
+          </select>
+          <p className="text-xs text-[var(--color-text-secondary)]">La asignación se registra al crear el borrador. Para cambiar el responsable de una tarea existente se requerirá un flujo de transferencia auditado.</p>
           <label htmlFor="tower-persist-title" className="block text-sm font-semibold">Título de la tarea</label>
           <input id="tower-persist-title" required minLength={3} maxLength={120} value={taskTitle} onChange={event => setTaskTitle(event.target.value)} className="w-full rounded-lg border border-[var(--color-border)] p-3 text-sm" />
           <label htmlFor="tower-persist-priority" className="block text-sm font-semibold">Prioridad</label>
