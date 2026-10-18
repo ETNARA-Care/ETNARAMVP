@@ -60,6 +60,7 @@ export function PlatformTowerPage() {
   const [taskInboxLoaded, setTaskInboxLoaded] = useState(false);
   const [taskStatusFilter, setTaskStatusFilter] = useState("all");
   const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("all");
+  const [taskAgentFilter, setTaskAgentFilter] = useState("all");
   const [taskPriorityFilter, setTaskPriorityFilter] = useState("all");
   const [taskSearch, setTaskSearch] = useState("");
   const [repairSignal, setRepairSignal] = useState("frontend_unavailable");
@@ -428,14 +429,17 @@ export function PlatformTowerPage() {
           <label className="text-sm">Departamento <select aria-label="Filtrar por departamento" value={taskDepartmentFilter} onChange={event => setTaskDepartmentFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
             <option value="all">Todos</option>{(data?.departments ?? defaultDepartments).map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
           </select></label>
+          <label className="text-sm">Agente responsable <select aria-label="Filtrar por agente responsable" value={taskAgentFilter} onChange={event => setTaskAgentFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
+            <option value="all">Todos los agentes</option>{roster.map(agent => <option key={agent.id} value={agent.id}>{agent.displayName ?? agent.name}</option>)}
+          </select></label>
           <label className="text-sm">Prioridad <select aria-label="Filtrar por prioridad" value={taskPriorityFilter} onChange={event => setTaskPriorityFilter(event.target.value)} className="ml-2 min-h-11 rounded-lg border px-3">
             <option value="all">Todas</option><option value="high">Alta</option><option value="normal">Normal</option><option value="low">Baja</option>
           </select></label>
         </div>}
         {taskInboxLoaded && <div className="mt-4 space-y-3" aria-live="polite">
-          {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.filter(task => (taskStatusFilter === "all" || task.status === taskStatusFilter) && (taskPriorityFilter === "all" || task.priority === taskPriorityFilter) && (taskDepartmentFilter === "all" || roster.find(agent => agent.id === task.agentId)?.department === taskDepartmentFilter) && (task.title.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()) || (roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId).toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))).map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
+          {taskInbox.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">No hay tareas guardadas en el servidor.</p> : taskInbox.filter(task => (taskStatusFilter === "all" || task.status === taskStatusFilter) && (taskPriorityFilter === "all" || task.priority === taskPriorityFilter) && (taskAgentFilter === "all" || task.agentId === taskAgentFilter) && (taskDepartmentFilter === "all" || roster.find(agent => agent.id === task.agentId)?.department === taskDepartmentFilter) && (task.title.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()) || (roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId).toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))).map(task => <article key={task.id} className="rounded-lg border border-[var(--color-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{task.title}</h3><span className="rounded-full border px-3 py-1 text-xs">{task.status}</span></div>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId} · Prioridad: {task.priority}</p>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Responsable: {roster.find(agent => agent.id === task.agentId)?.displayName ?? task.agentId} · Departamento: {(data?.departments ?? defaultDepartments).find(department => department.id === roster.find(agent => agent.id === task.agentId)?.department)?.name ?? "No identificado"} · Prioridad: {task.priority}</p>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Registrada: {new Date(task.createdAt).toLocaleString("es-PR")}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {(task.status === "draft" ? [{status:"submitted",label:"Enviar a revisión"}] :
