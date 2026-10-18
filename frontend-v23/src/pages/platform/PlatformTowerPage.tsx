@@ -8,6 +8,7 @@ import { TowerCarePanel } from "@/features/tower/TowerCarePanel";
 import { TowerExecutiveSummary } from "@/features/tower/TowerExecutiveSummary";
 import { TowerBusinessDepartments } from "@/features/tower/TowerBusinessDepartments";
 import { TowerReviewQueue } from "@/features/tower/TowerReviewQueue";
+import { TowerAiAdvisoryPanel } from "@/features/tower/TowerAiAdvisoryPanel";
 
 type Health = "healthy" | "degraded" | "unavailable" | "unknown";
 interface Agent { id: string; name: string; displayName?: string; mode: string; department?: string; responsibilities: readonly string[] }
@@ -551,6 +552,7 @@ export function PlatformTowerPage() {
         </div>}
         {!taskInboxLoaded && !taskInboxLoading && <p className="mt-4 text-sm text-[var(--color-text-secondary)]">Las tareas se consultan automáticamente al abrir Tower. Puedes actualizarlas manualmente.</p>}
       </section>
+      <TowerAiAdvisoryPanel />
       <section aria-label="Borradores de instrucciones" className="rounded-xl border border-[var(--color-border)] bg-white p-6">
         <h2 className="font-display text-2xl">Borradores de instrucciones ({drafts.length})</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Planificación local únicamente: estas instrucciones no se han asignado ni ejecutado.</p>
