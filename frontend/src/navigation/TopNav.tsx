@@ -13,6 +13,7 @@ export function TopNav() {
   if (isManager) {
     links.push({ to: "/agency", label: "Panel" });
     links.push({ to: "/agency/turnos", label: "Turnos" });
+    if (roles.includes("ORGANIZATION_ADMIN")) links.push({ to: "/agency/smartmatch", label: "SmartMatch" });
     links.push({ to: "/agency/personas", label: "Personas" });
     links.push({ to: "/agency/equipo", label: "Equipo" });
     links.push({ to: "/agency/horas", label: "Horas y facturación" });
