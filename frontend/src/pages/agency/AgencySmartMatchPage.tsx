@@ -8,6 +8,11 @@ import {
 
 export function AgencySmartMatchPage() {
   const { activeOrganization } = useAuth();
+  return <AgencySmartMatchForOrganization key={activeOrganization?.id ?? "none"} />;
+}
+
+function AgencySmartMatchForOrganization() {
+  const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
   const isAdmin = activeOrganization?.roles.includes("ORGANIZATION_ADMIN") ?? false;
   const [items, setItems] = useState<SmartMatchOpportunity[]>([]);
@@ -18,6 +23,7 @@ export function AgencySmartMatchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [requestVersion, setRequestVersion] = useState(0);
 
   const refresh = useCallback(async () => {
     if (!organizationId || !isAdmin) return;
@@ -32,7 +38,19 @@ export function AgencySmartMatchPage() {
     }
   }, [organizationId, isAdmin]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    let active = true;
+    if (!organizationId || !isAdmin) { setItems([]); return; }
+    setItems([]);
+    void listSmartMatchOpportunities(organizationId).then(response => {
+      if (active) { setItems(response.opportunities); setError(""); }
+    }).catch(err => {
+      if (active) setError(err instanceof ApiError && err.status === 403
+        ? "No tienes autorización para consultar SmartMatch."
+        : "No se pudo cargar SmartMatch. Comprueba que el backend de pruebas esté actualizado.");
+    });
+    return () => { active = false; };
+  }, [organizationId, isAdmin, requestVersion]);
 
   async function createDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,7 +63,7 @@ export function AgencySmartMatchPage() {
         endsAt: new Date(endsAt).toISOString(),
       });
       setNotice("Borrador guardado en la agencia.");
-      await refresh();
+      setRequestVersion(version => version + 1);
     } catch {
       setError("No se pudo guardar el borrador. Verifica las fechas y los permisos.");
     } finally { setLoading(false); }
