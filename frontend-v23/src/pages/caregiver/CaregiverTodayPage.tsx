@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock3 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
+import { listMyCoverageOffers, type MyCoverageOffer } from "@/api/coverageOffers";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 
 function sameDay(a: Date, b: Date) {
@@ -30,6 +31,7 @@ export function CaregiverTodayPage() {
   const { activeOrganization, activeWorkerProfile, user } = useAuth();
   const [shifts, setShifts] = useState<Shift[] | null>(null);
   const [recipients, setRecipients] = useState<CareRecipient[]>([]);
+  const [offers, setOffers] = useState<MyCoverageOffer[]>([]);
   const [error, setError] = useState(false);
   const organizationId = activeOrganization?.id;
   const now = new Date();
@@ -50,6 +52,12 @@ export function CaregiverTodayPage() {
       setError(true);
       setShifts([]);
     }
+    // Open shift offers are secondary: a failure here must not hide the caregiver's own shifts.
+    try {
+      setOffers(await listMyCoverageOffers(organizationId, token));
+    } catch {
+      setOffers([]);
+    }
   }, [organizationId]);
 
   useEffect(() => { void load(); }, [load]);
@@ -59,6 +67,7 @@ export function CaregiverTodayPage() {
   const today = ordered.filter((shift) => sameDay(new Date(shift.scheduled_start), now) && shift.status !== "cancelled");
   const main = today.find((shift) => shift.status === "in_progress") ?? today.find((shift) => shift.status !== "completed") ?? today[0];
   const upcoming = ordered.filter((shift) => new Date(shift.scheduled_start) > now && !sameDay(new Date(shift.scheduled_start), now) && shift.status !== "cancelled").slice(0, 2);
+  const pendingOffers = offers.filter((offer) => offer.responseStatus === "pending").length;
 
   if (shifts === null) return <div className="flex flex-col gap-4"><Skeleton className="h-16" /><Skeleton className="h-52" /><Skeleton className="h-28" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
@@ -86,6 +95,17 @@ export function CaregiverTodayPage() {
         </div>
       </Card>
     </Link> : <EmptyState title="No tienes turno hoy" description="Tu próximo turno aparecerá aquí cuando esté programado." />}
+
+    {pendingOffers > 0 && <Link to="/caregiver/shifts" className="block">
+      <Card className="flex items-center gap-3 border-[var(--color-accent-700)]/30 bg-white p-4">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--color-success-100)] text-[var(--color-navy-900)]"><Clock3 size={20} aria-hidden /></span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-[var(--color-navy-900)]">{pendingOffers === 1 ? "1 turno disponible" : `${pendingOffers} turnos disponibles`}</p>
+          <p className="text-sm text-[var(--color-text-secondary)]">La agencia busca quién pueda cubrir. Responde si estás disponible.</p>
+        </div>
+        <ChevronRight size={18} className="text-[var(--color-text-muted)]" aria-hidden />
+      </Card>
+    </Link>}
 
     {upcoming.length > 0 && <section>
       <div className="mb-3 flex items-center justify-between">

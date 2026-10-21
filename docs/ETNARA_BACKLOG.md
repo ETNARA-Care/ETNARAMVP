@@ -2,6 +2,23 @@
 
 ## In Progress
 
+### FUX-001 — Caregiver and Family experience priorities
+- caregiver header shows the real notification inbox (existing NotificationBell)
+- caregiver "Mi día" surfaces pending open-shift offers from `/me/coverage-offers`
+- caregiver shift detail shows one state-driven primary action (accept, start, record care, finish) before the care plan
+- family home stays calm when there is no shift today and offers a direct way to message the agency
+
+Status: Implemented on `ux/cuidador-familia-prioridades`; typecheck, lint
+(existing warnings only), all tests and production build pass. Pending review.
+
+### FUX-002 — Care recipient address and directions (needs backend)
+- care recipients have no address field in the backend today
+- needs an additive migration, an authorized API field and a privacy rule
+  (caregivers see it only for assigned shifts) before the app can show
+  "Cómo llegar"
+
+Status: Not started — backend gate required.
+
 ### FPH10-001 — Phase 10.0 multi-agency establishments
 - identify the active organization in Settings
 - reuse the existing organization selector for multi-agency accounts

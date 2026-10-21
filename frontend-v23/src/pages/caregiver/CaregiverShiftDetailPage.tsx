@@ -284,6 +284,54 @@ export function CaregiverShiftDetailPage() {
         </p>
       </section>
 
+
+      {assignmentPending && (
+        <Card className="flex flex-col gap-3">
+          <div>
+            <Badge tone="warning">Respuesta pendiente</Badge>
+            <p className="font-medium text-[var(--color-text-primary)] mt-2">¿Puedes cubrir este turno?</p>
+            <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Confirma tu disponibilidad antes de comenzar.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="danger" icon={<X size={18} />} disabled={saving} onClick={() => setRejectionOpen(true)}>Rechazar</Button>
+            <Button icon={<Check size={18} />} disabled={saving} onClick={() => void respond("accepted")}>Aceptar</Button>
+          </div>
+        </Card>
+      )}
+
+      {canStart && (
+        <div className="flex flex-col gap-2">
+          <Button size="lg" fullWidth icon={<LogIn size={20} />} disabled={saving} onClick={() => void startShift()}>{saving ? "Registrando llegada..." : "Comenzar turno"}</Button>
+          <p className="text-center text-[var(--text-caption)] text-[var(--color-text-muted)]">Al comenzar se registra tu llegada y podrás anotar los cuidados.</p>
+        </div>
+      )}
+
+      {canFinish && (
+        <div>
+          <div className="mb-3"><p className="font-semibold text-[var(--color-navy-900)]">Registrar cuidado</p><p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Toca lo que acabas de hacer.</p></div>
+          <div className="grid grid-cols-3 gap-2.5">
+            {ACTIONS.map((action) => (
+              <button
+                key={action.code}
+                type="button"
+                disabled={saving}
+                onClick={() => setActiveAction(action.code)}
+                className="flex flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] py-3.5 min-h-[76px] text-[var(--text-caption)] font-medium text-[var(--color-text-primary)] transition-transform active:scale-95 disabled:opacity-40"
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {canFinish && (
+        <Button variant="danger" fullWidth icon={<TriangleAlert size={18} />} disabled={saving} onClick={() => setIncidentOpen(true)}>
+          Reportar incidente
+        </Button>
+      )}
+
       <Card>
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2"><ClipboardList size={20} /><p className="font-medium text-[var(--color-text-primary)]">Plan de cuidado</p></div>
@@ -318,54 +366,11 @@ export function CaregiverShiftDetailPage() {
         )}
       </Card>
 
-      {assignmentPending && (
-        <Card className="flex flex-col gap-3">
-          <div>
-            <Badge tone="warning">Respuesta pendiente</Badge>
-            <p className="font-medium text-[var(--color-text-primary)] mt-2">¿Puedes cubrir este turno?</p>
-            <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Confirma tu disponibilidad antes de comenzar.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="danger" icon={<X size={18} />} disabled={saving} onClick={() => setRejectionOpen(true)}>Rechazar</Button>
-            <Button icon={<Check size={18} />} disabled={saving} onClick={() => void respond("accepted")}>Aceptar</Button>
-          </div>
-        </Card>
+      {canFinish && (
+        <Button size="lg" fullWidth icon={<LogOut size={20} />} disabled={saving} onClick={() => setFinishOpen(true)}>Finalizar turno</Button>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="secondary" size="lg" icon={<LogIn size={18} />} disabled={!canStart || saving} onClick={() => void startShift()}>Comenzar turno</Button>
-        <Button variant="secondary" size="lg" icon={<LogOut size={18} />} disabled={!canFinish || saving} onClick={() => setFinishOpen(true)}>Finalizar turno</Button>
-      </div>
-
-      <div>
-        <div className="mb-3"><p className="font-semibold text-[var(--color-navy-900)]">Registrar cuidado</p><p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Siete categorías respaldadas por ETNARA</p></div>
-        <div className="grid grid-cols-3 gap-2.5">
-          {ACTIONS.map((action) => (
-            <button
-              key={action.code}
-              disabled={!canFinish || saving}
-              onClick={() => setActiveAction(action.code)}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] py-3.5 min-h-[76px] text-[var(--text-caption)] font-medium text-[var(--color-text-primary)] transition-transform active:scale-95 disabled:opacity-40"
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          ))}
-        </div>
-        {!canFinish && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-2">{assignmentPending ? "Acepta el turno antes de registrar cuidados." : "Comienza el turno para registrar cuidados."}</p>}
-      </div>
-
-      <Button
-        variant="danger"
-        fullWidth
-        icon={<TriangleAlert size={18} />}
-        disabled={!canFinish || saving}
-        onClick={() => setIncidentOpen(true)}
-      >
-        Reportar incidente
-      </Button>
-
-      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {recipientName(recipient).split(" ")[0]}</Button>
+      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {recipientName(recipient)}</Button>
 
       <Card>
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>

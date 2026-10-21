@@ -2,6 +2,21 @@
 
 ## Current Status
 
+## 2026-10-21 — UX priorities for Caregiver and Family (ux/cuidador-familia-prioridades)
+
+- Caregiver header now mounts the existing real NotificationBell; its
+  caregiver routing (assignments and open-shift offers) already existed.
+- Caregiver "Mi día" shows a card with pending open-shift offers from the real
+  `/me/coverage-offers` contract; a failure there never hides the worker's own shifts.
+- Caregiver shift detail renders one state-driven primary action: accept or
+  reject, "Comenzar turno", then the care grid and incident report while active,
+  then the care plan and "Finalizar turno". No contract or permission change.
+- Family Today no longer shows an amber warning or "Aún sin cuidador asignado"
+  when there is no shift; it shows a calm state with a link to agency messages.
+- Reviewed at 390 px with intercepted API fixtures. Typecheck, lint (existing
+  warnings only), 74 tests and production build pass.
+- Exact next step: Rafa reviews the PR; recipient address needs a backend gate (FUX-002).
+
 Project: ETNARA Care
 Branch: design/claude-admin-full-integration
 
