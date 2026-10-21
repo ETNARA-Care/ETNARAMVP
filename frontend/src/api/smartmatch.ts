@@ -31,3 +31,14 @@ export function publishSmartMatchDraft(organizationId: string, opportunityId: st
     { method: "POST" },
   );
 }
+
+export interface SmartMatchApplicationCount {
+  opportunity_id: string;
+  pending_count: number;
+}
+
+export function listSmartMatchApplicationCounts(organizationId: string) {
+  return apiFetch<{ counts: SmartMatchApplicationCount[] }>(
+    `/organizations/${encodeURIComponent(organizationId)}/smartmatch/application-counts`,
+  );
+}
