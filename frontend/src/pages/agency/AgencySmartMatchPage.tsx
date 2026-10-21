@@ -2,8 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { ApiError } from "../../api/client";
 import {
-  createSmartMatchDraft, listSmartMatchOpportunities, publishSmartMatchDraft,
-  type SmartMatchOpportunity,
+  createSmartMatchDraft, listSmartMatchOpportunities, listSmartMatchApplicationCounts, publishSmartMatchDraft,
+  type SmartMatchOpportunity, type SmartMatchApplicationCount,
 } from "../../api/smartmatch";
 
 export function AgencySmartMatchPage() {
@@ -16,6 +16,8 @@ function AgencySmartMatchForOrganization() {
   const organizationId = activeOrganization?.id;
   const isAdmin = activeOrganization?.roles.includes("ORGANIZATION_ADMIN") ?? false;
   const [items, setItems] = useState<SmartMatchOpportunity[]>([]);
+  const [counts, setCounts] = useState<SmartMatchApplicationCount[]>([]);
+  const [countsError, setCountsError] = useState(false);
   const [regionLabel, setRegionLabel] = useState("");
   const [roleLabel, setRoleLabel] = useState("");
   const [startsAt, setStartsAt] = useState("");
@@ -27,8 +29,11 @@ function AgencySmartMatchForOrganization() {
 
   useEffect(() => {
     let active = true;
-    if (!organizationId || !isAdmin) { setItems([]); return; }
-    setItems([]);
+    if (!organizationId || !isAdmin) { setItems([]); setCounts([]); return; }
+    setItems([]); setCounts([]); setCountsError(false);
+    void listSmartMatchApplicationCounts(organizationId).then(response => {
+      if (active) setCounts(response.counts);
+    }).catch(() => { if (active) setCountsError(true); });
     void listSmartMatchOpportunities(organizationId).then(response => {
       if (active) { setItems(response.opportunities); setError(""); }
     }).catch(err => {
@@ -85,11 +90,13 @@ function AgencySmartMatchForOrganization() {
       </form>
       <h2>Oportunidades de esta agencia</h2>
       <button disabled={loading} type="button" onClick={() => setRequestVersion(version => version + 1)}>Actualizar</button>
+      {countsError && <p role="status">No se pudieron cargar los conteos de solicitudes.</p>}
       {items.length === 0 && <p>No hay oportunidades registradas.</p>}
       <ul>
         {items.map(item => (
           <li key={item.id} style={{ marginTop: 16 }}>
             <strong>{item.role_label}</strong> · {item.region_label} · {item.status}
+            <div>Solicitudes pendientes: {countsError ? "No disponible" : (counts.find(count => count.opportunity_id === item.id)?.pending_count ?? 0)}</div>
             <div>{new Date(item.starts_at).toLocaleString("es-PR")} — {new Date(item.ends_at).toLocaleString("es-PR")}</div>
             {item.status === "DRAFT" && (
               <button disabled={loading} type="button" onClick={() => void publish(item.id)}>Publicar internamente</button>
