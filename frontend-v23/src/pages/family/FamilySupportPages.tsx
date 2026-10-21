@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyTimelineItem } from "@/api/familyTimeline";
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
+import { pickRecipient, useFamilyRecipient } from "@/features/family/familyRecipient";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import type { NotificationItem } from "@/api/notifications";
 
@@ -18,6 +19,7 @@ function isToday(iso: string): boolean {
 
 export function FamilyActivityPage() {
   const { activeOrganization } = useAuth();
+  const { selectedKey } = useFamilyRecipient();
   const [items, setItems] = useState<FamilyTimelineItem[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -27,13 +29,11 @@ export function FamilyActivityPage() {
     setError(false);
     try {
       const recipients = await listMyCareRecipients(token);
-      const recipient = activeOrganization
-        ? recipients.find((item) => item.organizationId === activeOrganization.id) ?? recipients[0]
-        : recipients[0];
+      const recipient = pickRecipient(recipients, activeOrganization?.id, selectedKey);
       if (!recipient) { setItems([]); return; }
       setItems(await getFamilyTimeline(recipient.organizationId, recipient.recipientId, token));
     } catch { setError(true); setItems([]); }
-  }, [activeOrganization]);
+  }, [activeOrganization, selectedKey]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -92,6 +92,7 @@ export function FamilyActivityPage() {
 
 export function FamilyProfilePage() {
   const { user, activeOrganization, logout } = useAuth();
+  const { selectedKey } = useFamilyRecipient();
   const navigate = useNavigate();
   const [caregiver, setCaregiver] = useState<FamilyShiftSummary["caregiver"] | undefined>();
   const [recipientName, setRecipientName] = useState<string | null>(null);
@@ -101,15 +102,13 @@ export function FamilyProfilePage() {
     if (!token) return;
     try {
       const recipients = await listMyCareRecipients(token);
-      const recipient = activeOrganization
-        ? recipients.find((item) => item.organizationId === activeOrganization.id) ?? recipients[0]
-        : recipients[0];
+      const recipient = pickRecipient(recipients, activeOrganization?.id, selectedKey);
       if (!recipient) { setRecipientName(null); setCaregiver(null); return; }
       setRecipientName(recipient.preferredName || recipient.firstName);
       const shifts = await listFamilyShifts(recipient.organizationId, recipient.recipientId, token);
       setCaregiver(shifts.find((shift) => shift.status !== "cancelled" && shift.caregiver)?.caregiver ?? null);
     } catch { setRecipientName(null); setCaregiver(null); }
-  }, [activeOrganization]);
+  }, [activeOrganization, selectedKey]);
 
   useEffect(() => { void loadCaregiver(); }, [loadCaregiver]);
 

@@ -2,6 +2,15 @@
 
 ## In Progress
 
+### FUX-003 — Family: switch between relatives and daily summary
+- one family account can switch between every authorized relative (chips under the header, shown only with 2+)
+- Today, Activity, History and Profile follow the selected relative; selection lives in memory, no storage
+- "Resumen de hoy" restates meals, liquids, movement and latest mood from the curated family timeline only
+- toileting is never summarized; nothing is interpreted or rated
+
+Status: Implemented on `ux/familia-familiares-resumen`; typecheck, lint
+(existing warnings only), 77 tests and production build pass. Pending review.
+
 ### FUX-001 — Caregiver and Family experience priorities
 - caregiver header shows the real notification inbox (existing NotificationBell)
 - caregiver "Mi día" surfaces pending open-shift offers from `/me/coverage-offers`
