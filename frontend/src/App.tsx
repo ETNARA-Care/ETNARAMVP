@@ -5,6 +5,7 @@ import { TopNav } from "./navigation/TopNav";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { FamilyHomePage } from "./pages/family/FamilyHomePage";
 import { AgencyDashboardRealPage } from "./pages/agency/AgencyDashboardRealPage";
+import { AgencySmartMatchPage } from "./pages/agency/AgencySmartMatchPage";
 import { AgencyShiftsPage } from "./pages/agency/AgencyShiftsPage";
 import { AgencyRecipientsPage } from "./pages/agency/AgencyRecipientsPage";
 import { AgencyTeamPage } from "./pages/agency/AgencyTeamPage";
@@ -44,6 +45,7 @@ export default function App() {
               <Route path="/" element={<RoleHomeRedirect />} />
               <Route path="/family" element={<FamilyHomePage />} />
               <Route path="/agency" element={<AgencyDashboardRealPage />} />
+              <Route path="/agency/smartmatch" element={<AgencySmartMatchPage />} />
               <Route path="/agency/turnos" element={<AgencyShiftsPage />} />
               <Route path="/agency/personas" element={<AgencyRecipientsPage />} />
               <Route path="/agency/personas/:residentId" element={<AgencyResidentProfilePage />} />
