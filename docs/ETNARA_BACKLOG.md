@@ -20,13 +20,16 @@ Status: Implemented on `ux/familia-familiares-resumen`; typecheck, lint
 Status: Implemented on `ux/cuidador-familia-prioridades`; typecheck, lint
 (existing warnings only), all tests and production build pass. Pending review.
 
-### FUX-002 — Care recipient address and directions (needs backend)
-- care recipients have no address field in the backend today
-- needs an additive migration, an authorized API field and a privacy rule
-  (caregivers see it only for assigned shifts) before the app can show
-  "Cómo llegar"
+### FUX-002 — Care recipient address and directions
+- backend Phase 12.1 (ETNARA-Backend PR #185, migration 082) provides
+  GET/PUT `/care-recipients/:id/location` with assignment-scoped RLS
+- agency resident profile: "Dirección y acceso" card and editor (address,
+  municipality, access notes, optional coordinates pasted from Google Maps)
+- caregiver shift: "Cómo llegar" card with Google Maps, Waze and Copiar
+  dirección until the visit ends; family never requests the address
 
-Status: Not started — backend gate required.
+Status: Implemented on `ux/12.1-como-llegar` (draft PR). Publish after
+Railway returns, backend #185 is merged and 082 is applied.
 
 ### FPH10-001 — Phase 10.0 multi-agency establishments
 - identify the active organization in Settings
