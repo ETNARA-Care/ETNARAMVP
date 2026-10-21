@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { ApiError } from "../../api/client";
 import {
@@ -24,19 +24,6 @@ function AgencySmartMatchForOrganization() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
-
-  const refresh = useCallback(async () => {
-    if (!organizationId || !isAdmin) return;
-    try {
-      const response = await listSmartMatchOpportunities(organizationId);
-      setItems(response.opportunities);
-      setError("");
-    } catch (err) {
-      setError(err instanceof ApiError && err.status === 403
-        ? "No tienes autorización para consultar SmartMatch."
-        : "No se pudo cargar SmartMatch. Comprueba que el backend de pruebas esté actualizado.");
-    }
-  }, [organizationId, isAdmin]);
 
   useEffect(() => {
     let active = true;
@@ -75,7 +62,7 @@ function AgencySmartMatchForOrganization() {
     try {
       await publishSmartMatchDraft(organizationId, id);
       setNotice("Oportunidad interna publicada.");
-      await refresh();
+      setRequestVersion(version => version + 1);
     } catch {
       setError("No se pudo publicar. Solo el creador puede publicar un borrador futuro.");
     } finally { setLoading(false); }
@@ -97,7 +84,7 @@ function AgencySmartMatchForOrganization() {
         <button disabled={loading} type="submit">Guardar borrador</button>
       </form>
       <h2>Oportunidades de esta agencia</h2>
-      <button disabled={loading} type="button" onClick={() => void refresh()}>Actualizar</button>
+      <button disabled={loading} type="button" onClick={() => setRequestVersion(version => version + 1)}>Actualizar</button>
       {items.length === 0 && <p>No hay oportunidades registradas.</p>}
       <ul>
         {items.map(item => (
