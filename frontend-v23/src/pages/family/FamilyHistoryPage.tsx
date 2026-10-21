@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
+import { pickRecipient, useFamilyRecipient } from "@/features/family/familyRecipient";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyRecipient, type FamilyTimelineItem } from "@/api/familyTimeline";
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
 import { Badge, Card, EmptyState, ErrorState, IconButton, Skeleton, Timeline } from "@/components/ui";
@@ -87,6 +88,7 @@ function HistoryDayDetail({ shift, timeline, onBack }: {
 
 export function FamilyHistoryPage() {
   const { activeOrganization } = useAuth();
+  const { selectedKey } = useFamilyRecipient();
   const [recipient, setRecipient] = useState<FamilyRecipient | null>(null);
   const [shifts, setShifts] = useState<FamilyShiftSummary[] | null>(null);
   const [timeline, setTimeline] = useState<FamilyTimelineItem[]>([]);
@@ -99,9 +101,7 @@ export function FamilyHistoryPage() {
     setError(false);
     try {
       const recipients = await listMyCareRecipients(token);
-      const selected = activeOrganization
-        ? recipients.find((item) => item.organizationId === activeOrganization.id) ?? recipients[0]
-        : recipients[0];
+      const selected = pickRecipient(recipients, activeOrganization?.id, selectedKey);
       if (!selected) {
         setRecipient(null);
         setShifts([]);
@@ -120,7 +120,7 @@ export function FamilyHistoryPage() {
       setShifts([]);
       setTimeline([]);
     }
-  }, [activeOrganization]);
+  }, [activeOrganization, selectedKey]);
 
   useEffect(() => { void load(); }, [load]);
 

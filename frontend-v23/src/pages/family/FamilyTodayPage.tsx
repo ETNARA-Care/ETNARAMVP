@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Clock3, MessageCircle, ShieldCheck } from "lucide-react";
-import { Badge, Avatar, ErrorState, Skeleton } from "@/components/ui";
+import { Avatar, ErrorState, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyRecipient, type FamilyTimelineItem } from "@/api/familyTimeline";
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
+import { pickRecipient, useFamilyRecipient } from "@/features/family/familyRecipient";
+import { buildDailySummary } from "@/features/family/dailySummary";
 
 function isToday(iso: string) {
   const value = new Date(iso); const today = new Date();
@@ -35,6 +37,7 @@ function time(iso: string) {
 export function FamilyTodayPage() {
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
+  const { selectedKey } = useFamilyRecipient();
   const [recipient, setRecipient] = useState<FamilyRecipient | null>(null);
   const [shifts, setShifts] = useState<FamilyShiftSummary[] | null>(null);
   const [timeline, setTimeline] = useState<FamilyTimelineItem[]>([]);
@@ -45,7 +48,7 @@ export function FamilyTodayPage() {
     setError(false);
     try {
       const recipients = await listMyCareRecipients(token);
-      const selected = activeOrganization ? recipients.find(x => x.organizationId === activeOrganization.id) ?? recipients[0] : recipients[0];
+      const selected = pickRecipient(recipients, activeOrganization?.id, selectedKey);
       if (!selected) { setRecipient(null); setShifts([]); setTimeline([]); return; }
       const [shiftRows, timelineRows] = await Promise.all([
         listFamilyShifts(selected.organizationId, selected.recipientId, token),
@@ -53,7 +56,7 @@ export function FamilyTodayPage() {
       ]);
       setRecipient(selected); setShifts(shiftRows); setTimeline(timelineRows);
     } catch { setError(true); setShifts([]); setTimeline([]); }
-  }, [activeOrganization]);
+  }, [activeOrganization, selectedKey]);
 
   useEffect(() => {
     void load(); const interval = window.setInterval(() => void load(), 30_000);
@@ -65,6 +68,7 @@ export function FamilyTodayPage() {
     ?? shifts?.find(x => isToday(x.scheduledStart)), [shifts]);
   const entries = timeline.filter(x => isToday(x.occurredAt));
   const lastEntry = entries[0];
+  const summary = buildDailySummary(entries);
   const caredFor = recipientName(recipient);
   const caregiver = shift?.caregiver;
   const status = shiftStatus(shift);
@@ -78,7 +82,7 @@ export function FamilyTodayPage() {
         <p className="text-sm font-medium text-[#66845f]">Tu espacio de cuidado</p>
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">{caredFor}</h1>
         <p className="mt-1 text-sm text-[#667085]">
-          {lastEntry ? lastEntry.title : "Te mantendremos al día con su cuidado."}
+          {lastEntry ? `Última actualización: ${lastEntry.title.toLowerCase()} a las ${time(lastEntry.occurredAt)}` : "Te mantendremos al día con su cuidado."}
         </p>
       </section>
 
@@ -88,7 +92,7 @@ export function FamilyTodayPage() {
             <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#b8c9ad]">Hoy</p>
             <h2 className="mt-2 font-display text-2xl">{headline(status.label)}</h2>
           </div>
-          {shift && <Badge tone={status.tone}>{status.label}</Badge>}
+          {shift && <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">{status.label}</span>}
         </div>
         <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white/8 p-3">
           {caregiver ? <Avatar name={caregiver.displayName} size={44} />
@@ -101,6 +105,20 @@ export function FamilyTodayPage() {
           {caregiver?.credentials?.length ? <ShieldCheck size={18} className="text-[#b8c9ad]" aria-label="Profesional verificada" /> : null}
         </div>
       </section>
+
+      {summary.length > 0 && (
+        <section className="rounded-[22px] border border-[#102b57]/10 bg-white p-4 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
+          <p className="text-xs font-semibold uppercase tracking-[.14em] text-[#66845f]">Resumen de hoy</p>
+          <dl className="mt-2 divide-y divide-[#102b57]/8">
+            {summary.map((line) => (
+              <div key={line.label} className="flex gap-3 py-2.5">
+                <dt className="w-24 shrink-0 text-sm text-[#667085]">{line.label}</dt>
+                <dd className="min-w-0 flex-1 text-sm font-medium text-[#173154]">{line.text}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       <section className="rounded-[22px] border border-[#102b57]/10 bg-white p-4 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
         <div className="mb-3 flex items-center justify-between">

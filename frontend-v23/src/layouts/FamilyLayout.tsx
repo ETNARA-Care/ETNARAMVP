@@ -2,9 +2,11 @@ import { Outlet } from "react-router-dom";
 import { Home, HeartPulse, CalendarDays, MessageCircle, Menu } from "lucide-react";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { MobileTabBar } from "./MobileTabBar";
+import { FamilyRecipientProvider, FamilyRecipientSwitcher } from "@/features/family/FamilyRecipientContext";
 
 export function FamilyLayout() {
   return (
+    <FamilyRecipientProvider>
     <div data-portal="family" className="min-h-dvh flex flex-col bg-[#f8f5ee] text-[#173154]">
       <header className="sticky top-0 z-[var(--z-header)] border-b border-[#173154]/10 bg-[#f8f5ee]/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-[760px] items-center justify-between px-4">
@@ -19,6 +21,7 @@ export function FamilyLayout() {
         </div>
       </header>
       <main className="mx-auto w-full max-w-[760px] flex-1 px-4 py-5 pb-28 md:px-6 md:py-7">
+        <FamilyRecipientSwitcher />
         <Outlet />
       </main>
       <MobileTabBar items={[
@@ -29,5 +32,6 @@ export function FamilyLayout() {
         { to: "/family/profile", icon: <Menu size={21} />, label: "Más" },
       ]} />
     </div>
+    </FamilyRecipientProvider>
   );
 }

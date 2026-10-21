@@ -2,6 +2,19 @@
 
 ## Current Status
 
+## 2026-10-21 — Family relatives and daily summary (ux/familia-familiares-resumen)
+
+- Added `features/family/familyRecipient.ts` (selection helpers + context) and
+  `FamilyRecipientContext.tsx` (provider + switcher). FamilyLayout wraps the
+  portal; the switcher only renders when the account has 2+ relatives.
+- Today, Activity, History and Profile resolve the relative with
+  `pickRecipient(recipients, activeOrganization?.id, selectedKey)` and reload on change.
+- `features/family/dailySummary.ts` builds "Resumen de hoy" from the curated
+  family timeline only (MEAL, HYDRATION, MOBILITY/ACTIVITY, latest MOOD).
+- Fixed the unreadable status pill on the navy hero and the "last update" line.
+- Reviewed at 390 px with intercepted fixtures (two relatives). Typecheck, lint
+  (existing warnings only), 77 tests and build pass.
+
 ## 2026-10-21 — UX priorities for Caregiver and Family (ux/cuidador-familia-prioridades)
 
 - Caregiver header now mounts the existing real NotificationBell; its
