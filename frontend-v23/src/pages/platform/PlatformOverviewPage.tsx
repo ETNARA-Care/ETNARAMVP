@@ -3,12 +3,11 @@ import { ArrowRight, Building2, FileCheck2, RefreshCw, ShieldCheck } from "lucid
 import { Link } from "react-router-dom";
 import { getToken } from "@/auth/token";
 import { listPlatformOrganizations, type PlatformOrganization } from "@/api/platformOrganizations";
-import { listPlatformCredentialQueue, listPlatformEstablishmentDocuments } from "@/api/platformCredentials";
+import { listPlatformEstablishmentDocuments } from "@/api/platformCredentials";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 
 export function PlatformOverviewPage() {
   const [organizations, setOrganizations] = useState<PlatformOrganization[] | null>(null);
-  const [pendingCredentials, setPendingCredentials] = useState<number | null>(null);
   const [pendingDocuments, setPendingDocuments] = useState<number | null>(null);
   const [error, setError] = useState(false);
 
@@ -17,16 +16,13 @@ export function PlatformOverviewPage() {
     if (!token) { setError(true); return; }
     setError(false);
     setOrganizations(null);
-    setPendingCredentials(null);
     setPendingDocuments(null);
     try {
-      const [orgs, credentials, documents] = await Promise.all([
+      const [orgs, documents] = await Promise.all([
         listPlatformOrganizations(token),
-        listPlatformCredentialQueue(token),
         listPlatformEstablishmentDocuments(token),
       ]);
       setOrganizations(orgs);
-      setPendingCredentials(credentials.filter((item) => item.verification_status === "pending").length);
       setPendingDocuments(documents.filter((item) => item.review_status === "pending").length);
     } catch {
       setError(true);
@@ -39,7 +35,6 @@ export function PlatformOverviewPage() {
     () => organizations?.filter((org) => org.status.toLowerCase() === "active").length ?? null,
     [organizations],
   );
-  const pendingTotal = pendingCredentials === null || pendingDocuments === null ? null : pendingCredentials + pendingDocuments;
 
   if (error) return <ErrorState kind="network" onRetry={() => void load()} />;
 
@@ -49,18 +44,17 @@ export function PlatformOverviewPage() {
         <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div className="w-full min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-sage-300)]">ETNARA · Plataforma B2B</p>
-            <h1 className="max-w-full break-words font-display text-[clamp(1.9rem,7vw,3.5rem)] leading-[1.08] mt-2">Centro Administrativo</h1>
-            <p className="mt-3 w-full max-w-[42rem] text-sm leading-6 text-white/65">Supervisión de organizaciones cliente y de las verificaciones que requieren intervención de ETNARA.</p>
+            <h1 className="mt-2 max-w-full break-words font-display text-[clamp(1.9rem,7vw,3.5rem)] leading-[1.08]">Centro Administrativo</h1>
+            <p className="mt-3 w-full max-w-[42rem] text-sm leading-6 text-white/65">Supervisión comercial y operacional sin acceso a expedientes privados de residentes ni empleados.</p>
           </div>
           <button type="button" onClick={() => void load()} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-white/30 bg-white px-5 py-3 text-sm font-semibold text-[var(--color-navy-950)] hover:bg-white/90 md:w-auto"><RefreshCw size={17} />Actualizar</button>
         </div>
       </section>
 
-      <section className="grid min-w-0 grid-cols-1 gap-3 min-[390px]:grid-cols-2 lg:grid-cols-4">
+      <section className="grid min-w-0 grid-cols-1 gap-3 min-[390px]:grid-cols-2 lg:grid-cols-3">
         <Metric label="Organizaciones" value={organizations?.length ?? null} icon={<Building2 size={18} />} />
         <Metric label="Activas" value={activeOrganizations} icon={<ShieldCheck size={18} />} />
-        <Metric label="Credenciales pendientes" value={pendingCredentials} icon={<FileCheck2 size={18} />} />
-        <Metric label="Documentos pendientes" value={pendingDocuments} icon={<FileCheck2 size={18} />} />
+        <Metric label="Documentos de establecimiento pendientes" value={pendingDocuments} icon={<FileCheck2 size={18} />} />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_.75fr]">
@@ -71,18 +65,17 @@ export function PlatformOverviewPage() {
           </div>
           {organizations === null ? <div className="p-5"><Skeleton className="h-40" /></div> : organizations.length === 0 ? <EmptyState icon={<Building2 size={30} />} title="Aún no hay organizaciones" description="Las organizaciones cliente creadas en ETNARA aparecerán aquí." /> : (
             <div className="divide-y divide-[var(--color-border)]">
-              {organizations.slice(0, 6).map((org) => <div key={org.id} className="flex items-center justify-between gap-4 px-5 py-4"><div className="min-w-0"><p className="truncate font-semibold text-[var(--color-text-primary)]">{org.name}</p><p className="mt-1 text-xs text-[var(--color-text-secondary)]">{org.type === "agency" ? "Agencia de cuidado" : "Establecimiento residencial"}</p></div><div className="flex shrink-0 items-center gap-2"><span className="rounded-full bg-[var(--color-sage-100)] px-2.5 py-1 text-xs font-semibold text-[var(--color-navy-900)]">{org.status}</span><Link to="/platform/organizations" aria-label={`Administrar ${org.name}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-navy-900)]"><ArrowRight size={16}/></Link></div></div>)}
+              {organizations.slice(0, 6).map((org) => <div key={org.id} className="flex items-center justify-between gap-4 px-5 py-4"><div className="min-w-0"><p className="truncate font-semibold text-[var(--color-text-primary)]">{org.name}</p><p className="mt-1 text-xs text-[var(--color-text-secondary)]">{org.type === "agency" ? "Agencia de cuidado" : "Establecimiento residencial"}</p></div><div className="flex shrink-0 items-center gap-2"><span className="rounded-full bg-[var(--color-sage-100)] px-2.5 py-1 text-xs font-semibold text-[var(--color-navy-900)]">{org.status}</span><Link to="/platform/organizations" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-navy-900)]"><ArrowRight size={16}/></Link></div></div>)}
             </div>
           )}
         </Card>
 
         <Card className="p-0">
           <div className="border-b border-[var(--color-border)] px-5 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">Operación ETNARA</p><h2 className="font-display text-[var(--text-h2)]">Requiere atención</h2></div>
-          {pendingTotal === null ? <div className="p-5"><Skeleton className="h-32" /></div> : pendingTotal === 0 ? <div className="p-5"><EmptyState icon={<ShieldCheck size={30} />} title="Sin verificaciones pendientes" description="No hay documentos ni credenciales esperando revisión." /></div> : (
+          {pendingDocuments === null ? <div className="p-5"><Skeleton className="h-32" /></div> : pendingDocuments === 0 ? <div className="p-5"><EmptyState icon={<ShieldCheck size={30} />} title="Sin documentos pendientes" description="No hay documentos de establecimientos esperando revisión." /></div> : (
             <div className="space-y-3 p-5">
-              {pendingDocuments! > 0 && <Attention label="Documentos de establecimientos" count={pendingDocuments!} />}
-              {pendingCredentials! > 0 && <Attention label="Credenciales del personal" count={pendingCredentials!} />}
-              <Link to="/platform/credentials" className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white">Abrir Verificación <ArrowRight size={16} /></Link>
+              <Attention label="Documentos de establecimientos" count={pendingDocuments} />
+              <Link to="/platform/credentials" className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white">Abrir verificación <ArrowRight size={16} /></Link>
             </div>
           )}
         </Card>
