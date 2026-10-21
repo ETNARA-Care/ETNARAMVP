@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Clock3, ShieldCheck } from "lucide-react";
+import { ChevronRight, Clock3, MessageCircle, ShieldCheck } from "lucide-react";
 import { Badge, Avatar, ErrorState, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -16,11 +16,17 @@ function recipientName(recipient: FamilyRecipient | null) {
   return recipient.preferredName || `${recipient.firstName} ${recipient.lastName}`.trim();
 }
 function shiftStatus(shift?: FamilyShiftSummary) {
-  if (!shift) return { tone: "warning" as const, label: "Sin turno hoy" };
+  if (!shift) return { tone: "neutral" as const, label: "Sin turno hoy" };
   if (shift.checkedOutAt || shift.status === "completed") return { tone: "neutral" as const, label: "Completado" };
   if (shift.checkedInAt || shift.status === "in_progress") return { tone: "success" as const, label: "En curso" };
   if (shift.caregiver) return { tone: "success" as const, label: "Próximo" };
-  return { tone: "warning" as const, label: "Sin asignar" };
+  return { tone: "neutral" as const, label: "Por confirmar" };
+}
+function headline(label: string) {
+  if (label === "En curso") return "El cuidado está en curso";
+  if (label === "Sin turno hoy") return "Hoy no hay turno";
+  if (label === "Por confirmar") return "Turno por confirmar";
+  return label;
 }
 function time(iso: string) {
   return new Date(iso).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" });
@@ -80,16 +86,17 @@ export function FamilyTodayPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#b8c9ad]">Hoy</p>
-            <h2 className="mt-2 font-display text-2xl">{status.label === "En curso" ? "El cuidado está en curso" : status.label}</h2>
+            <h2 className="mt-2 font-display text-2xl">{headline(status.label)}</h2>
           </div>
-          <Badge tone={status.tone}>{status.label}</Badge>
+          {shift && <Badge tone={status.tone}>{status.label}</Badge>}
         </div>
         <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white/8 p-3">
-          <Avatar name={caregiver?.displayName ?? caredFor} size={44} />
+          {caregiver ? <Avatar name={caregiver.displayName} size={44} />
+            : <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/12 text-[#b8c9ad]"><MessageCircle size={20} aria-hidden /></span>}
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium">{caregiver?.displayName ?? "Aún sin cuidador asignado"}</p>
+            <p className="font-medium">{caregiver?.displayName ?? (shift ? "La agencia está confirmando quién le atenderá" : "¿Tienes alguna pregunta?")}</p>
             {shift ? <p className="mt-0.5 text-xs text-white/70">{time(shift.scheduledStart)} – {time(shift.scheduledEnd)}</p>
-              : <p className="mt-0.5 text-xs text-white/70">No hay un turno programado para hoy.</p>}
+              : <button type="button" onClick={() => navigate("/family/messages")} className="mt-0.5 text-left text-sm text-white/85 underline underline-offset-2">Escríbele a la agencia</button>}
           </div>
           {caregiver?.credentials?.length ? <ShieldCheck size={18} className="text-[#b8c9ad]" aria-label="Profesional verificada" /> : null}
         </div>

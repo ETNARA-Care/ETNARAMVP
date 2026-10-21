@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
 import { MobileTabBar } from "./MobileTabBar";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
@@ -28,6 +29,7 @@ export function CaregiverLayout() {
           <p className="truncate text-sm font-medium text-[var(--color-text-secondary)]">{activeOrganization?.name ?? "ETNARA Care"}</p>
           <p className="truncate text-xs text-[var(--color-text-muted)]">Portal del cuidador · {caregiverName}</p>
         </div>
+        <NotificationBell />
       </div>
     </header>
 
