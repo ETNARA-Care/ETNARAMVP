@@ -25,6 +25,20 @@ export type ExperienceRoute = "/platform" | "/agency" | "/caregiver" | "/family"
 
 const ADMIN_ROLES = ["PLATFORM_SUPERADMIN", "ORGANIZATION_ADMIN", "SUPERVISOR"];
 
+/**
+ * Portales que la persona puede abrir. Una supervisora que también trabaja
+ * turnos (decisión de Rafa, fase 12.3) entra a la agencia por defecto y puede
+ * cambiar a "Mi día" de cuidadora: ambos portales son suyos.
+ */
+export function allowedExperiences(roles: string[], isPlatformAdmin = false): ExperienceRoute[] {
+  const allowed: ExperienceRoute[] = [];
+  if (isPlatformAdmin) allowed.push("/platform");
+  if (roles.some((r) => ADMIN_ROLES.includes(r))) allowed.push("/agency");
+  if (roles.includes("WORKER")) allowed.push("/caregiver");
+  if (roles.includes("FAMILY") && allowed.length === 0) allowed.push("/family");
+  return allowed;
+}
+
 export function resolveExperienceRoute(roles: string[], isPlatformAdmin = false): ExperienceRoute | null {
   if (isPlatformAdmin) return "/platform";
   if (roles.some((r) => ADMIN_ROLES.includes(r))) return "/agency";

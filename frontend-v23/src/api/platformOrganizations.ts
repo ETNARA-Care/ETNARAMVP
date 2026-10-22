@@ -160,3 +160,12 @@ export async function updatePlatformOrganizationLifecycle(
   );
   return fromBackend(result.organization);
 }
+
+/** Fase 12.3: aceptar una invitación de equipo con una cuenta que ya existe (requiere sesión). */
+export function acceptOrganizationAdminInvitation(token: string, sessionToken: string) {
+  return apiClient.post<{ activation: { user_id: string; organization_id: string; invitation_type: "organization_admin" } }>(
+    "/platform/admin-invitations/accept",
+    { token },
+    sessionToken,
+  );
+}

@@ -2,6 +2,21 @@
 
 ## Current Status
 
+## 2026-10-22 — Phase 12.3 supervisor from caregiver + existing accounts (ux/12.3-supervisora-cuenta-existente)
+
+- roles.ts allowedExperiences: staff who also work shifts open both /agency
+  (default) and /caregiver. RoleGuard allows any allowed portal. Agency sidebar
+  "Mi día como cuidador/a"; caregiver portal "Ir a la agencia".
+- StaffRoleCard on the caregiver profile (administrators only): "Hacer
+  supervisor/a" / "Quitar supervisor/a" via POST /team/roles.
+- TeamPanel: "También cuidador/a" badge and "Quitar …" per role (not self);
+  clearer ALREADY_A_MEMBER message.
+- Invitation page: existing account signs in on the page and accepts via
+  POST /platform/admin-invitations/accept; identity mismatch explained.
+- Organization picker: readable heading, Spanish type and role labels.
+- Validation: typecheck, 112 tests, build; lint unchanged (76). Full flow
+  checked against a local backend.
+
 ## 2026-10-22 — Messages and care quality (ux/agency-messages-quality)
 
 - RealMessagingPanel names each conversation by its resident (agency and

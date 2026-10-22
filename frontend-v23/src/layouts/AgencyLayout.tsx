@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck } from "lucide-react";
+import { HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
@@ -46,7 +46,12 @@ export function AgencyLayout() {
    : GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => item.to !== "/agency/timesheets") }));
  const organizationName = activeOrganization?.name ?? "Organización";
  // Acceso a Plataforma ETNARA: solo administradores de plataforma, separado del administrador de la organización.
- const platformLink = isPlatformAdmin ? <AdminSideLink to="/platform" icon={BadgeCheck} label="Plataforma" /> : null;
+ const platformLink = isPlatformAdmin || roles.includes("WORKER")
+   ? <>
+       {isPlatformAdmin && <AdminSideLink to="/platform" icon={BadgeCheck} label="Plataforma" />}
+       {roles.includes("WORKER") && <AdminSideLink to="/caregiver/today" icon={HeartHandshake} label="Mi día como cuidador/a" />}
+     </>
+   : null;
 
  return (
  <div data-portal="admin" className="flex min-h-dvh">

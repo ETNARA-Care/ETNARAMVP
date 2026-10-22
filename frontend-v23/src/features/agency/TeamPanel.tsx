@@ -6,6 +6,7 @@ import {
   inviteTeamMember,
   listTeam,
   revokeTeamInvitation,
+  setStaffRole,
   staffRoleLabel,
   teamActivationLink,
   type StaffRole,
@@ -22,7 +23,7 @@ const ROLE_HELP: Record<StaffRole, string> = {
 function inviteError(error: unknown): string {
   const apiError = error as ApiError;
   if (apiError.status === 0) return "No hay conexión con el servidor.";
-  if (apiError.code === "ALREADY_A_MEMBER") return "Esa persona ya es parte de esta agencia.";
+  if (apiError.code === "ALREADY_A_MEMBER") return "Esa persona ya es parte de esta agencia. Si es cuidador/a, hazla supervisor/a desde su perfil en Personal.";
   if (apiError.code === "INVALID_PAYLOAD") return "Revisa el correo electrónico.";
   if (apiError.code === "TEAM_FORBIDDEN") return "Solo un administrador puede invitar al equipo.";
   return "No pudimos enviar la invitación. Intenta nuevamente.";
@@ -40,6 +41,7 @@ export function TeamPanel({ organizationId }: { organizationId: string }) {
   const [role, setRole] = useState<StaffRole>("SUPERVISOR");
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState<{ email: string; role: StaffRole; link: string; emailed: boolean } | null>(null);
+  const [removing, setRemoving] = useState<{ member: TeamMember; role: StaffRole } | null>(null);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -101,6 +103,23 @@ export function TeamPanel({ organizationId }: { organizationId: string }) {
     }
   }
 
+  async function removeRole() {
+    const token = getToken();
+    if (!token || !removing) return;
+    setSaving(true);
+    try {
+      await setStaffRole(organizationId, { membershipId: removing.member.membershipId, role: removing.role, enabled: false }, token);
+      toast.show(`${removing.member.email} ya no es ${staffRoleLabel[removing.role].toLowerCase()}.`, "success");
+      setRemoving(null);
+      await load();
+    } catch (error) {
+      const code = (error as ApiError).code;
+      toast.show(code === "CANNOT_REMOVE_OWN_ADMIN" ? "No puedes quitarte tu propio rol de administrador." : code === "LAST_ADMIN" ? "La agencia necesita al menos un administrador." : "No pudimos quitar el rol.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function copy(link: string) {
     try {
       await navigator.clipboard.writeText(link);
@@ -128,7 +147,11 @@ export function TeamPanel({ organizationId }: { organizationId: string }) {
                 <p className="truncate font-medium text-[var(--color-text-primary)]">{member.email}</p>
                 {member.isYou && <span className="text-[var(--text-caption)] text-[var(--color-text-muted)]">(tú)</span>}
               </div>
-              <div className="flex gap-1.5">{member.roles.map((code) => <Badge key={code} tone={code === "ORGANIZATION_ADMIN" ? "accent" : "neutral"}>{staffRoleLabel[code]}</Badge>)}</div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {member.workerMembershipId && <Badge tone="neutral">También cuidador/a</Badge>}
+                {member.roles.map((code) => <Badge key={code} tone={code === "ORGANIZATION_ADMIN" ? "accent" : "neutral"}>{staffRoleLabel[code]}</Badge>)}
+                {!member.isYou && member.roles.map((code) => <Button key={`x-${code}`} variant="ghost" size="md" icon={<X size={16} />} onClick={() => setRemoving({ member, role: code })}>Quitar {staffRoleLabel[code].toLowerCase()}</Button>)}
+              </div>
             </div>
           ))}
           {invitations.map((invitation) => (
@@ -145,6 +168,19 @@ export function TeamPanel({ organizationId }: { organizationId: string }) {
           ))}
         </Card>
       )}
+
+      <Modal
+        open={removing !== null}
+        onClose={() => !saving && setRemoving(null)}
+        title={removing ? `Quitar ${staffRoleLabel[removing.role].toLowerCase()}` : ""}
+        footer={<><Button variant="secondary" disabled={saving} onClick={() => setRemoving(null)}>Cancelar</Button><Button variant="danger" loading={saving} onClick={() => void removeRole()}>Sí, quitar</Button></>}
+      >
+        <p className="text-[var(--text-body)] text-[var(--color-text-secondary)]">
+          {removing && (removing.member.workerMembershipId
+            ? `${removing.member.email} seguirá siendo cuidador/a, pero perderá el rol de ${staffRoleLabel[removing.role].toLowerCase()}.`
+            : `${removing.member.email} perderá el rol de ${staffRoleLabel[removing.role].toLowerCase()} en esta agencia.`)}
+        </p>
+      </Modal>
 
       <Modal
         open={inviting}
