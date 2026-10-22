@@ -4,14 +4,16 @@ import { puertoRicoMunicipalities } from "../../data/puertoRicoMunicipalities";
 
 
 const samples = [
-  { id: 1, role: "Cuidador/a para turno diurno", zone: "Carolina, PR", time: "7:00 a. m. – 3:00 p. m.", status: "Publicada" },
-  { id: 2, role: "Asistente de cuidado", zone: "Trujillo Alto, PR", time: "3:00 p. m. – 11:00 p. m.", status: "Borrador" },
+  { id: 1, role: "Cuidador/a para turno diurno", zone: "Carolina", time: "7:00 a. m. – 3:00 p. m.", status: "Publicada" },
+  { id: 2, role: "Asistente de cuidado", zone: "Trujillo Alto", time: "3:00 p. m. – 11:00 p. m.", status: "Borrador" },
 ];
 
 export function SmartMatchPreviewPage() {
   const [view, setView] = useState<"agency" | "caregiver">("agency");
   const [zone, setZone] = useState("Carolina");
   const [minutes, setMinutes] = useState(25);
+  const [onlyMyMunicipality, setOnlyMyMunicipality] = useState(true);
+  const visibleSamples = samples.filter(s => s.status === "Publicada" && (!onlyMyMunicipality || s.zone === zone));
   const surface = { background: "#fff", border: "1px solid #e1e7e4", borderRadius: 16, padding: 20 };
   return (
     <main style={{ minHeight: "100dvh", background: "#f5f5ef", color: "#183044", fontFamily: "system-ui, sans-serif", padding: "24px 16px" }}>
@@ -45,9 +47,10 @@ export function SmartMatchPreviewPage() {
               <label style={{ display: "grid", gap: 8, marginTop: 18, maxWidth: 340 }}>Tiempo máximo de viaje: <strong>{minutes} minutos</strong>
                 <input type="range" min={10} max={60} step={5} value={minutes} onChange={e => setMinutes(Number(e.target.value))} />
               </label>
+              <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 14 }}><input type="checkbox" checked={onlyMyMunicipality} onChange={e => setOnlyMyMunicipality(e.target.checked)} />Mostrar solo oportunidades de mi municipio</label>
               <p style={{ color: "#647477" }}>Ubicación manual. GPS opcional solo con consentimiento. No se realiza seguimiento continuo.</p>
             </div>
-            <div style={surface}><h2 style={{ marginTop: 0 }}>Oportunidades cercanas</h2><p>Los resultados reales dependerán de las credenciales, disponibilidad, membresía y tiempos de ruta verificados.</p><p><strong>Ejemplo:</strong> Cuidador/a para turno diurno · {zone}</p><small>Esta vista no calcula rutas ni permite solicitar turnos todavía.</small></div>
+            <div style={surface}><h2 style={{ marginTop: 0 }}>Oportunidades cercanas</h2><p>Los resultados reales dependerán de las credenciales, disponibilidad, membresía y tiempos de ruta verificados.</p>{visibleSamples.length === 0 ? <p>No hay oportunidades ficticias publicadas para {zone}. Desactiva el filtro para ver los ejemplos disponibles.</p> : visibleSamples.map(item => <p key={item.id}><strong>{item.role}</strong> · {item.zone} · {item.time}</p>)}<small>El filtro por municipio funciona solo sobre los ejemplos. El límite de minutos no se usa para calcular rutas hasta integrar un proveedor de tiempos de viaje.</small></div>
           </section>
         )}
         <p style={{ marginTop: 26, fontSize: 13, color: "#647477" }}>Prototipo visual de SmartMatch para futura integración en ETNARA Care. Sin conexión a datos reales.</p>
