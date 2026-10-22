@@ -2,8 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { ApiError } from "../../api/client";
 import {
-  createSmartMatchDraft, listSmartMatchOpportunities, listSmartMatchApplicationCounts, publishSmartMatchDraft,
-  type SmartMatchOpportunity, type SmartMatchApplicationCount,
+  createSmartMatchDraft, listSmartMatchOpportunities, listSmartMatchApplicationCounts, listSmartMatchPendingApplications, publishSmartMatchDraft,
+  type SmartMatchOpportunity, type SmartMatchApplicationCount, type SmartMatchPendingApplication,
 } from "../../api/smartmatch";
 
 export function AgencySmartMatchPage() {
@@ -18,6 +18,10 @@ function AgencySmartMatchForOrganization() {
   const [items, setItems] = useState<SmartMatchOpportunity[]>([]);
   const [counts, setCounts] = useState<SmartMatchApplicationCount[]>([]);
   const [countsError, setCountsError] = useState(false);
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  const [applications, setApplications] = useState<SmartMatchPendingApplication[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
   const [regionLabel, setRegionLabel] = useState("");
   const [roleLabel, setRoleLabel] = useState("");
   const [startsAt, setStartsAt] = useState("");
@@ -31,6 +35,7 @@ function AgencySmartMatchForOrganization() {
     let active = true;
     if (!organizationId || !isAdmin) { setItems([]); setCounts([]); return; }
     setItems([]); setCounts([]); setCountsError(false);
+    setReviewId(null); setApplications([]); setReviewError("");
     void listSmartMatchApplicationCounts(organizationId).then(response => {
       if (active) setCounts(response.counts);
     }).catch(() => { if (active) setCountsError(true); });
@@ -73,6 +78,18 @@ function AgencySmartMatchForOrganization() {
     } finally { setLoading(false); }
   }
 
+  async function reviewApplications(opportunityId: string) {
+    if (!organizationId) return;
+    if (reviewId === opportunityId) { setReviewId(null); setApplications([]); return; }
+    setReviewId(opportunityId); setApplications([]); setReviewError(""); setReviewLoading(true);
+    try {
+      const result = await listSmartMatchPendingApplications(organizationId, opportunityId);
+      setApplications(result.applications);
+    } catch {
+      setReviewError("No se pudieron consultar las solicitudes. Verifica tus permisos.");
+    } finally { setReviewLoading(false); }
+  }
+
   if (!organizationId || !isAdmin) return <main style={{ padding: 24 }}>SmartMatch requiere acceso de administrador de agencia.</main>;
   return (
     <main style={{ maxWidth: 850, margin: "0 auto", padding: 24 }}>
@@ -98,6 +115,20 @@ function AgencySmartMatchForOrganization() {
             <strong>{item.role_label}</strong> · {item.region_label} · {item.status}
             <div>Solicitudes pendientes: {countsError ? "No disponible" : (counts.find(count => count.opportunity_id === item.id)?.pending_count ?? 0)}</div>
             <div>{new Date(item.starts_at).toLocaleString("es-PR")} — {new Date(item.ends_at).toLocaleString("es-PR")}</div>
+            <button type="button" disabled={reviewLoading} onClick={() => void reviewApplications(item.id)}>
+              {reviewId === item.id ? "Cerrar solicitudes" : "Revisar solicitudes"}
+            </button>
+            {reviewId === item.id && (
+              <section aria-label="Solicitudes pendientes" style={{ marginTop: 8 }}>
+                {reviewLoading && <p>Cargando solicitudes…</p>}
+                {reviewError && <p role="alert">{reviewError}</p>}
+                {!reviewLoading && !reviewError && applications.length === 0 && <p>No hay solicitudes pendientes.</p>}
+                <ul>{applications.map(application => (
+                  <li key={application.id}>Solicitud {application.id.slice(0, 8)} · Pendiente · {new Date(application.created_at).toLocaleString("es-PR")}</li>
+                ))}</ul>
+                <p>Consulta solamente. Las aprobaciones y asignaciones aún no están habilitadas.</p>
+              </section>
+            )}
             {item.status === "DRAFT" && (
               <button disabled={loading} type="button" onClick={() => void publish(item.id)}>Publicar internamente</button>
             )}
