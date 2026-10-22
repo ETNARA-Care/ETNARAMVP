@@ -2,6 +2,19 @@
 
 ## Current Status
 
+## 2026-10-21 — Phase 12.1 "Cómo llegar" (ux/12.1-como-llegar)
+
+- Added `api/recipientLocation.ts` (shared client; 404 = no access → null).
+- Added `features/caregiver/directions.ts` (address text, Google Maps and Waze
+  links preferring coordinates, coordinate parsing) and `DirectionsCard.tsx`.
+- Caregiver shift detail loads the location without blocking the shift and
+  shows the card until the visit is completed or cancelled.
+- Agency resident profile has a "Dirección y acceso" card and editor.
+- Family pages do not call the location endpoint (asserted in tests).
+- Validation: typecheck, 82 tests, build; lint unchanged (75 pre-existing
+  warnings, none new). Screenshots checked with a mocked API.
+- Exact next step: publish only after Railway returns, backend #185 is merged
+  and migration 084 is applied.
 ## 2026-10-21 — Caregiver offline-safe care records (ux/cuidador-sin-senal)
 
 - `features/caregiver/careEventQueue.ts` (contract + helpers) and

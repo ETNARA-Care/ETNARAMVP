@@ -19,6 +19,8 @@ import {
   checkIn, checkOut, getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
+import { getRecipientLocation, type RecipientLocation } from "@/api/recipientLocation";
+import { DirectionsCard } from "@/features/caregiver/DirectionsCard";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 
 const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }> = [
@@ -91,6 +93,7 @@ export function CaregiverShiftDetailPage() {
   const [verification, setVerification] = useState<VisitVerification | null>(null);
   const [careEvents, setCareEvents] = useState<CareEvent[]>([]);
   const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
+  const [location, setLocation] = useState<RecipientLocation | null>(null);
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeAction, setActiveAction] = useState<CareEventTypeCode | null>(null);
@@ -129,14 +132,19 @@ export function CaregiverShiftDetailPage() {
       ]);
       const shiftRow = shiftRows.find((item) => item.id === shiftId);
       if (!shiftRow) throw new Error("SHIFT_NOT_ASSIGNED");
-      const carePlanRow = shiftRow.care_recipient_id
-        ? await getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token)
-        : null;
+      const [carePlanRow, locationRow] = shiftRow.care_recipient_id
+        ? await Promise.all([
+          getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token),
+          // La dirección es ayuda, no bloquea el turno si falla.
+          getRecipientLocation(organizationId, shiftRow.care_recipient_id, token).catch(() => null),
+        ])
+        : [null, null];
       setShift(shiftRow);
       setVerification(summary);
       setRecipient(recipientRows.find((item) => item.id === shiftRow.care_recipient_id));
       setCareEvents(eventRows);
       setCarePlan(carePlanRow);
+      setLocation(locationRow);
     } catch {
       setError(true);
     }
@@ -318,6 +326,8 @@ export function CaregiverShiftDetailPage() {
           </div>
         </Card>
       )}
+
+      {status !== "completed" && status !== "cancelled" && <DirectionsCard location={location} />}
 
       {canStart && (
         <div className="flex flex-col gap-2">
