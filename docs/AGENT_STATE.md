@@ -14,7 +14,19 @@
 - Validation: typecheck, 82 tests, build; lint unchanged (75 pre-existing
   warnings, none new). Screenshots checked with a mocked API.
 - Exact next step: publish only after Railway returns, backend #185 is merged
-  and migration 082 is applied.
+  and migration 084 is applied.
+## 2026-10-21 — Caregiver offline-safe care records (ux/cuidador-sin-senal)
+
+- `features/caregiver/careEventQueue.ts` (contract + helpers) and
+  `CareEventQueueProvider.tsx` (provider + banner). The queue lives in memory only.
+- Saving a care record sends `clientEventId` + `occurredAt`. Connectivity failures
+  queue the record; other API errors surface immediately as before.
+- Shift detail lists pending records in the activity, blocks "Finalizar turno"
+  while any are pending and shows server-rejected records with a "Quitar" action.
+- Simulated offline → online with intercepted requests: one queued record, banner,
+  finish blocked, delivered on retry with the same clientEventId and occurredAt.
+- Typecheck, lint (no new warnings), 82 tests and build pass.
+- Exact next step: publish after backend PR #181 and migrations 080/081 on Railway.
 
 ## 2026-10-21 — Family relatives and daily summary (ux/familia-familiares-resumen)
 

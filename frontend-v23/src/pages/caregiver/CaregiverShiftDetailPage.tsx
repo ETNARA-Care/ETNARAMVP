@@ -4,7 +4,8 @@ import { Activity, Bath, Check, ClipboardList, Eye, Footprints, GlassWater, LogI
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
-import { createCareEvent, listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
+import { listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
+import { useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { createIncident } from "@/api/incidents";
 import {
   getActiveCarePlan,
@@ -31,6 +32,10 @@ const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }
   { code: "MOOD", label: "Ánimo", icon: <Smile size={22} /> },
   { code: "NOTE", label: "Observación", icon: <Eye size={22} /> },
 ];
+
+const ACTION_LABEL: Record<CareEventTypeCode, string> = Object.fromEntries(
+  ACTIONS.map((action) => [action.code, action.label]),
+) as Record<CareEventTypeCode, string>;
 
 const ACTION_TITLE: Record<CareEventTypeCode, string> = Object.fromEntries(
   ACTIONS.map((action) => [action.code, "Registrar " + action.label.toLowerCase()]),
@@ -109,6 +114,10 @@ export function CaregiverShiftDetailPage() {
   const [finishOpen, setFinishOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const organizationId = activeOrganization?.id;
+  const queue = useCareEventQueue();
+  const queuedHere = useMemo(() => queue.items.filter((item) => item.shiftId === shiftId), [queue.items, shiftId]);
+  const waitingHere = queuedHere.filter((item) => item.status !== "failed");
+  const failedHere = queuedHere.filter((item) => item.status === "failed");
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -141,7 +150,9 @@ export function CaregiverShiftDetailPage() {
     }
   }, [organizationId, shiftId]);
 
-  useEffect(() => { void load(); }, [load]);
+  // También se recarga cuando un registro pendiente llega al servidor.
+  const deliveredVersion = queue.deliveredVersion;
+  useEffect(() => { void load(); }, [load, deliveredVersion]);
 
   const timelineEntries = useMemo(() => [
     ...(verification?.events ?? []).map((event) => ({
@@ -150,11 +161,16 @@ export function CaregiverShiftDetailPage() {
       title: event.eventType === "check_in" ? "Llegada registrada · turno iniciado" : "Salida registrada · turno finalizado",
     })),
     ...careEvents.map((event) => ({ id: event.id, at: event.occurred_at, title: careEventSummary(event) })),
+    ...queuedHere.map((item) => ({
+      id: item.clientEventId,
+      at: item.input.occurredAt ?? new Date().toISOString(),
+      title: `${item.label} · ${item.status === "failed" ? "no se pudo enviar" : "pendiente de enviar"}`,
+    })),
   ].sort((a, b) => a.at.localeCompare(b.at)).map((event) => ({
     id: event.id,
     time: new Date(event.at).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" }),
     title: event.title,
-  })), [careEvents, verification]);
+  })), [careEvents, verification, queuedHere]);
 
   async function startShift() {
     const token = getToken();
@@ -229,17 +245,19 @@ export function CaregiverShiftDetailPage() {
     if (!organizationId || !shiftId || !token || !activeAction || !shift?.care_recipient_id || !careReady) return;
     setSaving(true);
     try {
-      await createCareEvent(organizationId, shiftId, {
-        typeCode: activeAction,
-        careRecipientId: shift.care_recipient_id,
-        ...carePayload(),
-      }, token);
-      show(ACTION_TITLE[activeAction] + " completado.", "success");
+      const outcome = await queue.submit({
+        organizationId,
+        shiftId,
+        label: ACTION_LABEL[activeAction],
+        input: { typeCode: activeAction, careRecipientId: shift.care_recipient_id, ...carePayload() },
+      });
+      if (outcome === "queued") show("Sin señal. Se guardó y se enviará solo cuando vuelva la señal.", "warning");
+      else show(ACTION_TITLE[activeAction] + " completado.", "success");
       setActiveAction(null);
       setNote("");
       setActivityLabel("");
       setActivityDuration("");
-      await load();
+      if (outcome === "sent") await load();
     } catch (requestError) { show(actionError(requestError), "danger"); }
     finally { setSaving(false); }
   }
@@ -284,7 +302,9 @@ export function CaregiverShiftDetailPage() {
             <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${canFinish ? "text-white/60" : "text-[var(--color-text-muted)]"}`}>{canFinish ? "Turno activo" : "Detalle del turno"}</p>
             <h1 className="mt-1 truncate font-[var(--font-serif)] text-2xl">{recipientName(recipient)}</h1>
           </div>
-          <StatusBadge status={status} />
+          {canFinish
+            ? <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">En curso</span>
+            : <StatusBadge status={status} />}
         </div>
         <p className={`mt-4 font-medium ${canFinish ? "text-white" : "text-[var(--color-text-primary)]"}`}>{new Date(shift.scheduled_start).toLocaleDateString("es-PR", { weekday: "long", day: "numeric", month: "long" })}</p>
         <p className={`text-sm ${canFinish ? "text-white/70" : "text-[var(--color-text-secondary)]"}`}>
@@ -376,8 +396,24 @@ export function CaregiverShiftDetailPage() {
         )}
       </Card>
 
+      {failedHere.length > 0 && (
+        <Card className="flex flex-col gap-2 border-red-200 bg-red-50">
+          <p className="font-medium text-red-900">{failedHere.length === 1 ? "1 registro no se pudo enviar" : `${failedHere.length} registros no se pudieron enviar`}</p>
+          {failedHere.map((item) => (
+            <div key={item.clientEventId} className="flex items-center justify-between gap-3 text-sm text-red-900">
+              <span>{item.label} · {item.failure}</span>
+              <button type="button" className="min-h-11 shrink-0 rounded-xl px-3 font-semibold" onClick={() => queue.discard(item.clientEventId)}>Quitar</button>
+            </div>
+          ))}
+          <p className="text-xs text-red-800">Avisa a Administración para que lo registre.</p>
+        </Card>
+      )}
+
       {canFinish && (
-        <Button size="lg" fullWidth icon={<LogOut size={20} />} disabled={saving} onClick={() => setFinishOpen(true)}>Finalizar turno</Button>
+        <div className="flex flex-col gap-2">
+          <Button size="lg" fullWidth icon={<LogOut size={20} />} disabled={saving || waitingHere.length > 0} onClick={() => setFinishOpen(true)}>Finalizar turno</Button>
+          {waitingHere.length > 0 && <p className="text-center text-[var(--text-caption)] text-amber-800">Tienes {waitingHere.length === 1 ? "1 registro" : `${waitingHere.length} registros`} por enviar. Podrás finalizar cuando vuelva la señal.</p>}
+        </div>
       )}
 
       <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {recipientName(recipient)}</Button>

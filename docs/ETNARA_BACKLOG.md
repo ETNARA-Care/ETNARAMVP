@@ -2,6 +2,16 @@
 
 ## In Progress
 
+### FUX-004 — Caregiver offline-safe care records
+- care records that fail for connectivity stay in an in-memory queue (no device storage)
+- each record carries a device `clientEventId` and its real `occurredAt`, reused on every retry
+- retries on reconnect, on return to the app, every 15 s and from a "Reintentar" button
+- banner "Sin señal · N registros por enviar"; pending items appear in the shift activity
+- "Finalizar turno" is blocked while records are pending; server rejections are shown, never dropped silently
+
+Status: Implemented on `ux/cuidador-sin-senal`. Depends on backend Phase 12.0
+(PR #181) for duplicate-safe retries and real times; publish after 080/081 are applied on Railway.
+
 ### FUX-003 — Family: switch between relatives and daily summary
 - one family account can switch between every authorized relative (chips under the header, shown only with 2+)
 - Today, Activity, History and Profile follow the selected relative; selection lives in memory, no storage
@@ -21,7 +31,7 @@ Status: Implemented on `ux/cuidador-familia-prioridades`; typecheck, lint
 (existing warnings only), all tests and production build pass. Pending review.
 
 ### FUX-002 — Care recipient address and directions
-- backend Phase 12.1 (ETNARA-Backend PR #185, migration 082) provides
+- backend Phase 12.1 (ETNARA-Backend PR #185, migration 084) provides
   GET/PUT `/care-recipients/:id/location` with assignment-scoped RLS
 - agency resident profile: "Dirección y acceso" card and editor (address,
   municipality, access notes, optional coordinates pasted from Google Maps)
@@ -29,7 +39,7 @@ Status: Implemented on `ux/cuidador-familia-prioridades`; typecheck, lint
   dirección until the visit ends; family never requests the address
 
 Status: Implemented on `ux/12.1-como-llegar` (draft PR). Publish after
-Railway returns, backend #185 is merged and 082 is applied.
+Railway returns, backend #185 (migration 084) is live.
 
 ### FPH10-001 — Phase 10.0 multi-agency establishments
 - identify the active organization in Settings
