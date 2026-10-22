@@ -2,6 +2,12 @@
 
 ## In Progress
 
+### FUX-005 — Agency team: invite administrators and supervisors
+- Configuración → Equipo (administrators only), invite with role, cancel
+- supervisors do not see Horas y facturación
+
+Status: Implemented on `ux/12.2-equipo-agencia`; awaiting PASS with backend 12.2.
+
 ### FUX-004 — Agency: one truth for coverage and compliance
 - covered only when the caregiver accepted (same rule as operations)
 - "Esperando respuesta" and "Sin llegada" shown everywhere consistently

@@ -2,6 +2,19 @@
 
 ## Current Status
 
+## 2026-10-22 — Phase 12.2 agency team (ux/12.2-equipo-agencia)
+
+- api/team.ts + features/agency/TeamPanel.tsx: Configuración → "Equipo" for
+  ORGANIZATION_ADMIN only — list administrators/supervisors, invite by email
+  with role (Supervisor | Administrador), cancel pending invitations, copy the
+  activation link when the email cannot be sent.
+- Activation page (/invite/organization-admin) names the invited role.
+- Supervisors: "Horas y facturación" removed from navigation and the page shows
+  an administrator-only notice (backend 085 also returns 403 and RLS denies).
+- Validation: typecheck, 105 tests, build; lint unchanged (76). Full flow
+  checked against a local backend: invite → activate → sign in as supervisor.
+- Pairs with ETNARA-Backend gate/12.2-team-invitations-admin-authority.
+
 ## 2026-10-22 — Agency plain language and missing rates (fix/agency-plain-language-and-rates)
 
 - Removed internal jargon from agency screens ("B2B", "endpoint", "briefing",

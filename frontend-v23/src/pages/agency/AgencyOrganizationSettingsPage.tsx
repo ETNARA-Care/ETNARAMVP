@@ -5,9 +5,11 @@ import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, 
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { createEstablishment, listEstablishments, updateEstablishment, type Establishment } from "@/api/establishments";
+import { TeamPanel } from "@/features/agency/TeamPanel";
 
 export function AgencyOrganizationSettingsPage() {
-  const { user, logout, activeOrganization, organizations } = useAuth();
+  const { user, logout, activeOrganization, organizations, roles } = useAuth();
+  const isOrgAdmin = roles.includes("ORGANIZATION_ADMIN");
   const organizationId = activeOrganization?.id;
   const navigate = useNavigate();
   const toast = useToast();
@@ -75,6 +77,8 @@ export function AgencyOrganizationSettingsPage() {
       </div>
       {organizations.length > 1 && <Button variant="secondary" onClick={() => navigate("/select-organization")}>Cambiar organización</Button>}
     </Card>
+
+    {isOrgAdmin && organizationId && <TeamPanel organizationId={organizationId} />}
 
     <div className="flex items-center justify-between gap-3"><div><h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Establecimientos</h2><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Ubicaciones que pertenecen a {activeOrganization?.name}.</p></div><Button icon={<Plus size={18} />} onClick={openCreate}>Añadir</Button></div>
     {establishments === null ? <Skeleton className="h-28" /> : error ? <ErrorState kind="server" onRetry={() => void load()} /> : establishments.length === 0 ? <EmptyState icon={<Building2 size={28} />} title="No hay establecimientos" description="Añade la primera ubicación de esta organización." action={{ label: "Añadir establecimiento", onClick: openCreate }} /> :
