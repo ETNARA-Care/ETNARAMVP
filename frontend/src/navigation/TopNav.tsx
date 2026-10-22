@@ -13,6 +13,7 @@ export function TopNav() {
   if (isManager) {
     links.push({ to: "/agency", label: "Panel" });
     links.push({ to: "/agency/turnos", label: "Turnos" });
+    if (roles.includes("ORGANIZATION_ADMIN")) links.push({ to: "/agency/smartmatch", label: "SmartMatch" });
     links.push({ to: "/agency/personas", label: "Personas" });
     links.push({ to: "/agency/equipo", label: "Equipo" });
     links.push({ to: "/agency/horas", label: "Horas y facturación" });
@@ -22,12 +23,13 @@ export function TopNav() {
   }
   if (isCaregiver) {
     links.push({ to: "/caregiver", label: "Mis turnos" });
+    links.push({ to: "/caregiver/smartmatch", label: "SmartMatch" });
   }
   links.push({ to: "/messages", label: "Mensajes" });
   links.push({ to: "/notifications", label: "Notificaciones" });
 
   function isActive(to: string) {
-    if (to === "/agency") return location.pathname === "/agency";
+    if (to === "/agency" || to === "/caregiver") return location.pathname === to;
     return location.pathname.startsWith(to);
   }
 

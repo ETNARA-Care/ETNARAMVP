@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
-import { FinancialRate, Timesheet, TimesheetSummary, listFinancialRates, listTimesheets, reviewTimesheet, saveFinancialRate } from "../../api/timesheets";
+import type { FinancialRate, Timesheet, TimesheetSummary } from "../../api/timesheets";
+import { listFinancialRates, listTimesheets, reviewTimesheet, saveFinancialRate } from "../../api/timesheets";
 
 const money=(c:number|null)=>c==null?"—":new Intl.NumberFormat("es-PR",{style:"currency",currency:"USD"}).format(c/100);
 const hours=(m:number)=>`${(m/60).toFixed(2)} h`;
