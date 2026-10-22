@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/auth/LoginPage";
 import { FamilyHomePage } from "./pages/family/FamilyHomePage";
 import { AgencyDashboardRealPage } from "./pages/agency/AgencyDashboardRealPage";
 import { AgencySmartMatchPage } from "./pages/agency/AgencySmartMatchPage";
+import { SmartMatchPreviewPage } from "./pages/agency/SmartMatchPreviewPage";
 import { AgencyShiftsPage } from "./pages/agency/AgencyShiftsPage";
 import { AgencyRecipientsPage } from "./pages/agency/AgencyRecipientsPage";
 import { AgencyTeamPage } from "./pages/agency/AgencyTeamPage";
@@ -39,6 +40,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/smartmatch-preview" element={<SmartMatchPreviewPage />} />
 
           <Route element={<RequireAuth />}>
             <Route element={<AppShell />}>
