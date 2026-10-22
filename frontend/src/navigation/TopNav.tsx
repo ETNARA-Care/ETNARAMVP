@@ -23,12 +23,13 @@ export function TopNav() {
   }
   if (isCaregiver) {
     links.push({ to: "/caregiver", label: "Mis turnos" });
+    links.push({ to: "/caregiver/smartmatch", label: "SmartMatch" });
   }
   links.push({ to: "/messages", label: "Mensajes" });
   links.push({ to: "/notifications", label: "Notificaciones" });
 
   function isActive(to: string) {
-    if (to === "/agency") return location.pathname === "/agency";
+    if (to === "/agency" || to === "/caregiver") return location.pathname === to;
     return location.pathname.startsWith(to);
   }
 
