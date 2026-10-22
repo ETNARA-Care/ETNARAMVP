@@ -2,6 +2,23 @@
 
 ## Current Status
 
+## 2026-10-22 — Agency coverage and compliance truth (fix/agency-coverage-compliance-truth)
+
+- New `features/agency/shiftCoverage.ts`: one coverage rule for the agency
+  portal, matching the backend operations center — covered only when the
+  caregiver ACCEPTED; pending = "Esperando respuesta"; accepted + 15 min past
+  start without check-in = "Sin llegada".
+- useAgencySupervision exposes `assignmentResponse`. Briefing ("Turnos
+  confirmados hoy"), ShiftBoard, Shifts list and Residents list use the rule.
+  Removed the double "Sin asignar" + "Esperando respuesta" badges.
+- Compliance: with zero active establishments the establishment panel no
+  longer counts 5 "faltantes" against a nonexistent establishment; the
+  residents card explains establishment requirements; readiness ring says
+  "Sin establecimientos".
+- Validation: typecheck, 97 tests, build; lint unchanged (76 pre-existing).
+  Checked against a local backend with seeded demo data.
+- Pairs with ETNARA-Backend fix/coverage-truth-and-alert-time.
+
 ## 2026-10-21 — Phase 12.1 "Cómo llegar" (ux/12.1-como-llegar)
 
 - Added `api/recipientLocation.ts` (shared client; 404 = no access → null).

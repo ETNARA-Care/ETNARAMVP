@@ -11,7 +11,8 @@ import {
   assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
   type Assignment, type CareRecipient, type CoverageCandidate, type Shift, type WorkerMembership,
 } from "@/api/shifts";
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, StatusBadge, useToast } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, useToast } from "@/components/ui";
+import { coverageLabel, coverageOf, coverageTone } from "@/features/agency/shiftCoverage";
 
 function localDateTime(date: Date): string {
   const offset = date.getTimezoneOffset() * 60_000;
@@ -355,9 +356,8 @@ export function AgencyShiftsPage() {
                   {interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Interesadas: {interestedNames.join(", ")}</p>}
                 </div>
  <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge status={shift.status} />
-                  {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
-                  {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
+                  {/* Una sola etiqueta con la misma regla del Resumen y del Centro operacional. */}
+                  {(() => { const state = coverageOf({ ...shift, assignmentResponse: assignment?.response_status === "accepted" || assignment?.response_status === "pending" ? assignment.response_status : null }); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })()}
  {shift.status === "unassigned" && !assignment && canStartCoverage && <Button variant="secondary" size="md" className="whitespace-nowrap" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>{campaign?.campaignStatus === "exhausted" ? "Reintentar cobertura" : "Ofrecer turno"}</Button>}
  {shift.status === "unassigned" && !assignment && <Button size="md" className="whitespace-nowrap" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
                 </div>

@@ -2,6 +2,13 @@
 
 ## In Progress
 
+### FUX-004 — Agency: one truth for coverage and compliance
+- covered only when the caregiver accepted (same rule as operations)
+- "Esperando respuesta" and "Sin llegada" shown everywhere consistently
+- compliance does not count establishment requirements without establishments
+
+Status: Implemented on `fix/agency-coverage-compliance-truth`; awaiting PASS.
+
 ### FUX-004 — Caregiver offline-safe care records
 - care records that fail for connectivity stay in an in-memory queue (no device storage)
 - each record carries a device `clientEventId` and its real `occurredAt`, reused on every retry
