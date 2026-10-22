@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { ApiError } from "../../api/client";
+import { puertoRicoMunicipalities } from "../../data/puertoRicoMunicipalities";
 import {
   createSmartMatchDraft, listSmartMatchOpportunities, listSmartMatchApplicationCounts, listSmartMatchPendingApplications, publishSmartMatchDraft,
   type SmartMatchOpportunity, type SmartMatchApplicationCount, type SmartMatchPendingApplication,
@@ -99,7 +100,7 @@ function AgencySmartMatchForOrganization() {
       {error && <p role="alert" style={{ color: "var(--color-danger, #a12b2b)" }}>{error}</p>}
       {notice && <p role="status">{notice}</p>}
       <form onSubmit={createDraft} style={{ display: "grid", gap: 12, maxWidth: 480 }}>
-        <label>Municipio o zona general<input required maxLength={100} value={regionLabel} onChange={e => setRegionLabel(e.target.value)} /></label>
+        <label>Municipio de Puerto Rico<select required value={regionLabel} onChange={e => setRegionLabel(e.target.value)}><option value="">Selecciona un municipio</option>{puertoRicoMunicipalities.map(municipality => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>
         <label>Función requerida<input required maxLength={100} value={roleLabel} onChange={e => setRoleLabel(e.target.value)} /></label>
         <label>Inicio<input required type="datetime-local" value={startsAt} onChange={e => setStartsAt(e.target.value)} /></label>
         <label>Fin<input required type="datetime-local" value={endsAt} onChange={e => setEndsAt(e.target.value)} /></label>
