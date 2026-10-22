@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const municipalities = ["Adjuntas","Aguada","Aguadilla","Aguas Buenas","Aibonito","Añasco","Arecibo","Arroyo","Barceloneta","Barranquitas","Bayamón","Cabo Rojo","Caguas","Camuy","Canóvanas","Carolina","Cataño","Cayey","Ceiba","Ciales","Cidra","Coamo","Comerío","Corozal","Culebra","Dorado","Fajardo","Florida","Guánica","Guayama","Guayanilla","Guaynabo","Gurabo","Hatillo","Hormigueros","Humacao","Isabela","Jayuya","Juana Díaz","Juncos","Lajas","Lares","Las Marías","Las Piedras","Loíza","Luquillo","Manatí","Maricao","Maunabo","Mayagüez","Moca","Naguabo","Naranjito","Orocovis","Patillas","Peñuelas","Ponce","Quebradillas","Rincón","Río Grande","Sabana Grande","Salinas","San Germán","San Juan","San Lorenzo","San Sebastián","Santa Isabel","Toa Alta","Toa Baja","Trujillo Alto","Utuado","Vega Alta","Vega Baja","Vieques","Villalba","Yabucoa","Yauco"];
+
 const samples = [
   { id: 1, role: "Cuidador/a para turno diurno", zone: "Carolina, PR", time: "7:00 a. m. – 3:00 p. m.", status: "Publicada" },
   { id: 2, role: "Asistente de cuidado", zone: "Trujillo Alto, PR", time: "3:00 p. m. – 11:00 p. m.", status: "Borrador" },
@@ -37,7 +39,7 @@ export function SmartMatchPreviewPage() {
             <div style={surface}>
               <h2 style={{ marginTop: 0 }}>Mis preferencias de búsqueda</h2>
               <label style={{ display: "grid", gap: 6, maxWidth: 340 }}>Zona habitual
-                <select value={zone} onChange={e => setZone(e.target.value)} style={{ padding: 12, borderRadius: 8, border: "1px solid #bbc9c1" }}><option>Carolina</option><option>San Juan</option><option>Trujillo Alto</option><option>Bayamón</option></select>
+                <select value={zone} onChange={e => setZone(e.target.value)} style={{ padding: 12, borderRadius: 8, border: "1px solid #bbc9c1" }}>{municipalities.map(town => <option key={town} value={town}>{town}</option>)}</select>
               </label>
               <label style={{ display: "grid", gap: 8, marginTop: 18, maxWidth: 340 }}>Tiempo máximo de viaje: <strong>{minutes} minutos</strong>
                 <input type="range" min={10} max={60} step={5} value={minutes} onChange={e => setMinutes(Number(e.target.value))} />
