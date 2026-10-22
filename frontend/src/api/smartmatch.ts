@@ -54,3 +54,11 @@ export function listSmartMatchPendingApplications(organizationId: string, opport
     `/organizations/${encodeURIComponent(organizationId)}/smartmatch/opportunities/${encodeURIComponent(opportunityId)}/applications`,
   );
 }
+
+export type CaregiverSmartMatchOpportunity = Pick<SmartMatchOpportunity, "id" | "region_label" | "role_label" | "starts_at" | "ends_at">;
+
+export function listCaregiverSmartMatchOpportunities(organizationId: string) {
+  return apiFetch<{ opportunities: CaregiverSmartMatchOpportunity[] }>(
+    `/organizations/${encodeURIComponent(organizationId)}/smartmatch/available-opportunities`,
+  );
+}
