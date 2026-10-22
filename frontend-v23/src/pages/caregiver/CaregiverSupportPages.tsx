@@ -207,7 +207,7 @@ export function CaregiverProfilePage() {
           {user?.email && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Sesión: {user.email}</p>}
         </div>
       </Card>
-      <Card className="overflow-hidden p-0">
+      <Card id="my-credentials" className="overflow-hidden p-0 scroll-mt-24">
         <div className="bg-[var(--color-navy-900)] p-5 text-white">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2"><ShieldCheck size={20} /><p className="font-semibold">Mis credenciales</p></div>
