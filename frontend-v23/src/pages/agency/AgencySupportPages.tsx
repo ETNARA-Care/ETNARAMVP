@@ -31,6 +31,7 @@ import {
 import { createCareRecipient, createWorker } from "@/api/roster";
 import { createEstablishment, listEstablishments, updateEstablishment, type Establishment } from "@/api/establishments";
 import { coverageLabel, coverageOf, coverageTone } from "@/features/agency/shiftCoverage";
+import { plural } from "@/pages/agency/overview/overviewModel";
 
 export function AgencyResidentsPage() {
   const { loading, error, recipients, shifts, reload } = useAgencySupervision();
@@ -348,7 +349,7 @@ export function AgencyCompliancePage() {
     setAgentBusy(true);
     try {
       setAgentBriefing(await generateComplianceAgentBriefing(organizationId, token));
-      toast.show("El Agente de Cumplimiento preparó el briefing.", "success");
+      toast.show("El Agente de Cumplimiento preparó el resumen.", "success");
     } catch {
       toast.show("El agente no pudo analizar el cumplimiento en este momento.", "danger");
     } finally {
@@ -387,7 +388,7 @@ export function AgencyCompliancePage() {
             loading={agentBusy}
             onClick={() => void runComplianceAgent()}
           >
-            {agentBriefing ? "Actualizar briefing" : "Generar briefing"}
+            {agentBriefing ? "Actualizar resumen" : "Generar resumen"}
           </Button>
         </div>
 
@@ -457,7 +458,7 @@ export function AgencyCompliancePage() {
               const policy = configuration.policies.find((item) => item.workerRole.toLowerCase() === role.toLowerCase());
               return (
                 <div key={role} className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
-                  <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{policy?.requirements.length ?? 0} requisito(s) · {policy?.source === "organization" ? "Política de tu organización" : "Política base de ETNARA"}</p></div>
+                  <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{plural(policy?.requirements.length ?? 0,"requisito","requisitos")} · {policy?.source === "organization" ? "Política de tu organización" : "Política base de ETNARA"}</p></div>
                   <Button variant="secondary" onClick={() => openPolicy(role)}>Configurar</Button>
                 </div>
               );
@@ -506,7 +507,7 @@ export function AgencyCompliancePage() {
         <div className="flex items-center gap-2"><History size={20} className="text-[var(--color-text-muted)]" /><h2 className="font-display text-[var(--text-h3)]">Historial auditable</h2></div>
         {audit.length === 0 ? <p className="mt-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">Todavía no hay cambios administrativos registrados.</p> : (
           <ul className="mt-3 flex flex-col divide-y divide-[var(--color-ivory-300)]">
-            {audit.slice(0, 10).map((entry) => <li key={entry.id} className="py-3"><p className="text-[var(--text-small)] font-medium">{entry.action === "COMPLIANCE_REQUIREMENTS_UPDATED" ? "Requisitos de cumplimiento actualizados" : "Estado laboral actualizado"}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{new Date(entry.occurredAt).toLocaleString("es-PR")}</p></li>)}
+            {audit.slice(0, 10).map((entry) => <li key={entry.id} className="py-3"><p className="text-[var(--text-small)] font-medium">{entry.action === "COMPLIANCE_REQUIREMENTS_UPDATED" ? "Requisitos de cumplimiento actualizados" : "Estado laboral actualizado"}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{new Date(entry.occurredAt).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}</p></li>)}
           </ul>
         )}
       </Card>

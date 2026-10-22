@@ -30,7 +30,7 @@ export function AgencyCareQualityPage() {
     setBusy(true);
     try {
       setBriefing(await generateCareQualityAgentBriefing(organizationId, token));
-      show("El Agente de Calidad preparó el briefing.", "success");
+      show("El Agente de Calidad preparó el resumen.", "success");
     } catch {
       show("El agente no pudo analizar la documentación en este momento.", "danger");
     } finally {
@@ -62,7 +62,7 @@ export function AgencyCareQualityPage() {
             </div>
           </div>
           <Button icon={<Sparkles size={18} />} loading={busy} onClick={() => void runAgent()}>
-            {briefing ? "Actualizar briefing" : "Generar briefing"}
+            {briefing ? "Actualizar resumen" : "Generar resumen"}
           </Button>
         </div>
 

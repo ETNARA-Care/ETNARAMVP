@@ -2,6 +2,17 @@
 
 ## Current Status
 
+## 2026-10-22 — Agency plain language and missing rates (fix/agency-plain-language-and-rates)
+
+- Removed internal jargon from agency screens ("B2B", "endpoint", "briefing",
+  "Family conserva endpoints"); buttons now say "Generar resumen".
+- Real plurals instead of "(s)"/"(es)" via overviewModel `plural`.
+- Dates without seconds (dateStyle medium + timeStyle short).
+- Horas y facturación: warning "Falta(n) la(s) tarifa(s) de …" with "Poner
+  tarifa", plus "Falta tarifa" on each row without rates.
+- Validation: typecheck, 101 tests, build; lint unchanged (76 pre-existing).
+- Pairs with ETNARA-Backend fix/agency-plain-language.
+
 ## 2026-10-22 — Agency coverage and compliance truth (fix/agency-coverage-compliance-truth)
 
 - New `features/agency/shiftCoverage.ts`: one coverage rule for the agency
