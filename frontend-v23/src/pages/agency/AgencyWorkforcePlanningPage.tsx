@@ -11,6 +11,7 @@ import {
   type WorkforceRisk,
 } from "@/api/workforcePlanning";
 import { Badge, Button, Card, ErrorState, PageHeader, Select, Skeleton, StatCard } from "@/components/ui";
+import { plural } from "@/pages/agency/overview/overviewModel";
 
 const riskPresentation: Record<WorkforceRisk, { label: string; tone: "success" | "warning" | "danger" }> = {
   stable: { label: "Estable", tone: "success" },
@@ -111,7 +112,7 @@ export function AgencyWorkforcePlanningPage() {
           {forecast.summary.workersWithoutAvailability > 0 && (
             <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-[var(--text-body)] text-[var(--color-text-primary)]">
-                {forecast.summary.workersWithoutAvailability} cuidador(es) aptos aún no tienen disponibilidad configurada; la capacidad conocida puede ser menor que la real.
+                {forecast.summary.workersWithoutAvailability === 1 ? "1 cuidador apto aún no tiene" : `${forecast.summary.workersWithoutAvailability} cuidadores aptos aún no tienen`} disponibilidad configurada; la capacidad conocida puede ser menor que la real.
               </p>
               <Button variant="secondary" onClick={() => navigate("/agency/workers")}>Ver cuidadores</Button>
             </Card>
@@ -152,7 +153,7 @@ function ForecastDay({ day, onOpenShifts }: { day: DailyWorkforceForecast; onOpe
         <div>
           <h3 className="font-display text-[var(--text-h3)] capitalize text-[var(--color-text-primary)]">{dayLabel(day.date)}</h3>
           <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
-            {day.totalShifts} turno(s) · {hours(day.requiredMinutes)} requeridas · {hours(day.knownAvailableMinutes)} disponibles conocidas
+            {plural(day.totalShifts,"turno","turnos")} · {hours(day.requiredMinutes)} requeridas · {hours(day.knownAvailableMinutes)} disponibles conocidas
           </p>
         </div>
         <Badge tone={presentation.tone}>{presentation.label}</Badge>
@@ -165,7 +166,7 @@ function ForecastDay({ day, onOpenShifts }: { day: DailyWorkforceForecast; onOpe
             <span className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Brecha: {hours(role.coverageGapMinutes)}</span>
           </div>
           <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">
-            {role.eligibleWorkers} apto(s) · {role.uncoveredShifts} turno(s) sin cubrir · {role.unknownAvailabilityWorkers} disponibilidad(es) desconocida(s)
+            {plural(role.eligibleWorkers,"apto","aptos")} · {plural(role.uncoveredShifts,"turno sin cubrir","turnos sin cubrir")} · {plural(role.unknownAvailabilityWorkers,"disponibilidad desconocida","disponibilidades desconocidas")}
           </p>
         </div>
       ))}

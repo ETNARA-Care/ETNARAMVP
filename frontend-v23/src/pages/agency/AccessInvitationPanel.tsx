@@ -158,8 +158,8 @@ export function AccessInvitationPanel(props: Props) {
                   </div>
                   <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">
                     {invitation.status === "accepted" && invitation.accepted_at
-                      ? `Aceptada ${new Date(invitation.accepted_at).toLocaleString("es-PR")}`
-                      : `Vence ${new Date(invitation.expires_at).toLocaleString("es-PR")}`}
+                      ? `Aceptada ${new Date(invitation.accepted_at).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}`
+                      : `Vence ${new Date(invitation.expires_at).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}`}
                   </p>
                 </div>
                 {(invitation.status === "pending" || invitation.status === "expired") && (

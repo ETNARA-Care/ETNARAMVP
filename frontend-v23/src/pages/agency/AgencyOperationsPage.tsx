@@ -73,7 +73,7 @@ export function AgencyOperationsPage() {
     setAgentBusy(true);
     try {
       setBriefing(await generateOperationsAgentBriefing(organizationId, token));
-      show("El Agente de Operaciones preparó el briefing.", "success");
+      show("El Agente de Operaciones preparó el resumen.", "success");
     } catch {
       show("El agente no pudo analizar la operación en este momento.", "danger");
     } finally {
@@ -170,7 +170,7 @@ export function AgencyOperationsPage() {
             loading={agentBusy}
             onClick={() => void runAgent()}
           >
-            {briefing ? "Actualizar briefing" : "Generar briefing"}
+            {briefing ? "Actualizar resumen" : "Generar resumen"}
           </Button>
         </div>
 
