@@ -2,6 +2,7 @@ import type { OperationsCenter } from "@/api/operations";
 import type { AdminShift } from "@/features/agency/useAgencySupervision";
 import { Skeleton } from "@/components/ui";
 import { plural } from "./overviewModel";
+import { coverageProblems, summarizeCoverage } from "@/features/agency/shiftCoverage";
 
 /** Saludo editorial: la situación del día en una frase + cifras ejecutivas reales. */
 export function Briefing({ organizationName, center, centerLoading, centerError, todayShifts, recipients, careEventsToday }: {
@@ -10,10 +11,10 @@ export function Briefing({ organizationName, center, centerLoading, centerError,
 }) {
  const raw = new Intl.DateTimeFormat("es-PR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
  const dateLabel = raw.charAt(0).toUpperCase() + raw.slice(1);
- const active = todayShifts.filter((s) => s.status !== "cancelled");
- const covered = active.filter((s) => Boolean(s.caregiver)).length;
- const uncovered = active.length - covered;
- const inProgress = active.filter((s) => s.status === "in_progress").length;
+ const coverage = summarizeCoverage(todayShifts);
+ const uncovered = coverage.total - coverage.confirmed;
+ const problems = coverageProblems(coverage);
+ const inProgress = todayShifts.filter((s) => s.status === "in_progress").length;
  const urgent = center?.summary.critical ?? 0;
  const toPlan = (center?.summary.warning ?? 0) + (center?.summary.info ?? 0);
 
@@ -28,7 +29,7 @@ export function Briefing({ organizationName, center, centerLoading, centerError,
 
  const stats = [
  { label: "Personas atendidas", value: String(recipients), sub: "activas en la organización" },
- { label: "Turnos cubiertos hoy", value: `${covered}/${active.length}`, sub: uncovered ? `${uncovered} sin cubrir` : "Cobertura completa", alert: uncovered > 0 },
+ { label: "Turnos confirmados hoy", value: `${coverage.confirmed}/${coverage.total}`, sub: problems ?? (coverage.total ? "Cobertura completa" : "Sin turnos hoy"), alert: Boolean(problems) },
  { label: "En curso ahora", value: String(inProgress), sub: "turnos activos" },
  { label: "Registros de cuidado", value: String(careEventsToday), sub: "documentados hoy" },
  ];

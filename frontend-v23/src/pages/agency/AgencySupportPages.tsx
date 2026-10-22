@@ -1,4 +1,4 @@
-import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
+import { PageHeader, EmptyState, Card, Badge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AlertTriangle, Archive, Bot, Building2, ChevronDown, History, KeyRound, LogOut, MapPin, Pencil, Plus, RefreshCcw, ShieldCheck, SlidersHorizontal, Sparkles, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +30,7 @@ import {
 } from "@/api/compliance";
 import { createCareRecipient, createWorker } from "@/api/roster";
 import { createEstablishment, listEstablishments, updateEstablishment, type Establishment } from "@/api/establishments";
+import { coverageLabel, coverageOf, coverageTone } from "@/features/agency/shiftCoverage";
 
 export function AgencyResidentsPage() {
   const { loading, error, recipients, shifts, reload } = useAgencySupervision();
@@ -109,10 +110,13 @@ function ResidentRow({ id, name, status, shift }: { id: string; name: string; st
       <div>
         <p className="font-medium text-[var(--color-text-primary)]">{name}</p>
         <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
-          {workerName ? `Cuidadora: ${workerName}` : shift ? "Sin cuidadora asignada" : "Sin turno programado hoy"}
+          {!shift ? "Sin turno programado hoy"
+            : !workerName ? "Sin cuidadora asignada"
+            : shift.assignmentResponse === "pending" ? `Esperando respuesta de ${workerName}`
+            : `Cuidadora: ${workerName}`}
         </p>
       </div>
-      {status === "archived" ? <Badge tone="neutral">Archivado</Badge> : shift ? <StatusBadge status={shift.status} /> : null}
+      {status === "archived" ? <Badge tone="neutral">Archivado</Badge> : shift ? (() => { const state = coverageOf(shift); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })() : null}
     </Card>
     </button>
   );

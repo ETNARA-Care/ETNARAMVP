@@ -216,7 +216,10 @@ test("Phase 5 assignment response is real and blocks care until accepted", async
   assert.match(caregiver, /assignmentAccepted/);
   assert.match(caregiver, /respond\("accepted"\)/);
   assert.match(caregiver, /respond\("rejected"\)/);
-  assert.match(agency, /Esperando respuesta/);
+  // La etiqueta vive en la regla compartida de cobertura (features/agency/shiftCoverage.ts).
+  const coverage = await readFile(new URL("../src/features/agency/shiftCoverage.ts", import.meta.url), "utf8");
+  assert.match(agency, /coverageLabel\[state\]/);
+  assert.match(coverage, /awaiting: "Esperando respuesta"/);
   assert.match(agency, /response_status === "accepted"/);
 });
 

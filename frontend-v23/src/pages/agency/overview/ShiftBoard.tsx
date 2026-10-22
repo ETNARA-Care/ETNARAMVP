@@ -6,6 +6,7 @@ import type { AdminShift } from "@/features/agency/useAgencySupervision";
 import { Avatar, EmptyState } from "@/components/ui";
 import { AdminPanel, AdminPanelHeader } from "@/components/admin/AdminUI";
 import { timeFmt } from "./overviewModel";
+import { coverageLabel, coverageOf, coverageProblems, summarizeCoverage } from "@/features/agency/shiftCoverage";
 
 const MAX_ROWS = 8;
 const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
@@ -50,7 +51,7 @@ function Timeline({ shifts }: { shifts: AdminShift[] }) {
  {who ? <Avatar name={who} size={26} /> : <UserPlus size={16} className="shrink-0" aria-hidden />}
  <span className="min-w-0">
  <span className={`block truncate text-sm font-medium ${who ? "text-[var(--color-text-primary)]" : ""}`}>{who ?? "Sin cubrir"}</span>
- <span className={`block truncate text-[0.6875rem] ${who ? "text-[var(--color-text-muted)]" : "opacity-80"}`}>{s.status === "in_progress" ? "En curso" : `${timeFmt(s.scheduled_start)} – ${timeFmt(s.scheduled_end)}`}</span>
+ {(() => { const state = coverageOf(s); const flagged = state === "awaiting" || state === "late"; return <span className={`block truncate text-[0.6875rem] ${flagged ? "font-medium text-[var(--color-warning-700)]" : who ? "text-[var(--color-text-muted)]" : "opacity-80"}`}>{state === "in_progress" ? "En curso" : flagged ? coverageLabel[state] : `${timeFmt(s.scheduled_start)} – ${timeFmt(s.scheduled_end)}`}</span>; })()}
  </span>
  </button>
  );
@@ -88,7 +89,7 @@ function CompactList({ shifts }: { shifts: AdminShift[] }) {
  <button type="button" onClick={() => navigate(`/agency/shifts/${s.id}`)} className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left ${who ? "" : "bg-[var(--color-danger-100)]/60"}`}>
  {who ? <Avatar name={who} size={28} /> : <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--color-danger-100)] text-[var(--color-danger-700)]"><UserPlus size={15} aria-hidden /></span>}
  <span className="min-w-0 flex-1">
- <span className={`block truncate text-sm font-medium ${who ? "text-[var(--color-text-primary)]" : "text-[var(--color-danger-700)]"}`}>{who ?? "Sin cubrir"}</span>
+ <span className={`block truncate text-sm font-medium ${who ? "text-[var(--color-text-primary)]" : "text-[var(--color-danger-700)]"}`}>{who ?? "Sin cubrir"}{who && s.assignmentResponse === "pending" && <span className="font-normal text-[var(--color-warning-700)]"> · esperando respuesta</span>}</span>
  <span className="block truncate text-xs text-[var(--color-text-muted)]">{s.recipient ? recipientName(s.recipient) : "Sin persona asignada"}, {timeFmt(s.scheduled_start)} – {timeFmt(s.scheduled_end)}</span>
  </span>
  {!who && <span className="shrink-0 rounded-[10px] bg-[var(--color-navy-900)] px-3 py-1.5 text-xs font-medium text-white">Asignar</span>}
@@ -105,12 +106,13 @@ function CompactList({ shifts }: { shifts: AdminShift[] }) {
 
 export function ShiftBoard({ shifts, onCreate, className = "" }: { shifts: AdminShift[]; onCreate: () => void; className?: string }) {
  const active = shifts.filter((s) => s.status !== "cancelled");
- const open = active.filter((s) => !s.caregiver).length;
+ const coverage = summarizeCoverage(active);
+ const problems = coverageProblems(coverage);
  const rowCount = new Set(active.map((s) => s.care_recipient_id ?? s.id)).size;
  return (
  <AdminPanel className={className}>
  <AdminPanelHeader title="Turnos de hoy"
- description={active.length ? `${active.length - open} de ${active.length} cubiertos.${open ? ` ${open} necesitan cuidador.` : ""}` : "No hay turnos programados para hoy."}
+ description={active.length ? `${coverage.confirmed} de ${active.length} confirmados.${problems ? ` ${problems}.` : ""}` : "No hay turnos programados para hoy."}
  action={<button type="button" onClick={onCreate} className="inline-flex min-h-9 items-center gap-1.5 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-medium hover:border-[var(--color-text-primary)]/25"><CalendarPlus size={15} aria-hidden />Crear turno</button>} />
  {active.length ? (<>
  <Timeline shifts={active} />

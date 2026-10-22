@@ -27,7 +27,7 @@ export function ReadinessPanel({ rows, places, error, credentialAlerts, classNam
  <AdminPanelHeader inverted title="ETNARA Compliance" description="Preparación de expedientes de residentes" />
  <div className="grid grid-cols-[auto_1fr] items-center gap-4 px-4 pb-4 pt-3 sm:flex sm:flex-col sm:gap-5 sm:px-6 sm:pb-6 sm:pt-5">
  {rows === null && !error ? <Skeleton className="h-40 w-40 rounded-full opacity-20" /> : (
- <ReadinessRing value={score} caption={total ? `${complete} de ${total} expedientes completos` : "Sin residentes activos"} size={118} />
+ <ReadinessRing value={score} caption={total ? `${complete} de ${total} expedientes completos` : places.length === 0 ? "Sin establecimientos" : "Sin residentes en establecimientos"} size={118} />
  )}
  {error && <p className="text-center text-sm text-white/75">No se pudieron leer los expedientes. Ábrelos desde Compliance.</p>}
  <span className="col-start-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px] text-white/85 sm:text-xs">
