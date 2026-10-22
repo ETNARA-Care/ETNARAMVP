@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowLeft, Send } from "lucide-react";
-import { Avatar, Badge, Card, EmptyState, ErrorState, IconButton, Skeleton } from "@/components/ui";
+import { ArrowLeft, PenSquare, Send } from "lucide-react";
+import { Avatar, Badge, Button, Card, EmptyState, ErrorState, IconButton, Modal, Select, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
   listConversations,
   listMessages,
+  openRecipientConversation,
   sendMessage,
   type Conversation,
   type ConversationMessage,
@@ -26,8 +27,24 @@ function ordered(messages: ConversationMessage[]): ConversationMessage[] {
   return [...messages].reverse();
 }
 
-/** Mensajería real compartida por Familiar, Cuidador y Agencia. */
-export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado" }: { conversationTitle?: string }) {
+export interface MessagingRecipient { id: string; name: string }
+
+/** "2:14 p. m." hoy, "ayer", o "22 oct". */
+function lastMessageTime(value: string): string {
+  const date = new Date(value);
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return date.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" });
+  if (date.toDateString() === yesterday.toDateString()) return "ayer";
+  return date.toLocaleDateString("es-PR", { day: "numeric", month: "short" });
+}
+
+/**
+ * Mensajería real compartida por Familiar, Cuidador y Agencia.
+ * `recipients` nombra cada conversación por su residente; `canStart` muestra
+ * "Nuevo mensaje" para abrir (o crear) la conversación de un residente.
+ */
+export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean }) {
   const { activeOrganization, user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, ConversationMessage[]>>({});
@@ -36,6 +53,28 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado" }: 
   const [sending, setSending] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedThreadId = searchParams.get("thread");
+  const [starting, setStarting] = useState(false);
+  const [startRecipient, setStartRecipient] = useState("");
+  const [opening, setOpening] = useState(false);
+  const nameById = Object.fromEntries(recipients.map((recipient) => [recipient.id, recipient.name]));
+  const titleOf = (conversation: Conversation) => (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversationTitle;
+
+  async function startConversation() {
+    const token = getToken();
+    const organizationId = activeOrganization?.id;
+    if (!token || !organizationId || !startRecipient) return;
+    setOpening(true);
+    try {
+      const conversation = await openRecipientConversation(organizationId, startRecipient, token);
+      setStarting(false);
+      setSearchParams({ thread: conversation.id }, { replace: true });
+    } catch (requestError) {
+      setError(errorKind(requestError));
+      setStarting(false);
+    } finally {
+      setOpening(false);
+    }
+  }
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -96,14 +135,28 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado" }: 
     return <ErrorState kind={error} onRetry={() => void load()} />;
   }
 
+  const startButton = canStart && recipients.length > 0 && (
+    <Button variant="secondary" icon={<PenSquare size={17} />} className="self-start" onClick={() => { setStartRecipient(recipients[0]?.id ?? ""); setStarting(true); }}>Nuevo mensaje</Button>
+  );
+  const startModal = (
+    <Modal open={starting} onClose={() => !opening && setStarting(false)} title="Nuevo mensaje" footer={<><Button variant="secondary" disabled={opening} onClick={() => setStarting(false)}>Cancelar</Button><Button loading={opening} disabled={!startRecipient} onClick={() => void startConversation()}>Abrir conversación</Button></>}>
+      <div className="flex flex-col gap-3">
+        <Select label="¿Sobre qué residente?" value={startRecipient} onChange={(event) => setStartRecipient(event.target.value)}>
+          {recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipient.name}</option>)}
+        </Select>
+        <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">La conversación incluye a la familia del residente y al equipo con acceso a su cuidado.</p>
+      </div>
+    </Modal>
+  );
+
   if (conversations.length === 0) {
-    return <EmptyState title="Sin conversaciones todavía" description="Las conversaciones autorizadas aparecerán aquí." />;
+    return <div className="flex flex-col gap-3">{startButton}<EmptyState title="Sin conversaciones todavía" description="Las conversaciones autorizadas aparecerán aquí." />{startModal}</div>;
   }
 
   if (openId) {
     return (
       <ConversationThread
-        title={conversationTitle}
+        title={titleOf(conversations.find((item) => item.id === openId) ?? { care_recipient_id: null } as Conversation)}
         messages={messagesByConversation[openId] ?? []}
         currentUserId={user.id}
         sending={sending}
@@ -120,28 +173,38 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado" }: 
 
   return (
     <div className="flex flex-col gap-2">
+      {startButton}
       {error && <ErrorState kind={error} onRetry={() => void load()} />}
-      {conversations.map((conversation) => {
+      {[...conversations].sort((a, b) => {
+        // La conversación con el mensaje más reciente primero.
+        const at = (id: string, fallback: string) => { const list = messagesByConversation[id] ?? []; return list[list.length - 1]?.created_at ?? fallback; };
+        return at(b.id, b.created_at).localeCompare(at(a.id, a.created_at));
+      }).map((conversation) => {
         const messages = messagesByConversation[conversation.id] ?? [];
         const last = messages[messages.length - 1];
         const unread = !!last && last.sender_user_id !== user.id;
+        const title = titleOf(conversation);
         return (
           <button key={conversation.id} onClick={() => { setError(null); setOpenId(conversation.id); }} className="text-left">
             <Card className="flex items-center gap-3 rounded-[22px] border-[#102b57]/10 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
-              <Avatar name={conversationTitle} size={44} />
+              <Avatar name={title} size={44} />
               <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <p className="min-w-0 flex-1 font-medium text-[var(--color-text-primary)] truncate">{title}</p>
+                  {last && <span className="shrink-0 text-[var(--text-caption)] text-[var(--color-text-muted)]">{lastMessageTime(last.created_at)}</span>}
+                </div>
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-[var(--color-text-primary)] truncate">{conversationTitle}</p>
+                  <p className="min-w-0 flex-1 text-[var(--text-small)] text-[var(--color-text-secondary)] truncate">
+                    {last ? last.body : "Sin mensajes todavía"}
+                  </p>
                   {unread && <Badge tone="accent">Nuevo</Badge>}
                 </div>
-                <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] truncate">
-                  {last ? last.body : "Sin mensajes todavía"}
-                </p>
               </div>
             </Card>
           </button>
         );
       })}
+      {startModal}
     </div>
   );
 }
