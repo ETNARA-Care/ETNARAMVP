@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AlertTriangle, Archive, Bot, Building2, ChevronDown, History, KeyRound, LogOut, MapPin, Pencil, Plus, RefreshCcw, ShieldCheck, SlidersHorizontal, Sparkles, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
+import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
@@ -245,10 +246,11 @@ function WorkerCard({ worker }: { worker: WorkerMembership & { credentials: Work
 }
 
 export function AgencyMessagesPage() {
+  const recipients = useMessagingRecipients();
   return (
     <div>
-      <PageHeader title="Mensajes" />
-      <RealMessagingPanel />
+      <PageHeader title="Mensajes" description="Conversaciones con la familia y el equipo de cada residente." />
+      <RealMessagingPanel recipients={recipients} canStart />
     </div>
   );
 }

@@ -2,6 +2,19 @@
 
 ## Current Status
 
+## 2026-10-22 — Messages and care quality (ux/agency-messages-quality)
+
+- RealMessagingPanel names each conversation by its resident (agency and
+  caregiver via listCareRecipients; family via its relatives), sorts by the
+  latest message and shows its time. Mobile rows keep the name readable.
+- Agency: "Nuevo mensaje" picks a resident and opens or creates its
+  conversation through POST /care-recipients/:id/conversation (backend checks
+  access). New api/messaging openRecipientConversation.
+- Calidad del cuidado runs its review when the page opens (deterministic, no
+  AI) instead of showing an empty page.
+- Validation: typecheck, 109 tests, build; lint unchanged (76). Checked against
+  a local backend: new conversation about José Méndez, message sent, list order.
+
 ## 2026-10-22 — Phase 12.2 agency team (ux/12.2-equipo-agencia)
 
 - api/team.ts + features/agency/TeamPanel.tsx: Configuración → "Equipo" for

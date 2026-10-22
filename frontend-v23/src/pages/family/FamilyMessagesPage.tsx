@@ -1,7 +1,9 @@
 import { MessageCircle } from "lucide-react";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
+import { familyRecipientName, useFamilyRecipient } from "@/features/family/familyRecipient";
 
 export function FamilyMessagesPage() {
+  const { recipients } = useFamilyRecipient();
   return (
     <div className="space-y-5">
       <section>
@@ -15,7 +17,7 @@ export function FamilyMessagesPage() {
           <div><p className="font-medium">Tu espacio de comunicación</p><p className="mt-0.5 text-sm text-white/70">Mensajes relacionados con el cuidado de tu familiar.</p></div>
         </div>
       </section>
-      <RealMessagingPanel conversationTitle="Equipo de cuidado" />
+      <RealMessagingPanel conversationTitle="Equipo de cuidado" recipients={recipients.map((recipient) => ({ id: recipient.recipientId, name: familyRecipientName(recipient) }))} />
     </div>
   );
 }
