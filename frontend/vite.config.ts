@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/ETNARAMVP/',
   plugins: [react()],
+  preview: {
+    allowedHosts: ['etnara-smartmatch-demo-web-staging.up.railway.app'],
+  },
   server: {
     proxy: {
       '/api': {
