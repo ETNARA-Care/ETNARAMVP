@@ -195,3 +195,30 @@ export async function reviewWorkerCredential(
   );
   return result.review;
 }
+
+
+export interface PendingCredentialReviewItem {
+  membershipId: string;
+  workerId: string;
+  workerDisplayName: string | null;
+  credentialId: string;
+  credentialTypeCode: string;
+  credentialTypeName: string;
+  expiresAt: string | null;
+  fileId: string;
+  originalFilename: string;
+  contentType: "application/pdf" | "image/jpeg" | "image/png";
+  sizeBytes: number;
+  submittedAt: string;
+}
+
+export async function listPendingCredentialReviews(
+  organizationId: string,
+  token: string,
+): Promise<PendingCredentialReviewItem[]> {
+  const result = await apiClient.get<{ items: PendingCredentialReviewItem[] }>(
+    `/organizations/${organizationId}/credentials/review-queue`,
+    token,
+  );
+  return result.items;
+}
