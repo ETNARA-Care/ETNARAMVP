@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import { resolveExperienceRoute, type ExperienceRoute } from "./roles";
+import { allowedExperiences, resolveExperienceRoute, type ExperienceRoute } from "./roles";
 
 /**
  * Se usa DENTRO de <ProtectedRoute> (ya garantiza status === "authenticated").
@@ -18,7 +18,7 @@ export function RoleGuard({ experience, children }: { experience: ExperienceRout
   }
 
   const resolved = resolveExperienceRoute(roles);
-  if (resolved !== experience) {
+  if (!allowedExperiences(roles).includes(experience)) {
     return <Navigate to={resolved ?? "/login"} replace />;
   }
 

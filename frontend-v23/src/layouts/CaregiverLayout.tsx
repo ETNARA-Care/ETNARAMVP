@@ -9,7 +9,8 @@ import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
 
 export function CaregiverLayout() {
-  const { activeOrganization, activeWorkerProfile, user } = useAuth();
+  const { activeOrganization, activeWorkerProfile, user, roles } = useAuth();
+  const alsoStaff = roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR");
   const caregiverName = activeWorkerProfile?.displayName ?? user?.email ?? "Cuidador/a";
   const navigate = useNavigate();
   const [adminEstablishments, setAdminEstablishments] = useState<MyEstablishmentAdminAssignment[]>([]);
@@ -35,6 +36,12 @@ export function CaregiverLayout() {
     </header>
 
     <CareEventQueueBanner />
+
+    {alsoStaff && <div className="mx-auto w-full max-w-[760px] px-4 pt-4 sm:px-6">
+      <button type="button" className="w-full rounded-2xl border border-[var(--color-border)] bg-white p-4 text-left shadow-sm" onClick={() => navigate("/agency")}>
+        <div className="flex items-center gap-3"><Building2 size={22}/><div><div className="font-semibold">Ir a la agencia</div><div className="text-sm text-[var(--color-text-secondary)]">También eres {roles.includes("ORGANIZATION_ADMIN") ? "administrador/a" : "supervisor/a"} de {activeOrganization?.name ?? "la agencia"}</div></div></div>
+      </button>
+    </div>}
 
     {adminEstablishments.length > 0 && <div className="mx-auto w-full max-w-[760px] px-4 pt-4 sm:px-6">
       <button type="button" className="w-full rounded-2xl border border-[var(--color-border)] bg-white p-4 text-left shadow-sm" onClick={() => navigate(`/caregiver/admin/establishments/${adminEstablishments[0].id}`)}>

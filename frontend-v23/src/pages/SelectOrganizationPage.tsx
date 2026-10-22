@@ -4,6 +4,17 @@ import { Card, Button } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 import { resolveExperienceRoute } from "@/auth/roles";
 
+const ORGANIZATION_TYPE_LABEL: Record<string, string> = {
+  HOME_CARE_AGENCY: "Agencia de cuidado en el hogar",
+  RESIDENTIAL_CARE_HOME: "Hogar de cuidado",
+};
+const ROLE_LABEL: Record<string, string> = {
+  ORGANIZATION_ADMIN: "Administrador/a",
+  SUPERVISOR: "Supervisor/a",
+  WORKER: "Cuidador/a",
+  FAMILY: "Familiar",
+};
+
 export function SelectOrganizationPage() {
   const { organizations, setActiveOrganization } = useAuth();
   const navigate = useNavigate();
@@ -28,14 +39,14 @@ export function SelectOrganizationPage() {
     <div className="min-h-dvh flex items-center justify-center px-[var(--spacing-md)] bg-[var(--color-navy-950)]">
       <div className="w-full max-w-[420px] flex flex-col gap-4">
         <div className="text-center mb-2">
-          <h1 className="font-display text-[var(--text-h2)] text-[var(--color-surface)]">Elige una organización</h1>
-          <p className="text-[var(--text-small)] text-[var(--color-ivory-200)] mt-1">Tienes acceso a más de una.</p>
+          <h1 className="font-display text-[var(--text-h2)] text-white">Elige una organización</h1>
+          <p className="text-[var(--text-small)] text-white/70 mt-1">Tienes acceso a más de una.</p>
         </div>
         {organizations.map((org) => (
           <Card key={org.id} className="flex items-center justify-between gap-3">
             <div>
               <p className="font-medium text-[var(--color-text-primary)]">{org.name}</p>
-              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{org.type}</p>
+              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{ORGANIZATION_TYPE_LABEL[org.type] ?? "Organización"}{org.roles.length ? ` · ${org.roles.map((role) => ROLE_LABEL[role] ?? role).join(" y ")}` : ""}</p>
             </div>
             <Button size="md" loading={selectingId === org.id} onClick={() => choose(org.id)}>
               Entrar

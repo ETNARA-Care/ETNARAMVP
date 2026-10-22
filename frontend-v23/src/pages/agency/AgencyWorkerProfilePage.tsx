@@ -24,11 +24,12 @@ import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, 
 import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
 import { formatCredentialDate } from "./workerCredentialUtils";
 import { AccessInvitationPanel } from "./AccessInvitationPanel";
+import { StaffRoleCard } from "@/features/agency/StaffRoleCard";
 
 export function AgencyWorkerProfilePage() {
   const { membershipId } = useParams();
   const navigate = useNavigate();
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, roles } = useAuth();
   const organizationId = activeOrganization?.id;
   const [worker, setWorker] = useState<WorkerMembership | null | undefined>(undefined);
   const [credentials, setCredentials] = useState<WorkerCredential[]>([]);
@@ -346,6 +347,10 @@ export function AgencyWorkerProfilePage() {
           </div>
         )}
       </Card>
+
+      {organizationId && membershipId && worker.status === "active" && roles.includes("ORGANIZATION_ADMIN") && (
+        <StaffRoleCard organizationId={organizationId} workerMembershipId={membershipId} name={worker.display_name ?? "Esta persona"} />
+      )}
 
       {organizationId && membershipId && worker.status === "active" && (
         <AccessInvitationPanel organizationId={organizationId} type="worker" workerMembershipId={membershipId} />
