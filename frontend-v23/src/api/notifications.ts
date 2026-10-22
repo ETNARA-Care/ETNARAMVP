@@ -42,6 +42,8 @@ function notificationSummary(type: string): string {
   if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";
   if (type === "CREDENTIAL_EXPIRED") return "Credencial vencida";
   if (type === "CREDENTIAL_REVIEW_PENDING") return "Credencial pendiente de revisión";
+  if (type === "CREDENTIAL_REVIEW_APPROVED") return "Credencial aprobada";
+  if (type === "CREDENTIAL_REVIEW_REJECTED") return "Credencial rechazada";
   if (type === "OPERATIONAL_ALERT_ESCALATED") return "Alerta operacional escalada";
   return "Notificación";
 }
