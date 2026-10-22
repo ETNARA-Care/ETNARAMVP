@@ -42,3 +42,15 @@ export function listSmartMatchApplicationCounts(organizationId: string) {
     `/organizations/${encodeURIComponent(organizationId)}/smartmatch/application-counts`,
   );
 }
+
+export interface SmartMatchPendingApplication {
+  id: string;
+  status: "PENDING";
+  created_at: string;
+}
+
+export function listSmartMatchPendingApplications(organizationId: string, opportunityId: string) {
+  return apiFetch<{ applications: SmartMatchPendingApplication[] }>(
+    `/organizations/${encodeURIComponent(organizationId)}/smartmatch/opportunities/${encodeURIComponent(opportunityId)}/applications`,
+  );
+}
