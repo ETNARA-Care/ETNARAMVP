@@ -1,5 +1,7 @@
 # ETNARA Frontend Agent State
 
+## Current Status
+
 ## 2026-10-22 — SmartMatch Gate 4: UI in frontend-v23 (claude/smartmatch-frontend-v23)
 
 - SmartMatch was only in the legacy `frontend/` (not deployed). Integrated into `frontend-v23/`
@@ -13,8 +15,6 @@
 - Tests: tests/smartmatch-gate4.test.mjs (static); real-browser E2E at 390x844 against the local
   backend as app_runtime with two synthetic agencies: 22/22.
 - Requires backend PR ETNARA-Care/ETNARA-Backend#198 (endpoints).
-
-## Current Status
 
 ## 2026-10-22 — Phase 12.3 supervisor from caregiver + existing accounts (ux/12.3-supervisora-cuenta-existente)
 
