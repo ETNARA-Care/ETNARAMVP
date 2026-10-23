@@ -11,6 +11,14 @@ import "@/styles/admin-theme.css";
 
 const queryClient = new QueryClient();
 
+// Phase 12.5: copia de la app en el teléfono para abrir sin señal (solo el
+// programa; ningún dato de pacientes pasa por el service worker).
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => undefined);
+  });
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     {/* basename desde import.meta.env.BASE_URL -- coincide con vite.config `base`

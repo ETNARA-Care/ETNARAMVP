@@ -19,6 +19,7 @@ import {
   getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
+import { OfflineReadyCard } from "@/features/caregiver/OfflineReady";
 import { getRecipientLocation, type RecipientLocation } from "@/api/recipientLocation";
 import { DirectionsCard } from "@/features/caregiver/DirectionsCard";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
@@ -336,6 +337,8 @@ export function CaregiverShiftDetailPage() {
       )}
 
       {status !== "completed" && status !== "cancelled" && <DirectionsCard location={location} />}
+
+      {organizationId && <OfflineReadyCard organizationId={organizationId} shift={shift} />}
 
       {canStart && (
         <div className="flex flex-col gap-2">

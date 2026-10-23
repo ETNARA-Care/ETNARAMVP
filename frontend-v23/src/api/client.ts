@@ -25,7 +25,15 @@ async function request<T>(path:string,options:RequestOptions):Promise<T>{const h
 const OFFLINE_READABLE=/\/me\/shifts$|\/me\/worker-profile$|\/shifts\/[^/]+\/(visit-verification|care-events)$|\/care-recipients(\/[^/]+\/(care-plan|location))?$/;
 const lastResponses=new Map<string,unknown>();
 const MAX_REMEMBERED=200;
-async function getRemembering<T>(path:string,token?:string|null):Promise<T>{const key=`${token??""} ${path}`;const remember=OFFLINE_READABLE.test(path);try{const result=await request<T>(path,{method:"GET",token});if(remember){lastResponses.delete(key);lastResponses.set(key,result);if(lastResponses.size>MAX_REMEMBERED)lastResponses.delete(lastResponses.keys().next().value as string);}return result;}catch(error){if(remember&&(error as ApiError).status===0&&lastResponses.has(key))return lastResponses.get(key) as T;throw error;}}
+async function getRemembering<T>(path:string,token?:string|null):Promise<T>{const key=`${token??""} ${path}`;const remember=OFFLINE_READABLE.test(path);try{const result=await request<T>(path,{method:"GET",token});if(remember){lastResponses.delete(key);lastResponses.set(key,result);if(lastResponses.size>MAX_REMEMBERED)lastResponses.delete(lastResponses.keys().next().value as string);rememberedListener?.();}return result;}catch(error){if(remember&&(error as ApiError).status===0&&lastResponses.has(key))return lastResponses.get(key) as T;throw error;}}
 /** Al cerrar sesión: olvida las lecturas recordadas. */
 export function forgetRememberedResponses():void{lastResponses.clear();}
+/**
+ * Phase 12.5: el caché cifrado de turnos (offline/shiftCache) lee y repone
+ * estas lecturas. El cliente no sabe nada de cifrado ni de sesiones.
+ */
+let rememberedListener:(()=>void)|null=null;
+export function onRemembered(listener:(()=>void)|null):void{rememberedListener=listener;}
+export function exportRemembered(token:string):Array<[string,unknown]>{const prefix=`${token} `;return [...lastResponses.entries()].filter(([key])=>key.startsWith(prefix)).map(([key,value])=>[key.slice(prefix.length),value]);}
+export function importRemembered(token:string,entries:Array<[string,unknown]>):void{for(const [path,value] of entries){const key=`${token} ${path}`;if(!lastResponses.has(key))lastResponses.set(key,value);}}
 export const apiClient={get:<T>(path:string,token?:string|null)=>getRemembering<T>(path,token),post:<T>(path:string,body?:unknown,token?:string|null)=>request<T>(path,{method:"POST",body,token}),put:<T>(path:string,body?:unknown,token?:string|null)=>request<T>(path,{method:"PUT",body,token}),patch:<T>(path:string,body?:unknown,token?:string|null)=>request<T>(path,{method:"PATCH",body,token}),delete:<T>(path:string,token?:string|null)=>request<T>(path,{method:"DELETE",token}),postBinary};

@@ -4,6 +4,7 @@ import { CalendarDays, ChevronRight, Clock3, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
+import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
 import { prefetchUpcomingShifts } from "@/features/caregiver/prefetchShifts";
 import { isConnectivityError } from "@/features/caregiver/careEventQueue";
 import { listMyCoverageOffers, respondCoverageOffer, type MyCoverageOffer } from "@/api/coverageOffers";
@@ -37,7 +38,8 @@ export function CaregiverShiftsPage() {
       const [shiftRows, recipientRows, offerRows] = await Promise.all([
         listMyShifts(organizationId, token),
         listCareRecipients(organizationId, token),
-        listMyCoverageOffers(organizationId, token),
+        // Las ofertas de turnos abiertos son secundarias: sin señal no ocultan los turnos propios.
+        listMyCoverageOffers(organizationId, token).catch(() => []),
       ]);
       setShifts(shiftRows);
       prefetchUpcomingShifts(organizationId, shiftRows, token); setRecipients(recipientRows); setOffers(offerRows);
@@ -84,6 +86,7 @@ export function CaregiverShiftsPage() {
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-[var(--color-navy-900)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
           <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
+          <OfflineReadyMark shiftId={shift.id} compact />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {shift.assignment_response_status === "pending" ? <Badge tone="warning">Responder</Badge> : <StatusBadge status={shift.status}/>}
