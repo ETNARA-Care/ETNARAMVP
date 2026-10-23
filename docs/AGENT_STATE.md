@@ -2,6 +2,129 @@
 
 ## Current Status
 
+## 2026-10-22 — Phase 12.3 supervisor from caregiver + existing accounts (ux/12.3-supervisora-cuenta-existente)
+
+- roles.ts allowedExperiences: staff who also work shifts open both /agency
+  (default) and /caregiver. RoleGuard allows any allowed portal. Agency sidebar
+  "Mi día como cuidador/a"; caregiver portal "Ir a la agencia".
+- StaffRoleCard on the caregiver profile (administrators only): "Hacer
+  supervisor/a" / "Quitar supervisor/a" via POST /team/roles.
+- TeamPanel: "También cuidador/a" badge and "Quitar …" per role (not self);
+  clearer ALREADY_A_MEMBER message.
+- Invitation page: existing account signs in on the page and accepts via
+  POST /platform/admin-invitations/accept; identity mismatch explained.
+- Organization picker: readable heading, Spanish type and role labels.
+- Validation: typecheck, 112 tests, build; lint unchanged (76). Full flow
+  checked against a local backend.
+
+## 2026-10-22 — Messages and care quality (ux/agency-messages-quality)
+
+- RealMessagingPanel names each conversation by its resident (agency and
+  caregiver via listCareRecipients; family via its relatives), sorts by the
+  latest message and shows its time. Mobile rows keep the name readable.
+- Agency: "Nuevo mensaje" picks a resident and opens or creates its
+  conversation through POST /care-recipients/:id/conversation (backend checks
+  access). New api/messaging openRecipientConversation.
+- Calidad del cuidado runs its review when the page opens (deterministic, no
+  AI) instead of showing an empty page.
+- Validation: typecheck, 109 tests, build; lint unchanged (76). Checked against
+  a local backend: new conversation about José Méndez, message sent, list order.
+
+## 2026-10-22 — Phase 12.2 agency team (ux/12.2-equipo-agencia)
+
+- api/team.ts + features/agency/TeamPanel.tsx: Configuración → "Equipo" for
+  ORGANIZATION_ADMIN only — list administrators/supervisors, invite by email
+  with role (Supervisor | Administrador), cancel pending invitations, copy the
+  activation link when the email cannot be sent.
+- Activation page (/invite/organization-admin) names the invited role.
+- Supervisors: "Horas y facturación" removed from navigation and the page shows
+  an administrator-only notice (backend 085 also returns 403 and RLS denies).
+- Validation: typecheck, 105 tests, build; lint unchanged (76). Full flow
+  checked against a local backend: invite → activate → sign in as supervisor.
+- Pairs with ETNARA-Backend gate/12.2-team-invitations-admin-authority.
+
+## 2026-10-22 — Agency plain language and missing rates (fix/agency-plain-language-and-rates)
+
+- Removed internal jargon from agency screens ("B2B", "endpoint", "briefing",
+  "Family conserva endpoints"); buttons now say "Generar resumen".
+- Real plurals instead of "(s)"/"(es)" via overviewModel `plural`.
+- Dates without seconds (dateStyle medium + timeStyle short).
+- Horas y facturación: warning "Falta(n) la(s) tarifa(s) de …" with "Poner
+  tarifa", plus "Falta tarifa" on each row without rates.
+- Validation: typecheck, 101 tests, build; lint unchanged (76 pre-existing).
+- Pairs with ETNARA-Backend fix/agency-plain-language.
+
+## 2026-10-22 — Agency coverage and compliance truth (fix/agency-coverage-compliance-truth)
+
+- New `features/agency/shiftCoverage.ts`: one coverage rule for the agency
+  portal, matching the backend operations center — covered only when the
+  caregiver ACCEPTED; pending = "Esperando respuesta"; accepted + 15 min past
+  start without check-in = "Sin llegada".
+- useAgencySupervision exposes `assignmentResponse`. Briefing ("Turnos
+  confirmados hoy"), ShiftBoard, Shifts list and Residents list use the rule.
+  Removed the double "Sin asignar" + "Esperando respuesta" badges.
+- Compliance: with zero active establishments the establishment panel no
+  longer counts 5 "faltantes" against a nonexistent establishment; the
+  residents card explains establishment requirements; readiness ring says
+  "Sin establecimientos".
+- Validation: typecheck, 97 tests, build; lint unchanged (76 pre-existing).
+  Checked against a local backend with seeded demo data.
+- Pairs with ETNARA-Backend fix/coverage-truth-and-alert-time.
+
+## 2026-10-21 — Phase 12.1 "Cómo llegar" (ux/12.1-como-llegar)
+
+- Added `api/recipientLocation.ts` (shared client; 404 = no access → null).
+- Added `features/caregiver/directions.ts` (address text, Google Maps and Waze
+  links preferring coordinates, coordinate parsing) and `DirectionsCard.tsx`.
+- Caregiver shift detail loads the location without blocking the shift and
+  shows the card until the visit is completed or cancelled.
+- Agency resident profile has a "Dirección y acceso" card and editor.
+- Family pages do not call the location endpoint (asserted in tests).
+- Validation: typecheck, 82 tests, build; lint unchanged (75 pre-existing
+  warnings, none new). Screenshots checked with a mocked API.
+- Exact next step: publish only after Railway returns, backend #185 is merged
+  and migration 084 is applied.
+## 2026-10-21 — Caregiver offline-safe care records (ux/cuidador-sin-senal)
+
+- `features/caregiver/careEventQueue.ts` (contract + helpers) and
+  `CareEventQueueProvider.tsx` (provider + banner). The queue lives in memory only.
+- Saving a care record sends `clientEventId` + `occurredAt`. Connectivity failures
+  queue the record; other API errors surface immediately as before.
+- Shift detail lists pending records in the activity, blocks "Finalizar turno"
+  while any are pending and shows server-rejected records with a "Quitar" action.
+- Simulated offline → online with intercepted requests: one queued record, banner,
+  finish blocked, delivered on retry with the same clientEventId and occurredAt.
+- Typecheck, lint (no new warnings), 82 tests and build pass.
+- Exact next step: publish after backend PR #181 and migrations 080/081 on Railway.
+
+## 2026-10-21 — Family relatives and daily summary (ux/familia-familiares-resumen)
+
+- Added `features/family/familyRecipient.ts` (selection helpers + context) and
+  `FamilyRecipientContext.tsx` (provider + switcher). FamilyLayout wraps the
+  portal; the switcher only renders when the account has 2+ relatives.
+- Today, Activity, History and Profile resolve the relative with
+  `pickRecipient(recipients, activeOrganization?.id, selectedKey)` and reload on change.
+- `features/family/dailySummary.ts` builds "Resumen de hoy" from the curated
+  family timeline only (MEAL, HYDRATION, MOBILITY/ACTIVITY, latest MOOD).
+- Fixed the unreadable status pill on the navy hero and the "last update" line.
+- Reviewed at 390 px with intercepted fixtures (two relatives). Typecheck, lint
+  (existing warnings only), 77 tests and build pass.
+
+## 2026-10-21 — UX priorities for Caregiver and Family (ux/cuidador-familia-prioridades)
+
+- Caregiver header now mounts the existing real NotificationBell; its
+  caregiver routing (assignments and open-shift offers) already existed.
+- Caregiver "Mi día" shows a card with pending open-shift offers from the real
+  `/me/coverage-offers` contract; a failure there never hides the worker's own shifts.
+- Caregiver shift detail renders one state-driven primary action: accept or
+  reject, "Comenzar turno", then the care grid and incident report while active,
+  then the care plan and "Finalizar turno". No contract or permission change.
+- Family Today no longer shows an amber warning or "Aún sin cuidador asignado"
+  when there is no shift; it shows a calm state with a link to agency messages.
+- Reviewed at 390 px with intercepted API fixtures. Typecheck, lint (existing
+  warnings only), 74 tests and production build pass.
+- Exact next step: Rafa reviews the PR; recipient address needs a backend gate (FUX-002).
+
 Project: ETNARA Care
 Branch: design/claude-admin-full-integration
 

@@ -27,7 +27,7 @@ test("the center reflects the B2B pillars without creating a Family agent", () =
     assert.match(page, new RegExp(`name: "${pillar}"`));
   assert.match(page, /ETNARA \{pillar\.name\}/);
   assert.match(page, /control humano/);
-  assert.match(page, /Family conserva endpoints y permisos propios/);
+  assert.match(page, /La familia no participa en estos análisis/);
   assert.doesNotMatch(page, /generateFamilyAgent|family\/agent/i);
   assert.doesNotMatch(page, /DemoStore|mock/i);
 });

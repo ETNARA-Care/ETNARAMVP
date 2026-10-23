@@ -15,6 +15,8 @@ import {
 export interface AdminShift extends Shift {
   recipient?: CareRecipient;
   caregiver?: WorkerMembership;
+  /** Respuesta de la cuidadora asignada: solo "accepted" cuenta como cubierto. */
+  assignmentResponse?: "pending" | "accepted" | null;
 }
 
 export interface AdminCareEvent extends CareEvent {
@@ -73,12 +75,10 @@ export function useAgencySupervision(): AgencySupervisionState {
 
       const recipientById = Object.fromEntries(recipientRows.map((recipient) => [recipient.id, recipient]));
       const workerByMembershipId = Object.fromEntries(workerRows.map((worker) => [worker.id, worker]));
-      const assigneeByShiftId = Object.fromEntries(assignmentRows.map(({ shiftId, assignments }) => [
+      const activeAssignmentByShiftId = Object.fromEntries(assignmentRows.map(({ shiftId, assignments }) => [
         shiftId,
-        workerByMembershipId[(
-          assignments.find((assignment) => assignment.response_status === "accepted")
-          ?? assignments.find((assignment) => assignment.response_status === "pending")
-        )?.organization_worker_membership_id ?? ""],
+        assignments.find((assignment) => assignment.response_status === "accepted")
+          ?? assignments.find((assignment) => assignment.response_status === "pending"),
       ]));
 
  setWorkers(workerRows);
@@ -86,7 +86,8 @@ export function useAgencySupervision(): AgencySupervisionState {
       setShifts(shiftRows.map((shift) => ({
         ...shift,
         recipient: recipientById[shift.care_recipient_id ?? ""],
-        caregiver: assigneeByShiftId[shift.id],
+        caregiver: workerByMembershipId[activeAssignmentByShiftId[shift.id]?.organization_worker_membership_id ?? ""],
+        assignmentResponse: (activeAssignmentByShiftId[shift.id]?.response_status as "pending" | "accepted" | undefined) ?? null,
       })));
       setEvents(recipientEventRows.flatMap(({ recipientId, events: rows }) => rows.map((event) => ({
         ...event,

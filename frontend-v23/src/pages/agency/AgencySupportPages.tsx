@@ -1,8 +1,9 @@
-import { PageHeader, EmptyState, Card, Badge, StatusBadge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
+import { PageHeader, EmptyState, Card, Badge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AlertTriangle, Archive, Bot, Building2, ChevronDown, History, KeyRound, LogOut, MapPin, Pencil, Plus, RefreshCcw, ShieldCheck, SlidersHorizontal, Sparkles, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
+import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
@@ -30,6 +31,8 @@ import {
 } from "@/api/compliance";
 import { createCareRecipient, createWorker } from "@/api/roster";
 import { createEstablishment, listEstablishments, updateEstablishment, type Establishment } from "@/api/establishments";
+import { coverageLabel, coverageOf, coverageTone } from "@/features/agency/shiftCoverage";
+import { plural } from "@/pages/agency/overview/overviewModel";
 
 export function AgencyResidentsPage() {
   const { loading, error, recipients, shifts, reload } = useAgencySupervision();
@@ -109,10 +112,13 @@ function ResidentRow({ id, name, status, shift }: { id: string; name: string; st
       <div>
         <p className="font-medium text-[var(--color-text-primary)]">{name}</p>
         <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
-          {workerName ? `Cuidadora: ${workerName}` : shift ? "Sin cuidadora asignada" : "Sin turno programado hoy"}
+          {!shift ? "Sin turno programado hoy"
+            : !workerName ? "Sin cuidadora asignada"
+            : shift.assignmentResponse === "pending" ? `Esperando respuesta de ${workerName}`
+            : `Cuidadora: ${workerName}`}
         </p>
       </div>
-      {status === "archived" ? <Badge tone="neutral">Archivado</Badge> : shift ? <StatusBadge status={shift.status} /> : null}
+      {status === "archived" ? <Badge tone="neutral">Archivado</Badge> : shift ? (() => { const state = coverageOf(shift); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })() : null}
     </Card>
     </button>
   );
@@ -240,10 +246,11 @@ function WorkerCard({ worker }: { worker: WorkerMembership & { credentials: Work
 }
 
 export function AgencyMessagesPage() {
+  const recipients = useMessagingRecipients();
   return (
     <div>
-      <PageHeader title="Mensajes" />
-      <RealMessagingPanel />
+      <PageHeader title="Mensajes" description="Conversaciones con la familia y el equipo de cada residente." />
+      <RealMessagingPanel recipients={recipients} canStart />
     </div>
   );
 }
@@ -344,7 +351,7 @@ export function AgencyCompliancePage() {
     setAgentBusy(true);
     try {
       setAgentBriefing(await generateComplianceAgentBriefing(organizationId, token));
-      toast.show("El Agente de Cumplimiento preparó el briefing.", "success");
+      toast.show("El Agente de Cumplimiento preparó el resumen.", "success");
     } catch {
       toast.show("El agente no pudo analizar el cumplimiento en este momento.", "danger");
     } finally {
@@ -383,7 +390,7 @@ export function AgencyCompliancePage() {
             loading={agentBusy}
             onClick={() => void runComplianceAgent()}
           >
-            {agentBriefing ? "Actualizar briefing" : "Generar briefing"}
+            {agentBriefing ? "Actualizar resumen" : "Generar resumen"}
           </Button>
         </div>
 
@@ -453,7 +460,7 @@ export function AgencyCompliancePage() {
               const policy = configuration.policies.find((item) => item.workerRole.toLowerCase() === role.toLowerCase());
               return (
                 <div key={role} className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
-                  <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{policy?.requirements.length ?? 0} requisito(s) · {policy?.source === "organization" ? "Política de tu organización" : "Política base de ETNARA"}</p></div>
+                  <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{plural(policy?.requirements.length ?? 0,"requisito","requisitos")} · {policy?.source === "organization" ? "Política de tu organización" : "Política base de ETNARA"}</p></div>
                   <Button variant="secondary" onClick={() => openPolicy(role)}>Configurar</Button>
                 </div>
               );
@@ -502,7 +509,7 @@ export function AgencyCompliancePage() {
         <div className="flex items-center gap-2"><History size={20} className="text-[var(--color-text-muted)]" /><h2 className="font-display text-[var(--text-h3)]">Historial auditable</h2></div>
         {audit.length === 0 ? <p className="mt-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">Todavía no hay cambios administrativos registrados.</p> : (
           <ul className="mt-3 flex flex-col divide-y divide-[var(--color-ivory-300)]">
-            {audit.slice(0, 10).map((entry) => <li key={entry.id} className="py-3"><p className="text-[var(--text-small)] font-medium">{entry.action === "COMPLIANCE_REQUIREMENTS_UPDATED" ? "Requisitos de cumplimiento actualizados" : "Estado laboral actualizado"}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{new Date(entry.occurredAt).toLocaleString("es-PR")}</p></li>)}
+            {audit.slice(0, 10).map((entry) => <li key={entry.id} className="py-3"><p className="text-[var(--text-small)] font-medium">{entry.action === "COMPLIANCE_REQUIREMENTS_UPDATED" ? "Requisitos de cumplimiento actualizados" : "Estado laboral actualizado"}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{new Date(entry.occurredAt).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}</p></li>)}
           </ul>
         )}
       </Card>

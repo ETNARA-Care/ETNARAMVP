@@ -36,13 +36,27 @@ export async function listRecipientCareEvents(
 export async function createCareEvent(
   organizationId: string,
   shiftId: string,
-  input: { typeCode: CareEventTypeCode; careRecipientId: string; noteText?: string; payload?: Record<string, unknown> },
+  input: CreateCareEventInput,
   token: string,
 ): Promise<CareEvent> {
-  const result = await apiClient.post<{ event: CareEvent }>(
+  const result = await apiClient.post<{ event: CareEvent; replayed?: boolean }>(
     `/organizations/${organizationId}/shifts/${shiftId}/care-events`,
     input,
     token,
   );
   return result.event;
+}
+
+/**
+ * clientEventId (device UUID) lets a retry return the stored record instead of
+ * creating a duplicate; occurredAt keeps the real time when the upload is late.
+ * Both are optional and validated by the backend (Phase 12.0).
+ */
+export interface CreateCareEventInput {
+  typeCode: CareEventTypeCode;
+  careRecipientId: string;
+  noteText?: string;
+  payload?: Record<string, unknown>;
+  clientEventId?: string;
+  occurredAt?: string;
 }

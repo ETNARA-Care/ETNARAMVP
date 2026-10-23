@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
-import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
+import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
-import { listMyCredentials, type CredentialSummary } from "@/api/credentials";
+import { listMyCredentials, uploadMyCredentialDocument, type CredentialSummary } from "@/api/credentials";
 import { getMyAvailability, saveMyAvailability, type MyAvailability } from "@/api/availability";
 
 const weekdays = [
@@ -51,6 +52,7 @@ function credentialState(credential: CredentialSummary): { tone: "success" | "wa
 }
 
 export function CaregiverMessagesPage() {
+  const recipients = useMessagingRecipients();
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-navy-900)] p-5 text-white">
@@ -58,7 +60,7 @@ export function CaregiverMessagesPage() {
         <h1 className="mt-1 font-[var(--font-serif)] text-2xl">Mensajes</h1>
         <p className="mt-2 text-sm text-white/70">Coordina con tu equipo desde las conversaciones disponibles para tu cuenta.</p>
       </div>
-      <RealMessagingPanel />
+      <RealMessagingPanel recipients={recipients} />
     </div>
   );
 }
@@ -70,6 +72,8 @@ export function CaregiverProfilePage() {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState<CredentialSummary[] | null>(null);
   const [credentialError, setCredentialError] = useState(false);
+  const [credentialFiles, setCredentialFiles] = useState<Record<string, File | null>>({});
+  const [uploadingCredentialId, setUploadingCredentialId] = useState<string | null>(null);
   const [availability, setAvailability] = useState<MyAvailability | null>(null);
   const [availabilityDays, setAvailabilityDays] = useState<AvailabilityDayDraft[]>(emptyAvailabilityDays);
   const [timeOff, setTimeOff] = useState<TimeOffDraft[]>([]);
@@ -161,6 +165,31 @@ export function CaregiverProfilePage() {
     }
   }
 
+  async function submitCredentialDocument(credential: CredentialSummary) {
+    const token = getToken();
+    const file = credentialFiles[credential.id];
+    if (!token || !activeOrganization || !file) return;
+    if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type)) {
+      show("Selecciona un PDF, JPG o PNG.", "danger");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      show("El documento no puede superar 10 MB.", "danger");
+      return;
+    }
+    setUploadingCredentialId(credential.id);
+    try {
+      await uploadMyCredentialDocument(activeOrganization.id, credential.id, file, token);
+      setCredentialFiles((current) => ({ ...current, [credential.id]: null }));
+      await loadCredentials();
+      show("Documento enviado a Administración para revisión.", "success");
+    } catch {
+      show("No pudimos enviar el documento. Intenta nuevamente.", "danger");
+    } finally {
+      setUploadingCredentialId(null);
+    }
+  }
+
   async function onLogout() {
     await logout();
     navigate("/login", { replace: true });
@@ -180,7 +209,7 @@ export function CaregiverProfilePage() {
           {user?.email && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Sesión: {user.email}</p>}
         </div>
       </Card>
-      <Card className="overflow-hidden p-0">
+      <Card id="my-credentials" className="overflow-hidden p-0 scroll-mt-24">
         <div className="bg-[var(--color-navy-900)] p-5 text-white">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2"><ShieldCheck size={20} /><p className="font-semibold">Mis credenciales</p></div>
@@ -194,20 +223,46 @@ export function CaregiverProfilePage() {
           ) : credentials.length === 0 ? (
             <div className="rounded-[var(--radius-sm)] bg-[var(--color-ivory-100)] p-4">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">No hay credenciales registradas todavía.</p>
-              <p className="mt-1 text-[var(--text-caption)] text-[var(--color-text-muted)]">La carga de documentos por el cuidador todavía no está habilitada. Administración gestiona tu expediente.</p>
+              <p className="mt-1 text-[var(--text-caption)] text-[var(--color-text-muted)]">Administración debe registrar primero los requisitos de credenciales para que puedas cargar evidencia.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
               {credentials.map((credential) => {
                 const state = credentialState(credential);
                 return (
-                  <div key={credential.id} className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] p-3">
-                    <CheckCircle2 size={18} className="text-[var(--color-success-700)] shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[var(--text-small)] font-medium text-[var(--color-text-primary)]">{credential.typeName}</p>
-                      {credential.expiresAt && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Vence {new Date(`${credential.expiresAt}T00:00:00`).toLocaleDateString("es-PR")}</p>}
+                  <div key={credential.id} className="rounded-[var(--radius-sm)] border border-[var(--color-border)] p-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 size={18} className="text-[var(--color-success-700)] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[var(--text-small)] font-medium text-[var(--color-text-primary)]">{credential.typeName}</p>
+                        {credential.expiresAt && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Vence {new Date(`${credential.expiresAt}T00:00:00`).toLocaleDateString("es-PR")}</p>}
+                      </div>
+                      <Badge tone={state.tone}>{state.label}</Badge>
                     </div>
-                    <Badge tone={state.tone}>{state.label}</Badge>
+                    {credential.verificationStatus === "rejected" && credential.reviewNotes && (
+                      <div className="mt-3 rounded-[var(--radius-sm)] bg-[var(--color-danger-50)] p-3">
+                        <p className="text-[var(--text-caption)] font-semibold text-[var(--color-danger-700)]">Motivo del rechazo</p>
+                        <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">{credential.reviewNotes}</p>
+                      </div>
+                    )}
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+                      <Input
+                        label={credential.verificationStatus === "rejected" ? "Reemplazar documento" : "Subir documento"}
+                        type="file"
+                        accept="application/pdf,image/jpeg,image/png"
+                        onChange={(event) => setCredentialFiles((current) => ({ ...current, [credential.id]: event.target.files?.[0] ?? null }))}
+                      />
+                      <Button
+                        variant="secondary"
+                        icon={<Upload size={17} />}
+                        onClick={() => void submitCredentialDocument(credential)}
+                        loading={uploadingCredentialId === credential.id}
+                        disabled={!credentialFiles[credential.id] || (uploadingCredentialId !== null && uploadingCredentialId !== credential.id)}
+                      >
+                        Enviar a revisión
+                      </Button>
+                    </div>
+                    <p className="mt-2 text-[var(--text-caption)] text-[var(--color-text-muted)]">PDF, JPG o PNG · máximo 10 MB. Una nueva carga vuelve el requisito a Pendiente.</p>
                   </div>
                 );
               })}

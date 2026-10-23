@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Activity, Bot, ClipboardCheck, FileWarning, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
@@ -8,7 +8,7 @@ import {
   type CareQualityAgentBriefing,
   type CareQualitySeverity,
 } from "@/api/careQualityAgent";
-import { Badge, Button, Card, PageHeader, StatCard, useToast } from "@/components/ui";
+import { Badge, Button, Card, PageHeader, Skeleton, StatCard, useToast } from "@/components/ui";
 
 const tone: Record<CareQualitySeverity, "danger" | "warning" | "neutral"> = {
   critical: "danger",
@@ -22,6 +22,20 @@ export function AgencyCareQualityPage() {
   const { show } = useToast();
   const [briefing, setBriefing] = useState<CareQualityAgentBriefing | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autoFailed, setAutoFailed] = useState(false);
+
+  // La revisión se calcula con los registros reales (sin IA), así que corre
+  // sola al abrir la página: la agencia no ve una página vacía.
+  useEffect(() => {
+    const token = getToken();
+    const organizationId = activeOrganization?.id;
+    if (!token || !organizationId) return;
+    let cancelled = false;
+    generateCareQualityAgentBriefing(organizationId, token)
+      .then((result) => { if (!cancelled) setBriefing(result); })
+      .catch(() => { if (!cancelled) setAutoFailed(true); });
+    return () => { cancelled = true; };
+  }, [activeOrganization?.id]);
 
   async function runAgent() {
     const token = getToken();
@@ -30,7 +44,7 @@ export function AgencyCareQualityPage() {
     setBusy(true);
     try {
       setBriefing(await generateCareQualityAgentBriefing(organizationId, token));
-      show("El Agente de Calidad preparó el briefing.", "success");
+      show("El Agente de Calidad preparó el resumen.", "success");
     } catch {
       show("El agente no pudo analizar la documentación en este momento.", "danger");
     } finally {
@@ -62,9 +76,12 @@ export function AgencyCareQualityPage() {
             </div>
           </div>
           <Button icon={<Sparkles size={18} />} loading={busy} onClick={() => void runAgent()}>
-            {briefing ? "Actualizar briefing" : "Generar briefing"}
+            {briefing ? "Actualizar resumen" : "Generar resumen"}
           </Button>
         </div>
+
+        {!briefing && !autoFailed && <Skeleton className="mt-5 h-28" />}
+        {!briefing && autoFailed && <p className="mt-5 text-sm text-[var(--color-text-secondary)]">No pudimos revisar la documentación ahora. Toca «Generar resumen» para intentarlo otra vez.</p>}
 
         {briefing && (
           <div className="mt-5 pt-5 border-t border-[var(--color-border)]">

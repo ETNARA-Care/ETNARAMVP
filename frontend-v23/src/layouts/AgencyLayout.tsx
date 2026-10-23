@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck } from "lucide-react";
+import { HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
@@ -39,14 +39,23 @@ const MOBILE_TABS: AdminNavItem[] = [
 ];
 
 export function AgencyLayout() {
- const { activeOrganization, organizations, user, isPlatformAdmin, logout } = useAuth();
+ const { activeOrganization, organizations, user, isPlatformAdmin, logout, roles } = useAuth();
+ // Horas y facturación: solo administradores (backend 085). El supervisor no ve el enlace.
+ const groups = roles.includes("ORGANIZATION_ADMIN")
+   ? GROUPS
+   : GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => item.to !== "/agency/timesheets") }));
  const organizationName = activeOrganization?.name ?? "Organización";
  // Acceso a Plataforma ETNARA: solo administradores de plataforma, separado del administrador de la organización.
- const platformLink = isPlatformAdmin ? <AdminSideLink to="/platform" icon={BadgeCheck} label="Plataforma" /> : null;
+ const platformLink = isPlatformAdmin || roles.includes("WORKER")
+   ? <>
+       {isPlatformAdmin && <AdminSideLink to="/platform" icon={BadgeCheck} label="Plataforma" />}
+       {roles.includes("WORKER") && <AdminSideLink to="/caregiver/today" icon={HeartHandshake} label="Mi día como cuidador/a" />}
+     </>
+   : null;
 
  return (
  <div data-portal="admin" className="flex min-h-dvh">
- <AdminSidebar groups={GROUPS} platformLink={platformLink} organizationName={organizationName} />
+ <AdminSidebar groups={groups} platformLink={platformLink} organizationName={organizationName} />
  <div className="min-w-0 flex-1">
  <AdminTopbar organizationName={organizationName} canSwitchOrganization={organizations.length > 1}
  userLabel={user?.email ?? "Administrador"} onLogout={logout} />
@@ -54,7 +63,7 @@ export function AgencyLayout() {
  <Outlet />
  </main>
  </div>
- <AdminMobileNav tabs={MOBILE_TABS} groups={GROUPS} platformLink={platformLink} />
+ <AdminMobileNav tabs={MOBILE_TABS} groups={groups} platformLink={platformLink} />
  </div>
  );
 }

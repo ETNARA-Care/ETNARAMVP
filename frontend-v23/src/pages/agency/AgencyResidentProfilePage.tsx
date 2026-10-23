@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, ArrowLeft, CalendarRange, ClipboardList, HeartPulse, Plus, Trash2, UserRound } from "lucide-react";
+import { Activity, AlertTriangle, ArrowLeft, CalendarRange, ClipboardList, HeartPulse, MapPin, Plus, Trash2, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -20,6 +20,8 @@ import { getCareRecipient, recipientName, type CareRecipient } from "@/api/shift
 import { Badge, BottomSheet, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { useAgencySupervision } from "@/features/agency/useAgencySupervision";
 import { updateCareRecipient } from "@/api/roster";
+import { getRecipientLocation, saveRecipientLocation, type RecipientLocation } from "@/api/recipientLocation";
+import { addressText, formatCoordinates, parseCoordinates } from "@/features/caregiver/directions";
 import { AccessInvitationPanel } from "./AccessInvitationPanel";
 
 const careLabels: Record<string, string> = {
@@ -105,6 +107,10 @@ export function AgencyResidentProfilePage() {
   const [planSaving, setPlanSaving] = useState(false);
   const [planForm, setPlanForm] = useState<CarePlanFormState>(emptyCarePlanForm);
   const [form, setForm] = useState({ firstName: "", lastName: "", preferredName: "", dateOfBirth: "", allergies: "" });
+  const [location, setLocation] = useState<RecipientLocation | null | undefined>(undefined);
+  const [locationEditing, setLocationEditing] = useState(false);
+  const [locationSaving, setLocationSaving] = useState(false);
+  const [locationForm, setLocationForm] = useState({ addressLine: "", municipality: "", accessNotes: "", coordinates: "" });
   const toast = useToast();
 
   const load = useCallback(async () => {
@@ -112,14 +118,16 @@ export function AgencyResidentProfilePage() {
     if (!organizationId || !residentId || !token) return;
     setError(false);
     try {
-      const [recipientRow, incidentRows, carePlanRow] = await Promise.all([
+      const [recipientRow, incidentRows, carePlanRow, locationRow] = await Promise.all([
         getCareRecipient(organizationId, residentId, token),
         listIncidents(organizationId, token),
         getActiveCarePlan(organizationId, residentId, token),
+        getRecipientLocation(organizationId, residentId, token),
       ]);
       setResident(recipientRow);
       setIncidents(incidentRows.filter((incident) => incident.care_recipient_id === residentId));
       setCarePlan(carePlanRow);
+      setLocation(locationRow);
     } catch {
       setResident(null);
       setError(true);
@@ -159,6 +167,40 @@ export function AgencyResidentProfilePage() {
       toast.show("No pudimos actualizar al residente.", "danger");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openLocationEditor = () => {
+    setLocationForm({
+      addressLine: location?.address_line ?? "",
+      municipality: location?.municipality ?? "",
+      accessNotes: location?.access_notes ?? "",
+      coordinates: formatCoordinates(location),
+    });
+    setLocationEditing(true);
+  };
+
+  const coordinates = parseCoordinates(locationForm.coordinates);
+
+  const saveLocation = async () => {
+    const token = getToken();
+    if (!organizationId || !residentId || !token || coordinates === "invalid") return;
+    setLocationSaving(true);
+    try {
+      const saved = await saveRecipientLocation(organizationId, residentId, {
+        addressLine: locationForm.addressLine.trim() || null,
+        municipality: locationForm.municipality.trim() || null,
+        accessNotes: locationForm.accessNotes.trim() || null,
+        latitude: coordinates?.latitude ?? null,
+        longitude: coordinates?.longitude ?? null,
+      }, token);
+      setLocation(saved);
+      setLocationEditing(false);
+      toast.show("Dirección guardada. La verá la cuidadora asignada al turno.", "success");
+    } catch {
+      toast.show("No pudimos guardar la dirección.", "danger");
+    } finally {
+      setLocationSaving(false);
     }
   };
 
@@ -290,6 +332,28 @@ export function AgencyResidentProfilePage() {
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
+            <MapPin size={21} />
+            <div>
+              <h2 className="font-medium text-[var(--color-text-primary)]">Dirección y acceso</h2>
+              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-0.5">Solo la ven Administración y la cuidadora con turno asignado. La familia no la ve.</p>
+            </div>
+          </div>
+          <Button variant="secondary" onClick={openLocationEditor} disabled={location === undefined}>{location ? "Editar dirección" : "Añadir dirección"}</Button>
+        </div>
+        {location === undefined ? <Skeleton className="h-16" /> : !location || (!addressText(location) && !location.access_notes && !formatCoordinates(location)) ? (
+          <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Sin dirección registrada. Añádela para que la cuidadora pueda abrir Google Maps o Waze desde su turno.</p>
+        ) : (
+          <dl className="grid gap-3 sm:grid-cols-2">
+            <ProfileField label="Dirección" value={addressText(location) || "No registrada"} />
+            <ProfileField label="Coordenadas" value={formatCoordinates(location) || "No registradas"} />
+            <div className="sm:col-span-2"><ProfileField label="Cómo llegar" value={location.access_notes || "Sin notas de acceso"} /></div>
+          </dl>
+        )}
+      </Card>
+
+      <Card>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
             <ClipboardList size={21} />
             <div>
               <h2 className="font-medium text-[var(--color-text-primary)]">Plan individual de cuidado</h2>
@@ -382,6 +446,28 @@ export function AgencyResidentProfilePage() {
           <Input label="Nombre preferido (opcional)" value={form.preferredName} onChange={(event) => setForm((current) => ({ ...current, preferredName: event.target.value }))} />
           <Input label="Fecha de nacimiento (opcional)" type="date" value={form.dateOfBirth} onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))} />
           <Input label="Alergias (opcional)" hint="Separa varias alergias con comas." value={form.allergies} onChange={(event) => setForm((current) => ({ ...current, allergies: event.target.value }))} />
+        </div>
+      </Modal>
+
+      <Modal
+        open={locationEditing}
+        onClose={() => !locationSaving && setLocationEditing(false)}
+        title="Dirección y acceso"
+        footer={<><Button variant="secondary" onClick={() => setLocationEditing(false)} disabled={locationSaving}>Cancelar</Button><Button onClick={() => void saveLocation()} loading={locationSaving} disabled={coordinates === "invalid"}>Guardar dirección</Button></>}
+      >
+        <div className="flex flex-col gap-3">
+          <Input label="Dirección" maxLength={200} value={locationForm.addressLine} onChange={(event) => setLocationForm((current) => ({ ...current, addressLine: event.target.value }))} placeholder="Ej. Carr. 156 km 12.3, Bo. Quebrada Grande" />
+          <Input label="Municipio" maxLength={60} value={locationForm.municipality} onChange={(event) => setLocationForm((current) => ({ ...current, municipality: event.target.value }))} placeholder="Ej. Barranquitas" />
+          <Textarea label="Cómo llegar (opcional)" maxLength={500} value={locationForm.accessNotes} onChange={(event) => setLocationForm((current) => ({ ...current, accessNotes: event.target.value }))} placeholder="Ej. Casa amarilla con portón verde, después de la iglesia. El perro está amarrado." />
+          <Input
+            label="Coordenadas (opcional)"
+            error={coordinates === "invalid" ? "Escribe latitud y longitud separadas por coma, ej. 18.186123, -66.306456" : undefined}
+            hint="Ayudan en el campo. En Google Maps mantén presionada la casa y copia los números."
+            inputMode="decimal"
+            value={locationForm.coordinates}
+            onChange={(event) => setLocationForm((current) => ({ ...current, coordinates: event.target.value }))}
+            placeholder="18.186123, -66.306456"
+          />
         </div>
       </Modal>
 

@@ -11,7 +11,9 @@ import {
   assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
   type Assignment, type CareRecipient, type CoverageCandidate, type Shift, type WorkerMembership,
 } from "@/api/shifts";
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, StatusBadge, useToast } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, useToast } from "@/components/ui";
+import { coverageLabel, coverageOf, coverageTone } from "@/features/agency/shiftCoverage";
+import { plural } from "@/pages/agency/overview/overviewModel";
 
 function localDateTime(date: Date): string {
   const offset = date.getTimezoneOffset() * 60_000;
@@ -250,7 +252,7 @@ export function AgencyShiftsPage() {
     setAgentBusy(true);
     try {
       setAgentBriefing(await generateCoverageAgentBriefing(organizationId, token));
-      show("El Agente de Cobertura preparó el briefing.", "success");
+      show("El Agente de Cobertura preparó el resumen.", "success");
     } catch {
       show("El agente no pudo analizar la cobertura en este momento.", "danger");
     } finally {
@@ -281,7 +283,7 @@ export function AgencyShiftsPage() {
             </div>
           </div>
           <Button icon={<Sparkles size={18} />} loading={agentBusy} onClick={() => void runCoverageAgent()}>
-            {agentBriefing ? "Actualizar briefing" : "Generar briefing"}
+            {agentBriefing ? "Actualizar resumen" : "Generar resumen"}
           </Button>
         </div>
 
@@ -306,7 +308,7 @@ export function AgencyShiftsPage() {
                         </div>
                         <p className="text-sm mt-2">{formatWindow({ scheduled_start: priority.scheduledStart, scheduled_end: priority.scheduledEnd })}</p>
                         <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                          {priority.eligibleCandidateCount} opción(es) elegible(s) · {priority.interestedCount} interesada(s)
+                          {plural(priority.eligibleCandidateCount,"opción elegible","opciones elegibles")} · {plural(priority.interestedCount,"interesada","interesadas")}
                         </p>
                         <p className="text-sm text-[var(--color-text-secondary)] mt-1">Recomendación: {priority.recommendedAction}</p>
                       </div>
@@ -348,16 +350,15 @@ export function AgencyShiftsPage() {
                   <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
                   {assignee && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidadora: {assignee.display_name ?? assignee.internal_role}</p>}
-                  {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ola {campaign.currentWave}: {interestedNames.length} disponible(s) · {pendingCount} pendiente(s) · {queuedCount} en espera</p>}
+                  {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ola {campaign.currentWave}: {plural(interestedNames.length,"disponible","disponibles")} · {plural(pendingCount,"pendiente","pendientes")} · {queuedCount} en espera</p>}
                   {campaign?.campaignStatus === "open" && campaign.nextWaveAt && interestedNames.length === 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Próxima ola automática a las {formatWaveDeadline(campaign.nextWaveAt)} si nadie está disponible.</p>}
                   {campaign?.campaignStatus === "open" && !campaign.nextWaveAt && interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-success-700)]">Escalación detenida: Administración puede realizar la asignación final.</p>}
                   {campaign?.campaignStatus === "exhausted" && <p className="text-[var(--text-caption)] text-[var(--color-warning-700)]">Se consultó a todo el personal elegible sin encontrar disponibilidad.</p>}
                   {interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Interesadas: {interestedNames.join(", ")}</p>}
                 </div>
  <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge status={shift.status} />
-                  {assignment?.response_status === "pending" && <Badge tone="warning">Esperando respuesta</Badge>}
-                  {assignment?.response_status === "accepted" && <Badge tone="success">Aceptado</Badge>}
+                  {/* Una sola etiqueta con la misma regla del Resumen y del Centro operacional. */}
+                  {(() => { const state = coverageOf({ ...shift, assignmentResponse: assignment?.response_status === "accepted" || assignment?.response_status === "pending" ? assignment.response_status : null }); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })()}
  {shift.status === "unassigned" && !assignment && canStartCoverage && <Button variant="secondary" size="md" className="whitespace-nowrap" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>{campaign?.campaignStatus === "exhausted" ? "Reintentar cobertura" : "Ofrecer turno"}</Button>}
  {shift.status === "unassigned" && !assignment && <Button size="md" className="whitespace-nowrap" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
                 </div>

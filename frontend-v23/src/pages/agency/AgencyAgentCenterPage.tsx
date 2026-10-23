@@ -36,7 +36,7 @@ const AGENTS: Array<{
   {
     key: "operations",
     name: "Agente de Operaciones",
-    pillar: "Operación B2B",
+    pillar: "ETNARA Operaciones",
     description: "Prioriza alertas reales de turnos, entradas, credenciales, incidentes y horas.",
     destination: "/agency/operations",
   },
@@ -122,7 +122,7 @@ export function AgencyAgentCenterPage() {
     <div className="flex flex-col gap-[var(--spacing-lg)]">
       <PageHeader
         title="Centro de agentes"
-        description="Briefings administrativos de Compliance, Workforce, Care y operaciones"
+        description="Resúmenes de cumplimiento, personal, cuidado y operaciones."
         actions={(
           <Button icon={<Sparkles size={18} />} loading={busy} onClick={() => void runAllAgents()}>
             Analizar organización
@@ -141,7 +141,7 @@ export function AgencyAgentCenterPage() {
               <Badge tone="neutral">Asesor · control humano</Badge>
             </div>
             <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-              Cada agente analiza su fuente autorizada y conserva su propia auditoría. Este centro no asigna personal, aprueba documentos, modifica expedientes ni comparte información con Family.
+              Cada agente analiza su fuente autorizada y conserva su propia auditoría. Este centro no asigna personal, aprueba documentos, modifica expedientes ni comparte información con la familia.
             </p>
           </div>
         </div>
@@ -174,7 +174,7 @@ export function AgencyAgentCenterPage() {
                       {snapshot.priorityCount} prioridad{snapshot.priorityCount === 1 ? "" : "es"}
                     </Badge>
                     <span className="text-xs text-[var(--color-text-muted)]">
-                      {new Date(snapshot.generatedAt).toLocaleString("es-PR")}
+                      {new Date(snapshot.generatedAt).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}
                     </span>
                   </div>
                   <p className="font-medium text-sm mt-2">{snapshot.headline}</p>
@@ -195,7 +195,7 @@ export function AgencyAgentCenterPage() {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <MessagesSquare size={19} className="text-[var(--color-accent-700)]" />
-          <h2 className="font-display text-lg">Organización del producto B2B</h2>
+          <h2 className="font-display text-lg">Áreas de ETNARA</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {PILLARS.map((pillar) => {
@@ -215,7 +215,7 @@ export function AgencyAgentCenterPage() {
           })}
         </div>
         <p className="text-xs text-[var(--color-text-muted)] mt-3">
-          Family conserva endpoints y permisos propios; no participa en los análisis organizacionales de los agentes.
+          La familia no participa en estos análisis: solo ve lo que su app le permite.
         </p>
       </div>
     </div>

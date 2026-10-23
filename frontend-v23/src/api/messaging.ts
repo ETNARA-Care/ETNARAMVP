@@ -49,3 +49,16 @@ export async function sendMessage(
   );
   return result.message;
 }
+
+/**
+ * Abre la conversación de un residente (familia + equipo) o la crea si aún no
+ * existe. El backend valida que quien la pide tenga acceso a ese residente.
+ */
+export async function openRecipientConversation(organizationId: string, recipientId: string, token: string): Promise<Conversation> {
+  const result = await apiClient.post<{ conversation: Conversation }>(
+    `/organizations/${organizationId}/care-recipients/${recipientId}/conversation`,
+    undefined,
+    token,
+  );
+  return result.conversation;
+}

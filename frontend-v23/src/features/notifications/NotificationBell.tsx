@@ -49,6 +49,14 @@ export function NotificationBell() {
       navigate(`/${portal}/messages?thread=${entityId}`);
       return;
     }
+    if (type === "CREDENTIAL_REVIEW_PENDING" && portal === "agency") {
+      navigate("/agency/compliance#credential-review-queue");
+      return;
+    }
+    if ((type === "CREDENTIAL_REVIEW_APPROVED" || type === "CREDENTIAL_REVIEW_REJECTED") && portal === "caregiver") {
+      navigate("/caregiver/profile#my-credentials");
+      return;
+    }
     if (entityType === "credential" && portal === "agency" && workerMembershipId) {
       navigate(`/agency/workers/${workerMembershipId}`);
       return;

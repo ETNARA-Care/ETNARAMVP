@@ -2,6 +2,58 @@
 
 ## In Progress
 
+### FUX-005 — Agency team: invite administrators and supervisors
+- Configuración → Equipo (administrators only), invite with role, cancel
+- supervisors do not see Horas y facturación
+
+Status: Implemented on `ux/12.2-equipo-agencia`; awaiting PASS with backend 12.2.
+
+### FUX-004 — Agency: one truth for coverage and compliance
+- covered only when the caregiver accepted (same rule as operations)
+- "Esperando respuesta" and "Sin llegada" shown everywhere consistently
+- compliance does not count establishment requirements without establishments
+
+Status: Implemented on `fix/agency-coverage-compliance-truth`; awaiting PASS.
+
+### FUX-004 — Caregiver offline-safe care records
+- care records that fail for connectivity stay in an in-memory queue (no device storage)
+- each record carries a device `clientEventId` and its real `occurredAt`, reused on every retry
+- retries on reconnect, on return to the app, every 15 s and from a "Reintentar" button
+- banner "Sin señal · N registros por enviar"; pending items appear in the shift activity
+- "Finalizar turno" is blocked while records are pending; server rejections are shown, never dropped silently
+
+Status: Implemented on `ux/cuidador-sin-senal`. Depends on backend Phase 12.0
+(PR #181) for duplicate-safe retries and real times; publish after 080/081 are applied on Railway.
+
+### FUX-003 — Family: switch between relatives and daily summary
+- one family account can switch between every authorized relative (chips under the header, shown only with 2+)
+- Today, Activity, History and Profile follow the selected relative; selection lives in memory, no storage
+- "Resumen de hoy" restates meals, liquids, movement and latest mood from the curated family timeline only
+- toileting is never summarized; nothing is interpreted or rated
+
+Status: Implemented on `ux/familia-familiares-resumen`; typecheck, lint
+(existing warnings only), 77 tests and production build pass. Pending review.
+
+### FUX-001 — Caregiver and Family experience priorities
+- caregiver header shows the real notification inbox (existing NotificationBell)
+- caregiver "Mi día" surfaces pending open-shift offers from `/me/coverage-offers`
+- caregiver shift detail shows one state-driven primary action (accept, start, record care, finish) before the care plan
+- family home stays calm when there is no shift today and offers a direct way to message the agency
+
+Status: Implemented on `ux/cuidador-familia-prioridades`; typecheck, lint
+(existing warnings only), all tests and production build pass. Pending review.
+
+### FUX-002 — Care recipient address and directions
+- backend Phase 12.1 (ETNARA-Backend PR #185, migration 084) provides
+  GET/PUT `/care-recipients/:id/location` with assignment-scoped RLS
+- agency resident profile: "Dirección y acceso" card and editor (address,
+  municipality, access notes, optional coordinates pasted from Google Maps)
+- caregiver shift: "Cómo llegar" card with Google Maps, Waze and Copiar
+  dirección until the visit ends; family never requests the address
+
+Status: Implemented on `ux/12.1-como-llegar` (draft PR). Publish after
+Railway returns, backend #185 (migration 084) is live.
+
 ### FPH10-001 — Phase 10.0 multi-agency establishments
 - identify the active organization in Settings
 - reuse the existing organization selector for multi-agency accounts
