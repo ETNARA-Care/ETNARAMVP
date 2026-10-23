@@ -22,6 +22,7 @@ import {
 import { getShiftServiceLocation, type ShiftServiceLocation } from "@/api/serviceLocations";
 import { ServiceDirectionsCard } from "@/features/serviceLocation/ServiceDirectionsCard";
 import { ArrivalCard } from "@/features/serviceLocation/ArrivalCard";
+import { CaregiverJourneyCard } from "@/features/journey/CaregiverJourneyCard";
 import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
@@ -340,6 +341,11 @@ export function CaregiverShiftDetailPage() {
             <Button icon={<Check size={18} />} disabled={saving} onClick={() => void respond("accepted")}>Aceptar</Button>
           </div>
         </Card>
+      )}
+
+      {canStart && organizationId && shiftId && !verification.arrivals?.length && (
+        // Gate 7: «Voy en camino» before the directions; remounts (and hides) once the arrival exists.
+        <CaregiverJourneyCard key={`journey-${verification.arrivals?.length ?? 0}`} organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start} />
       )}
 
       {status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location={location} />}

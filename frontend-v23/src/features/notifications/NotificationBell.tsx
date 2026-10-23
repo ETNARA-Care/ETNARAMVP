@@ -40,6 +40,15 @@ export function NotificationBell() {
       navigate(`/agency/shifts/${shiftId}`);
       return;
     }
+    // Gate 7: journey notices.
+    if (type === "FAMILY_CAREGIVER_EN_ROUTE" || type === "FAMILY_CAREGIVER_DELAYED" || type === "FAMILY_CAREGIVER_ARRIVED") {
+      navigate("/family");
+      return;
+    }
+    if ((type === "SHIFT_NOT_EN_ROUTE" || type === "SHIFT_DELAY_REPORTED") && shiftId) {
+      navigate(`/agency/shifts/${shiftId}`);
+      return;
+    }
     if (type === "SHIFT_LOCATION_CHANGED" && shiftId) {
       navigate(`/caregiver/shifts/${shiftId}`);
       return;

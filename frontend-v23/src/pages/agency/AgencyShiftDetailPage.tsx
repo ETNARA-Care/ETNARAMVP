@@ -19,6 +19,7 @@ import {
 import { Badge, Button, Card, EmptyState, ErrorState, Modal, PageHeader, Skeleton, StatusBadge, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
 import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
+import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -139,6 +140,8 @@ export function AgencyShiftDetailPage() {
 
       {organizationId && shiftId && <ShiftVisitPanel organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
         cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
+
+      {organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
 
       {organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId}
         editable={shift.status !== "cancelled" && shift.status !== "completed"} />}

@@ -2,6 +2,16 @@
 
 ## Current Status
 
+## 2026-10-23 — Gate 7 «ETNARA En Camino» (claude/smartmatch-frontend-v23)
+
+- features/journey: CaregiverJourneyCard («Voy en camino», «Informar retraso» with minute chips and
+  reason categories, window from start-2h to start+1h, no location), FamilyJourneyProgress (assigned →
+  en camino → llegada registrada → servicio iniciado → finalizado, declared delay labelled «no es una
+  hora estimada», cancellation), TodayJourneysPanel (Operaciones «Hoy en ruta», risks, preventive
+  wording), ShiftJourneyHistory (agency «Historial operativo»). Bell labels/routes for 5 new notices.
+- Checks: 153/153 static; lint 0 errors; build; audit 0. E2E 390x844: Gate 7 9/9, Gate 6 22/22,
+  Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
 ## 2026-10-23 — Gate 6 close: family form on iPhone, approval authorization (claude/smartmatch-frontend-v23)
 
 - Modal follows window.visualViewport when fullScreenOnMobile (iOS keyboard): sheet height = visible

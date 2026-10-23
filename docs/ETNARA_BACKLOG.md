@@ -8,6 +8,7 @@
   proximity, late-arrival notices, family correction requests, FILLED cancellation.
 - Gate 6 fix (staging): GPS confirmed separately from written-address verification; «Ubicar en el mapa»;
   approximate-destination warning; full-screen mobile forms.
+- Gate 7 (staging): «ETNARA En Camino» — declared departure/delays, family progress, «Hoy en ruta», alerts.
 - Pending: manual iPhone (Safari/WebKit) check of the GPS modal; production map tile provider contract; network (inter-agency) opportunities.
 
 ### FUX-006 — Caregiver offline mode (Phase 12.4)

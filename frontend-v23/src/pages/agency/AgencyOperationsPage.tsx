@@ -1,3 +1,4 @@
+import { TodayJourneysPanel } from "@/features/journey/TodayJourneysPanel";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
@@ -147,6 +148,8 @@ export function AgencyOperationsPage() {
           icon={<CheckCircle2 size={18} />}
         />
       </section>
+
+      {activeOrganization?.id && <TodayJourneysPanel organizationId={activeOrganization.id} />}
 
       <Card className="border border-[var(--color-border)]">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
