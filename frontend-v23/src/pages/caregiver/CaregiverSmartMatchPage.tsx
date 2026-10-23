@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BriefcaseBusiness, CalendarDays, MapPin } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, MapPin, ShieldCheck } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
@@ -25,7 +26,10 @@ export function CaregiverSmartMatchPage() {
   const [mine, setMine] = useState<MyApplication[]>([]);
   const [error, setError] = useState<"network" | "permission" | null>(null);
   const [municipality, setMunicipality] = useState("");
-  const [tab, setTab] = useState("available");
+  const [searchParams] = useSearchParams();
+  // From a notification: ?tab=mine&application=<id> opens "Mis solicitudes" and highlights it.
+  const [tab, setTab] = useState(searchParams.get("tab") === "mine" ? "mine" : "available");
+  const highlightId = searchParams.get("application");
   const [applyTarget, setApplyTarget] = useState<AvailableOpportunity | null>(null);
   const [consent, setConsent] = useState(false);
   const [withdrawTarget, setWithdrawTarget] = useState<MyApplication | null>(null);
@@ -90,9 +94,8 @@ export function CaregiverSmartMatchPage() {
   return <div className="space-y-4">
     <div>
       <h1 className="text-2xl font-semibold">Oportunidades</h1>
-      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-        Servicios publicados por {activeOrganization?.name ?? "tu agencia"}. No incluyen nombres de pacientes, direcciones exactas ni información clínica.
-      </p>
+      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Servicios de {activeOrganization?.name ?? "tu agencia"}.</p>
+      <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]"><ShieldCheck size={14} aria-hidden /> Sin datos de pacientes ni direcciones exactas.</p>
     </div>
 
     <Tabs items={[{ id: "available", label: "Disponibles" }, { id: "mine", label: `Mis solicitudes${mine.length ? ` (${mine.length})` : ""}` }]}
@@ -106,7 +109,7 @@ export function CaregiverSmartMatchPage() {
         {PUERTO_RICO_MUNICIPALITIES.map((m) => <option key={m} value={m}>{m}</option>)}
       </Select>
       <p className="text-xs text-[var(--color-text-muted)]">
-        El tiempo de viaje todavía no se calcula: ETNARA no muestra estimados que no provengan de un proveedor de rutas.
+        Tiempo de viaje: aún no disponible.
       </p>
       {available === null && <><Skeleton className="h-28" /><Skeleton className="h-28" /></>}
       {available !== null && shown.length === 0 && <EmptyState icon={<BriefcaseBusiness size={28} />}
@@ -134,7 +137,8 @@ export function CaregiverSmartMatchPage() {
       {mine.length === 0 && <EmptyState title="Aún no tienes solicitudes" description="Cuando solicites una oportunidad, verás aquí su estado." />}
       {mine.map((app) => {
         const status = applicationLabel(app.status, app.decision_reason);
-        return <Card key={app.id} className="p-4">
+        return <Card key={app.id} className={`p-4 ${app.id === highlightId ? "ring-2 ring-[var(--color-accent-700)]" : ""}`}
+          aria-current={app.id === highlightId ? "true" : undefined}>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="font-semibold">{app.role_label} · {app.region_label}</p>
@@ -158,7 +162,7 @@ export function CaregiverSmartMatchPage() {
     </section>}
 
     <Modal open={applyTarget !== null} onClose={() => !busy && setApplyTarget(null)} title="Solicitar oportunidad"
-      footer={<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button variant="ghost" disabled={busy} onClick={() => setApplyTarget(null)}>Cancelar</Button>
         <Button disabled={!consent} loading={busy} onClick={() => void confirmApply()}>Enviar solicitud</Button>
       </div>}>
@@ -172,7 +176,7 @@ export function CaregiverSmartMatchPage() {
     </Modal>
 
     <Modal open={withdrawTarget !== null} onClose={() => !busy && setWithdrawTarget(null)} title="Retirar solicitud"
-      footer={<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button variant="ghost" disabled={busy} onClick={() => setWithdrawTarget(null)}>Mantener</Button>
         <Button variant="danger" loading={busy} onClick={() => void confirmWithdraw()}>Retirar</Button>
       </div>}>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { CheckCircle2, History, Plus, XCircle } from "lucide-react";
+import { CheckCircle2, History, Plus, ShieldCheck, XCircle } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
@@ -10,7 +11,7 @@ import {
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
 import {
-  applicationLabel, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, smartMatchErrorMessage,
+  applicationLabel, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, smartMatchErrorMessage,
 } from "@/features/smartmatch/smartmatchText";
 
 const CHECK_ROWS: { key: "membershipActive" | "credentialsEligible" | "availabilityConfigured" | "availabilityCovers" | "noUnavailabilityConflict" | "consentRecorded" | "opportunityOpen"; label: string }[] = [
@@ -38,6 +39,7 @@ export function AgencySmartMatchPage() {
   const organizationId = activeOrganization?.id;
   const isAdmin = roles.includes("ORGANIZATION_ADMIN");
   const { show } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [items, setItems] = useState<AgencyOpportunity[] | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -47,7 +49,7 @@ export function AgencySmartMatchPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(() => {
     const start = new Date(Date.now() + 24 * 3600_000); start.setMinutes(0, 0, 0);
-    return { regionLabel: "", roleLabel: "", startsAt: localInput(start), endsAt: localInput(new Date(start.getTime() + 4 * 3600_000)) };
+    return { regionLabel: "", roleChoice: ROLE_OPTIONS[0] as string, roleOther: "", startsAt: localInput(start), endsAt: localInput(new Date(start.getTime() + 4 * 3600_000)) };
   });
   const [formError, setFormError] = useState("");
 
@@ -70,6 +72,21 @@ export function AgencySmartMatchPage() {
   }, [organizationId, isAdmin]);
   useEffect(() => { void load(); }, [load]);
 
+  // Links from notifications and the dashboard: ?application=<id> opens the review,
+  // ?opportunity=<id> opens that opportunity's applications. Params are consumed once.
+  useEffect(() => {
+    const applicationId = searchParams.get("application");
+    const opportunityId = searchParams.get("opportunity");
+    if (!applicationId && !(opportunityId && items)) return;
+    if (applicationId) void openReview(applicationId);
+    else if (opportunityId) {
+      const opp = items?.find((o) => o.id === opportunityId);
+      if (opp) void openQueue(opp);
+    }
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, items]);
+
   const groups = useMemo(() => {
     const all = items ?? [];
     return {
@@ -84,17 +101,20 @@ export function AgencySmartMatchPage() {
     event.preventDefault();
     const token = getToken();
     if (!organizationId || !token) return;
-    if (!form.regionLabel || !form.roleLabel.trim()) { setFormError("Selecciona un municipio y escribe la función."); return; }
+    const roleLabel = form.roleChoice === "Otro" ? form.roleOther.trim() : form.roleChoice;
+    if (!form.regionLabel) { setFormError("Selecciona un municipio."); return; }
+    const roleProblem = roleLabelProblem(roleLabel);
+    if (roleProblem) { setFormError(roleProblem); return; }
     if (new Date(form.endsAt) <= new Date(form.startsAt)) { setFormError("La hora de fin debe ser posterior al inicio."); return; }
     if (new Date(form.startsAt) <= new Date()) { setFormError("El inicio debe ser en el futuro."); return; }
     setBusy(true); setFormError("");
     try {
       await createOpportunityDraft(organizationId, {
-        regionLabel: form.regionLabel, roleLabel: form.roleLabel.trim(),
+        regionLabel: form.regionLabel, roleLabel,
         startsAt: new Date(form.startsAt).toISOString(), endsAt: new Date(form.endsAt).toISOString(),
       }, token);
       show("Borrador guardado. Cualquier administrador de la agencia puede publicarlo.", "success");
-      setCreateOpen(false); setForm((f) => ({ ...f, roleLabel: "" }));
+      setCreateOpen(false); setForm((f) => ({ ...f, roleOther: "" }));
     } catch (e) { setFormError(smartMatchErrorMessage(e, "No se pudo guardar el borrador.")); }
     finally { setBusy(false); await load(); }
   }
@@ -181,9 +201,12 @@ export function AgencySmartMatchPage() {
 
   return <div className="space-y-6">
     <PageHeader title="SmartMatch"
-      description="Oportunidades internas de tu agencia. Solo municipio, función y horario: nunca nombres de pacientes, direcciones exactas ni información clínica. La red entre agencias está deshabilitada."
+      description="Oportunidades internas de tu agencia."
       actions={<Button icon={<Plus size={18} />} onClick={() => { setFormError(""); setCreateOpen(true); }}>Nueva oportunidad</Button>} />
 
+    <p className="-mt-2 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+      <ShieldCheck size={14} aria-hidden /> Solo municipio, función y horario. Sin datos de pacientes.
+    </p>
     {loadError && <ErrorState kind="network" onRetry={() => void load()} />}
     {items === null && !loadError && <><Skeleton className="h-24" /><Skeleton className="h-24" /></>}
     {items !== null && !loadError && items.length === 0 && <EmptyState title="Sin oportunidades"
@@ -196,7 +219,7 @@ export function AgencySmartMatchPage() {
     </>}
 
     <Modal open={createOpen} onClose={() => !busy && setCreateOpen(false)} title="Nueva oportunidad (borrador)"
-      footer={<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button variant="ghost" disabled={busy} onClick={() => setCreateOpen(false)}>Cancelar</Button>
         <Button type="submit" form="smartmatch-draft" loading={busy}>Guardar borrador</Button>
       </div>}>
@@ -205,11 +228,20 @@ export function AgencySmartMatchPage() {
           <option value="">Selecciona un municipio</option>
           {PUERTO_RICO_MUNICIPALITIES.map((m) => <option key={m} value={m}>{m}</option>)}
         </Select>
-        <Input label="Función requerida" required maxLength={100} value={form.roleLabel}
-          hint="Ej.: Cuidador/a, Acompañante. No escribas nombres ni datos del paciente."
-          onChange={(e) => setForm({ ...form, roleLabel: e.target.value })} />
+        <Select label="Función requerida" required value={form.roleChoice} onChange={(e) => setForm({ ...form, roleChoice: e.target.value })}>
+          {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+          <option value="Otro">Otro…</option>
+        </Select>
+        {form.roleChoice === "Otro" && <Input label="Describe la función" required maxLength={60} value={form.roleOther}
+          hint="Solo el puesto (ej.: Acompañante bilingüe). Sin nombres, teléfonos ni direcciones."
+          error={form.roleOther ? roleLabelProblem(form.roleOther) ?? undefined : undefined}
+          onChange={(e) => setForm({ ...form, roleOther: e.target.value })} />}
         <Input label="Inicio" type="datetime-local" required value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
         <Input label="Fin" type="datetime-local" required value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} />
+        {form.startsAt && form.endsAt && new Date(form.endsAt) > new Date(form.startsAt) &&
+          <p className="rounded-xl bg-[var(--color-ivory-100)] p-3 text-sm" aria-live="polite">
+            Se publicará como: <strong>{formatWindow(new Date(form.startsAt).toISOString(), new Date(form.endsAt).toISOString())}</strong>
+          </p>}
         {formError && <p role="alert" className="text-sm text-[var(--color-danger-700)]">{formError}</p>}
         <p className="text-xs text-[var(--color-text-muted)]">Después de publicar, el horario, el municipio y la función ya no se pueden cambiar.</p>
       </form>
@@ -238,7 +270,7 @@ export function AgencySmartMatchPage() {
     </Modal>
 
     <Modal open={review !== null} onClose={() => !busy && setReview(null)} title={`Revisión · ${review?.caregiver.displayName ?? "Cuidador/a"}`}
-      footer={review && <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      footer={review && review.application.status === "PENDING" && <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {!confirmApprove && !confirmReject && <>
           <Button variant="danger" disabled={busy} onClick={() => setConfirmReject(true)}>Rechazar</Button>
           <Button disabled={busy || !review.checks.approvable} onClick={() => setConfirmApprove(true)}>Aprobar</Button>
@@ -254,6 +286,10 @@ export function AgencySmartMatchPage() {
       </div>}>
       {review && <div className="space-y-3 text-sm">
         <p>{formatWindow(review.opportunity.startsAt, review.opportunity.endsAt)}</p>
+        {review.application.status !== "PENDING" && <p role="status" className="rounded-xl border border-[var(--color-border)] p-3">
+          Esta solicitud ya está <strong>{applicationLabel(review.application.status, review.application.decisionReason).label.toLowerCase()}</strong>
+          {review.application.decidedAt ? ` (${formatDateTime(review.application.decidedAt)})` : ""}. No requiere acción.
+        </p>}
         <ul className="space-y-1.5" aria-label="Requisitos verificados">
           {CHECK_ROWS.map((row) => <li key={row.key} className="flex items-start gap-2">
             {review.checks[row.key]
@@ -266,7 +302,7 @@ export function AgencySmartMatchPage() {
           <p className="text-[var(--color-danger-700)]">No hay una política de credenciales aplicable: no se puede verificar.</p>}
         {review.checks.unmetRequirementCodes.length > 0 &&
           <p>Credenciales pendientes: <strong>{review.checks.unmetRequirementCodes.join(", ")}</strong></p>}
-        {!review.checks.approvable && <p role="status" className="rounded-xl bg-[var(--color-warning-50,#fff7e6)] p-3">
+        {review.application.status === "PENDING" && !review.checks.approvable && <p role="status" className="rounded-xl bg-[var(--color-warning-50,#fff7e6)] p-3">
           La aprobación está bloqueada hasta que todos los requisitos se puedan verificar.
         </p>}
         {confirmApprove && <p role="alert" className="rounded-xl border border-[var(--color-border)] p-3">

@@ -2,6 +2,15 @@
 
 ## Current Status
 
+## 2026-10-23 — SmartMatch Gate 5: notifications, dashboard panel, mobile fixes (claude/smartmatch-frontend-v23)
+
+- Bell: numeric badge (9+), "Marcar todas", SmartMatch notifications deep-link to the exact
+  application (/agency/smartmatch?application=, /caregiver/smartmatch?tab=mine&application=).
+- Agency overview: SmartMatch panel (admins only): Pendientes / Publicadas / Cubiertas + Revisar.
+- Mobile: ScrollToTop on route change; Modal fits 100dvh with scrolling body and safe-area footer;
+  es-PR explicit date parts; short privacy lines; role Select + "Otro" mirroring server validation.
+- tests/smartmatch-gate5.test.mjs (6). Browser E2E 390x844: Gate 5 21/21, Gate 4 22/22.
+
 ## 2026-10-22 — SmartMatch Gate 4: UI in frontend-v23 (claude/smartmatch-frontend-v23)
 
 - SmartMatch was only in the legacy `frontend/` (not deployed). Integrated into `frontend-v23/`

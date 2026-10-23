@@ -14,6 +14,7 @@ import { ExpiringDocuments } from "./overview/ExpiringDocuments";
 import { ResidentsPanel } from "./overview/ResidentsPanel";
 import { IncidentsPanel } from "./overview/IncidentsPanel";
 import { ActivityFeed } from "./overview/ActivityFeed";
+import { SmartMatchPanel } from "./overview/SmartMatchPanel";
 function DashboardAction({ label, Icon, to, primary = false, onNavigate }: { label: string; Icon: typeof CalendarPlus; to: string; primary?: boolean; onNavigate: (to: string) => void }) {
  return (
  <button type="button" onClick={() => onNavigate(to)}
@@ -34,7 +35,7 @@ const QUICK_ACTIONS = [
 /** Centro de mando del Portal Administrativo: todo con datos reales de la organización activa. */
 export function AgencyOverviewPage() {
  const navigate = useNavigate();
- const { activeOrganization } = useAuth();
+ const { activeOrganization, roles } = useAuth();
  const supervision = useAgencySupervision();
  const operations = useOperationsCenter();
  const compliance = useResidentCompliance();
@@ -63,6 +64,7 @@ export function AgencyOverviewPage() {
  <ExpiringDocuments rows={compliance.rows} credentialAlerts={credentialAlerts} className="xl:col-span-8" />
  <ResidentsPanel recipients={activeRecipients} rows={compliance.rows} places={compliance.places} className="xl:col-span-4" />
  <IncidentsPanel alerts={alerts} className="xl:col-span-4" />
+ {roles.includes("ORGANIZATION_ADMIN") && activeOrganization && <SmartMatchPanel organizationId={activeOrganization.id} className="xl:col-span-4" />}
  <div className="hidden content-start gap-4 sm:gap-6 xl:col-span-4 xl:grid">
  <section className="min-w-0">
  <h2 className="font-display text-[1.3rem] text-[var(--color-text-primary)]">Acciones rápidas</h2>

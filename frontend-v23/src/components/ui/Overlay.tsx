@@ -30,16 +30,17 @@ export function Modal({ open, onClose, title, children, footer }: OverlayBasePro
       ref={ref}
       onClose={onClose}
       onCancel={onClose}
-      className="m-auto w-[min(480px,92vw)] rounded-[var(--radius-lg)] p-0 border-none
+      className="m-auto w-[min(480px,92vw)] max-h-[calc(100dvh-2rem)] rounded-[var(--radius-lg)] p-0 border-none
         shadow-[var(--shadow-raised)] backdrop:bg-[var(--color-navy-950)]/40
-        open:animate-[fadeIn_var(--duration-base)_var(--ease-standard)]"
+        open:flex open:flex-col open:animate-[fadeIn_var(--duration-base)_var(--ease-standard)]"
     >
-      <div className="flex items-center justify-between px-[var(--spacing-md)] py-[var(--spacing-sm)] border-b border-[var(--color-border)]">
-        <h2 className="font-display text-[var(--text-h3)]">{title}</h2>
-        <IconButton icon={<X size={18} />} label="Cerrar" onClick={onClose} />
+      {/* Header and footer stay visible; only the body scrolls (tall forms on a phone). */}
+      <div className="flex shrink-0 items-start justify-between gap-3 px-[var(--spacing-md)] py-[var(--spacing-sm)] border-b border-[var(--color-border)]">
+        <h2 className="min-w-0 break-words pt-1.5 font-display text-[1.2rem] leading-tight sm:text-[var(--text-h3)]">{title}</h2>
+        <span className="shrink-0"><IconButton icon={<X size={18} />} label="Cerrar" onClick={onClose} /></span>
       </div>
-      <div className="p-[var(--spacing-md)]">{children}</div>
-      {footer && <div className="flex justify-end gap-2 px-[var(--spacing-md)] pb-[var(--spacing-md)]">{footer}</div>}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-[var(--spacing-md)]">{children}</div>
+      {footer && <div className="flex shrink-0 justify-end gap-2 border-t border-[var(--color-border)] px-[var(--spacing-md)] pt-[var(--spacing-sm)] pb-[max(var(--spacing-md),env(safe-area-inset-bottom))]">{footer}</div>}
     </dialog>
   );
 }
@@ -74,7 +75,7 @@ export function BottomSheet({ open, onClose, title, children, footer }: OverlayB
       </div>
       <div className="px-[var(--spacing-md)] pb-[var(--spacing-md)] overflow-y-auto">{children}</div>
       {footer && (
-        <div className="sticky bottom-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] p-[var(--spacing-md)] flex gap-2">
+        <div className="sticky bottom-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] p-[var(--spacing-md)] pb-[max(var(--spacing-md),env(safe-area-inset-bottom))] flex gap-2">
           {footer}
         </div>
       )}

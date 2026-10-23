@@ -18,7 +18,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, unread, error, reload, markRead } = useNotifications();
+  const { items, unread, error, reload, markRead, markAllRead } = useNotifications();
 
   async function openNotification(notification: NonNullable<typeof items>[number]) {
     await markRead(notification.id);
@@ -27,6 +27,13 @@ export function NotificationBell() {
     const portal = location.pathname.startsWith("/family")
       ? "family"
       : location.pathname.startsWith("/caregiver") ? "caregiver" : "agency";
+
+    // SmartMatch: open the exact application (agency review) or the caregiver's own list.
+    if (entityType === "smartmatch_application" && entityId) {
+      if (type === "SMARTMATCH_APPLICATION_SUBMITTED") navigate(`/agency/smartmatch?application=${entityId}`);
+      else navigate(`/caregiver/smartmatch?tab=mine&application=${entityId}`);
+      return;
+    }
 
     if (entityType === "incident" && entityId) {
       if (portal === "family") navigate(`/family/incidents/${entityId}`);
@@ -88,8 +95,12 @@ export function NotificationBell() {
         {unread > 0 && (
           <span
             aria-hidden
-            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-danger-700)]"
-          />
+            data-testid="notification-count"
+            className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full
+              bg-[var(--color-danger-700)] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-[var(--color-surface)]"
+          >
+            {unread > 9 ? "9+" : unread}
+          </span>
         )}
       </div>
 
@@ -105,7 +116,15 @@ export function NotificationBell() {
           >
             <div className="flex items-center justify-between px-3.5 py-3 border-b border-[var(--color-border)]">
               <p className="font-medium text-[var(--text-body)] text-[var(--color-text-primary)]">Notificaciones</p>
-              {unread > 0 && <Badge tone="accent">{unread} sin leer</Badge>}
+              {unread > 0 && (
+                <span className="flex items-center gap-2">
+                  <Badge tone="accent">{unread} sin leer</Badge>
+                  <button type="button" onClick={() => void markAllRead()}
+                    className="min-h-8 rounded-md px-1.5 text-[var(--text-caption)] font-medium text-[var(--color-accent-700)] hover:underline">
+                    Marcar todas
+                  </button>
+                </span>
+              )}
             </div>
             <div className="max-h-[360px] overflow-y-auto">
               {error ? (

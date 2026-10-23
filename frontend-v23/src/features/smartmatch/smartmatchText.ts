@@ -11,8 +11,11 @@ export function formatWindow(startsAt: string, endsAt: string): string {
   const time = (d: Date) => d.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit", timeZone: "America/Puerto_Rico" });
   return `${day} · ${time(start)} – ${time(end)}`;
 }
+/** "25 oct 2026, 10:00 a. m." -- explicit parts: dateStyle "medium" renders 10/25/2026 in es-PR. */
 export function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Puerto_Rico" });
+  return new Date(value).toLocaleString("es-PR", {
+    day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Puerto_Rico",
+  });
 }
 
 export function applicationLabel(status: ApplicationStatus, reason: DecisionReason | null): { label: string; tone: Tone } {
@@ -66,4 +69,27 @@ export function smartMatchErrorMessage(error: unknown, fallback: string): string
     case "INVALID_REQUEST": return "Revisa los datos: la hora de fin debe ser posterior al inicio.";
     default: return fallback;
   }
+}
+
+/** Opciones de función (iguales a las del servidor); "Otro" permite texto libre validado. */
+export const ROLE_OPTIONS = [
+  "Cuidador/a",
+  "Acompañante",
+  "Asistente de cuidado personal",
+  "Cuidado nocturno",
+  "Relevo (respiro familiar)",
+] as const;
+
+/** Espejo de la validación del servidor: un título de función, nunca nombres, teléfonos ni direcciones. */
+export function roleLabelProblem(value: string): string | null {
+  const role = value.trim();
+  if (!role) return "Escribe la función requerida.";
+  if (role.length > 60) return "Máximo 60 caracteres.";
+  if ((ROLE_OPTIONS as readonly string[]).includes(role)) return null;
+  if (/\d/.test(role)) return "No incluyas números (teléfonos, direcciones o edades).";
+  if (!/^[\p{L} /().,'-]+$/u.test(role)) return "Usa solo letras: sin correos, símbolos ni direcciones.";
+  if (/\b(sr|sra|srta|don|doña|dona)\b\.?/i.test(role)) return "No incluyas nombres de personas.";
+  if (/\b(paciente|residente|participante|diagn[oó]stico|demencia|alzheimer|c[aá]ncer|di[aá]lisis)\b/i.test(role)) return "No incluyas información del paciente ni datos clínicos.";
+  if (/\b(calle|ave|avenida|urb|urbanizaci[oó]n|carr|carretera|apt|apartamento|edif|edificio|barrio|bo|km|cond|condominio)\b\.?/i.test(role)) return "No incluyas direcciones; el municipio ya indica la zona.";
+  return null;
 }

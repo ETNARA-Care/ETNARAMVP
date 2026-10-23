@@ -37,6 +37,10 @@ function notificationSummary(type: string): string {
   if (type === "OPEN_SHIFT_OFFER") return "Nuevo turno disponible";
   if (type === "OPEN_SHIFT_INTERESTED") return "Una cuidadora está disponible para un turno";
   if (type === "OPEN_SHIFT_DECLINED") return "Respuesta a una oferta de turno";
+  if (type === "SMARTMATCH_APPLICATION_SUBMITTED") return "Nueva solicitud en SmartMatch";
+  if (type === "SMARTMATCH_APPLICATION_APPROVED") return "Tu solicitud fue aprobada";
+  if (type === "SMARTMATCH_APPLICATION_REJECTED") return "Tu solicitud no fue aprobada";
+  if (type === "SMARTMATCH_APPLICATION_CLOSED") return "La oportunidad se cubrió con otra persona";
   if (type === "SHIFT_STARTED") return "La cuidadora comenzó el turno";
   if (type === "SHIFT_COMPLETED") return "La cuidadora finalizó el turno";
   if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";
