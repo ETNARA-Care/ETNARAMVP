@@ -21,7 +21,7 @@ export interface WorkerMembership { id:string; worker_id:string; status:string; 
 export interface WorkerCredentialSummary { id:string; type_code:string; status:string; expires_at:string|null; }
 export interface WorkerProfile { membership:Omit<WorkerMembership,"display_name">; credentialsSummary:WorkerCredentialSummary[]; }
 export interface Assignment { id:string; shift_id:string; organization_worker_membership_id:string; response_status:"pending"|"accepted"|"rejected"; responded_at:string|null; response_reason:string|null; created_at?:string; }
-export interface VisitVerification { shiftId:string; events:Array<{id:string;eventType:string;occurredAt:string}>; status:"not_started"|"in_progress"|"completed"; }
+export interface VisitVerification { shiftId:string; events:Array<{id:string;eventType:string;occurredAt:string;recordedOffline?:boolean}>; status:"not_started"|"in_progress"|"completed"; }
 export interface CoverageCandidate { membershipId:string;displayName:string|null;internalRole:string;eligibility:"eligible"|"not_eligible";hasScheduleConflict:boolean;continuityCount:number;scheduledMinutesNext7Days:number;availabilityConfigured:boolean;matchesDeclaredAvailability:boolean;hasUnavailabilityPeriod:boolean;recommended:boolean;rank:number|null;reasons:string[];blockers:string[]; }
 
 export async function listShifts(organizationId:string,token:string):Promise<Shift[]>{const r=await apiClient.get<{shifts:Shift[]}>(`/organizations/${organizationId}/shifts`,token);return r.shifts;}
@@ -54,6 +54,8 @@ export async function assignShift(organizationId:string,shiftId:string,organizat
 export async function getCoverageRecommendations(organizationId:string,input:{careRecipientId:string;scheduledStart:string;scheduledEnd:string;requiredRole?: string},token:string):Promise<CoverageCandidate[]>{const r=await apiClient.post<{candidates:CoverageCandidate[]}>(`/organizations/${organizationId}/coverage/recommendations`,input,token);return r.candidates;}
 export async function respondToAssignment(organizationId:string,shiftId:string,decision:"accepted"|"rejected",reason:string|undefined,token:string):Promise<Assignment>{const r=await apiClient.post<{assignment:Assignment}>(`/organizations/${organizationId}/me/shifts/${shiftId}/respond`,{decision,...(reason?.trim()?{reason:reason.trim()}:{})},token);return r.assignment;}
 export async function getVisitVerification(organizationId:string,shiftId:string,token:string):Promise<VisitVerification>{return apiClient.get(`/organizations/${organizationId}/shifts/${shiftId}/visit-verification`,token);}
-export async function checkIn(organizationId:string,shiftId:string,token:string):Promise<void>{await apiClient.post(`/organizations/${organizationId}/shifts/${shiftId}/check-in`,{verificationMethodCode:"CAREGIVER_SESSION"},token);}
-export async function checkOut(organizationId:string,shiftId:string,token:string):Promise<void>{await apiClient.post(`/organizations/${organizationId}/shifts/${shiftId}/check-out`,{},token);}
+/** offline (Phase 12.4): id del teléfono y hora real; reenviar el mismo id nunca duplica. */
+export interface VisitEventOptions { clientEventId?:string; occurredAt?:string; recordedOffline?:boolean; }
+export async function checkIn(organizationId:string,shiftId:string,token:string,offline:VisitEventOptions={}):Promise<void>{await apiClient.post(`/organizations/${organizationId}/shifts/${shiftId}/check-in`,{verificationMethodCode:"CAREGIVER_SESSION",...offline},token);}
+export async function checkOut(organizationId:string,shiftId:string,token:string,offline:VisitEventOptions={}):Promise<void>{await apiClient.post(`/organizations/${organizationId}/shifts/${shiftId}/check-out`,{...offline},token);}
 export function recipientName(recipient:CareRecipient|undefined):string{return recipient?.preferred_name||`${recipient?.first_name||"Persona"} ${recipient?.last_name||"atendida"}`.trim();}

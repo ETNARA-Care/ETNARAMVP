@@ -3,7 +3,16 @@ import * as authApi from "@/api/auth";
 import * as orgApi from "@/api/organizationContext";
 import type { ApiError } from "@/api/client";
 import type { MeUser, MeOrganization, MyWorkerProfile } from "@/api/organizationContext";
-import { getToken, setToken, clearToken } from "./token";
+import { getToken, setToken, clearToken, isKeptSession, restoreToken } from "./token";
+import { secureGet, secureSet } from "@/offline/secureStore";
+
+/** Copia de /me para abrir la app sin señal (solo sesiones de cuidador/a, cifrada). */
+interface OfflineIdentity {
+  me: orgApi.MeResult;
+  activeOrganizationId: string | null;
+  workerProfile: MyWorkerProfile | null;
+}
+const SECURE_IDENTITY = "identity";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
@@ -16,6 +25,8 @@ interface AuthContextValue {
   isPlatformAdmin: boolean;
   activeWorkerProfile: MyWorkerProfile | null;
   error: ApiError | null;
+  /** Se abrió sin señal con la sesión guardada; los datos se actualizan al volver la señal. */
+  offline: boolean;
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -41,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [activeWorkerProfile, setActiveWorkerProfile] = useState<MyWorkerProfile | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
+  const [offline, setOffline] = useState(false);
 
   const applyMeResult = useCallback((me: orgApi.MeResult) => {
     setUser(me.user);
@@ -58,16 +70,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * por decisión explícita de esta fase.
    */
   const autoSelectSingleOrganization = useCallback(async (token: string, orgs: MeOrganization[]) => {
-    if (orgs.length !== 1) return;
+    if (orgs.length !== 1) return { id: null, profile: null };
     const only = orgs[0];
     await orgApi.setActiveOrganization(only.id, token);
     setActiveOrganizationState(only);
-    setActiveWorkerProfile(
-      only.roles.includes("WORKER") ? await orgApi.getMyWorkerProfile(only.id, token) : null,
-    );
+    const profile = only.roles.includes("WORKER") ? await orgApi.getMyWorkerProfile(only.id, token) : null;
+    setActiveWorkerProfile(profile);
+    return { id: only.id as string | null, profile };
   }, []);
 
+  const rememberIdentity = useCallback((me: orgApi.MeResult, activeOrganizationId: string | null, workerProfile: MyWorkerProfile | null) => {
+    if (!isKeptSession()) return;
+    void secureSet(SECURE_IDENTITY, { me, activeOrganizationId, workerProfile } satisfies OfflineIdentity);
+  }, []);
+
+
   const bootstrap = useCallback(async () => {
+    await restoreToken();
     const token = getToken();
     if (!token) {
       setStatus("unauthenticated");
@@ -76,11 +95,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await orgApi.getMe(token);
       applyMeResult(me);
-      await autoSelectSingleOrganization(token, me.organizations);
+      const selected = await autoSelectSingleOrganization(token, me.organizations);
+      rememberIdentity(me, selected.id, selected.profile);
+      setOffline(false);
       setStatus("authenticated");
       setError(null);
     } catch (err) {
       const apiErr = err as ApiError;
+      // Sin señal con una sesión de cuidador/a guardada: se abre con la
+      // última identidad conocida; las acciones se encolan y se envían luego.
+      const cached = apiErr.status !== 401 && isKeptSession() ? await secureGet<OfflineIdentity>(SECURE_IDENTITY) : null;
+      if (cached) {
+        applyMeResult(cached.me);
+        const org = cached.me.organizations.find((o) => o.id === cached.activeOrganizationId) ?? null;
+        setActiveOrganizationState(org);
+        setActiveWorkerProfile(cached.workerProfile);
+        setOffline(true);
+        setStatus("authenticated");
+        setError(null);
+        return;
+      }
       if (apiErr.status === 401) {
         clearToken();
         setIsPlatformAdmin(false);
@@ -93,22 +127,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setError(apiErr);
       }
     }
-  }, [applyMeResult, autoSelectSingleOrganization]);
+  }, [applyMeResult, autoSelectSingleOrganization, rememberIdentity]);
 
   useEffect(() => {
     bootstrap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Se abrió sin señal: al volver la señal confirma la sesión con el servidor.
+  useEffect(() => {
+    if (!offline) return;
+    const onOnline = () => void bootstrap();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [offline, bootstrap]);
+
   const login = useCallback(async (identifier: string, password: string) => {
     const isEmail = identifier.includes("@");
     const payload = isEmail ? { email: identifier, password } : { phone: identifier, password };
-    const { token } = await authApi.login(payload); // si esto falla (401/500/red), nunca se llegó a guardar token -- nada que revertir
-    setToken(token);
+    const { token, keepSignedIn, expiresAt } = await authApi.login(payload); // si esto falla (401/500/red), nunca se llegó a guardar token -- nada que revertir
+    setToken(token, { keepSignedIn, expiresAt });
     try {
       const me = await orgApi.getMe(token);
       applyMeResult(me);
-      await autoSelectSingleOrganization(token, me.organizations);
+      const selected = await autoSelectSingleOrganization(token, me.organizations);
+      rememberIdentity(me, selected.id, selected.profile);
+      setOffline(false);
       setStatus("authenticated");
       setError(null);
     } catch (err) {
@@ -127,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       throw err;
     }
-  }, [applyMeResult, autoSelectSingleOrganization]);
+  }, [applyMeResult, autoSelectSingleOrganization, rememberIdentity]);
 
   const logout = useCallback(async () => {
     const token = getToken();
@@ -147,6 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsPlatformAdmin(false);
     setActiveWorkerProfile(null);
     setError(null);
+    setOffline(false);
     setStatus("unauthenticated");
   }, []);
 
@@ -161,19 +206,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await orgApi.setActiveOrganization(organizationId, token);
     const org = organizations.find((o) => o.id === organizationId) ?? null;
     setActiveOrganizationState(org);
-    setActiveWorkerProfile(
-      org?.roles.includes("WORKER") ? await orgApi.getMyWorkerProfile(organizationId, token) : null,
-    );
-  }, [organizations]);
+    const profile = org?.roles.includes("WORKER") ? await orgApi.getMyWorkerProfile(organizationId, token) : null;
+    setActiveWorkerProfile(profile);
+    if (user) rememberIdentity({ user, platformAdmin: isPlatformAdmin, organizations }, organizationId, profile);
+  }, [organizations, user, isPlatformAdmin, rememberIdentity]);
 
   const roles = useMemo(() => activeOrganization?.roles ?? [], [activeOrganization]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error,
+      status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error, offline,
       login, logout, refreshSession, setActiveOrganization: setActiveOrganizationById,
     }),
-    [status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error, login, logout, refreshSession, setActiveOrganizationById]
+    [status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error, offline, login, logout, refreshSession, setActiveOrganizationById]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

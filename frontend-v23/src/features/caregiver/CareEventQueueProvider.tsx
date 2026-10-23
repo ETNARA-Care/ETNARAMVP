@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CloudOff, RefreshCw, TriangleAlert } from "lucide-react";
-import { getToken } from "@/auth/token";
-import { createCareEvent } from "@/api/careEvents";
+import { useAuth } from "@/auth/AuthProvider";
+import { getToken, isKeptSession } from "@/auth/token";
+import { createCareEvent, type CreateCareEventInput } from "@/api/careEvents";
+import { checkIn as sendCheckIn, checkOut as sendCheckOut } from "@/api/shifts";
+import { MAX_AGE_MS, secureDelete, secureGet, secureSet } from "@/offline/secureStore";
 import {
   CareEventQueueContext,
   failureMessage,
@@ -10,16 +13,78 @@ import {
   useCareEventQueue,
   type CareEventQueueState,
   type QueuedCareEvent,
+  type QueuedKind,
+  type VisitEventInput,
 } from "./careEventQueue";
 
 const RETRY_INTERVAL_MS = 15_000;
+const SECURE_QUEUE = "queue";
+
+interface StoredQueue {
+  userId: string;
+  items: QueuedCareEvent[];
+}
+
+async function deliver(item: QueuedCareEvent, token: string): Promise<void> {
+  if (item.kind === "check_in") return sendCheckIn(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
+  if (item.kind === "check_out") return sendCheckOut(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
+  await createCareEvent(item.organizationId, item.shiftId, item.input as CreateCareEventInput, token);
+}
+
+function newEntry(kind: QueuedKind, organizationId: string, shiftId: string, label: string, input: Record<string, unknown> = {}): QueuedCareEvent {
+  const clientEventId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  return {
+    clientEventId,
+    kind,
+    organizationId,
+    shiftId,
+    label,
+    status: "pending",
+    createdAt: now,
+    input: { ...input, clientEventId, occurredAt: now },
+  };
+}
 
 export function CareEventQueueProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [items, setItems] = useState<QueuedCareEvent[]>([]);
+  const [restored, setRestored] = useState(false);
   const [deliveredVersion, setDeliveredVersion] = useState(0);
   const itemsRef = useRef(items);
   useEffect(() => { itemsRef.current = items; }, [items]);
   const flushing = useRef(false);
+  const persisted = isKeptSession();
+
+  // Al abrir: recupera lo que quedó pendiente en este teléfono (cifrado),
+  // solo del mismo usuario y de los últimos 7 días.
+  useEffect(() => {
+    let cancelled = false;
+    if (!persisted || !userId) {
+      Promise.resolve().then(() => { if (!cancelled) setRestored(true); });
+      return () => { cancelled = true; };
+    }
+    secureGet<StoredQueue>(SECURE_QUEUE).then((stored) => {
+      if (cancelled) return;
+      const cutoff = Date.now() - MAX_AGE_MS;
+      const kept = stored && stored.userId === userId
+        ? stored.items
+          .filter((item) => new Date(item.createdAt).getTime() > cutoff)
+          .map((item) => item.status === "sending" ? { ...item, status: "pending" as const } : item)
+        : [];
+      if (kept.length > 0) setItems((current) => [...kept, ...current.filter((item) => !kept.some((k) => k.clientEventId === item.clientEventId))]);
+      setRestored(true);
+    });
+    return () => { cancelled = true; };
+  }, [persisted, userId]);
+
+  // Cada cambio se guarda cifrado; sin pendientes, se borra del teléfono.
+  useEffect(() => {
+    if (!restored || !persisted || !userId) return;
+    if (items.length === 0) void secureDelete(SECURE_QUEUE);
+    else void secureSet(SECURE_QUEUE, { userId, items } satisfies StoredQueue);
+  }, [items, restored, persisted, userId]);
 
   const update = useCallback((clientEventId: string, patch: Partial<QueuedCareEvent> | null) => {
     setItems((current) => patch === null
@@ -37,7 +102,7 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
       for (const item of itemsRef.current.filter((entry) => entry.status === "pending")) {
         update(item.clientEventId, { status: "sending" });
         try {
-          await createCareEvent(item.organizationId, item.shiftId, item.input, token);
+          await deliver(item, token);
           update(item.clientEventId, null);
           setDeliveredVersion((version) => version + 1);
         } catch (error) {
@@ -56,64 +121,93 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
   const pendingCount = items.filter((item) => item.status !== "failed").length;
 
   useEffect(() => {
-    if (pendingCount === 0) return;
+    if (pendingCount === 0 || !restored) return;
     const onOnline = () => void flush();
     const onVisible = () => { if (document.visibilityState === "visible") void flush(); };
-    const onBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    // Guardado en el teléfono: cerrar la app ya no pierde nada.
+    const onBeforeUnload = (event: BeforeUnloadEvent) => { if (!persisted) event.preventDefault(); };
     window.addEventListener("online", onOnline);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("beforeunload", onBeforeUnload);
     const timer = window.setInterval(() => void flush(), RETRY_INTERVAL_MS);
+    const first = window.setTimeout(() => void flush(), 0);
     return () => {
       window.removeEventListener("online", onOnline);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("beforeunload", onBeforeUnload);
       window.clearInterval(timer);
+      window.clearTimeout(first);
     };
-  }, [pendingCount, flush]);
+  }, [pendingCount, flush, persisted, restored]);
 
-  const submit = useCallback<CareEventQueueState["submit"]>(async ({ organizationId, shiftId, label, input }) => {
-    const entry: QueuedCareEvent = {
-      clientEventId: crypto.randomUUID(),
-      organizationId,
-      shiftId,
-      typeCode: input.typeCode,
-      label,
-      status: "pending",
-      input: { ...input, occurredAt: new Date().toISOString() },
-    };
-    entry.input.clientEventId = entry.clientEventId;
+  /** Envía ya si hay señal y nada delante; si no, encola (respeta el orden). */
+  const enqueue = useCallback(async (entry: QueuedCareEvent): Promise<"sent" | "queued"> => {
     const token = getToken();
-    // Con otros pendientes delante, se encola para respetar el orden.
     if (token && navigator.onLine !== false && itemsRef.current.every((item) => item.status === "failed")) {
       try {
-        await createCareEvent(organizationId, shiftId, entry.input, token);
+        await deliver(entry, token);
         return "sent";
       } catch (error) {
         if (!isConnectivityError(error)) throw error;
       }
     }
+    // Llegada/salida que espera señal: el servidor la marca "sin conexión".
+    if (entry.kind !== "care_event") entry.input = { ...entry.input, recordedOffline: true };
     setItems((current) => [...current, entry]);
     return "queued";
   }, []);
 
+  const submit = useCallback<CareEventQueueState["submit"]>(({ organizationId, shiftId, label, input }) => {
+    const entry = newEntry("care_event", organizationId, shiftId, label, input as unknown as Record<string, unknown>);
+    entry.typeCode = input.typeCode;
+    return enqueue(entry);
+  }, [enqueue]);
+
+  const checkIn = useCallback<CareEventQueueState["checkIn"]>((organizationId, shiftId) =>
+    enqueue(newEntry("check_in", organizationId, shiftId, "Llegada")), [enqueue]);
+  const checkOut = useCallback<CareEventQueueState["checkOut"]>((organizationId, shiftId) =>
+    enqueue(newEntry("check_out", organizationId, shiftId, "Salida")), [enqueue]);
+
   const value = useMemo<CareEventQueueState>(() => ({
     items,
     deliveredVersion,
+    persisted,
     submit,
+    checkIn,
+    checkOut,
     retryNow: () => void flush(),
     discard: (clientEventId: string) => update(clientEventId, null),
-  }), [items, deliveredVersion, submit, flush, update]);
+  }), [items, deliveredVersion, persisted, submit, checkIn, checkOut, flush, update]);
 
   return <CareEventQueueContext.Provider value={value}>{children}</CareEventQueueContext.Provider>;
 }
 
+function subscribeOnline(callback: () => void): () => void {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => { window.removeEventListener("online", callback); window.removeEventListener("offline", callback); };
+}
+
 /** Aviso fijo arriba mientras haya registros por enviar o que fallaron. */
 export function CareEventQueueBanner() {
-  const { items, retryNow } = useCareEventQueue();
+  const { items, retryNow, persisted } = useCareEventQueue();
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const waiting = items.filter((item) => item.status !== "failed");
   const failed = items.filter((item) => item.status === "failed");
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    if (online) return null;
+    return (
+      <div className="mx-auto w-full max-w-[760px] px-4 pt-3 sm:px-6">
+        <div role="status" className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-amber-900">
+          <CloudOff size={20} aria-hidden className="shrink-0" />
+          <p className="min-w-0 flex-1 text-sm font-medium">
+            Sin señal
+            <span className="block text-xs font-normal text-amber-800">Ves la última información. Lo que registres se guarda y se envía cuando vuelva la señal.</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
   const sending = waiting.some((item) => item.status === "sending");
 
   return (
@@ -123,7 +217,7 @@ export function CareEventQueueBanner() {
           <CloudOff size={20} aria-hidden className="shrink-0" />
           <p className="min-w-0 flex-1 text-sm font-medium">
             {sending ? "Enviando registros…" : `Sin señal · ${waiting.length} ${waiting.length === 1 ? "registro" : "registros"} por enviar`}
-            <span className="block text-xs font-normal text-amber-800">Se envían solos cuando vuelva la señal. No cierres la app.</span>
+            <span className="block text-xs font-normal text-amber-800">{persisted ? "Guardados en este teléfono. Se envían solos cuando vuelva la señal." : "Se envían solos cuando vuelva la señal. No cierres la app."}</span>
           </p>
           <button type="button" onClick={retryNow} disabled={sending} className="flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold disabled:opacity-50">
             <RefreshCw size={16} aria-hidden />Reintentar
