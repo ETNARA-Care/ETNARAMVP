@@ -4,6 +4,7 @@ import { BriefcaseBusiness, Building2, CalendarRange, Home, MessageCircle, MoreH
 import { MobileTabBar } from "./MobileTabBar";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { CareEventQueueBanner, CareEventQueueProvider } from "@/features/caregiver/CareEventQueueProvider";
+import { AppLockGate } from "@/features/caregiver/AppLock";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
@@ -25,7 +26,7 @@ export function CaregiverLayout() {
       .catch(() => setAdminEstablishments([]));
   }, [activeOrganization]);
 
-  return <CareEventQueueProvider><div data-portal="caregiver" className="min-h-dvh bg-[var(--color-ivory-50)] text-[var(--color-text-primary)]">
+  return <CareEventQueueProvider><AppLockGate><div data-portal="caregiver" className="min-h-dvh bg-[var(--color-ivory-50)] text-[var(--color-text-primary)]">
     <header className="sticky top-0 z-30 border-b border-[var(--color-border)]/70 bg-[var(--color-ivory-50)]/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-[760px] items-center gap-3 px-4 sm:px-6">
         <img src="/etnara-mark.svg" alt="" className="h-9 w-9 rounded-lg" />
@@ -60,5 +61,5 @@ export function CaregiverLayout() {
       { to: "/caregiver/messages", icon: <MessageCircle size={21}/>, label: "Mensajes" },
       { to: "/caregiver/profile", icon: <MoreHorizontal size={21}/>, label: "Más" },
     ]}/>
-  </div></CareEventQueueProvider>;
+  </div></AppLockGate></CareEventQueueProvider>;
 }

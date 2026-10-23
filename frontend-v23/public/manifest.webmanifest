@@ -1,0 +1,13 @@
+{
+  "name": "ETNARA Care",
+  "short_name": "ETNARA",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FBF8F2",
+  "theme_color": "#16213D",
+  "icons": [
+    { "src": "/etnara-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

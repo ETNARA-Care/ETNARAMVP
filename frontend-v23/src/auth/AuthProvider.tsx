@@ -5,6 +5,7 @@ import type { ApiError } from "@/api/client";
 import type { MeUser, MeOrganization, MyWorkerProfile } from "@/api/organizationContext";
 import { getToken, setToken, clearToken, isKeptSession, restoreToken } from "./token";
 import { secureGet, secureSet } from "@/offline/secureStore";
+import { restoreShiftCache, startShiftCache, stopShiftCache } from "@/offline/shiftCache";
 
 /** Copia de /me para abrir la app sin señal (solo sesiones de cuidador/a, cifrada). */
 interface OfflineIdentity {
@@ -87,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const bootstrap = useCallback(async () => {
     await restoreToken();
+    // Turnos cercanos guardados cifrados: la app abre con ellos aunque no haya señal.
+    await restoreShiftCache();
     const token = getToken();
     if (!token) {
       setStatus("unauthenticated");
@@ -133,6 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     bootstrap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Solo una sesión de cuidador/a que se queda en el teléfono guarda sus turnos cercanos.
+  useEffect(() => {
+    if (status !== "authenticated" || !isKeptSession()) return;
+    startShiftCache();
+    return () => stopShiftCache();
+  }, [status]);
 
   // Se abrió sin señal: al volver la señal confirma la sesión con el servidor.
   useEffect(() => {

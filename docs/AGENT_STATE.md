@@ -2,6 +2,47 @@
 
 ## Current Status
 
+## 2026-10-23 — Phase 12.6 bloqueo con Face ID / huella (ux/12.6-bloqueo-faceid)
+
+- Rafa: password login already works with iPhone Face ID autofill; what was
+  missing is protecting the 7-day kept caregiver session. Decision: lock on
+  open and after 5 minutes away.
+- offline/appLock.ts: WebAuthn platform credential (userVerification
+  required, UV flag checked). Local screen lock: verified by the phone, so
+  it works offline; credential id stored encrypted (secureStore); wiped on
+  logout. Only kept caregiver sessions.
+- AppLockGate in CaregiverLayout (inside the queue provider so pending
+  records keep sending): portal stays mounted but hidden while locked.
+  "Entrar con mi contraseña" signs out, warning about unsent records.
+  One-time offer on Mi día; on/off in Más.
+- Validation: typecheck, 125 tests, build, lint unchanged (76). Real-browser
+  E2E with a virtual authenticator: 12/12 (lock on reopen, failed
+  verification stays locked, unlock offline, off/on, password exit wipes the
+  phone, administrators unaffected).
+
+## 2026-10-23 — Phase 12.5 abrir sin señal desde cero (ux/12.5-abrir-sin-senal)
+
+- public/sw.js: service worker with the app PROGRAM only (index.html, /assets,
+  icons, fonts). API (other origin) never passes through it; navigation is
+  network-first with the cached index.html as fallback. Each build stamps
+  BUILD (vite plugin) so old copies are dropped. Manifest + apple meta so it
+  can be added to the home screen (iOS keeps storage better that way).
+- offline/shiftCache.ts (decision approved by Rafa 2026-10-23): for a kept
+  caregiver session, the caregiver's own shifts that are not finished and
+  start within 36 h — with their residents (filtered), care plan, address
+  and visit records — are saved encrypted (secureStore) and restored on open.
+  Expires 12 h after the last of those shifts (max 7 days); logout wipes it.
+- Shifts page: open-shift offers no longer block the own shift list offline.
+- Like "bajar el expediente" before a visit (Rafa's request): each upcoming
+  shift shows "Listo para usar sin señal" once it is saved on the phone; the
+  shift detail offers "Descargar para usar sin señal" when it is not yet.
+- Fix: Today card for an in-progress shift kept the white Card background
+  (white on white); now navy as designed.
+- Validation: typecheck, 122 tests, build, lint unchanged (76). Real-browser
+  E2E (service worker on localhost + local backend): 12/12 — opens from zero
+  offline with today's shift, a shift 5 days away is not stored, offline
+  check-in arrives marked offline, logout wipes the phone.
+
 ## 2026-10-23 — Security audit fixes (claude/smartmatch-frontend-v23)
 
 - parseMapPoint: stray «%» no longer throws; out-of-range match tries next pattern; Apple «coordinate=».

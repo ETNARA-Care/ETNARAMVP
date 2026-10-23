@@ -25,6 +25,7 @@ import { ServiceDirectionsCard } from "@/features/serviceLocation/ServiceDirecti
 import { ArrivalCard } from "@/features/serviceLocation/ArrivalCard";
 import { CaregiverJourneyCard } from "@/features/journey/CaregiverJourneyCard";
 import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
+import { OfflineReadyCard } from "@/features/caregiver/OfflineReady";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
 
@@ -357,6 +358,8 @@ export function CaregiverShiftDetailPage() {
       {enCamino && canStart && organizationId && shiftId && (
         <ArrivalCard organizationId={organizationId} shiftId={shiftId} arrival={verification.arrivals?.[0] ?? null} onRecorded={() => void load()} />
       )}
+
+      {organizationId && <OfflineReadyCard organizationId={organizationId} shift={shift} />}
 
       {canStart && (
         <div className="flex flex-col gap-2">

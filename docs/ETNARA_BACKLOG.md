@@ -2,6 +2,15 @@
 
 ## In Progress
 
+### FUX-008 — Caregiver app lock with Face ID / fingerprint (Phase 12.6)
+
+- Status: ready for review (gate). Frontend only.
+- Next: SmartMatch.
+
+### FUX-007 — Caregiver app opens with no signal (Phase 12.5)
+
+- Status: ready for review (gate). Frontend only; no backend change.
+- Next: Face ID / fingerprint unlock (WebAuthn).
 ### SM-005 — SmartMatch Gate 5: notifications, dashboard, mobile, Turnos link (PR #216, staging only)
 - Done in staging branch: bell badge + deep links, overview panel, mobile fixes, «Crear turno con esta cuidadora».
 - Gate 6 (staging): service locations, shift address, Cómo llegar (Apple/Google/Waze), Llegué with consented

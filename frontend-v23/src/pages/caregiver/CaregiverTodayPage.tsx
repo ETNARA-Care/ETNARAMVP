@@ -4,6 +4,8 @@ import { CalendarDays, ChevronRight, Clock3 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
+import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
+import { AppLockOffer } from "@/features/caregiver/AppLock";
 import { prefetchUpcomingShifts } from "@/features/caregiver/prefetchShifts";
 import { isConnectivityError } from "@/features/caregiver/careEventQueue";
 import { listMyCoverageOffers, type MyCoverageOffer } from "@/api/coverageOffers";
@@ -89,8 +91,10 @@ export function CaregiverTodayPage() {
       <h1 className="mt-1 font-[var(--font-display)] text-3xl text-[var(--color-navy-900)]">{greeting(now)}, {firstName}</h1>
     </header>
 
+    <AppLockOffer />
+
     {main ? <Link to={`/caregiver/shifts/${main.id}`} className="block">
-      <Card className={`overflow-hidden border-0 p-0 ${main.status === "in_progress" ? "bg-[var(--color-navy-900)] text-white" : "bg-white"}`}>
+      <Card className={`overflow-hidden border-0 p-0 ${main.status === "in_progress" ? "bg-[var(--color-navy-900)]! text-white" : "bg-white"}`}>
         <div className="p-5">
           <div className="mb-5 flex items-start justify-between gap-3">
             <div>
@@ -100,7 +104,7 @@ export function CaregiverTodayPage() {
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${main.assignment_response_status === "pending" ? "bg-amber-100 text-amber-800" : main.status === "in_progress" ? "bg-white/15 text-white" : "bg-[var(--color-success-100)] text-[var(--color-navy-900)]"}`}>{shiftLabel(main)}</span>
           </div>
           <div className={`flex items-center justify-between border-t pt-4 ${main.status === "in_progress" ? "border-white/15" : "border-[var(--color-border)]"}`}>
-            <div><p className={`text-xs ${main.status === "in_progress" ? "text-white/60" : "text-[var(--color-text-muted)]"}`}>Horario</p><p className="mt-1 font-medium">{windowLabel(main)}</p></div>
+            <div><p className={`text-xs ${main.status === "in_progress" ? "text-white/60" : "text-[var(--color-text-muted)]"}`}>Horario</p><p className="mt-1 font-medium">{windowLabel(main)}</p><div className="mt-1.5"><OfflineReadyMark shiftId={main.id} onDark={main.status === "in_progress"} /></div></div>
             <ChevronRight size={21} aria-hidden />
           </div>
         </div>
