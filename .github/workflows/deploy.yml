@@ -51,6 +51,13 @@ jobs:
         working-directory: frontend-v23
         env:
           VITE_API_URL: https://etnara-care-backend-staging-production-2a3a.up.railway.app
+          # Map tiles (pilot). Empty = OpenStreetMap (default). Set as repository
+          # VARIABLES (not secrets: the Mapbox token is public and URL-restricted):
+          #   MAP_TILE_URL, MAP_TILE_ATTRIBUTION, MAP_TILE_SIZE (512 for Mapbox), MAP_LOGO_URL
+          VITE_MAP_TILE_URL: ${{ vars.MAP_TILE_URL }}
+          VITE_MAP_TILE_ATTRIBUTION: ${{ vars.MAP_TILE_ATTRIBUTION }}
+          VITE_MAP_TILE_SIZE: ${{ vars.MAP_TILE_SIZE }}
+          VITE_MAP_LOGO_URL: ${{ vars.MAP_LOGO_URL }}
         run: npm run build
 
       - name: Add SPA fallback
