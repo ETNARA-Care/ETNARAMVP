@@ -2,6 +2,29 @@
 
 ## Current Status
 
+## 2026-10-22 — Phase 12.4 modo sin señal (ux/12.4-modo-sin-senal)
+
+- offline/secureStore.ts: IndexedDB + AES-GCM with a non-extractable key; each
+  value expires (max 7 days); logout clears everything including the key.
+- auth/token.ts: decision change approved by Rafa — a caregiver-only session
+  (backend keepSignedIn) is kept encrypted on the device up to 7 days and
+  restored on open; all other sessions stay tab-only (sessionStorage).
+  AuthProvider opens with the cached identity when there is no signal and
+  re-checks with the server when it returns.
+- Care event queue now also holds check-in/check-out, in order, each with its
+  own clientEventId and real time; saved encrypted per user for kept
+  sessions (memory only otherwise). A queued visit shows as started/finished.
+  Finishing with pending records is allowed only when the queue is saved.
+- api/client.ts: caregiver shift reads remembered in memory only (never on
+  disk) so screens keep working when signal drops; 20 s request timeout
+  counts as no signal. Upcoming shift details prefetched while online.
+- "Sin señal" notice; lists show "Sin conexión" and reload when signal
+  returns. Agency timesheets show "Registrada sin conexión".
+- Known limit: if the app is closed with no signal, reopening shows no shift
+  list (only pending records persist). Decision pending with Rafa.
+- Validation: typecheck, 118 tests, build; lint unchanged (76). Real-browser
+  E2E against the local backend: 17/17.
+
 ## 2026-10-22 — Phase 12.3 supervisor from caregiver + existing accounts (ux/12.3-supervisora-cuenta-existente)
 
 - roles.ts allowedExperiences: staff who also work shifts open both /agency
