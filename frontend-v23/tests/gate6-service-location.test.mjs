@@ -62,7 +62,7 @@ test("family: own permission-gated route, request a correction, see its status; 
 });
 
 test("SmartMatch: cancel a FILLED opportunity with a reason; active shift sends the admin to Turnos", () => {
-  assert.match(agencySM, /cancelFilledOpportunity\(organizationId, cancelTarget\.id, cancelReason, cancelNote, token\)/);
+  assert.match(agencySM, /cancelOpportunityApi\(organizationId, cancelTarget\.id, cancelReason, cancelNote, token\)/);
   assert.match(agencySM, /SmartMatch no cancela ni reasigna turnos reales/);
   assert.match(agencySM, /No se envía a la cuidadora/);
 });

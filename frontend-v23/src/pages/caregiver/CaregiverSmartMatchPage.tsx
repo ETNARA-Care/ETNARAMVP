@@ -124,7 +124,7 @@ export function CaregiverSmartMatchPage() {
               <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]"><MapPin size={15} />{opp.region_label}</p>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]"><CalendarDays size={15} />{formatWindow(opp.starts_at, opp.ends_at)}</p>
             </div>
-            {open && <Badge tone={applicationLabel(latest.status, latest.decision_reason).tone}>{applicationLabel(latest.status, latest.decision_reason).label}</Badge>}
+            {open && <Badge tone={applicationLabel(latest.status, latest.decision_reason, latest.closed_reason).tone}>{applicationLabel(latest.status, latest.decision_reason, latest.closed_reason).label}</Badge>}
           </div>
           {!open && <Button className="mt-3" fullWidth onClick={() => { setConsent(false); setApplyTarget(opp); }}>
             {latest?.status === "WITHDRAWN" ? "Volver a solicitar" : "Solicitar oportunidad"}
@@ -137,7 +137,7 @@ export function CaregiverSmartMatchPage() {
       {mine.length === 0 && <EmptyState title="Aún no tienes solicitudes" description="Cuando solicites una oportunidad, verás aquí su estado." />}
       {mine.map((app) => {
         const cancelled = app.status === "APPROVED" && app.opportunity_status === "CANCELLED";
-        const status = cancelled ? { label: "Cancelada por la agencia", tone: "neutral" as const } : applicationLabel(app.status, app.decision_reason);
+        const status = cancelled ? { label: "Cancelada por la agencia", tone: "neutral" as const } : applicationLabel(app.status, app.decision_reason, app.closed_reason);
         return <Card key={app.id} className={`p-4 ${app.id === highlightId ? "ring-2 ring-[var(--color-accent-700)]" : ""}`}
           aria-current={app.id === highlightId ? "true" : undefined}>
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -157,6 +157,11 @@ export function CaregiverSmartMatchPage() {
           </p>}
           {cancelled && <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             La agencia canceló esta oportunidad{app.opportunity_cancellation_reason ? `: ${CANCELLATION_REASONS[app.opportunity_cancellation_reason].toLowerCase()}` : ""}.
+          </p>}
+          {app.status === "CLOSED" && <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            {app.closed_reason === "OPPORTUNITY_EXPIRED"
+              ? "La oportunidad venció sin asignarse. Tu solicitud se cerró; no es una decisión sobre ti."
+              : `La agencia canceló esta oportunidad${app.opportunity_cancellation_reason ? `: ${CANCELLATION_REASONS[app.opportunity_cancellation_reason].toLowerCase()}` : ""}. Tu solicitud se cerró; no es una decisión sobre ti.`}
           </p>}
           {app.status === "PENDING" && <Button className="mt-3" variant="secondary" fullWidth onClick={() => setWithdrawTarget(app)}>
             Retirar solicitud

@@ -18,8 +18,11 @@ export function formatDateTime(value: string): string {
   });
 }
 
-export function applicationLabel(status: ApplicationStatus, reason: DecisionReason | null): { label: string; tone: Tone } {
+export function applicationLabel(status: ApplicationStatus, reason: DecisionReason | null, closedReason?: string | null): { label: string; tone: Tone } {
   switch (status) {
+    case "CLOSED": return closedReason === "OPPORTUNITY_EXPIRED"
+      ? { label: "Oportunidad vencida", tone: "neutral" }
+      : { label: "Cancelada por la agencia", tone: "neutral" };
     case "PENDING": return { label: "Pendiente", tone: "warning" };
     case "APPROVED": return { label: "Aprobada", tone: "success" };
     case "WITHDRAWN": return { label: "Retirada", tone: "neutral" };
@@ -61,11 +64,21 @@ export const EVENT_LABELS: Record<string, string> = {
   WITHDRAWN: "Solicitud retirada",
   APPROVED: "Aprobada",
   REJECTED: "Rechazada",
+  CLOSED: "Solicitud cerrada",
+};
+export const OPPORTUNITY_EVENT_LABELS: Record<string, string> = {
+  CREATED: "Creada (borrador)",
+  PUBLISHED: "Publicada",
+  FILLED: "Cubierta",
+  CANCELLED: "Cancelada",
+  EXPIRED: "Vencida automáticamente",
 };
 export const REASON_LABELS: Record<string, string> = {
   APPROVED_ELIGIBLE: "Cumple todos los requisitos verificados",
   AGENCY_REJECTED: "Decisión de la agencia",
   OPPORTUNITY_FILLED: "La oportunidad se cubrió con otra persona",
+  OPPORTUNITY_CANCELLED: "La agencia canceló la oportunidad",
+  OPPORTUNITY_EXPIRED: "La oportunidad venció sin asignarse",
 };
 
 /** Mensajes claros para cada error conocido del backend. */
@@ -78,6 +91,7 @@ export function smartMatchErrorMessage(error: unknown, fallback: string): string
     case "CONSENT_REQUIRED": return "Debes aceptar el consentimiento para solicitar.";
     case "APPLICATION_NOT_PENDING": return "Esta solicitud ya no está pendiente. Actualizamos la información.";
     case "OPPORTUNITY_NOT_OPEN": return "La oportunidad ya no está abierta (cubierta, cancelada o vencida).";
+    case "OPPORTUNITY_NOT_CANCELLABLE": return "Esta oportunidad ya no se puede cancelar (ya está cancelada o vencida). Actualizamos la información.";
     case "APPROVAL_BLOCKED": return "No se puede aprobar: falta información verificable. Revisa los requisitos.";
     case "CONCURRENT_UPDATE_RETRY": return "Otra persona estaba actuando a la vez. Inténtalo de nuevo.";
     case "NOT_FOUND_OR_NOT_PUBLISHABLE": return "Este borrador ya no se puede publicar (ya publicado o con fecha pasada).";

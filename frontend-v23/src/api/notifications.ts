@@ -42,6 +42,8 @@ function notificationSummary(type: string): string {
   if (type === "SMARTMATCH_APPLICATION_REJECTED") return "Tu solicitud no fue aprobada";
   if (type === "SMARTMATCH_APPLICATION_CLOSED") return "La oportunidad se cubrió con otra persona";
   if (type === "SMARTMATCH_OPPORTUNITY_CANCELLED") return "La agencia canceló una oportunidad que tenías aprobada";
+  if (type === "SMARTMATCH_APPLICATION_OPPORTUNITY_CANCELLED") return "La agencia canceló una oportunidad a la que te postulaste";
+  if (type === "SMARTMATCH_APPLICATION_OPPORTUNITY_EXPIRED") return "Venció una oportunidad a la que te postulaste";
   if (type === "SHIFT_LATE_ARRIVAL") return "Turno sin llegada registrada (15 min)";
   if (type === "SHIFT_ARRIVAL_NEEDS_REVIEW") return "Llegada pendiente de revisión";
   if (type === "SHIFT_LOCATION_CHANGED") return "Cambió la dirección de uno de tus turnos";

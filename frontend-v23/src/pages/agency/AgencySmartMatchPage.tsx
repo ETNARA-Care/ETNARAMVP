@@ -4,14 +4,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
-  cancelFilledOpportunity, createOpportunityDraft, decideApplication, type CancellationReason, getApplicationReview, listAgencyOpportunities, listDecisionHistory,
+  cancelOpportunity as cancelOpportunityApi, listOpportunityHistory, type OpportunityHistoryEvent, createOpportunityDraft, decideApplication, type CancellationReason, getApplicationReview, listAgencyOpportunities, listDecisionHistory,
   listPendingCounts, listReviewQueue, publishOpportunity,
   type AgencyOpportunity, type ApplicationReview, type DecisionEvent, type ReviewQueueItem,
 } from "@/api/smartmatch";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
 import {
-  applicationLabel, CANCELLATION_REASONS, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, shiftLinkLabel, smartMatchErrorMessage,
+  applicationLabel, CANCELLATION_REASONS, EVENT_LABELS, OPPORTUNITY_EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, shiftLinkLabel, smartMatchErrorMessage,
 } from "@/features/smartmatch/smartmatchText";
 
 const CHECK_ROWS: { key: "membershipActive" | "credentialsEligible" | "availabilityConfigured" | "availabilityCovers" | "noUnavailabilityConflict" | "consentRecorded" | "opportunityOpen"; label: string }[] = [
@@ -67,6 +67,8 @@ export function AgencySmartMatchPage() {
   const [confirmApprove, setConfirmApprove] = useState(false);
   const [confirmReject, setConfirmReject] = useState(false);
   const [history, setHistory] = useState<{ name: string; events: DecisionEvent[] } | null>(null);
+  // Migration 109: append-only status history of one opportunity.
+  const [oppHistory, setOppHistory] = useState<{ title: string; events: OpportunityHistoryEvent[] } | null>(null);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -181,11 +183,21 @@ export function AgencySmartMatchPage() {
     if (!organizationId || !token || !cancelTarget || !cancelReason) return;
     setBusy(true);
     try {
-      await cancelFilledOpportunity(organizationId, cancelTarget.id, cancelReason, cancelNote, token);
-      show("Oportunidad cancelada. Avisamos a la cuidadora aprobada.", "success");
+      const result = await cancelOpportunityApi(organizationId, cancelTarget.id, cancelReason, cancelNote, token);
+      const n = result.closedApplications ?? 0;
+      show(result.previousStatus === "PUBLISHED"
+        ? (n === 0 ? "Oportunidad cancelada. No había solicitudes pendientes." : `Oportunidad cancelada. Cerramos ${n === 1 ? "1 solicitud pendiente" : `${n} solicitudes pendientes`} y avisamos a ${n === 1 ? "la cuidadora" : "cada cuidadora"}.`)
+        : "Oportunidad cancelada. Avisamos a la cuidadora aprobada.", "success");
       setCancelTarget(null);
     } catch (e) { show(smartMatchErrorMessage(e, "No se pudo cancelar la oportunidad."), "danger"); }
     finally { setBusy(false); await load(); }
+  }
+
+  async function openOpportunityHistory(opp: AgencyOpportunity) {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    try { setOppHistory({ title: `${opp.role_label} · ${opp.region_label}`, events: await listOpportunityHistory(organizationId, opp.id, token) }); }
+    catch (e) { show(smartMatchErrorMessage(e, "No se pudo cargar el historial."), "danger"); }
   }
 
   async function openHistory(item: ReviewQueueItem) {
@@ -215,10 +227,11 @@ export function AgencySmartMatchPage() {
         {opp.status === "DRAFT" && <Button disabled={busy} onClick={() => void publish(opp)}>Publicar</Button>}
         {opp.status === "FILLED" && !opp.shift_id && <Button icon={<CalendarPlus size={18} />} onClick={() => createShiftFor(opp.id)}>Crear turno con esta cuidadora</Button>}
         {opp.status === "FILLED" && opp.shift_id && <Button variant="secondary" onClick={() => navigate(`/agency/shifts/${opp.shift_id}`)}>Ver turno</Button>}
-        {opp.status === "FILLED" && <Button variant="ghost" onClick={() => { setCancelReason(""); setCancelNote(""); setCancelTarget(opp); }}>Cancelar oportunidad</Button>}
+        {(opp.status === "FILLED" || opp.status === "PUBLISHED") && <Button variant="ghost" onClick={() => { setCancelReason(""); setCancelNote(""); setCancelTarget(opp); }}>Cancelar oportunidad</Button>}
         {opp.status !== "DRAFT" && <Button variant="secondary" onClick={() => void openQueue(opp)}>
           {opp.status === "PUBLISHED" ? "Revisar solicitudes" : "Ver solicitudes e historial"}
         </Button>}
+        {opp.status !== "DRAFT" && <Button variant="ghost" icon={<History size={18} />} onClick={() => void openOpportunityHistory(opp)}>Historial de la oportunidad</Button>}
       </div>
     </Card>;
   };
@@ -352,7 +365,8 @@ export function AgencySmartMatchPage() {
       </div>
     </Modal>
 
-    <Modal open={cancelTarget !== null} onClose={() => !busy && setCancelTarget(null)} title="Cancelar oportunidad cubierta"
+    <Modal open={cancelTarget !== null} onClose={() => !busy && setCancelTarget(null)}
+      title={cancelTarget?.status === "PUBLISHED" ? "Cancelar oportunidad publicada" : "Cancelar oportunidad cubierta"}
       footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button variant="ghost" disabled={busy} onClick={() => setCancelTarget(null)}>Volver</Button>
         {!(cancelTarget?.shift_id && cancelTarget.shift_status !== "cancelled") &&
@@ -368,8 +382,24 @@ export function AgencySmartMatchPage() {
           {(Object.keys(CANCELLATION_REASONS) as CancellationReason[]).map((r) => <option key={r} value={r}>{CANCELLATION_REASONS[r]}</option>)}
         </Select>
         <Input label="Nota interna (opcional)" maxLength={300} value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} hint="No se envía a la cuidadora." />
-        <p className="text-xs text-[var(--color-text-muted)]">La cuidadora aprobada recibirá un aviso con el motivo. El historial se conserva.</p>
+        {cancelTarget?.status === "PUBLISHED"
+          ? <p className="text-sm" role="status">{(counts[cancelTarget.id] ?? 0) === 0
+              ? "No hay solicitudes pendientes. La oportunidad dejará de mostrarse a las cuidadoras."
+              : `Se cerrarán ${(counts[cancelTarget.id] ?? 0) === 1 ? "1 solicitud pendiente" : `${counts[cancelTarget.id]} solicitudes pendientes`}. Cada cuidadora recibirá un aviso con el motivo (sin la nota interna).`}
+              {" "}El historial se conserva.</p>
+          : <p className="text-xs text-[var(--color-text-muted)]">La cuidadora aprobada recibirá un aviso con el motivo. El historial se conserva.</p>}
       </div>}
+    </Modal>
+
+    <Modal open={oppHistory !== null} onClose={() => setOppHistory(null)} title={`Historial · ${oppHistory?.title ?? ""}`}>
+      <ol className="space-y-2 text-sm" aria-label="Historial de la oportunidad">
+        {(oppHistory?.events ?? []).map((ev, i) => <li key={i} className="rounded-xl border border-[var(--color-border)] p-3">
+          <p className="font-medium">{OPPORTUNITY_EVENT_LABELS[ev.eventType] ?? ev.eventType}</p>
+          <p className="text-xs text-[var(--color-text-muted)]">{formatDateTime(ev.occurredAt)} · {ev.automatic ? "Automático (sistema)" : ev.actorName ?? "Administración"}</p>
+          {ev.reason && <p className="mt-1">Motivo: {CANCELLATION_REASONS[ev.reason] ?? ev.reason}</p>}
+          {ev.closedApplications > 0 && <p className="mt-1">{ev.closedApplications === 1 ? "1 solicitud pendiente cerrada" : `${ev.closedApplications} solicitudes pendientes cerradas`} (cuidadoras avisadas)</p>}
+        </li>)}
+      </ol>
     </Modal>
 
     <Modal open={history !== null} onClose={() => setHistory(null)} title={`Historial · ${history?.name ?? ""}`}>

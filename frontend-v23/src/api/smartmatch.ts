@@ -8,7 +8,9 @@ import { apiClient } from "./client";
 export const SMARTMATCH_CONSENT_VERSION = "smartmatch-consent-v1";
 
 export type OpportunityStatus = "DRAFT" | "PUBLISHED" | "CANCELLED" | "EXPIRED" | "FILLED";
-export type ApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | "WITHDRAWN";
+/** CLOSED: the opportunity was cancelled or expired (backend 109); not a decision about the person. */
+export type ApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | "WITHDRAWN" | "CLOSED";
+export type ClosedReason = "OPPORTUNITY_CANCELLED" | "OPPORTUNITY_EXPIRED";
 export type DecisionReason = "APPROVED_ELIGIBLE" | "AGENCY_REJECTED" | "OPPORTUNITY_FILLED";
 
 export interface AgencyOpportunity {
@@ -34,6 +36,7 @@ export interface AvailableOpportunity {
 export interface MyApplication {
   id: string; status: ApplicationStatus; created_at: string; withdrawn_at: string | null;
   decided_at: string | null; decision_reason: DecisionReason | null;
+  closed_reason?: ClosedReason | null; closed_at?: string | null;
   opportunity_id: string; region_label: string; role_label: string;
   starts_at: string; ends_at: string; opportunity_status: OpportunityStatus;
   /** Gate 6: reason category when the agency cancelled an opportunity you had approved. */
@@ -57,9 +60,16 @@ export interface ApplicationReview {
   checks: ApprovalChecks;
 }
 export interface DecisionEvent {
-  event_type: "SUBMITTED" | "WITHDRAWN" | "APPROVED" | "REJECTED";
+  event_type: "SUBMITTED" | "WITHDRAWN" | "APPROVED" | "REJECTED" | "CLOSED";
   previous_status: ApplicationStatus | null; new_status: ApplicationStatus;
-  actor_user_id: string | null; decision_reason: DecisionReason | null; occurred_at: string;
+  actor_user_id: string | null; decision_reason: DecisionReason | ClosedReason | null; occurred_at: string;
+}
+/** Opportunity status history (backend 109). actorName null + automatic: closed by the system (expiry). */
+export interface OpportunityHistoryEvent {
+  eventType: "CREATED" | "PUBLISHED" | "FILLED" | "CANCELLED" | "EXPIRED";
+  previousStatus: OpportunityStatus | null; newStatus: OpportunityStatus;
+  actorName: string | null; automatic: boolean; reason: CancellationReason | null;
+  closedApplications: number; occurredAt: string;
 }
 
 const base = (organizationId: string) => `/organizations/${encodeURIComponent(organizationId)}/smartmatch`;
@@ -90,9 +100,16 @@ export async function createShiftFromOpportunity(organizationId: string, opportu
       ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}) }, token);
 }
 export type CancellationReason = "NO_LONGER_NEEDED" | "SCHEDULE_CHANGED" | "COVERED_OTHERWISE" | "OTHER";
-/** Gate 6: cancel a FILLED opportunity (blocked while its Turnos shift is active). */
-export async function cancelFilledOpportunity(organizationId: string, opportunityId: string, reason: CancellationReason, note: string, token: string) {
-  return apiClient.post(`${base(organizationId)}/opportunities/${id(opportunityId)}/cancel`, { reason, ...(note.trim() ? { note: note.trim() } : {}) }, token);
+/**
+ * Cancel a PUBLISHED opportunity (pending applications are closed and notified)
+ * or a FILLED one (blocked while its Turnos shift is active). Reason required.
+ */
+export async function cancelOpportunity(organizationId: string, opportunityId: string, reason: CancellationReason, note: string, token: string) {
+  return apiClient.post<{ previousStatus: OpportunityStatus; closedApplications: number }>(
+    `${base(organizationId)}/opportunities/${id(opportunityId)}/cancel`, { reason, ...(note.trim() ? { note: note.trim() } : {}) }, token);
+}
+export async function listOpportunityHistory(organizationId: string, opportunityId: string, token: string) {
+  return (await apiClient.get<{ history: OpportunityHistoryEvent[] }>(`${base(organizationId)}/opportunities/${id(opportunityId)}/history`, token)).history;
 }
 export async function listPendingCounts(organizationId: string, token: string) {
   return (await apiClient.get<{ counts: { opportunity_id: string; pending_count: number }[] }>(
