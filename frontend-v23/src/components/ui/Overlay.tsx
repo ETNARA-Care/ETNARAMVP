@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type React from "react";
 import { X } from "lucide-react";
 import { IconButton } from "./Button";
@@ -22,6 +22,28 @@ function keepFocusedFieldVisible(event: React.FocusEvent<HTMLDivElement>) {
 }
 
 /**
+ * iOS Safari: the keyboard shrinks the *visual* viewport but not 100dvh, so a
+ * full-screen sheet keeps its footer behind the keyboard. Follow the visual
+ * viewport while open (phones only) so header, body and buttons stay above it.
+ */
+function useVisualViewportBox(active: boolean) {
+  const [box, setBox] = useState<{ height: number; top: number } | null>(null);
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!active || !vv) { setBox(null); return; }
+    const update = () => {
+      // Only when something (the keyboard) actually covers the layout viewport.
+      setBox(window.innerWidth < 640 && vv.height < window.innerHeight - 1 ? { height: Math.round(vv.height), top: Math.round(vv.offsetTop) } : null);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
+  }, [active]);
+  return box;
+}
+
+/**
  * Usa <dialog> nativo: focus trap, Esc-to-close y el backdrop ::backdrop
  * vienen gratis del navegador -- menos JS propio para algo tan sensible a
  * accesibilidad como un modal.
@@ -31,6 +53,7 @@ export function Modal({ open, onClose, title, children, footer, fullScreenOnMobi
   fullScreenOnMobile?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const keyboardBox = useVisualViewportBox(open && fullScreenOnMobile);
 
   useEffect(() => {
     const el = ref.current;
@@ -44,6 +67,8 @@ export function Modal({ open, onClose, title, children, footer, fullScreenOnMobi
       ref={ref}
       onClose={onClose}
       onCancel={onClose}
+      data-keyboard-open={keyboardBox ? "true" : undefined}
+      style={keyboardBox ? { height: keyboardBox.height, maxHeight: keyboardBox.height, top: keyboardBox.top, bottom: "auto" } : undefined}
       className={`p-0 border-none shadow-[var(--shadow-raised)] backdrop:bg-[var(--color-navy-950)]/40
         open:flex open:flex-col open:animate-[fadeIn_var(--duration-base)_var(--ease-standard)]
         ${fullScreenOnMobile

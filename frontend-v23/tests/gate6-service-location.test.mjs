@@ -117,3 +117,20 @@ test("mobile forms: full-screen sheet, sticky header/footer above the map, safe 
   assert.match(map, /relative isolate z-0/);
   assert.match(section, /fullScreenOnMobile/);
 });
+
+// ---------------------------------------------------------------- Gate 6 close: family form on iPhone + approval authorization
+test("family correction form: full-screen sheet, compact footer, keyboard-aware modal", () => {
+  assert.match(family, /title="Solicitar corrección" fullScreenOnMobile/);
+  assert.match(family, /footer=\{<div className="flex w-full items-center gap-2 sm:justify-end">/);
+  assert.doesNotMatch(family, /flex-col-reverse/);
+  assert.match(overlay, /window\.visualViewport/);
+  assert.match(overlay, /vv\.addEventListener\("resize", update\)/);
+  assert.match(overlay, /data-keyboard-open/);
+});
+
+test("approving a family correction shows the change and needs explicit authorization when shifts use the address", () => {
+  assert.match(section, /data-testid="approval-diff"/);
+  assert.match(section, /disabled=\{resolving\?\.decision === "APPROVE" && approvalShifts > 0 && !shiftsAck\}/);
+  assert.match(section, /confirmUpcomingShifts: true as const/);
+  assert.match(section, /Los turnos no se modifican/);
+});

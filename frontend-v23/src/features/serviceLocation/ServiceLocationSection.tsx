@@ -53,6 +53,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
   const [history, setHistory] = useState<{ events: LocationEvent[]; access: LocationAccess[] } | null>(null);
   const [resolving, setResolving] = useState<{ request: ChangeRequest; decision: "APPROVE" | "REJECT" } | null>(null);
   const [resolutionNote, setResolutionNote] = useState("");
+  const [shiftsAck, setShiftsAck] = useState(false);
   // Gate 6 fix: exact point confirmed separately from the written address.
   const [gpsFor, setGpsFor] = useState<ServiceLocation | null>(null);
 
@@ -71,6 +72,8 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
   useEffect(() => { void load(); }, [load]);
 
   const active = (data?.locations ?? []).filter((l) => !l.archivedAt);
+  const primaryLocation = active.find((l) => l.isPrimary) ?? null;
+  const approvalShifts = primaryLocation?.upcomingShiftCount ?? 0;
   const archived = (data?.locations ?? []).filter((l) => l.archivedAt);
   const labelOf = (id: string | null) => data?.locations.find((l) => l.id === id)?.label ?? "Sin dirección";
 
@@ -188,7 +191,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
             {r.message && <li>Mensaje: «{r.message}»</li>}
           </ul>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-            <Button size="md" onClick={() => { setResolutionNote(""); setResolving({ request: r, decision: "APPROVE" }); }}>Aprobar y aplicar</Button>
+            <Button size="md" onClick={() => { setResolutionNote(""); setShiftsAck(false); setResolving({ request: r, decision: "APPROVE" }); }}>Aprobar y aplicar</Button>
             <Button size="md" variant="secondary" onClick={() => { setResolutionNote(""); setResolving({ request: r, decision: "REJECT" }); }}>Rechazar</Button>
           </div>
         </div>
@@ -295,17 +298,31 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
       </Modal>
 
       <Modal open={resolving !== null} onClose={() => !busy && setResolving(null)} title={resolving?.decision === "APPROVE" ? "Aprobar corrección" : "Rechazar corrección"}
-        footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        fullScreenOnMobile
+        footer={<div className="flex w-full items-center gap-2 sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setResolving(null)}>Volver</Button>
-          <Button loading={busy} variant={resolving?.decision === "REJECT" ? "danger" : "primary"}
+          <Button className="flex-1 sm:flex-none" loading={busy} variant={resolving?.decision === "REJECT" ? "danger" : "primary"}
+            disabled={resolving?.decision === "APPROVE" && approvalShifts > 0 && !shiftsAck}
             onClick={() => resolving && void act(async (t) => { await resolveChangeRequest(organizationId, recipientId, resolving.request.id,
-              { decision: resolving.decision, ...(resolutionNote.trim() ? { note: resolutionNote.trim() } : {}) }, t); setResolving(null); },
-              resolving.decision === "APPROVE" ? "Corrección aplicada a la dirección principal. Avisamos al familiar." : "Solicitud rechazada. Avisamos al familiar.",
+              { decision: resolving.decision, ...(resolutionNote.trim() ? { note: resolutionNote.trim() } : {}),
+                ...(resolving.decision === "APPROVE" && shiftsAck ? { confirmUpcomingShifts: true as const } : {}) }, t); setResolving(null); },
+              resolving.decision === "APPROVE"
+                ? (approvalShifts > 0 ? "Corrección aplicada. Avisamos al familiar y a la cuidadora de los turnos próximos." : "Corrección aplicada a la dirección principal. Avisamos al familiar.")
+                : "Solicitud rechazada. Avisamos al familiar.",
               "No se pudo registrar la decisión.")}>Confirmar</Button>
         </div>}>
-        <p className="text-[var(--text-small)]">{resolving?.decision === "APPROVE"
-          ? "Los datos propuestos se aplicarán a la dirección principal y deberás verificarla de nuevo."
-          : "La dirección oficial no cambia."}</p>
+        {resolving?.decision === "APPROVE" ? <div className="flex flex-col gap-3 text-[var(--text-small)]">
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3" data-testid="approval-diff">
+            <p className="text-[var(--color-text-secondary)]">Ahora: <span className="text-[var(--color-text-primary)]">{primaryLocation ? serviceAddressText(primaryLocation) || "—" : "—"}</span></p>
+            <p className="mt-1 text-[var(--color-text-secondary)]">Propuesta: <strong className="text-[var(--color-text-primary)]">{[resolving.request.proposed_address_line, [resolving.request.proposed_municipality, resolving.request.proposed_postal_code].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "sin cambios en la dirección"}</strong></p>
+            {resolving.request.proposed_access_notes && <p className="mt-1 text-[var(--color-text-secondary)]">Acceso: {resolving.request.proposed_access_notes}</p>}
+          </div>
+          <p>Se aplicará a la dirección principal. Tendrás que verificarla de nuevo y, si cambia la calle o el municipio, confirmar otra vez el punto GPS.</p>
+          {approvalShifts > 0 && <div role="status" className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--color-warning-700)]">
+            <p>{approvalShifts} turno(s) próximo(s) usan esta dirección. Los turnos no se modifican, pero la cuidadora asignada verá la dirección corregida y recibirá un aviso (sin la dirección).</p>
+            <div className="mt-2"><Checkbox label={`Autorizo que ${approvalShifts === 1 ? "ese turno use" : "esos turnos usen"} la dirección corregida`} checked={shiftsAck} onChange={(e) => setShiftsAck(e.target.checked)} /></div>
+          </div>}
+        </div> : <p className="text-[var(--text-small)]">La dirección oficial no cambia.</p>}
         <div className="mt-3"><Textarea label="Nota para el familiar (opcional)" rows={2} maxLength={300} value={resolutionNote} onChange={(e) => setResolutionNote(e.target.value)} /></div>
       </Modal>
 

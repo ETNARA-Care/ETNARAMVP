@@ -2,6 +2,16 @@
 
 ## Current Status
 
+## 2026-10-23 — Gate 6 close: family form on iPhone, approval authorization (claude/smartmatch-frontend-v23)
+
+- Modal follows window.visualViewport when fullScreenOnMobile (iOS keyboard): sheet height = visible
+  area, buttons and focused field stay above the keyboard (data-keyboard-open).
+- Family «Solicitar corrección»: full-screen sheet, one-row footer (Cancelar + Enviar a la agencia).
+- Agency «Aprobar corrección»: current vs proposed address; when upcoming shifts use it, warning +
+  required «Autorizo…» checkbox -> confirmUpcomingShifts. Full-screen on mobile.
+- Checks: 148/148 static; E2E 390x844 Gate 6 22/22 (FM1 keyboard-aware family form, FM2 approval
+  with shifts), Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
 ## 2026-10-23 — Gate 6 fix: «Ubicar en el mapa», GPS state, iPhone forms (claude/smartmatch-frontend-v23)
 
 - Badges «Dirección verificada / sin verificar» and «GPS confirmado / sin confirmar» are independent.

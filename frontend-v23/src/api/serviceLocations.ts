@@ -87,7 +87,7 @@ export const shiftLocationOptions = async (o: string, r: string, t: string) =>
   (await apiClient.get<{ options: ShiftLocationOption[] }>(`${rec(o, r)}/service-location-options`, t)).options;
 export const listChangeRequests = async (o: string, r: string, t: string) =>
   (await apiClient.get<{ requests: ChangeRequest[] }>(`${rec(o, r)}/location-change-requests`, t)).requests;
-export const resolveChangeRequest = (o: string, r: string, id: string, body: { decision: "APPROVE" | "REJECT"; note?: string }, t: string) =>
+export const resolveChangeRequest = (o: string, r: string, id: string, body: { decision: "APPROVE" | "REJECT"; note?: string; confirmUpcomingShifts?: true }, t: string) =>
   apiClient.post(`${rec(o, r)}/location-change-requests/${id}/resolve`, body, t);
 export const listFamilyPermissions = async (o: string, r: string, t: string) =>
   (await apiClient.get<{ relatives: FamilyPermission[] }>(`${rec(o, r)}/family-location-permissions`, t)).relatives;

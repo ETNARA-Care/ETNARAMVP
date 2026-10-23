@@ -88,10 +88,11 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
         </>}
       </Card>
 
-      <Modal open={open} onClose={() => !busy && setOpen(false)} title="Solicitar corrección"
-        footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      {/* Same mobile pattern as the agency address forms: full-screen sheet, compact one-row footer. */}
+      <Modal open={open} onClose={() => !busy && setOpen(false)} title="Solicitar corrección" fullScreenOnMobile
+        footer={<div className="flex w-full items-center gap-2 sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button loading={busy} onClick={() => void submit()}>Enviar a la agencia</Button>
+          <Button className="flex-1 sm:flex-none" loading={busy} onClick={() => void submit()}>Enviar a la agencia</Button>
         </div>}>
         <div className="flex flex-col gap-3">
           <p className="text-sm text-[#475467]">La agencia revisará tu solicitud antes de cambiar la dirección oficial. Completa solo lo que haya que corregir.</p>
