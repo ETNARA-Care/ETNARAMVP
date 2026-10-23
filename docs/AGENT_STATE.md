@@ -2,6 +2,20 @@
 
 ## Current Status
 
+## 2026-10-23 — Gate 6: service location, Cómo llegar, Llegué (claude/smartmatch-frontend-v23)
+
+- Resident record: «Ubicación del servicio» (ServiceLocationSection) replaces the Phase 12.1 card:
+  addresses, ZIP, access notes, Leaflet + OpenStreetMap marker (no geocoding; leaflet 1.9.4 pinned),
+  verify, primary, archive, history + caregiver access log, family permission, correction requests,
+  explicit «Actualizar turnos» when the primary address changes.
+- Turnos forms: «Dirección del servicio» (primary preselected; SmartMatch requires a choice).
+- Caregiver: «Cómo llegar» from the shift's confirmed location (Apple Maps, Google Maps, Waze);
+  «Llegué» with one-time consent modal, one getCurrentPosition reading, never blocks «Comenzar turno»;
+  consent card in profile. Agency shift detail: address, real times, lateness, arrival review.
+- Family profile: «Lugar del servicio» (permission-gated) + correction request and status.
+- SmartMatch: cancel FILLED with reason; active shift sends the admin to Turnos.
+- Tests 142/142; E2E 390x844: Gate 6 16/16, Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
 ## 2026-10-23 — SmartMatch Gate 5: Crear turno con esta cuidadora (claude/smartmatch-frontend-v23)
 
 - After approval: "Solicitud aprobada" prompt with «Crear turno con esta cuidadora» / «Más tarde».

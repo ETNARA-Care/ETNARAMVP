@@ -19,8 +19,10 @@ import {
   getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
-import { getRecipientLocation, type RecipientLocation } from "@/api/recipientLocation";
-import { DirectionsCard } from "@/features/caregiver/DirectionsCard";
+import { getShiftServiceLocation, type ShiftServiceLocation } from "@/api/serviceLocations";
+import { ServiceDirectionsCard } from "@/features/serviceLocation/ServiceDirectionsCard";
+import { ArrivalCard } from "@/features/serviceLocation/ArrivalCard";
+import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
 
@@ -94,7 +96,7 @@ export function CaregiverShiftDetailPage() {
   const [verification, setVerification] = useState<VisitVerification | null>(null);
   const [careEvents, setCareEvents] = useState<CareEvent[]>([]);
   const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
-  const [location, setLocation] = useState<RecipientLocation | null>(null);
+  const [location, setLocation] = useState<ShiftServiceLocation | null>(null);
   const [error, setError] = useState<boolean | "offline">(false);
   const [saving, setSaving] = useState(false);
   const [activeAction, setActiveAction] = useState<CareEventTypeCode | null>(null);
@@ -138,8 +140,8 @@ export function CaregiverShiftDetailPage() {
       const [carePlanRow, locationRow] = shiftRow.care_recipient_id
         ? await Promise.all([
           getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token),
-          // La dirección es ayuda, no bloquea el turno si falla.
-          getRecipientLocation(organizationId, shiftRow.care_recipient_id, token).catch(() => null),
+          // Gate 6: la dirección confirmada de ESTE turno. Es ayuda, no bloquea el turno si falla.
+          getShiftServiceLocation(organizationId, shiftRow.id, token).catch(() => null),
         ])
         : [null, null];
       setShift(shiftRow);
@@ -164,6 +166,9 @@ export function CaregiverShiftDetailPage() {
       at: event.occurredAt,
       title: (event.eventType === "check_in" ? "Llegada registrada · turno iniciado" : "Salida registrada · turno finalizado")
         + (event.recordedOffline ? " · sin conexión" : ""),
+    })),
+    ...(verification?.arrivals ?? []).map((arrival) => ({
+      id: `arrival-${arrival.occurredAt}`, at: arrival.occurredAt, title: `Llegué · ${PROXIMITY_TEXT[arrival.proximity]}`,
     })),
     ...careEvents.map((event) => ({ id: event.id, at: event.occurred_at, title: careEventSummary(event) })),
     ...queuedHere.map((item) => ({
@@ -337,7 +342,11 @@ export function CaregiverShiftDetailPage() {
         </Card>
       )}
 
-      {status !== "completed" && status !== "cancelled" && <DirectionsCard location={location} />}
+      {status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location={location} />}
+
+      {canStart && organizationId && shiftId && (
+        <ArrivalCard organizationId={organizationId} shiftId={shiftId} arrival={verification.arrivals?.[0] ?? null} onRecorded={() => void load()} />
+      )}
 
       {canStart && (
         <div className="flex flex-col gap-2">

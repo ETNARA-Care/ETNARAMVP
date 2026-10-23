@@ -18,6 +18,7 @@ import {
 } from "@/api/shifts";
 import { Badge, Button, Card, EmptyState, ErrorState, Modal, PageHeader, Skeleton, StatusBadge, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
+import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -136,6 +137,9 @@ export function AgencyShiftDetailPage() {
         </div>
       </Card>
 
+      {organizationId && shiftId && <ShiftVisitPanel organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
+        cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
+
       {organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId}
         editable={shift.status !== "cancelled" && shift.status !== "completed"} />}
 
@@ -154,7 +158,7 @@ export function AgencyShiftDetailPage() {
                       <UserRound size={20} className="text-[var(--color-text-muted)] shrink-0" aria-hidden />
                       <div className="min-w-0">
                         <p className="font-medium text-[var(--color-text-primary)] truncate">{worker?.display_name || worker?.internal_role || "Cuidador"}</p>
-                        {assignment.responded_at && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Respondió {new Date(assignment.responded_at).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}</p>}
+                        {assignment.responded_at && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Respondió {new Date(assignment.responded_at).toLocaleString("es-PR", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}</p>}
                       </div>
                     </div>
                     <Badge tone={responseTone(assignment.response_status)}>{responseLabels[assignment.response_status]}</Badge>

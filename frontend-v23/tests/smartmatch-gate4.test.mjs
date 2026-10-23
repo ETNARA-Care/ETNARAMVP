@@ -39,7 +39,7 @@ test("caregiver flow: filter, explicit consent, withdraw, re-apply, statuses", (
   assert.match(caregiver, /Retirar solicitud/);
   assert.match(caregiver, /Volver a solicitar/);
   assert.match(caregiver, /La agencia toma la decisión final/);
-  assert.match(caregiver, /aún no aparece como asignación/);
+  assert.match(caregiver, /Si crea el turno, lo verás en «Turnos» para aceptarlo/);
   assert.doesNotMatch(caregiver, /minutos de viaje|min de viaje/i);
   assert.equal(read("src/features/smartmatch/municipalities.ts").match(/"/g).length / 2, 78);
 });

@@ -36,6 +36,8 @@ export interface MyApplication {
   decided_at: string | null; decision_reason: DecisionReason | null;
   opportunity_id: string; region_label: string; role_label: string;
   starts_at: string; ends_at: string; opportunity_status: OpportunityStatus;
+  /** Gate 6: reason category when the agency cancelled an opportunity you had approved. */
+  opportunity_cancellation_reason?: CancellationReason | null;
 }
 export interface ReviewQueueItem {
   id: string; status: ApplicationStatus; created_at: string; decided_at: string | null;
@@ -81,10 +83,16 @@ export async function getShiftDraft(organizationId: string, opportunityId: strin
 }
 /** One server transaction: shift + assignment (Turnos rules) + private instructions + link. */
 export async function createShiftFromOpportunity(organizationId: string, opportunityId: string,
-  input: { careRecipientId: string; instructions?: string }, token: string) {
+  input: { careRecipientId: string; serviceLocationId?: string; instructions?: string }, token: string) {
   return apiClient.post<{ shift: { id: string }; assignment: { id: string; response_status: string }; hasInstructions: boolean }>(
     `${base(organizationId)}/opportunities/${id(opportunityId)}/shift`,
-    { careRecipientId: input.careRecipientId, ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}) }, token);
+    { careRecipientId: input.careRecipientId, ...(input.serviceLocationId ? { serviceLocationId: input.serviceLocationId } : {}),
+      ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}) }, token);
+}
+export type CancellationReason = "NO_LONGER_NEEDED" | "SCHEDULE_CHANGED" | "COVERED_OTHERWISE" | "OTHER";
+/** Gate 6: cancel a FILLED opportunity (blocked while its Turnos shift is active). */
+export async function cancelFilledOpportunity(organizationId: string, opportunityId: string, reason: CancellationReason, note: string, token: string) {
+  return apiClient.post(`${base(organizationId)}/opportunities/${id(opportunityId)}/cancel`, { reason, ...(note.trim() ? { note: note.trim() } : {}) }, token);
 }
 export async function listPendingCounts(organizationId: string, token: string) {
   return (await apiClient.get<{ counts: { opportunity_id: string; pending_count: number }[] }>(

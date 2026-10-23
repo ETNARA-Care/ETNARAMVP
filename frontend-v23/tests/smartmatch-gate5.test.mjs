@@ -76,10 +76,12 @@ test("Turnos: approval offers 'Crear turno con esta cuidadora' and deferred stat
 
 test("Turnos: the existing shifts page opens prefilled; schedule fixed; one server call", () => {
   assert.match(shiftsPage, /searchParams\.get\("smartmatch"\)/);
-  assert.match(shiftsPage, /createShiftFromOpportunity\(organizationId, smartMatchId, \{ careRecipientId: smartMatchRecipientId, instructions \}/);
+  assert.match(shiftsPage, /createShiftFromOpportunity\(organizationId, smartMatchId, \{ careRecipientId: smartMatchRecipientId, instructions,/);
+  // Gate 6: the admin confirms the service address explicitly in SmartMatch mode.
+  assert.match(shiftsPage, /smartMatchNeedsLocation/);
   assert.match(smApi, /\/opportunities\/\$\{id\(opportunityId\)\}\/shift`/);
   assert.doesNotMatch(smApi, /scheduledStart/);
-  assert.match(shiftsPage, /disabled=\{saving \|\| !smartMatchDraft\?\.canCreate \|\| !smartMatchRecipientId\}/);
+  assert.match(shiftsPage, /disabled=\{saving \|\| !smartMatchDraft\?\.canCreate \|\| !smartMatchRecipientId \|\| smartMatchNeedsLocation/);
 });
 
 test("Turnos: private instructions are fetched from their own endpoint, read-only for caregivers", () => {

@@ -9,7 +9,7 @@ import {
 } from "@/api/smartmatch";
 import { Badge, Button, Card, Checkbox, EmptyState, ErrorState, Modal, Select, Skeleton, Tabs, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
-import { applicationLabel, formatDateTime, formatWindow, smartMatchErrorMessage } from "@/features/smartmatch/smartmatchText";
+import { applicationLabel, formatDateTime, formatWindow, smartMatchErrorMessage, CANCELLATION_REASONS } from "@/features/smartmatch/smartmatchText";
 
 /**
  * SmartMatch del cuidador: oportunidades internas de su propia agencia.
@@ -136,7 +136,8 @@ export function CaregiverSmartMatchPage() {
     {!error && tab === "mine" && <section className="space-y-3" aria-label="Mis solicitudes">
       {mine.length === 0 && <EmptyState title="Aún no tienes solicitudes" description="Cuando solicites una oportunidad, verás aquí su estado." />}
       {mine.map((app) => {
-        const status = applicationLabel(app.status, app.decision_reason);
+        const cancelled = app.status === "APPROVED" && app.opportunity_status === "CANCELLED";
+        const status = cancelled ? { label: "Cancelada por la agencia", tone: "neutral" as const } : applicationLabel(app.status, app.decision_reason);
         return <Card key={app.id} className={`p-4 ${app.id === highlightId ? "ring-2 ring-[var(--color-accent-700)]" : ""}`}
           aria-current={app.id === highlightId ? "true" : undefined}>
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -151,8 +152,11 @@ export function CaregiverSmartMatchPage() {
             </div>
             <Badge tone={status.tone}>{status.label}</Badge>
           </div>
-          {app.status === "APPROVED" && <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-            La agencia aprobó tu solicitud. Te contactará para confirmar el turno; aún no aparece como asignación.
+          {app.status === "APPROVED" && !cancelled && <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            La agencia aprobó tu solicitud. Si crea el turno, lo verás en «Turnos» para aceptarlo.
+          </p>}
+          {cancelled && <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            La agencia canceló esta oportunidad{app.opportunity_cancellation_reason ? `: ${CANCELLATION_REASONS[app.opportunity_cancellation_reason].toLowerCase()}` : ""}.
           </p>}
           {app.status === "PENDING" && <Button className="mt-3" variant="secondary" fullWidth onClick={() => setWithdrawTarget(app)}>
             Retirar solicitud

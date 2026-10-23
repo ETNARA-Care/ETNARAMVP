@@ -21,7 +21,8 @@ export interface WorkerMembership { id:string; worker_id:string; status:string; 
 export interface WorkerCredentialSummary { id:string; type_code:string; status:string; expires_at:string|null; }
 export interface WorkerProfile { membership:Omit<WorkerMembership,"display_name">; credentialsSummary:WorkerCredentialSummary[]; }
 export interface Assignment { id:string; shift_id:string; organization_worker_membership_id:string; response_status:"pending"|"accepted"|"rejected"; responded_at:string|null; response_reason:string|null; created_at?:string; }
-export interface VisitVerification { shiftId:string; events:Array<{id:string;eventType:string;occurredAt:string;recordedOffline?:boolean}>; status:"not_started"|"in_progress"|"completed"; }
+export interface ShiftArrival { membershipId:string; occurredAt:string; proximity:"NEAR"|"FAR"|"NO_CONSENT"|"UNAVAILABLE"|"NO_REFERENCE"; distanceM:number|null; needsReview:boolean; reviewedAt:string|null; reviewNote:string|null; recordedOffline:boolean; }
+export interface VisitVerification { shiftId:string; events:Array<{id:string;eventType:string;occurredAt:string;recordedOffline?:boolean;membershipId?:string}>; status:"not_started"|"in_progress"|"completed"; /** Gate 6: "Llegué" (result only). */ arrivals?:ShiftArrival[]; }
 export interface CoverageCandidate { membershipId:string;displayName:string|null;internalRole:string;eligibility:"eligible"|"not_eligible";hasScheduleConflict:boolean;continuityCount:number;scheduledMinutesNext7Days:number;availabilityConfigured:boolean;matchesDeclaredAvailability:boolean;hasUnavailabilityPeriod:boolean;recommended:boolean;rank:number|null;reasons:string[];blockers:string[]; }
 
 export async function listShifts(organizationId:string,token:string):Promise<Shift[]>{const r=await apiClient.get<{shifts:Shift[]}>(`/organizations/${organizationId}/shifts`,token);return r.shifts;}
@@ -29,7 +30,7 @@ export async function listMyShifts(organizationId:string,token:string):Promise<S
 export async function getShift(organizationId:string,shiftId:string,token:string):Promise<Shift>{const r=await apiClient.get<{shift:Shift}>(`/organizations/${organizationId}/shifts/${shiftId}`,token);return r.shift;}
 export async function createShift(
   organizationId: string,
-  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string },
+  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string; serviceLocationId?: string },
   token: string,
 ): Promise<Shift> {
   const r = await apiClient.post<{ shift: Shift }>(`/organizations/${organizationId}/shifts`, input, token);

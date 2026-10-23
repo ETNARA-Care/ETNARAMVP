@@ -4,14 +4,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
-  createOpportunityDraft, decideApplication, getApplicationReview, listAgencyOpportunities, listDecisionHistory,
+  cancelFilledOpportunity, createOpportunityDraft, decideApplication, type CancellationReason, getApplicationReview, listAgencyOpportunities, listDecisionHistory,
   listPendingCounts, listReviewQueue, publishOpportunity,
   type AgencyOpportunity, type ApplicationReview, type DecisionEvent, type ReviewQueueItem,
 } from "@/api/smartmatch";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
 import {
-  applicationLabel, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, shiftLinkLabel, smartMatchErrorMessage,
+  applicationLabel, CANCELLATION_REASONS, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, shiftLinkLabel, smartMatchErrorMessage,
 } from "@/features/smartmatch/smartmatchText";
 
 const CHECK_ROWS: { key: "membershipActive" | "credentialsEligible" | "availabilityConfigured" | "availabilityCovers" | "noUnavailabilityConflict" | "consentRecorded" | "opportunityOpen"; label: string }[] = [
@@ -44,6 +44,10 @@ export function AgencySmartMatchPage() {
   const navigate = useNavigate();
   const createShiftFor = (opportunityId: string) => navigate(`/agency/shifts?create=1&smartmatch=${opportunityId}`);
   const [approvedFor, setApprovedFor] = useState<{ opportunityId: string; name: string } | null>(null);
+  // Gate 6: cancel a FILLED opportunity (reason required; never touches the Turnos shift).
+  const [cancelTarget, setCancelTarget] = useState<AgencyOpportunity | null>(null);
+  const [cancelReason, setCancelReason] = useState<CancellationReason | "">("");
+  const [cancelNote, setCancelNote] = useState("");
 
   const [items, setItems] = useState<AgencyOpportunity[] | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -172,6 +176,18 @@ export function AgencySmartMatchPage() {
     }
   }
 
+  async function cancelOpportunity() {
+    const token = getToken();
+    if (!organizationId || !token || !cancelTarget || !cancelReason) return;
+    setBusy(true);
+    try {
+      await cancelFilledOpportunity(organizationId, cancelTarget.id, cancelReason, cancelNote, token);
+      show("Oportunidad cancelada. Avisamos a la cuidadora aprobada.", "success");
+      setCancelTarget(null);
+    } catch (e) { show(smartMatchErrorMessage(e, "No se pudo cancelar la oportunidad."), "danger"); }
+    finally { setBusy(false); await load(); }
+  }
+
   async function openHistory(item: ReviewQueueItem) {
     const token = getToken();
     if (!organizationId || !token) return;
@@ -199,6 +215,7 @@ export function AgencySmartMatchPage() {
         {opp.status === "DRAFT" && <Button disabled={busy} onClick={() => void publish(opp)}>Publicar</Button>}
         {opp.status === "FILLED" && !opp.shift_id && <Button icon={<CalendarPlus size={18} />} onClick={() => createShiftFor(opp.id)}>Crear turno con esta cuidadora</Button>}
         {opp.status === "FILLED" && opp.shift_id && <Button variant="secondary" onClick={() => navigate(`/agency/shifts/${opp.shift_id}`)}>Ver turno</Button>}
+        {opp.status === "FILLED" && <Button variant="ghost" onClick={() => { setCancelReason(""); setCancelNote(""); setCancelTarget(opp); }}>Cancelar oportunidad</Button>}
         {opp.status !== "DRAFT" && <Button variant="secondary" onClick={() => void openQueue(opp)}>
           {opp.status === "PUBLISHED" ? "Revisar solicitudes" : "Ver solicitudes e historial"}
         </Button>}
@@ -333,6 +350,26 @@ export function AgencySmartMatchPage() {
         <p>La oportunidad quedó <strong>cubierta</strong> por {approvedFor?.name}.</p>
         <p>Crea el turno en Turnos: eliges a la persona atendida de tu agencia y añades instrucciones privadas. Si lo dejas para después, verás «Cubierta — pendiente de asignación» y el botón seguirá disponible.</p>
       </div>
+    </Modal>
+
+    <Modal open={cancelTarget !== null} onClose={() => !busy && setCancelTarget(null)} title="Cancelar oportunidad cubierta"
+      footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="ghost" disabled={busy} onClick={() => setCancelTarget(null)}>Volver</Button>
+        {!(cancelTarget?.shift_id && cancelTarget.shift_status !== "cancelled") &&
+          <Button variant="danger" loading={busy} disabled={!cancelReason} onClick={() => void cancelOpportunity()}>Cancelar oportunidad</Button>}
+      </div>}>
+      {cancelTarget?.shift_id && cancelTarget.shift_status !== "cancelled" ? <div className="space-y-3 text-sm">
+        <p role="status">Esta oportunidad tiene un <strong>turno activo</strong> en Turnos. SmartMatch no cancela ni reasigna turnos reales.</p>
+        <p>Primero decide en Turnos: cancela el turno o reasígnalo. Después podrás cancelar la oportunidad aquí.</p>
+        <Button variant="secondary" fullWidth onClick={() => navigate(`/agency/shifts/${cancelTarget.shift_id}`)}>Ir al turno</Button>
+      </div> : <div className="space-y-3">
+        <Select label="Motivo" required value={cancelReason} onChange={(e) => setCancelReason(e.target.value as CancellationReason)}>
+          <option value="">Selecciona un motivo</option>
+          {(Object.keys(CANCELLATION_REASONS) as CancellationReason[]).map((r) => <option key={r} value={r}>{CANCELLATION_REASONS[r]}</option>)}
+        </Select>
+        <Input label="Nota interna (opcional)" maxLength={300} value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} hint="No se envía a la cuidadora." />
+        <p className="text-xs text-[var(--color-text-muted)]">La cuidadora aprobada recibirá un aviso con el motivo. El historial se conserva.</p>
+      </div>}
     </Modal>
 
     <Modal open={history !== null} onClose={() => setHistory(null)} title={`Historial · ${history?.name ?? ""}`}>

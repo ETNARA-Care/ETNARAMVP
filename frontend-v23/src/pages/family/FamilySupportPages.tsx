@@ -7,6 +7,7 @@ import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyTimelineItem } from "@/api/familyTimeline";
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
 import { pickRecipient, useFamilyRecipient } from "@/features/family/familyRecipient";
+import { FamilyServiceLocationCard } from "@/features/family/FamilyServiceLocationCard";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import type { NotificationItem } from "@/api/notifications";
 
@@ -96,6 +97,7 @@ export function FamilyProfilePage() {
   const navigate = useNavigate();
   const [caregiver, setCaregiver] = useState<FamilyShiftSummary["caregiver"] | undefined>();
   const [recipientName, setRecipientName] = useState<string | null>(null);
+  const [recipientId, setRecipientId] = useState<string | null>(null);
 
   const loadCaregiver = useCallback(async () => {
     const token = getToken();
@@ -103,8 +105,9 @@ export function FamilyProfilePage() {
     try {
       const recipients = await listMyCareRecipients(token);
       const recipient = pickRecipient(recipients, activeOrganization?.id, selectedKey);
-      if (!recipient) { setRecipientName(null); setCaregiver(null); return; }
+      if (!recipient) { setRecipientName(null); setRecipientId(null); setCaregiver(null); return; }
       setRecipientName(recipient.preferredName || recipient.firstName);
+      setRecipientId(recipient.recipientId);
       const shifts = await listFamilyShifts(recipient.organizationId, recipient.recipientId, token);
       setCaregiver(shifts.find((shift) => shift.status !== "cancelled" && shift.caregiver)?.caregiver ?? null);
     } catch { setRecipientName(null); setCaregiver(null); }
@@ -135,6 +138,8 @@ export function FamilyProfilePage() {
         </div>
         {recipientName ? <p className="mt-4 border-t border-white/10 pt-3 text-sm text-white/75">Acceso familiar al cuidado de <span className="font-medium text-white">{recipientName}</span></p> : null}
       </section>
+
+      {recipientId && <FamilyServiceLocationCard recipientId={recipientId} />}
 
       <section>
         <h2 className="mb-3 font-display text-xl text-[#102b57]">Equipo de cuidado</h2>

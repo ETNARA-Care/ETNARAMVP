@@ -35,6 +35,24 @@ export function NotificationBell() {
       return;
     }
 
+    // Gate 6: arrivals, address changes and family correction requests (never carry the address).
+    if ((type === "SHIFT_LATE_ARRIVAL" || type === "SHIFT_ARRIVAL_NEEDS_REVIEW") && shiftId) {
+      navigate(`/agency/shifts/${shiftId}`);
+      return;
+    }
+    if (type === "SHIFT_LOCATION_CHANGED" && shiftId) {
+      navigate(`/caregiver/shifts/${shiftId}`);
+      return;
+    }
+    if (type === "LOCATION_CHANGE_REQUESTED" && careRecipientId) {
+      navigate(`/agency/residents/${careRecipientId}`);
+      return;
+    }
+    if (type === "LOCATION_CHANGE_APPROVED" || type === "LOCATION_CHANGE_REJECTED") {
+      navigate("/family/profile");
+      return;
+    }
+
     if (entityType === "incident" && entityId) {
       if (portal === "family") navigate(`/family/incidents/${entityId}`);
       if (portal === "agency") navigate(`/agency/incidents/${entityId}`);

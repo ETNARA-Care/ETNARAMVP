@@ -8,6 +8,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listMyCredentials, uploadMyCredentialDocument, type CredentialSummary } from "@/api/credentials";
 import { getMyAvailability, saveMyAvailability, type MyAvailability } from "@/api/availability";
+import { LocationConsentCard } from "@/features/serviceLocation/LocationConsentCard";
 
 const weekdays = [
   { value: 1, label: "Lunes" }, { value: 2, label: "Martes" }, { value: 3, label: "Miércoles" },
@@ -326,6 +327,8 @@ export function CaregiverProfilePage() {
         )}
         </div>
       </Card>
+      {activeOrganization && <LocationConsentCard organizationId={activeOrganization.id} />}
+
       <Button variant="secondary" icon={<LogOut size={18} />} onClick={onLogout}>Cerrar sesión</Button>
     </div>
   );

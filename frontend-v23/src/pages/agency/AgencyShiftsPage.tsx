@@ -14,6 +14,8 @@ import {
 import { createShiftFromOpportunity, getShiftDraft, type SmartMatchShiftDraft } from "@/api/smartmatch";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { formatWindow as formatSmartMatchWindow, smartMatchErrorMessage } from "@/features/smartmatch/smartmatchText";
+import { useLocationOptions } from "@/features/serviceLocation/useLocationOptions";
+import { LocationSelect } from "@/features/serviceLocation/LocationSelect";
 import { coverageLabel, coverageOf, coverageTone } from "@/features/agency/shiftCoverage";
 import { plural } from "@/pages/agency/overview/overviewModel";
 
@@ -103,6 +105,8 @@ export function AgencyShiftsPage() {
   const [smartMatchError, setSmartMatchError] = useState("");
   const [smartMatchRecipientId, setSmartMatchRecipientId] = useState("");
   const [instructions, setInstructions] = useState("");
+  // Gate 6: confirmed service address of the new shift.
+  const [locationChoice, setLocationChoice] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -158,7 +162,8 @@ export function AgencyShiftsPage() {
     if (!organizationId || !token || !smartMatchId || !smartMatchRecipientId) return;
     setSaving(true);
     try {
-      await createShiftFromOpportunity(organizationId, smartMatchId, { careRecipientId: smartMatchRecipientId, instructions }, token);
+      await createShiftFromOpportunity(organizationId, smartMatchId, { careRecipientId: smartMatchRecipientId, instructions,
+        ...(smartMatchLocationId ? { serviceLocationId: smartMatchLocationId } : {}) }, token);
       show(`Turno creado y enviado a ${smartMatchDraft?.caregiver?.displayName ?? "la cuidadora"} para que lo acepte.`, "success");
       closeCreate();
     } catch (requestError) {
@@ -188,6 +193,12 @@ export function AgencyShiftsPage() {
   const eligibleWorkers = useMemo(() => workers.filter((worker) => worker.compliance.eligibility === "eligible"), [workers]);
   const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
   const effectiveRecipientId = recipientId || recipients[0]?.id || "";
+  const genericLocations = useLocationOptions(organizationId, creating && !smartMatchId ? effectiveRecipientId : "");
+  const smartMatchLocations = useLocationOptions(organizationId, smartMatchId ? smartMatchRecipientId : "");
+  // Plain Turnos form: preselect the primary address. SmartMatch: the admin must confirm one.
+  const genericLocationId = locationChoice[effectiveRecipientId] ?? genericLocations?.find((o) => o.isPrimary)?.id ?? "";
+  const smartMatchLocationId = locationChoice[smartMatchRecipientId] ?? "";
+  const smartMatchNeedsLocation = Boolean(smartMatchLocations && smartMatchLocations.length > 0 && !smartMatchLocationId);
   const effectiveWorkerId = selectedWorkerId || eligibleWorkers[0]?.id || "";
   const selectedCoverageCandidate = coverageCandidates?.find((candidate) => candidate.membershipId === effectiveWorkerId);
   const selectedWorkerAllowed = !coverageCandidates || selectedCoverageCandidate?.recommended === true;
@@ -247,6 +258,7 @@ export function AgencyShiftsPage() {
     try {
       const shift = await createShift(organizationId, {
         careRecipientId: effectiveRecipientId, scheduledStart: new Date(times.start).toISOString(), scheduledEnd: new Date(times.end).toISOString(),
+        ...(genericLocationId ? { serviceLocationId: genericLocationId } : {}),
         requiredRole: workerById[effectiveWorkerId]?.internal_role ?? "Cuidador/a",
       }, token);
       await assignShift(organizationId, shift.id, effectiveWorkerId, token);
@@ -412,7 +424,7 @@ export function AgencyShiftsPage() {
       <Modal open={creating && !!smartMatchId} onClose={() => !saving && closeCreate()} title="Crear turno desde SmartMatch"
         footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" onClick={closeCreate} disabled={saving}>Cancelar</Button>
-          <Button onClick={() => void saveSmartMatchShift()} loading={saving} disabled={saving || !smartMatchDraft?.canCreate || !smartMatchRecipientId}>Crear turno</Button>
+          <Button onClick={() => void saveSmartMatchShift()} loading={saving} disabled={saving || !smartMatchDraft?.canCreate || !smartMatchRecipientId || smartMatchNeedsLocation || smartMatchLocations === null}>Crear turno</Button>
         </div>}>
         <div className="flex flex-col gap-4">
           {!smartMatchDraft && !smartMatchError && <Skeleton className="h-24" />}
@@ -438,6 +450,8 @@ export function AgencyShiftsPage() {
                 <option value="">Selecciona una persona</option>
                 {recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}
               </Select>
+              {smartMatchRecipientId && <LocationSelect options={smartMatchLocations} value={smartMatchLocationId} requireChoice
+                onChange={(id) => setLocationChoice((c) => ({ ...c, [smartMatchRecipientId]: id }))} />}
               <Textarea label="Instrucciones operativas (privadas)" rows={4} maxLength={2000} value={instructions} onChange={(event) => setInstructions(event.target.value)}
                 hint="Solo las ven los administradores y supervisores de tu agencia y la cuidadora asignada. No las ven familiares ni ETNARA central." />
               <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Al guardar, el sistema vuelve a verificar credenciales, disponibilidad y cruces de horario, y envía la asignación a la cuidadora.</p>
@@ -449,6 +463,7 @@ export function AgencyShiftsPage() {
       <Modal open={creating && !smartMatchId} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || coverageLoading || !effectiveRecipientId || !effectiveWorkerId || !selectedWorkerAllowed}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
         <div className="flex flex-col gap-4">
           <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => { setRecipientId(event.target.value); setCoverageCandidates(null); }} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
+          <LocationSelect options={genericLocations} value={genericLocationId} onChange={(id) => setLocationChoice((c) => ({ ...c, [effectiveRecipientId]: id }))} />
           <Select label="Cuidadora apta" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); const recommendation = coverageCandidates?.find((candidate) => candidate.membershipId === worker.id); const unavailable = recommendation && !recommendation.recommended; return <option key={worker.id} value={worker.id} disabled={reason !== null || unavailable}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : unavailable ? " — Conflicto o requisito pendiente" : " — Apta"}</option>; })}</Select>
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
           <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => { setTimes((current) => ({ ...current, start: event.target.value })); setCoverageCandidates(null); }} required />
