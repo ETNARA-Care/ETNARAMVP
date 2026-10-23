@@ -61,7 +61,10 @@ export function ShiftVisitPanel({ organizationId, shiftId, scheduledStart, cance
             {location === undefined ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Cargando…</p>
               : location ? <>
                 <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{serviceAddressText(location) || "Ubicación marcada en el mapa"}</p>
-                {!location.verified && <Badge tone="warning">Dirección sin verificar</Badge>}
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {!location.verified && <Badge tone="warning">Dirección sin verificar</Badge>}
+                  {location.gpsConfirmed ? <Badge tone="success">GPS confirmado</Badge> : <Badge tone="warning">GPS sin confirmar · navegación aproximada</Badge>}
+                </div>
               </> : <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">Sin dirección registrada para este turno.</p>}
           </div>
         </div>

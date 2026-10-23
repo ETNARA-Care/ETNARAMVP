@@ -12,7 +12,10 @@ export interface ServiceLocation {
   latitude: number | null;
   longitude: number | null;
   establishment: { id: string; name: string; address: string | null } | null;
+  /** The agency checked the WRITTEN address. */
   verifiedAt: string | null;
+  /** The agency explicitly confirmed the exact map point (Gate 6 fix). */
+  gpsConfirmedAt: string | null;
   archivedAt: string | null;
   updatedAt: string;
   createdAt: string;
@@ -35,7 +38,7 @@ export interface LocationInput {
   establishmentId?: string | null;
 }
 export interface LocationEvent {
-  id: string; location_id: string; event_type: "CREATED" | "UPDATED" | "VERIFIED" | "PRIMARY_SET" | "ARCHIVED" | "RESTORED";
+  id: string; location_id: string; event_type: "CREATED" | "UPDATED" | "VERIFIED" | "PRIMARY_SET" | "ARCHIVED" | "RESTORED" | "GPS_CONFIRMED" | "GPS_CHANGED";
   occurred_at: string; actor_user_id: string | null;
   previous: Record<string, unknown> | null; current: Record<string, unknown>;
 }
@@ -47,12 +50,14 @@ export interface ChangeRequest {
   resolved_at: string | null; created_at: string; relationship_type?: string;
 }
 export interface FamilyPermission { id: string; relationship_type: string; is_primary_contact: boolean; can_view_service_location: boolean }
-export interface ShiftLocationOption { id: string; label: string; isPrimary: boolean; verified: boolean; summary: string }
+export interface ShiftLocationOption { id: string; label: string; isPrimary: boolean; verified: boolean; gpsConfirmed: boolean; summary: string }
 /** What a caregiver (or manager) gets for one shift. */
 export interface ShiftServiceLocation {
   id: string; label: string; addressLine: string | null; municipality: string | null; postalCode: string | null;
   accessNotes: string | null; latitude: number | null; longitude: number | null;
   establishment: { id: string; name: string; address: string | null } | null; verified: boolean;
+  /** Coordinates are only sent when the agency confirmed them; otherwise navigation is approximate. */
+  gpsConfirmed: boolean;
 }
 export interface FamilyServiceLocation {
   canView: boolean;
@@ -70,6 +75,9 @@ export const updateServiceLocation = (o: string, r: string, id: string, input: L
 export const setPrimaryLocation = (o: string, r: string, id: string, t: string) =>
   apiClient.post<{ shiftsOnOtherAddresses: string[] }>(`${rec(o, r)}/service-locations/${id}/primary`, {}, t);
 export const verifyLocation = (o: string, r: string, id: string, t: string) => apiClient.post(`${rec(o, r)}/service-locations/${id}/verify`, {}, t);
+/** Explicit confirmation of the exact point (managers only; who/when recorded). */
+export const confirmLocationGps = (o: string, r: string, id: string, point: { latitude: number; longitude: number }, t: string) =>
+  apiClient.post<{ location: ServiceLocation }>(`${rec(o, r)}/service-locations/${id}/confirm-gps`, { ...point, confirm: true }, t);
 export const archiveLocation = (o: string, r: string, id: string, t: string) => apiClient.post(`${rec(o, r)}/service-locations/${id}/archive`, {}, t);
 export const reassignShifts = (o: string, r: string, shiftIds: string[], toLocationId: string, t: string) =>
   apiClient.post<{ movedShiftIds: string[] }>(`${rec(o, r)}/service-locations/reassign-shifts`, { shiftIds, toLocationId }, t);

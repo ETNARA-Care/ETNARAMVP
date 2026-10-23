@@ -17,7 +17,7 @@ const agencySM = read("src/pages/agency/AgencySmartMatchPage.tsx");
 const bell = read("src/features/notifications/NotificationBell.tsx");
 
 test("map: OpenStreetMap tiles, marker placed by hand, no geocoding of the written address", () => {
-  assert.match(map, /tile\.openstreetmap\.org/);
+  assert.match(map, /VITE_MAP_TILE_URL \|\| "https:\/\/tile\.openstreetmap\.org/);
   assert.match(map, /OpenStreetMap/);
   assert.match(map, /m\.on\("click"/);
   assert.match(map, /draggable: true/);
@@ -43,7 +43,7 @@ test("arrival: one reading only after consent, never tracking, never blocks the 
 });
 
 test("agency record: addresses, ZIP, access, map, alternates, primary, verify, history, family permission and requests", () => {
-  for (const s of ["Ubicación del servicio", "Código postal", "Referencias de acceso", "LocationMapPicker", "Hacer principal", "Verificar",
+  for (const s of ["Ubicación del servicio", "Código postal", "Referencias de acceso", "GpsConfirmModal", "Hacer principal", "Verificar",
     "Historial de la ubicación", "Accesos de cuidadoras", "Familiares que pueden ver la dirección principal", "Aprobar y aplicar",
     "Usar la dirección del hogar", "Turnos próximos con otra dirección", "Mantener como están"]) assert.ok(section.includes(s), s);
 });
@@ -72,4 +72,48 @@ test("notifications route to the right place and never show an address", () => {
     assert.ok(bell.includes(t), t);
     assert.ok(read("src/api/notifications.ts").includes(t), t);
   }
+});
+
+// ---------------------------------------------------------------- Gate 6 fixes: GPS confirmation + mobile forms
+const gps = read("src/features/serviceLocation/GpsConfirmModal.tsx");
+const overlay = read("src/components/ui/Overlay.tsx");
+const select = read("src/features/serviceLocation/LocationSelect.tsx");
+const directions = read("src/features/serviceLocation/ServiceDirectionsCard.tsx");
+const api = read("src/api/serviceLocations.ts");
+
+test("two independent states: written address verified vs GPS confirmed", () => {
+  for (const s of ["Dirección verificada", "Dirección sin verificar", "GPS confirmado", "GPS sin confirmar", "Ubicar en el mapa", "Corregir punto"]) assert.ok(section.includes(s), s);
+  assert.match(api, /gpsConfirmedAt: string \| null/);
+  assert.match(api, /\/confirm-gps`, \{ \.\.\.point, confirm: true \}/);
+  assert.doesNotMatch(code(section), /<LocationMapPicker/); // the map lives only in the GPS modal
+});
+
+test("GPS modal: local search, manual marker, preview, explicit confirmation", () => {
+  assert.match(gps, /MUNICIPALITY_CENTERS/);
+  assert.match(gps, /parseMapPoint\(paste\)/);
+  assert.match(gps, /<LocationMapPicker value=\{point\} onChange=\{\(p\) => \{ setPoint\(p\); setSure\(false\); \}\}/);
+  assert.match(gps, /data-testid="gps-preview"/);
+  assert.match(gps, /Confirmo que el marcador está en la entrada/);
+  assert.match(gps, /disabled=\{!point \|\| !sure\}/);
+  assert.match(gps, /La búsqueda no sale de ETNARA/);
+  assert.equal((read("src/features/serviceLocation/municipalityCenters.ts").match(/^\s+"[^"]+": \{ lat:/gm) || []).length, 78);
+});
+
+test("navigation: coordinates only when GPS confirmed, else approximate warning", () => {
+  assert.match(nav, /gpsConfirmed !== false/);
+  assert.match(nav, /export const isApproximate/);
+  assert.match(directions, /Destino aproximado/);
+  assert.match(directions, /Punto exacto confirmado/);
+  assert.match(select, /Sin GPS confirmado: puedes crear el turno/);
+  assert.doesNotMatch(code(select), /disabled=/); // never blocks the shift
+});
+
+test("mobile forms: full-screen sheet, sticky header/footer above the map, safe area, focused field scrolled into view", () => {
+  assert.match(overlay, /fullScreenOnMobile/);
+  assert.match(overlay, /h-\[100dvh\]/);
+  assert.match(overlay, /safe-area-inset-bottom/);
+  assert.match(overlay, /relative z-10/);
+  assert.match(overlay, /scrollIntoView/);
+  assert.match(map, /relative isolate z-0/);
+  assert.match(section, /fullScreenOnMobile/);
 });

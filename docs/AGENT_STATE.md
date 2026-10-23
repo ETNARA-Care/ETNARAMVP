@@ -2,6 +2,20 @@
 
 ## Current Status
 
+## 2026-10-23 — Gate 6 fix: «Ubicar en el mapa», GPS state, iPhone forms (claude/smartmatch-frontend-v23)
+
+- Badges «Dirección verificada / sin verificar» and «GPS confirmado / sin confirmar» are independent.
+- GpsConfirmModal: local search only (municipality centres from Census centroids; pasted Apple/Google
+  Maps link or "lat, lng" parsed locally, PR bounds), tap/drag marker, preview, required checkbox,
+  «Confirmar GPS». Opens after adding an address; «Corregir punto» later. No geocoding provider.
+- Map removed from the address form. Modal fullScreenOnMobile (100dvh sheet, header/footer z-10 with
+  background, safe areas, focused field scrolled into view); Leaflet container isolate z-0.
+  Tile URL/attribution configurable (VITE_MAP_TILE_URL / VITE_MAP_TILE_ATTRIBUTION).
+- Turnos: LocationSelect shows GPS state per option and a non-blocking warning. Cómo llegar: Apple,
+  Google, Waze use coordinates only when confirmed; otherwise written address + «Destino aproximado».
+- Checks: tsc, lint (0 errors), 146/146 static tests, build; E2E 390x844: Gate 6 20/20, Turnos 13/13,
+  Gate 5 21/21, Gate 4 22/22. Chromium only (no WebKit here) -> iPhone check is manual.
+
 ## 2026-10-23 — Gate 6: service location, Cómo llegar, Llegué (claude/smartmatch-frontend-v23)
 
 - Resident record: «Ubicación del servicio» (ServiceLocationSection) replaces the Phase 12.1 card:

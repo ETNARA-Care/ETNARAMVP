@@ -1,7 +1,7 @@
 import { Copy, MapPin, Navigation } from "lucide-react";
 import type { ShiftServiceLocation } from "@/api/serviceLocations";
 import { Card, useToast } from "@/components/ui";
-import { appleMapsUrl, canNavigateTo, googleMapsUrl, serviceAddressText, wazeUrl } from "./navigation";
+import { appleMapsUrl, canNavigateTo, googleMapsUrl, isApproximate, serviceAddressText, wazeUrl } from "./navigation";
 
 /**
  * «Cómo llegar» for the caregiver's authorized shift (Gate 6). The address comes
@@ -30,6 +30,11 @@ export function ServiceDirectionsCard({ location }: { location: ShiftServiceLoca
           <p className="mt-1 whitespace-pre-line text-[var(--text-small)] text-[var(--color-text-primary)]">{location.accessNotes}</p>
         </div>
       )}
+      {canNavigateTo(location) && (isApproximate(location)
+        ? <p role="status" className="mt-3 rounded-[var(--radius-sm)] border border-[var(--color-warning-700)]/30 p-3 text-[var(--text-small)] text-[var(--color-warning-700)]" data-testid="nav-approximate">
+            Destino aproximado: la agencia aún no confirmó el punto exacto en el mapa. El mapa te llevará a la calle; usa las referencias o llama a la agencia.
+          </p>
+        : <p className="mt-3 text-[var(--text-small)] font-medium text-[var(--color-success-700)]" data-testid="nav-exact">Punto exacto confirmado por la agencia.</p>)}
       {canNavigateTo(location) && (
         <div className="mt-4 grid grid-cols-2 gap-2">
           <a className={link} href={appleMapsUrl(location)} target="_blank" rel="noopener noreferrer"><Navigation size={18} aria-hidden />Apple Maps</a>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, History, MapPin, Plus, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Crosshair, History, MapPin, Plus, ShieldCheck } from "lucide-react";
 import type { ApiError } from "@/api/client";
 import { getToken } from "@/auth/token";
 import {
@@ -9,7 +9,7 @@ import {
 } from "@/api/serviceLocations";
 import { Badge, Button, Card, Checkbox, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
-import { LocationMapPicker } from "./LocationMapPicker";
+import { GpsConfirmModal } from "./GpsConfirmModal";
 import { serviceAddressText } from "./navigation";
 
 const when = (v: string) => new Date(v).toLocaleString("es-PR", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Puerto_Rico" });
@@ -17,6 +17,7 @@ const day = (v: string) => new Date(v).toLocaleDateString("es-PR", { weekday: "s
 const EVENT_LABEL: Record<LocationEvent["event_type"], string> = {
   CREATED: "Dirección registrada", UPDATED: "Dirección modificada", VERIFIED: "Dirección verificada",
   PRIMARY_SET: "Marcada como principal", ARCHIVED: "Dirección archivada", RESTORED: "Dirección restaurada",
+  GPS_CONFIRMED: "Punto GPS confirmado", GPS_CHANGED: "Marcador movido (GPS por confirmar)",
 };
 const ERRORS: Record<string, string> = {
   PRIMARY_CANNOT_BE_ARCHIVED: "Marca otra dirección como principal antes de archivar esta.",
@@ -29,10 +30,10 @@ const message = (e: unknown, fallback: string) => ERRORS[(e as ApiError)?.code ?
 
 interface FormState {
   id: string | null; label: string; useEstablishment: boolean; addressLine: string; municipality: string; postalCode: string;
-  accessNotes: string; point: { latitude: number; longitude: number } | null; makePrimary: boolean;
+  accessNotes: string; makePrimary: boolean;
 }
 const emptyForm = (primary: boolean): FormState => ({ id: null, label: primary ? "Principal" : "Alterna", useEstablishment: false,
-  addressLine: "", municipality: "", postalCode: "", accessNotes: "", point: null, makePrimary: primary });
+  addressLine: "", municipality: "", postalCode: "", accessNotes: "", makePrimary: primary });
 
 /**
  * Pacientes/Residentes → Expediente → Ubicación del servicio (Gate 6).
@@ -52,6 +53,8 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
   const [history, setHistory] = useState<{ events: LocationEvent[]; access: LocationAccess[] } | null>(null);
   const [resolving, setResolving] = useState<{ request: ChangeRequest; decision: "APPROVE" | "REJECT" } | null>(null);
   const [resolutionNote, setResolutionNote] = useState("");
+  // Gate 6 fix: exact point confirmed separately from the written address.
+  const [gpsFor, setGpsFor] = useState<ServiceLocation | null>(null);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -75,13 +78,13 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
     setFormError("");
     setForm({ id: l.id, label: l.label, useEstablishment: Boolean(l.establishment), addressLine: l.addressLine ?? "",
       municipality: l.municipality ?? "", postalCode: l.postalCode ?? "", accessNotes: l.accessNotes ?? "",
-      point: l.latitude != null && l.longitude != null ? { latitude: l.latitude, longitude: l.longitude } : null, makePrimary: l.isPrimary });
+      makePrimary: l.isPrimary });
   }
 
   async function save(confirmed = false) {
     const token = getToken();
     if (!form || !token) return;
-    if (!form.useEstablishment && !form.addressLine.trim() && !form.point) { setFormError("Escribe la dirección o coloca el marcador en el mapa."); return; }
+    if (!form.useEstablishment && !form.addressLine.trim()) { setFormError("Escribe la dirección física."); return; }
     if (form.postalCode && !/^\d{5}(-\d{4})?$/.test(form.postalCode.trim())) { setFormError("El código postal debe tener 5 dígitos (ej. 00725)."); return; }
     const current = form.id ? data?.locations.find((l) => l.id === form.id) : undefined;
     if (form.id && !confirmed && (current?.upcomingShiftCount ?? 0) > 0) { setConfirmEdit(current!.upcomingShiftCount!); return; }
@@ -92,7 +95,6 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
       municipality: form.useEstablishment ? null : form.municipality || null,
       postalCode: form.useEstablishment ? null : form.postalCode.trim() || null,
       accessNotes: form.accessNotes.trim() || null,
-      latitude: form.point?.latitude ?? null, longitude: form.point?.longitude ?? null,
     };
     setBusy(true); setFormError("");
     try {
@@ -101,7 +103,8 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
         show("Dirección actualizada. Vuelve a verificarla.", "success");
       } else {
         const r = await createServiceLocation(organizationId, recipientId, { ...input, makePrimary: form.makePrimary }, token);
-        show("Dirección registrada.", "success");
+        show("Dirección registrada. Ahora ubica el punto exacto en el mapa.", "success");
+        setGpsFor(r.location);
         if (r.shiftsOnOtherAddresses.length) setMoveOffer({ toLocationId: r.location.id, shiftIds: r.shiftsOnOtherAddresses });
       }
       setForm(null); setConfirmEdit(null);
@@ -200,18 +203,23 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-medium text-[var(--color-text-primary)]">{l.label}</p>
               {l.isPrimary && l.label !== "Principal" && <Badge tone="accent">Principal</Badge>}
-              {l.verifiedAt ? <Badge tone="success">Verificada</Badge> : <Badge tone="warning">Sin verificar</Badge>}
+              {l.verifiedAt ? <Badge tone="success">Dirección verificada</Badge> : <Badge tone="warning">Dirección sin verificar</Badge>}
+              {l.gpsConfirmedAt ? <Badge tone="success">GPS confirmado</Badge> : <Badge tone="warning">GPS sin confirmar</Badge>}
             </div>
             <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-primary)]">{serviceAddressText(l) || "Ubicación marcada en el mapa"}</p>
             {l.establishment && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Dirección del hogar (no se copia al expediente).</p>}
             {l.accessNotes && <p className="mt-1 whitespace-pre-line text-[var(--text-small)] text-[var(--color-text-secondary)]">Acceso: {l.accessNotes}</p>}
             <p className="mt-1 text-[var(--text-caption)] text-[var(--color-text-muted)]">
-              {l.latitude != null ? "Marcador en el mapa confirmado" : "Sin marcador en el mapa"} · {l.upcomingShiftCount ?? 0} turno(s) próximo(s)
+              {l.gpsConfirmedAt ? "Punto exacto confirmado: la navegación llega al marcador."
+                : l.latitude != null ? "Marcador sin confirmar: la navegación usará la dirección escrita (aproximada)."
+                : "Sin marcador: la navegación usará la dirección escrita (aproximada)."} · {l.upcomingShiftCount ?? 0} turno(s) próximo(s)
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button size="md" variant="secondary" disabled={busy} onClick={() => openEdit(l)}>Editar</Button>
+              <Button size="md" variant={l.gpsConfirmedAt ? "secondary" : "primary"} icon={<Crosshair size={16} />} disabled={busy} onClick={() => setGpsFor(l)}>
+                {l.gpsConfirmedAt ? "Corregir punto" : "Ubicar en el mapa"}</Button>
               {!l.verifiedAt && <Button size="md" variant="secondary" icon={<CheckCircle2 size={16} />} disabled={busy}
-                onClick={() => void act((t) => verifyLocation(organizationId, recipientId, l.id, t), "Dirección verificada.", "No se pudo verificar.")}>Verificar</Button>}
+                onClick={() => void act((t) => verifyLocation(organizationId, recipientId, l.id, t), "Dirección escrita verificada.", "No se pudo verificar.")}>Verificar dirección</Button>}
               {!l.isPrimary && <Button size="md" variant="ghost" disabled={busy} onClick={() => void makePrimary(l)}>Hacer principal</Button>}
               {!l.isPrimary && <Button size="md" variant="ghost" disabled={busy}
                 onClick={() => void act((t) => archiveLocation(organizationId, recipientId, l.id, t), "Dirección archivada.", "No se pudo archivar.")}>Archivar</Button>}
@@ -235,7 +243,10 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
         </div>
       )}
 
-      <Modal open={form !== null} onClose={() => !busy && setForm(null)} title={form?.id ? "Editar dirección" : "Añadir dirección"}
+      <GpsConfirmModal open={gpsFor !== null} organizationId={organizationId} recipientId={recipientId} location={gpsFor}
+        onClose={() => setGpsFor(null)} onConfirmed={() => { setGpsFor(null); void load(); }} />
+
+      <Modal open={form !== null} onClose={() => !busy && setForm(null)} title={form?.id ? "Editar dirección" : "Añadir dirección"} fullScreenOnMobile
         footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setForm(null)}>Cancelar</Button>
           <Button loading={busy} onClick={() => void save()}>Guardar</Button>
@@ -256,7 +267,8 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
           </>}
           <Textarea label="Referencias de acceso" rows={3} maxLength={500} value={form.accessNotes} onChange={(e) => setForm({ ...form, accessNotes: e.target.value })}
             placeholder="Portón, timbre, dónde estacionar, mascotas…" />
-          <LocationMapPicker value={form.point} onChange={(point) => setForm((f) => (f ? { ...f, point } : f))} />
+          <p className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+            El punto exacto se confirma en el siguiente paso, «Ubicar en el mapa». Sin él, la navegación usa la dirección escrita y puede ser aproximada.</p>
           {!form.id && active.length > 0 && <Checkbox label="Marcar como dirección principal" checked={form.makePrimary} onChange={(e) => setForm({ ...form, makePrimary: e.target.checked })} />}
           {formError && <p role="alert" className="text-[var(--text-small)] text-[var(--color-danger-700)]">{formError}</p>}
         </div>}

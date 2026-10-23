@@ -6,7 +6,9 @@
 - Done in staging branch: bell badge + deep links, overview panel, mobile fixes, «Crear turno con esta cuidadora».
 - Gate 6 (staging): service locations, shift address, Cómo llegar (Apple/Google/Waze), Llegué with consented
   proximity, late-arrival notices, family correction requests, FILLED cancellation.
-- Pending: production map tile provider contract; network (inter-agency) opportunities.
+- Gate 6 fix (staging): GPS confirmed separately from written-address verification; «Ubicar en el mapa»;
+  approximate-destination warning; full-screen mobile forms.
+- Pending: manual iPhone (Safari/WebKit) check of the GPS modal; production map tile provider contract; network (inter-agency) opportunities.
 
 ### FUX-006 — Caregiver offline mode (Phase 12.4)
 

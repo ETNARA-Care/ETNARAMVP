@@ -6,7 +6,7 @@ export const PROXIMITY_TEXT: Record<ShiftArrival["proximity"], string> = {
   FAR: "Lejos del lugar: la agencia lo revisará",
   NO_CONSENT: "Sin verificación de ubicación: la agencia lo revisará",
   UNAVAILABLE: "Ubicación no disponible: la agencia lo revisará",
-  NO_REFERENCE: "El lugar no tiene marcador en el mapa",
+  NO_REFERENCE: "Registrada (el lugar aún no tiene punto GPS confirmado)",
 };
 
 const LATE_AFTER_MIN = 15;
