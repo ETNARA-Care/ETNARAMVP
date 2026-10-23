@@ -2,6 +2,11 @@
 
 ## In Progress
 
+### FUX-006 — Caregiver offline mode (Phase 12.4)
+
+- Status: ready for review (gate), with backend gate/12.4-offline-mode.
+- Next: WebAuthn unlock; decide on encrypted cache of today's shifts.
+
 ### FUX-005 — Agency team: invite administrators and supervisors
 - Configuración → Equipo (administrators only), invite with role, cancel
 - supervisors do not see Horas y facturación

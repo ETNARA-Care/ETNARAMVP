@@ -1,6 +1,6 @@
 import { apiClient } from "@/api/client";
 export interface FinancialRate { membership_id:string; display_name:string|null; internal_role:string; membership_status:string; pay_rate_cents:number|null; bill_rate_cents:number|null; currency:string|null; updated_at:string|null }
-export interface Timesheet { id:string; worker_name:string|null; worker_role:string; recipient_name:string|null; recorded_minutes:number; approved_minutes:number|null; pay_amount_cents:number|null; bill_amount_cents:number|null; status:"pending"|"approved"|"disputed"; review_note:string|null }
+export interface Timesheet { id:string; worker_name:string|null; worker_role:string; recipient_name:string|null; recorded_minutes:number; approved_minutes:number|null; pay_amount_cents:number|null; bill_amount_cents:number|null; status:"pending"|"approved"|"disputed"; review_note:string|null; recorded_offline?:boolean }
 export interface TimesheetSummary { recordedMinutes:number; approvedMinutes:number; pendingCount:number; disputedCount:number; approvedPayCents:number; approvedBillCents:number }
 export interface PayPeriodWorker { workerName:string; approvedMinutes:number; payAmountCents:number; billAmountCents:number; timesheets:number }
 export interface PayPeriodPreview { dateFrom:string; dateTo:string; cadence:"weekly"|"biweekly"|"custom"; workers:PayPeriodWorker[]; exceptions:{pending:number;disputed:number}; summary:{approvedMinutes:number;payAmountCents:number;billAmountCents:number;approvedTimesheets:number} }
