@@ -16,6 +16,8 @@ export interface MeOrganization {
   type: string;
   membershipStatus: string;
   roles: string[];
+  /** Pilot features enabled for this agency ("SMARTMATCH", "EN_CAMINO"); absent on older backends. */
+  features?: string[];
 }
 
 export interface MyWorkerProfile {

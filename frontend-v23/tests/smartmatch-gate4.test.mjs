@@ -20,10 +20,10 @@ test("SmartMatch uses the real backend endpoints", () => {
 });
 
 test("routes and navigation exist in the deployed frontend", () => {
-  assert.match(app, /path="smartmatch" element=\{<CaregiverSmartMatchPage\/>\}/);
-  assert.match(app, /path="smartmatch" element=\{<AgencySmartMatchPage\/>\}/);
+  assert.match(app, /path="smartmatch" element=\{<FeatureRoute feature="SMARTMATCH" fallback="\/caregiver"><CaregiverSmartMatchPage\/><\/FeatureRoute>\}/);
+  assert.match(app, /path="smartmatch" element=\{<FeatureRoute feature="SMARTMATCH" fallback="\/agency"><AgencySmartMatchPage\/><\/FeatureRoute>\}/);
   assert.match(agencyLayout, /to: "\/agency\/smartmatch"/);
-  assert.match(caregiverLayout, /to: "\/caregiver\/smartmatch", icon: <BriefcaseBusiness size=\{21\}\/>, label: "Ofertas"/);
+  assert.match(caregiverLayout, /\{ to: "\/caregiver\/smartmatch", icon: <BriefcaseBusiness size=\{21\}\/>, label: "Ofertas" \}/);
 });
 
 test("supervisors do not see the SmartMatch link (administrators only)", () => {

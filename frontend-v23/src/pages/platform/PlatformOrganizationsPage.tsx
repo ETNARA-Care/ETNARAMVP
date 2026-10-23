@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, MailPlus, Plus, RefreshCw, Search } from "lucide-react";
 import { getToken } from "@/auth/token";
+import { OrganizationFeaturesCard } from "@/features/platform/OrganizationFeaturesCard";
 import {
   createPlatformOrganization,
   getPlatformOrganizationCredentialSummary,
@@ -217,6 +218,7 @@ export function PlatformOrganizationsPage() {
               <Card className="p-3"><strong className="font-display text-2xl">{overview.locations.length}</strong><div className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Establecimientos</div></Card>
               <Card className="p-3"><strong className="font-display text-2xl">{overview.counts.residents}</strong><div className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Residentes</div></Card>
             </div>
+            {selectedOrg && <OrganizationFeaturesCard organizationId={selectedOrg.id}/>}
             {credentialSummary && <Card><h3 className="font-semibold">Credenciales · resumen agregado</h3><div className="mt-3 grid grid-cols-2 gap-2 text-sm"><div>Total: {credentialSummary.credentials_total}</div><div>Pendientes: {credentialSummary.credentials_pending}</div><div>Aprobadas: {credentialSummary.credentials_verified}</div><div>Rechazadas: {credentialSummary.credentials_rejected}</div></div></Card>}
             <Card><h3 className="mb-2 font-semibold">Establecimientos</h3>{overview.locations.length ? overview.locations.map((location) => <button key={location.id} type="button" onClick={() => void inspectEstablishment(location.id)} className="block w-full border-b py-3 text-left">{location.name}</button>) : <p className="text-sm text-[var(--color-text-secondary)]">No hay establecimientos registrados.</p>}</Card>
             <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">ETNARA solo recibe conteos y datos institucionales necesarios para operar la cuenta.</p>

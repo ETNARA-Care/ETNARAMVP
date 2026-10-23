@@ -5,6 +5,7 @@ import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2, Upload 
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyCredentials, uploadMyCredentialDocument, type CredentialSummary } from "@/api/credentials";
 import { getMyAvailability, saveMyAvailability, type MyAvailability } from "@/api/availability";
@@ -327,7 +328,7 @@ export function CaregiverProfilePage() {
         )}
         </div>
       </Card>
-      {activeOrganization && <LocationConsentCard organizationId={activeOrganization.id} />}
+      {activeOrganization && hasOrgFeature(activeOrganization.features, "EN_CAMINO") && <LocationConsentCard organizationId={activeOrganization.id} />}
 
       <Button variant="secondary" icon={<LogOut size={18} />} onClick={onLogout}>Cerrar sesión</Button>
     </div>

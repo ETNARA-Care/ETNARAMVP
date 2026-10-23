@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import {
   escalateOperationalAlert,
@@ -149,7 +150,7 @@ export function AgencyOperationsPage() {
         />
       </section>
 
-      {activeOrganization?.id && <TodayJourneysPanel organizationId={activeOrganization.id} />}
+      {activeOrganization?.id && hasOrgFeature(activeOrganization.features, "EN_CAMINO") && <TodayJourneysPanel organizationId={activeOrganization.id} />}
 
       <Card className="border border-[var(--color-border)]">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">

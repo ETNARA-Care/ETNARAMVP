@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { useNavigate, useParams } from "react-router-dom";
 import { Activity, Bath, Check, ClipboardList, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
@@ -91,6 +92,9 @@ export function CaregiverShiftDetailPage() {
   const { shiftId } = useParams();
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
+  // «En camino» y «Llegué»: solo agencias piloto (backend 108). Sin ellos, el turno sigue con Comenzar / Finalizar.
+  const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
+  const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
   const [shift, setShift] = useState<Shift | null>(null);
   const [recipient, setRecipient] = useState<CareRecipient | undefined>();
@@ -327,7 +331,7 @@ export function CaregiverShiftDetailPage() {
         </p>
       </section>
 
-      {organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId} editable={false} />}
+      {smartMatch && organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId} editable={false} />}
 
       {assignmentPending && (
         <Card className="flex flex-col gap-3">
@@ -343,14 +347,14 @@ export function CaregiverShiftDetailPage() {
         </Card>
       )}
 
-      {canStart && organizationId && shiftId && !verification.arrivals?.length && (
+      {enCamino && canStart && organizationId && shiftId && !verification.arrivals?.length && (
         // Gate 7: «Voy en camino» before the directions; remounts (and hides) once the arrival exists.
         <CaregiverJourneyCard key={`journey-${verification.arrivals?.length ?? 0}`} organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start} />
       )}
 
       {status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location={location} />}
 
-      {canStart && organizationId && shiftId && (
+      {enCamino && canStart && organizationId && shiftId && (
         <ArrivalCard organizationId={organizationId} shiftId={shiftId} arrival={verification.arrivals?.[0] ?? null} onRecorded={() => void load()} />
       )}
 

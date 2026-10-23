@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CalendarClock, UserRound, XCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import {
@@ -37,6 +38,8 @@ export function AgencyShiftDetailPage() {
   const { shiftId } = useParams();
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
+  const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
+  const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
   const organizationId = activeOrganization?.id;
   const [shift, setShift] = useState<Shift | null | undefined>(undefined);
@@ -141,9 +144,9 @@ export function AgencyShiftDetailPage() {
       {organizationId && shiftId && <ShiftVisitPanel organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
         cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
 
-      {organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
+      {enCamino && organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
 
-      {organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId}
+      {smartMatch && organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId}
         editable={shift.status !== "cancelled" && shift.status !== "completed"} />}
 
       <section>

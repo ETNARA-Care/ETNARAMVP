@@ -32,7 +32,7 @@ test("SmartMatch notifications open the exact application", () => {
 });
 
 test("dashboard SmartMatch panel is for administrators only and links to review", () => {
-  assert.match(overview, /roles\.includes\("ORGANIZATION_ADMIN"\) && activeOrganization && <SmartMatchPanel/);
+  assert.match(overview, /roles\.includes\("ORGANIZATION_ADMIN"\) && activeOrganization && hasOrgFeature\(activeOrganization\.features, "SMARTMATCH"\) && <SmartMatchPanel/);
   for (const label of ["Pendientes", "Publicadas", "Cubiertas"]) assert.ok(panel.includes(`"${label}"`), label);
   assert.match(panel, /\/agency\/smartmatch\?opportunity=\$\{o\.id\}/);
   assert.doesNotMatch(code(panel), /care_recipient|patient|paciente/i);
