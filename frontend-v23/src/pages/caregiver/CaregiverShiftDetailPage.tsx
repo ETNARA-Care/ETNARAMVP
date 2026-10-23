@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
-import { useCareEventQueue } from "@/features/caregiver/careEventQueue";
+import { isConnectivityError, queuedVisitState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { createIncident } from "@/api/incidents";
 import {
   getActiveCarePlan,
@@ -16,7 +16,7 @@ import {
   type CarePlanTaskPriority,
 } from "@/api/carePlans";
 import {
-  checkIn, checkOut, getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
+  getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
 import { getRecipientLocation, type RecipientLocation } from "@/api/recipientLocation";
@@ -94,7 +94,7 @@ export function CaregiverShiftDetailPage() {
   const [careEvents, setCareEvents] = useState<CareEvent[]>([]);
   const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
   const [location, setLocation] = useState<RecipientLocation | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<boolean | "offline">(false);
   const [saving, setSaving] = useState(false);
   const [activeAction, setActiveAction] = useState<CareEventTypeCode | null>(null);
   const [mealType, setMealType] = useState("Desayuno");
@@ -118,6 +118,8 @@ export function CaregiverShiftDetailPage() {
   const queuedHere = useMemo(() => queue.items.filter((item) => item.shiftId === shiftId), [queue.items, shiftId]);
   const waitingHere = queuedHere.filter((item) => item.status !== "failed");
   const failedHere = queuedHere.filter((item) => item.status === "failed");
+  // Llegada o salida guardada en el teléfono que aún no llega al servidor.
+  const queuedVisit = shiftId ? queuedVisitState(queue.items, shiftId) : null;
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -145,8 +147,9 @@ export function CaregiverShiftDetailPage() {
       setCareEvents(eventRows);
       setCarePlan(carePlanRow);
       setLocation(locationRow);
-    } catch {
-      setError(true);
+      setError(false);
+    } catch (loadError) {
+      setError(isConnectivityError(loadError) ? "offline" : true);
     }
   }, [organizationId, shiftId]);
 
@@ -158,13 +161,14 @@ export function CaregiverShiftDetailPage() {
     ...(verification?.events ?? []).map((event) => ({
       id: event.id,
       at: event.occurredAt,
-      title: event.eventType === "check_in" ? "Llegada registrada · turno iniciado" : "Salida registrada · turno finalizado",
+      title: (event.eventType === "check_in" ? "Llegada registrada · turno iniciado" : "Salida registrada · turno finalizado")
+        + (event.recordedOffline ? " · sin conexión" : ""),
     })),
     ...careEvents.map((event) => ({ id: event.id, at: event.occurred_at, title: careEventSummary(event) })),
     ...queuedHere.map((item) => ({
       id: item.clientEventId,
       at: item.input.occurredAt ?? new Date().toISOString(),
-      title: `${item.label} · ${item.status === "failed" ? "no se pudo enviar" : "pendiente de enviar"}`,
+      title: `${item.label} · ${item.status === "failed" ? "no se pudo enviar" : "guardada sin señal, pendiente de enviar"}`,
     })),
   ].sort((a, b) => a.at.localeCompare(b.at)).map((event) => ({
     id: event.id,
@@ -177,9 +181,9 @@ export function CaregiverShiftDetailPage() {
     if (!organizationId || !shiftId || !token) return;
     setSaving(true);
     try {
-      await checkIn(organizationId, shiftId, token);
-      show("Llegada registrada. Turno iniciado.", "success");
-      await load();
+      const outcome = await queue.checkIn(organizationId, shiftId);
+      if (outcome === "queued") show("Sin señal. Tu llegada quedó guardada con la hora real y se enviará sola.", "warning");
+      else { show("Llegada registrada. Turno iniciado.", "success"); await load(); }
     } catch (requestError) { show(actionError(requestError), "danger"); }
     finally { setSaving(false); }
   }
@@ -189,8 +193,8 @@ export function CaregiverShiftDetailPage() {
     if (!organizationId || !shiftId || !token) return;
     setSaving(true);
     try {
-      await checkOut(organizationId, shiftId, token);
-      show("Salida registrada. Turno finalizado.", "success");
+      const outcome = await queue.checkOut(organizationId, shiftId);
+      show(outcome === "queued" ? "Sin señal. Tu salida quedó guardada con la hora real y se enviará sola." : "Salida registrada. Turno finalizado.", outcome === "queued" ? "warning" : "success");
       navigate("/caregiver/shifts");
     } catch (requestError) { show(actionError(requestError), "danger"); }
     finally { setSaving(false); }
@@ -284,14 +288,18 @@ export function CaregiverShiftDetailPage() {
     }
   }
 
-  if (error) return <ErrorState kind="not_found" onRetry={() => void load()} />;
+  if (error) return <ErrorState kind={error === "offline" ? "offline" : "not_found"} onRetry={() => void load()} />;
   if (!shift || !verification) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-32" /></div>;
 
-  const status = effectiveStatus(shift, verification);
+  const status: ShiftStatus = queuedVisit === "checked_out" ? "completed" : queuedVisit === "checked_in" ? "in_progress" : effectiveStatus(shift, verification);
   const assignmentAccepted = shift.assignment_response_status === "accepted";
   const assignmentPending = shift.assignment_response_status === "pending";
-  const canStart = assignmentAccepted && verification.status === "not_started" && status !== "cancelled" && status !== "completed";
-  const canFinish = verification.status === "in_progress";
+  const visitStatus = queuedVisit === "checked_out" ? "completed" : queuedVisit === "checked_in" ? "in_progress" : verification.status;
+  const canStart = assignmentAccepted && visitStatus === "not_started" && shift.status !== "cancelled" && shift.status !== "completed";
+  const canFinish = visitStatus === "in_progress";
+  // Solo si la cola se guarda en el teléfono se puede finalizar con pendientes:
+  // la salida se envía después de ellos, en orden.
+  const finishBlocked = waitingHere.length > 0 && !queue.persisted;
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
@@ -411,8 +419,12 @@ export function CaregiverShiftDetailPage() {
 
       {canFinish && (
         <div className="flex flex-col gap-2">
-          <Button size="lg" fullWidth icon={<LogOut size={20} />} disabled={saving || waitingHere.length > 0} onClick={() => setFinishOpen(true)}>Finalizar turno</Button>
-          {waitingHere.length > 0 && <p className="text-center text-[var(--text-caption)] text-amber-800">Tienes {waitingHere.length === 1 ? "1 registro" : `${waitingHere.length} registros`} por enviar. Podrás finalizar cuando vuelva la señal.</p>}
+          <Button size="lg" fullWidth icon={<LogOut size={20} />} disabled={saving || finishBlocked} onClick={() => setFinishOpen(true)}>Finalizar turno</Button>
+          {waitingHere.length > 0 && <p className="text-center text-[var(--text-caption)] text-amber-800">
+            {finishBlocked
+              ? `Tienes ${waitingHere.length === 1 ? "1 registro" : `${waitingHere.length} registros`} por enviar. Podrás finalizar cuando vuelva la señal.`
+              : `${waitingHere.length === 1 ? "1 registro guardado" : `${waitingHere.length} registros guardados`} sin señal. Se envían solos, antes de tu salida.`}
+          </p>}
         </div>
       )}
 

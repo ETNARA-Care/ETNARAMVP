@@ -14,6 +14,8 @@ export interface LoginPayload {
 export interface LoginResult {
   token: string;
   expiresAt: string;
+  /** Phase 12.4: cuenta solo de cuidador/a; la sesión puede quedarse en el teléfono. */
+  keepSignedIn?: boolean;
 }
 
 export function login(payload: LoginPayload): Promise<LoginResult> {

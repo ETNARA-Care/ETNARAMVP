@@ -4,6 +4,8 @@ import { CalendarDays, ChevronRight, Clock3 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
+import { prefetchUpcomingShifts } from "@/features/caregiver/prefetchShifts";
+import { isConnectivityError } from "@/features/caregiver/careEventQueue";
 import { listMyCoverageOffers, type MyCoverageOffer } from "@/api/coverageOffers";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 
@@ -32,7 +34,8 @@ export function CaregiverTodayPage() {
   const [shifts, setShifts] = useState<Shift[] | null>(null);
   const [recipients, setRecipients] = useState<CareRecipient[]>([]);
   const [offers, setOffers] = useState<MyCoverageOffer[]>([]);
-  const [error, setError] = useState(false);
+  // "offline": sin señal y nada recordado en memoria; se recarga sola al volver la señal.
+  const [error, setError] = useState<false | "offline" | "server">(false);
   const organizationId = activeOrganization?.id;
   const now = new Date();
   const firstName = (activeWorkerProfile?.displayName ?? user?.email ?? "Cuidador/a").split(/[ @]/)[0];
@@ -47,9 +50,10 @@ export function CaregiverTodayPage() {
         listCareRecipients(organizationId, token),
       ]);
       setShifts(shiftRows);
+      prefetchUpcomingShifts(organizationId, shiftRows, token);
       setRecipients(recipientRows);
-    } catch {
-      setError(true);
+    } catch (loadError) {
+      setError(isConnectivityError(loadError) ? "offline" : "server");
       setShifts([]);
     }
     // Open shift offers are secondary: a failure here must not hide the caregiver's own shifts.
@@ -61,6 +65,13 @@ export function CaregiverTodayPage() {
   }, [organizationId]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (error !== "offline") return;
+    const onOnline = () => void load();
+    window.addEventListener("online", onOnline);
+    const timer = window.setInterval(() => void load(), 20_000);
+    return () => { window.removeEventListener("online", onOnline); window.clearInterval(timer); };
+  }, [error, load]);
 
   const recipientById = useMemo(() => Object.fromEntries(recipients.map((item) => [item.id, item])), [recipients]);
   const ordered = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
@@ -70,7 +81,7 @@ export function CaregiverTodayPage() {
   const pendingOffers = offers.filter((offer) => offer.responseStatus === "pending").length;
 
   if (shifts === null) return <div className="flex flex-col gap-4"><Skeleton className="h-16" /><Skeleton className="h-52" /><Skeleton className="h-28" /></div>;
-  if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
+  if (error) return <ErrorState kind={error} onRetry={() => void load()} />;
 
   return <div className="flex flex-col gap-7">
     <header className="px-1">

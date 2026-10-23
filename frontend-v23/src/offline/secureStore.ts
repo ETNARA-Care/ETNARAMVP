@@ -1,0 +1,110 @@
+/**
+ * Almacén cifrado en el teléfono (Phase 12.4, aprobado por Rafa 2026-10-22).
+ *
+ * Solo guarda lo que el modo sin señal necesita: la sesión de un cuidador y
+ * los registros que aún no llegaron al servidor. Todo va cifrado con
+ * AES-GCM; la llave es una CryptoKey NO exportable creada por el navegador y
+ * guardada en IndexedDB, así que el contenido no se puede leer copiando los
+ * archivos del navegador. Cada valor lleva su fecha de vencimiento (máx. 7
+ * días) y se borra solo; al cerrar sesión se borra todo.
+ *
+ * Si el navegador no tiene IndexedDB o WebCrypto (modo privado antiguo), todo
+ * falla en silencio y la app sigue como antes: solo en memoria.
+ */
+const DB_NAME = "etnara-secure";
+const STORE = "items";
+const KEY_ID = "__key";
+export const MAX_AGE_MS = 7 * 24 * 3600 * 1000;
+
+interface Sealed {
+  iv: Uint8Array<ArrayBuffer>;
+  data: ArrayBuffer;
+  expiresAt: number;
+}
+
+function available(): boolean {
+  return typeof indexedDB !== "undefined" && typeof crypto !== "undefined" && !!crypto.subtle;
+}
+
+let dbPromise: Promise<IDBDatabase> | null = null;
+function openDb(): Promise<IDBDatabase> {
+  if (!dbPromise) {
+    dbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore(STORE);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => { dbPromise = null; reject(request.error); };
+    });
+  }
+  return dbPromise;
+}
+
+function run<T>(mode: IDBTransactionMode, work: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  return openDb().then((db) => new Promise<T>((resolve, reject) => {
+    const tx = db.transaction(STORE, mode);
+    const request = work(tx.objectStore(STORE));
+    tx.oncomplete = () => resolve(request.result);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  }));
+}
+
+let keyPromise: Promise<CryptoKey> | null = null;
+function getKey(): Promise<CryptoKey> {
+  if (!keyPromise) {
+    keyPromise = run<CryptoKey | undefined>("readonly", (s) => s.get(KEY_ID)).then(async (existing) => {
+      if (existing) return existing;
+      const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+      await run("readwrite", (s) => s.put(key, KEY_ID));
+      return key;
+    }).catch((error) => { keyPromise = null; throw error; });
+  }
+  return keyPromise;
+}
+
+/** Guarda un valor cifrado. Vence a los 7 días como máximo. */
+export async function secureSet(name: string, value: unknown, expiresAt = Date.now() + MAX_AGE_MS): Promise<void> {
+  if (!available()) return;
+  try {
+    const key = await getKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(value)));
+    const sealed: Sealed = { iv, data, expiresAt: Math.min(expiresAt, Date.now() + MAX_AGE_MS) };
+    await run("readwrite", (s) => s.put(sealed, name));
+  } catch {
+    // Sin almacenamiento disponible: se queda solo en memoria.
+  }
+}
+
+/** Lee y descifra un valor; si venció o no se puede leer, lo borra y devuelve null. */
+export async function secureGet<T>(name: string): Promise<T | null> {
+  if (!available()) return null;
+  try {
+    const sealed = await run<Sealed | undefined>("readonly", (s) => s.get(name));
+    if (!sealed) return null;
+    if (sealed.expiresAt <= Date.now()) {
+      await secureDelete(name);
+      return null;
+    }
+    const key = await getKey();
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: sealed.iv }, key, sealed.data);
+    return JSON.parse(new TextDecoder().decode(plain)) as T;
+  } catch {
+    await secureDelete(name);
+    return null;
+  }
+}
+
+export async function secureDelete(name: string): Promise<void> {
+  if (!available()) return;
+  try { await run("readwrite", (s) => s.delete(name)); } catch { /* nada que borrar */ }
+}
+
+/** Al cerrar sesión: borra todo, incluida la llave (lo cifrado queda ilegible). */
+export async function secureClearAll(): Promise<void> {
+  keyPromise = null;
+  if (!available()) return;
+  try {
+    await run("readwrite", (s) => s.clear());
+  } catch { /* nada que borrar */ }
+}
