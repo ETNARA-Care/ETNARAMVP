@@ -37,7 +37,8 @@ export function CaregiverShiftsPage() {
       const [shiftRows, recipientRows, offerRows] = await Promise.all([
         listMyShifts(organizationId, token),
         listCareRecipients(organizationId, token),
-        listMyCoverageOffers(organizationId, token),
+        // Las ofertas de turnos abiertos son secundarias: sin señal no ocultan los turnos propios.
+        listMyCoverageOffers(organizationId, token).catch(() => []),
       ]);
       setShifts(shiftRows);
       prefetchUpcomingShifts(organizationId, shiftRows, token); setRecipients(recipientRows); setOffers(offerRows);

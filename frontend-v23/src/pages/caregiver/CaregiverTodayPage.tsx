@@ -90,7 +90,7 @@ export function CaregiverTodayPage() {
     </header>
 
     {main ? <Link to={`/caregiver/shifts/${main.id}`} className="block">
-      <Card className={`overflow-hidden border-0 p-0 ${main.status === "in_progress" ? "bg-[var(--color-navy-900)] text-white" : "bg-white"}`}>
+      <Card className={`overflow-hidden border-0 p-0 ${main.status === "in_progress" ? "bg-[var(--color-navy-900)]! text-white" : "bg-white"}`}>
         <div className="p-5">
           <div className="mb-5 flex items-start justify-between gap-3">
             <div>

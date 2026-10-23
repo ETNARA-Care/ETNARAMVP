@@ -2,6 +2,11 @@
 
 ## In Progress
 
+### FUX-007 — Caregiver app opens with no signal (Phase 12.5)
+
+- Status: ready for review (gate). Frontend only; no backend change.
+- Next: Face ID / fingerprint unlock (WebAuthn).
+
 ### FUX-006 — Caregiver offline mode (Phase 12.4)
 
 - Status: ready for review (gate), with backend gate/12.4-offline-mode.
