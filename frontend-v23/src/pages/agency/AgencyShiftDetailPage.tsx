@@ -17,6 +17,7 @@ import {
   type WorkerMembership,
 } from "@/api/shifts";
 import { Badge, Button, Card, EmptyState, ErrorState, Modal, PageHeader, Skeleton, StatusBadge, useToast } from "@/components/ui";
+import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -134,6 +135,9 @@ export function AgencyShiftDetailPage() {
           </div>
         </div>
       </Card>
+
+      {organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId}
+        editable={shift.status !== "cancelled" && shift.status !== "completed"} />}
 
       <section>
         <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)] mb-3">Respuestas de cuidadores</h2>

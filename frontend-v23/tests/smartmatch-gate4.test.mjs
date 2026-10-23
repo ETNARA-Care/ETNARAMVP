@@ -53,7 +53,8 @@ test("agency flow: create, publish by any admin, review checks, confirmed decisi
   assert.match(agency, /disabled=\{busy \|\| !review\.checks\.approvable\}/);
   assert.match(agency, /Historial/);
   assert.match(agency, /"Cubiertas"/);
-  assert.match(agency, /Todavía no se crea una asignación de turno/);
+  // Approval still never creates a shift: the shift is the next, explicit step in Turnos.
+  assert.match(agency, /El turno se crea en el siguiente paso, en Turnos/);
 });
 
 test("no creator-only publishing message anywhere", () => {

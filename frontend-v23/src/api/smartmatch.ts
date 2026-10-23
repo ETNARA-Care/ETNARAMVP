@@ -14,6 +14,19 @@ export type DecisionReason = "APPROVED_ELIGIBLE" | "AGENCY_REJECTED" | "OPPORTUN
 export interface AgencyOpportunity {
   id: string; region_label: string; role_label: string;
   starts_at: string; ends_at: string; status: OpportunityStatus;
+  /** Turnos shift created from this opportunity (Gate 5), if any. */
+  shift_id?: string | null;
+  shift_status?: "unassigned" | "confirmed" | "in_progress" | "completed" | "cancelled" | null;
+  shift_assignment_status?: "pending" | "accepted" | "rejected" | null;
+}
+/** What the "Crear turno con esta cuidadora" form needs. No clinical or personal data. */
+export interface SmartMatchShiftDraft {
+  opportunity: { id: string; status: OpportunityStatus; role_label: string; region_label: string;
+    starts_at: string; ends_at: string; shift_id: string | null; started: boolean };
+  caregiver: { membershipId: string | null; displayName: string | null } | null;
+  checks: { membershipActive: boolean; credentialsEligible: boolean; credentialsVerifiable: boolean;
+    unmetRequirementCodes: string[]; availabilityCovers: boolean; ready: boolean } | null;
+  canCreate: boolean;
 }
 export interface AvailableOpportunity {
   id: string; region_label: string; role_label: string; starts_at: string; ends_at: string;
@@ -62,6 +75,16 @@ export async function createOpportunityDraft(organizationId: string,
 export async function publishOpportunity(organizationId: string, opportunityId: string, token: string) {
   return (await apiClient.post<{ opportunity: { id: string; status: OpportunityStatus } }>(
     `${base(organizationId)}/opportunities/${id(opportunityId)}/publish`, undefined, token)).opportunity;
+}
+export async function getShiftDraft(organizationId: string, opportunityId: string, token: string) {
+  return apiClient.get<SmartMatchShiftDraft>(`${base(organizationId)}/opportunities/${id(opportunityId)}/shift-draft`, token);
+}
+/** One server transaction: shift + assignment (Turnos rules) + private instructions + link. */
+export async function createShiftFromOpportunity(organizationId: string, opportunityId: string,
+  input: { careRecipientId: string; instructions?: string }, token: string) {
+  return apiClient.post<{ shift: { id: string }; assignment: { id: string; response_status: string }; hasInstructions: boolean }>(
+    `${base(organizationId)}/opportunities/${id(opportunityId)}/shift`,
+    { careRecipientId: input.careRecipientId, ...(input.instructions?.trim() ? { instructions: input.instructions.trim() } : {}) }, token);
 }
 export async function listPendingCounts(organizationId: string, token: string) {
   return (await apiClient.get<{ counts: { opportunity_id: string; pending_count: number }[] }>(

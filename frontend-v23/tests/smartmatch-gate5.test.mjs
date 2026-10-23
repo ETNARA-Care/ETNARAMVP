@@ -60,3 +60,32 @@ test("role field offers predefined options plus a validated 'Otro'", () => {
   assert.match(text, /No incluyas información del paciente/);
   assert.match(text, /No incluyas direcciones/);
 });
+
+const shiftsPage = read("src/pages/agency/AgencyShiftsPage.tsx");
+const smApi = read("src/api/smartmatch.ts");
+const shiftsApi = read("src/api/shifts.ts");
+const instructionsCard = read("src/features/shifts/ShiftPrivateInstructions.tsx");
+
+test("Turnos: approval offers 'Crear turno con esta cuidadora' and deferred state stays actionable", () => {
+  assert.match(agency, /Crear turno con esta cuidadora/);
+  assert.match(agency, /navigate\(`\/agency\/shifts\?create=1&smartmatch=\$\{opportunityId\}`\)/);
+  assert.match(agency, /opp\.status === "FILLED" && !opp\.shift_id && <Button/);
+  assert.match(text, /"Cubierta — pendiente de asignación"/);
+  assert.match(text, /Turno creado/);
+});
+
+test("Turnos: the existing shifts page opens prefilled; schedule fixed; one server call", () => {
+  assert.match(shiftsPage, /searchParams\.get\("smartmatch"\)/);
+  assert.match(shiftsPage, /createShiftFromOpportunity\(organizationId, smartMatchId, \{ careRecipientId: smartMatchRecipientId, instructions \}/);
+  assert.match(smApi, /\/opportunities\/\$\{id\(opportunityId\)\}\/shift`/);
+  assert.doesNotMatch(smApi, /scheduledStart/);
+  assert.match(shiftsPage, /disabled=\{saving \|\| !smartMatchDraft\?\.canCreate \|\| !smartMatchRecipientId\}/);
+});
+
+test("Turnos: private instructions are fetched from their own endpoint, read-only for caregivers", () => {
+  assert.match(shiftsApi, /\/shifts\/\$\{shiftId\}\/private-instructions/);
+  assert.match(read("src/pages/caregiver/CaregiverShiftDetailPage.tsx"), /<ShiftPrivateInstructions organizationId=\{organizationId\} shiftId=\{shiftId\} editable=\{false\} \/>/);
+  assert.match(read("src/pages/agency/AgencyShiftDetailPage.tsx"), /<ShiftPrivateInstructions/);
+  assert.match(instructionsCard, /if \(text === undefined \|\| \(!text && !editable\)\) return null;/);
+  assert.doesNotMatch(read("src/pages/family/FamilyTodayPage.tsx"), /private-instructions|ShiftPrivateInstructions/);
+});

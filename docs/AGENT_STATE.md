@@ -2,6 +2,15 @@
 
 ## Current Status
 
+## 2026-10-23 — SmartMatch Gate 5: Crear turno con esta cuidadora (claude/smartmatch-frontend-v23)
+
+- After approval: "Solicitud aprobada" prompt with «Crear turno con esta cuidadora» / «Más tarde».
+- Filled cards: «Cubierta — pendiente de asignación» + button, or «Turno creado · …» + «Ver turno».
+- /agency/shifts?create=1&smartmatch=<id>: the Turnos create form in SmartMatch mode (caregiver and
+  schedule fixed, person receiving care from the agency, private instructions, one server call).
+- ShiftPrivateInstructions card: agency shift detail (editable) and caregiver shift detail (read).
+- Tests 134/134; browser E2E 390x844: Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
 ## 2026-10-23 — SmartMatch Gate 5: notifications, dashboard panel, mobile fixes (claude/smartmatch-frontend-v23)
 
 - Bell: numeric badge (9+), "Marcar todas", SmartMatch notifications deep-link to the exact

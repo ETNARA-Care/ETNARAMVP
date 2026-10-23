@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bot, Plus, Sparkles } from "lucide-react";
+import { Bot, Lock, Plus, Sparkles } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -11,7 +11,9 @@ import {
   assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
   type Assignment, type CareRecipient, type CoverageCandidate, type Shift, type WorkerMembership,
 } from "@/api/shifts";
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, useToast } from "@/components/ui";
+import { createShiftFromOpportunity, getShiftDraft, type SmartMatchShiftDraft } from "@/api/smartmatch";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, Textarea, useToast } from "@/components/ui";
+import { formatWindow as formatSmartMatchWindow, smartMatchErrorMessage } from "@/features/smartmatch/smartmatchText";
 import { coverageLabel, coverageOf, coverageTone } from "@/features/agency/shiftCoverage";
 import { plural } from "@/pages/agency/overview/overviewModel";
 
@@ -73,7 +75,7 @@ function firstBlockingReason(worker: AssignableWorker): string | null {
 
 export function AgencyShiftsPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { activeOrganization } = useAuth();
   const { show } = useToast();
   const [shifts, setShifts] = useState<Shift[] | null>(null);
@@ -94,6 +96,13 @@ export function AgencyShiftsPage() {
   const [agentBriefing, setAgentBriefing] = useState<CoverageAgentBriefing | null>(null);
   const [agentBusy, setAgentBusy] = useState(false);
   const organizationId = activeOrganization?.id;
+  // SmartMatch -> Turnos: ?create=1&smartmatch=<opportunityId> opens this same
+  // form prefilled with the approved caregiver and the opportunity's schedule.
+  const smartMatchId = searchParams.get("smartmatch");
+  const [smartMatchDraft, setSmartMatchDraft] = useState<SmartMatchShiftDraft | null>(null);
+  const [smartMatchError, setSmartMatchError] = useState("");
+  const [smartMatchRecipientId, setSmartMatchRecipientId] = useState("");
+  const [instructions, setInstructions] = useState("");
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -129,6 +138,38 @@ export function AgencyShiftsPage() {
   }, [organizationId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!organizationId || !token || !smartMatchId) return;
+    setSmartMatchDraft(null); setSmartMatchError(""); setSmartMatchRecipientId(""); setInstructions("");
+    getShiftDraft(organizationId, smartMatchId, token)
+      .then(setSmartMatchDraft)
+      .catch((e) => setSmartMatchError(smartMatchErrorMessage(e, "No se pudo cargar la oportunidad.")));
+  }, [organizationId, smartMatchId]);
+
+  function closeCreate() {
+    setCreating(false);
+    if (smartMatchId) setSearchParams({}, { replace: true });
+  }
+
+  async function saveSmartMatchShift() {
+    const token = getToken();
+    if (!organizationId || !token || !smartMatchId || !smartMatchRecipientId) return;
+    setSaving(true);
+    try {
+      await createShiftFromOpportunity(organizationId, smartMatchId, { careRecipientId: smartMatchRecipientId, instructions }, token);
+      show(`Turno creado y enviado a ${smartMatchDraft?.caregiver?.displayName ?? "la cuidadora"} para que lo acepte.`, "success");
+      closeCreate();
+    } catch (requestError) {
+      show(smartMatchErrorMessage(requestError, "No pudimos crear el turno. Intenta nuevamente."), "danger");
+      const refreshed = await getShiftDraft(organizationId, smartMatchId, token).catch(() => null);
+      if (refreshed) setSmartMatchDraft(refreshed);
+    } finally {
+      setSaving(false);
+      await load();
+    }
+  }
 
   useEffect(() => {
     if (!organizationId || !shifts) return;
@@ -368,7 +409,44 @@ export function AgencyShiftsPage() {
         </div>
       )}
 
-      <Modal open={creating} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || coverageLoading || !effectiveRecipientId || !effectiveWorkerId || !selectedWorkerAllowed}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
+      <Modal open={creating && !!smartMatchId} onClose={() => !saving && closeCreate()} title="Crear turno desde SmartMatch"
+        footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={closeCreate} disabled={saving}>Cancelar</Button>
+          <Button onClick={() => void saveSmartMatchShift()} loading={saving} disabled={saving || !smartMatchDraft?.canCreate || !smartMatchRecipientId}>Crear turno</Button>
+        </div>}>
+        <div className="flex flex-col gap-4">
+          {!smartMatchDraft && !smartMatchError && <Skeleton className="h-24" />}
+          {smartMatchError && <p role="alert" className="text-[var(--text-small)] text-[var(--color-danger-700)]">{smartMatchError}</p>}
+          {smartMatchDraft && <>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-[var(--text-small)]" aria-label="Datos de la oportunidad">
+              <div className="col-span-2"><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidadora aprobada</dt><dd className="font-medium text-[var(--color-text-primary)]">{smartMatchDraft.caregiver?.displayName ?? "—"}</dd></div>
+              <div className="col-span-2"><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Horario</dt><dd className="font-medium text-[var(--color-text-primary)]">{formatSmartMatchWindow(smartMatchDraft.opportunity.starts_at, smartMatchDraft.opportunity.ends_at)}</dd></div>
+              <div><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Función</dt><dd className="font-medium text-[var(--color-text-primary)]">{smartMatchDraft.opportunity.role_label}</dd></div>
+              <div><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Municipio</dt><dd className="font-medium text-[var(--color-text-primary)]">{smartMatchDraft.opportunity.region_label}</dd></div>
+              <p className="col-span-2 flex items-center gap-1.5 text-[var(--text-caption)] text-[var(--color-text-muted)]"><Lock size={13} aria-hidden /> Horario y cuidadora fijos: son los que la cuidadora aceptó.</p>
+            </dl>
+            {smartMatchDraft.opportunity.shift_id && <div role="status" className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-[var(--text-small)]">
+              Ya se creó un turno para esta oportunidad. <button type="button" className="font-medium underline" onClick={() => navigate(`/agency/shifts/${smartMatchDraft.opportunity.shift_id}`)}>Ver turno</button>
+            </div>}
+            {!smartMatchDraft.opportunity.shift_id && smartMatchDraft.opportunity.started && <p role="status" className="text-[var(--text-small)] text-[var(--color-warning-700)]">El horario ya comenzó. Crea el turno manualmente con «Crear turno».</p>}
+            {!smartMatchDraft.opportunity.shift_id && !smartMatchDraft.opportunity.started && smartMatchDraft.checks && !smartMatchDraft.checks.ready && <p role="status" className="text-[var(--text-small)] text-[var(--color-warning-700)]">
+              La cuidadora ya no cumple los requisitos{smartMatchDraft.checks.unmetRequirementCodes.length ? ` (${smartMatchDraft.checks.unmetRequirementCodes.join(", ")})` : ""}. Revisa Cumplimiento antes de crear el turno.
+            </p>}
+            {smartMatchDraft.canCreate && <>
+              <Select label="Persona atendida" value={smartMatchRecipientId} onChange={(event) => setSmartMatchRecipientId(event.target.value)} required
+                hint="Solo personas activas de tu agencia. Este dato no se comparte en SmartMatch.">
+                <option value="">Selecciona una persona</option>
+                {recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}
+              </Select>
+              <Textarea label="Instrucciones operativas (privadas)" rows={4} maxLength={2000} value={instructions} onChange={(event) => setInstructions(event.target.value)}
+                hint="Solo las ven los administradores y supervisores de tu agencia y la cuidadora asignada. No las ven familiares ni ETNARA central." />
+              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Al guardar, el sistema vuelve a verificar credenciales, disponibilidad y cruces de horario, y envía la asignación a la cuidadora.</p>
+            </>}
+          </>}
+        </div>
+      </Modal>
+
+      <Modal open={creating && !smartMatchId} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || coverageLoading || !effectiveRecipientId || !effectiveWorkerId || !selectedWorkerAllowed}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
         <div className="flex flex-col gap-4">
           <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => { setRecipientId(event.target.value); setCoverageCandidates(null); }} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
           <Select label="Cuidadora apta" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); const recommendation = coverageCandidates?.find((candidate) => candidate.membershipId === worker.id); const unavailable = recommendation && !recommendation.recommended; return <option key={worker.id} value={worker.id} disabled={reason !== null || unavailable}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : unavailable ? " — Conflicto o requisito pendiente" : " — Apta"}</option>; })}</Select>

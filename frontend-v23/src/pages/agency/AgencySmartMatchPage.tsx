@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { CheckCircle2, History, Plus, ShieldCheck, XCircle } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { CalendarPlus, CheckCircle2, History, Plus, ShieldCheck, XCircle } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
@@ -11,7 +11,7 @@ import {
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
 import {
-  applicationLabel, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, smartMatchErrorMessage,
+  applicationLabel, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, shiftLinkLabel, smartMatchErrorMessage,
 } from "@/features/smartmatch/smartmatchText";
 
 const CHECK_ROWS: { key: "membershipActive" | "credentialsEligible" | "availabilityConfigured" | "availabilityCovers" | "noUnavailabilityConflict" | "consentRecorded" | "opportunityOpen"; label: string }[] = [
@@ -31,8 +31,9 @@ function localInput(date: Date): string {
 /**
  * SmartMatch del administrador: la agencia publica oportunidades internas y
  * decide sobre las solicitudes. Cualquier administrador de la agencia puede
- * publicar borradores. Aprobar marca la oportunidad como cubierta; todavía no
- * crea una asignación de turno.
+ * publicar borradores. Aprobar marca la oportunidad como cubierta; el turno
+ * real se crea después, en el módulo de Turnos existente
+ * («Crear turno con esta cuidadora»), donde se elige a la persona atendida.
  */
 export function AgencySmartMatchPage() {
   const { activeOrganization, roles, user } = useAuth();
@@ -40,6 +41,9 @@ export function AgencySmartMatchPage() {
   const isAdmin = roles.includes("ORGANIZATION_ADMIN");
   const { show } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const createShiftFor = (opportunityId: string) => navigate(`/agency/shifts?create=1&smartmatch=${opportunityId}`);
+  const [approvedFor, setApprovedFor] = useState<{ opportunityId: string; name: string } | null>(null);
 
   const [items, setItems] = useState<AgencyOpportunity[] | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -153,6 +157,10 @@ export function AgencySmartMatchPage() {
       show(decision === "APPROVE"
         ? `Solicitud aprobada. La oportunidad quedó cubierta${result.closedApplications ? ` y se cerraron ${result.closedApplications} solicitudes pendientes` : ""}.`
         : "Solicitud rechazada.", "success");
+      if (decision === "APPROVE" && result.outcome === "APPROVED") {
+        setApprovedFor({ opportunityId: review.opportunity.id, name: review.caregiver.displayName ?? "la cuidadora" });
+        setQueueFor(null);
+      }
       setReview(null);
     } catch (e) {
       show(smartMatchErrorMessage(e, "No se pudo registrar la decisión."), "danger");
@@ -176,6 +184,7 @@ export function AgencySmartMatchPage() {
   const opportunityCard = (opp: AgencyOpportunity) => {
     const status = opportunityLabel(opp.status);
     const pending = counts[opp.id] ?? 0;
+    const link = shiftLinkLabel(opp);
     return <Card key={opp.id} className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
@@ -183,10 +192,13 @@ export function AgencySmartMatchPage() {
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{formatWindow(opp.starts_at, opp.ends_at)}</p>
           {opp.status === "PUBLISHED" && <p className="mt-1 text-sm">Solicitudes pendientes: <strong>{pending}</strong></p>}
         </div>
-        <Badge tone={status.tone}>{status.label}</Badge>
+        {/* A filled opportunity shows its Turnos state instead of a second "Cubierta" badge. */}
+        {link ? <span data-testid="shift-link-status"><Badge tone={link.tone}>{link.label}</Badge></span> : <Badge tone={status.tone}>{status.label}</Badge>}
       </div>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         {opp.status === "DRAFT" && <Button disabled={busy} onClick={() => void publish(opp)}>Publicar</Button>}
+        {opp.status === "FILLED" && !opp.shift_id && <Button icon={<CalendarPlus size={18} />} onClick={() => createShiftFor(opp.id)}>Crear turno con esta cuidadora</Button>}
+        {opp.status === "FILLED" && opp.shift_id && <Button variant="secondary" onClick={() => navigate(`/agency/shifts/${opp.shift_id}`)}>Ver turno</Button>}
         {opp.status !== "DRAFT" && <Button variant="secondary" onClick={() => void openQueue(opp)}>
           {opp.status === "PUBLISHED" ? "Revisar solicitudes" : "Ver solicitudes e historial"}
         </Button>}
@@ -306,10 +318,21 @@ export function AgencySmartMatchPage() {
           La aprobación está bloqueada hasta que todos los requisitos se puedan verificar.
         </p>}
         {confirmApprove && <p role="alert" className="rounded-xl border border-[var(--color-border)] p-3">
-          Al aprobar, la oportunidad quedará cubierta y las demás solicitudes pendientes se cerrarán. Todavía no se crea una asignación de turno.
+          Al aprobar, la oportunidad quedará cubierta y las demás solicitudes pendientes se cerrarán. El turno se crea en el siguiente paso, en Turnos.
         </p>}
         {confirmReject && <p role="alert" className="rounded-xl border border-[var(--color-border)] p-3">¿Confirmas que deseas rechazar esta solicitud?</p>}
       </div>}
+    </Modal>
+
+    <Modal open={approvedFor !== null} onClose={() => setApprovedFor(null)} title="Solicitud aprobada"
+      footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="ghost" onClick={() => setApprovedFor(null)}>Más tarde</Button>
+        <Button icon={<CalendarPlus size={18} />} onClick={() => approvedFor && createShiftFor(approvedFor.opportunityId)}>Crear turno con esta cuidadora</Button>
+      </div>}>
+      <div className="space-y-2 text-sm">
+        <p>La oportunidad quedó <strong>cubierta</strong> por {approvedFor?.name}.</p>
+        <p>Crea el turno en Turnos: eliges a la persona atendida de tu agencia y añades instrucciones privadas. Si lo dejas para después, verás «Cubierta — pendiente de asignación» y el botón seguirá disponible.</p>
+      </div>
     </Modal>
 
     <Modal open={history !== null} onClose={() => setHistory(null)} title={`Historial · ${history?.name ?? ""}`}>

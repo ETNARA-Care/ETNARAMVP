@@ -2,6 +2,10 @@
 
 ## In Progress
 
+### SM-005 — SmartMatch Gate 5: notifications, dashboard, mobile, Turnos link (PR #216, staging only)
+- Done in staging branch: bell badge + deep links, overview panel, mobile fixes, «Crear turno con esta cuidadora».
+- Pending (not in scope yet): cancelling a FILLED opportunity; network (inter-agency) opportunities.
+
 ### FUX-006 — Caregiver offline mode (Phase 12.4)
 
 - Status: ready for review (gate), with backend gate/12.4-offline-mode.

@@ -39,6 +39,16 @@ export function opportunityLabel(status: OpportunityStatus): { label: string; to
   }
 }
 
+/** Estado del turno creado desde una oportunidad cubierta. */
+export function shiftLinkLabel(opp: { status: OpportunityStatus; shift_id?: string | null; shift_status?: string | null; shift_assignment_status?: string | null }): { label: string; tone: Tone } | null {
+  if (opp.status !== "FILLED") return null;
+  if (!opp.shift_id) return { label: "Cubierta — pendiente de asignación", tone: "warning" };
+  if (opp.shift_status === "cancelled") return { label: "Turno cancelado", tone: "neutral" };
+  if (opp.shift_assignment_status === "accepted") return { label: "Turno creado · aceptado", tone: "success" };
+  if (opp.shift_assignment_status === "rejected") return { label: "Turno creado · rechazado por la cuidadora", tone: "danger" };
+  return { label: "Turno creado · esperando respuesta", tone: "accent" };
+}
+
 export const EVENT_LABELS: Record<string, string> = {
   SUBMITTED: "Solicitud enviada",
   WITHDRAWN: "Solicitud retirada",
@@ -67,6 +77,12 @@ export function smartMatchErrorMessage(error: unknown, fallback: string): string
     case "NOT_FOUND": return "No encontramos este registro en tu agencia.";
     case "FORBIDDEN": return "Tu cuenta no tiene permiso para esta acción.";
     case "INVALID_REQUEST": return "Revisa los datos: la hora de fin debe ser posterior al inicio.";
+    case "SHIFT_ALREADY_CREATED": return "Ya se creó un turno para esta oportunidad.";
+    case "OPPORTUNITY_NOT_FILLED": return "Primero aprueba una solicitud: la oportunidad todavía no está cubierta.";
+    case "OPPORTUNITY_STARTED": return "El horario de esta oportunidad ya comenzó; crea el turno manualmente en Turnos.";
+    case "CAREGIVER_NOT_READY": return "La cuidadora ya no cumple los requisitos (credenciales, membresía o disponibilidad). Revisa Cumplimiento.";
+    case "RECIPIENT_NOT_IN_AGENCY": return "Selecciona una persona atendida activa de tu agencia.";
+    case "SCHEDULE_CONFLICT": return "La cuidadora ya tiene otro turno en ese horario.";
     default: return fallback;
   }
 }
