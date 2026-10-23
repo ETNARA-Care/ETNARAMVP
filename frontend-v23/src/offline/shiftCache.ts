@@ -71,13 +71,38 @@ export function minimizeReads(entries: Array<[string, unknown]>, now = Date.now(
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 
-async function save(): Promise<void> {
+// Turnos que ya están guardados en el teléfono con lo necesario para abrirse
+// sin señal (la pantalla muestra "Listo para usar sin señal").
+let ready: ReadonlySet<string> = new Set();
+const readyListeners = new Set<() => void>();
+function setReady(entries: Array<[string, unknown]>): void {
+  const ids = new Set<string>();
+  for (const [path] of entries) {
+    const part = SHIFT_PART.exec(path);
+    if (part && part[2] === "visit-verification") ids.add(part[1]);
+  }
+  ready = ids;
+  for (const listener of readyListeners) listener();
+}
+export function subscribeOfflineReady(listener: () => void): () => void {
+  readyListeners.add(listener);
+  return () => { readyListeners.delete(listener); };
+}
+export function offlineReadyShifts(): ReadonlySet<string> {
+  return ready;
+}
+
+/** Guarda ya (cifrado) lo recordado; devuelve false si esta sesión no guarda nada. */
+export async function saveShiftCacheNow(): Promise<boolean> {
   const token = getToken();
-  if (!token || !isKeptSession()) return;
+  if (!token || !isKeptSession()) return false;
   const { entries, expiresAt } = minimizeReads(exportRemembered(token));
   if (entries.length === 0) await secureDelete(SECURE_READS);
   else await secureSet(SECURE_READS, { token, entries } satisfies StoredReads, expiresAt);
+  setReady(entries);
+  return true;
 }
+const save = saveShiftCacheNow;
 
 /** Empieza a guardar (cifrado) lo que la cuidadora va viendo de sus turnos cercanos. */
 export function startShiftCache(): void {
@@ -92,6 +117,7 @@ export function stopShiftCache(): void {
   onRemembered(null);
   if (timer) clearTimeout(timer);
   timer = null;
+  setReady([]);
 }
 
 /** Al abrir la app: repone en memoria los turnos guardados de esta misma sesión. */
@@ -103,4 +129,5 @@ export async function restoreShiftCache(): Promise<void> {
   const { entries } = minimizeReads(stored.entries);
   if (entries.length === 0) { await secureDelete(SECURE_READS); return; }
   importRemembered(token, entries);
+  setReady(entries);
 }

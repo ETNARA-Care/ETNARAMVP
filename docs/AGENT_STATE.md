@@ -15,10 +15,13 @@
   and visit records — are saved encrypted (secureStore) and restored on open.
   Expires 12 h after the last of those shifts (max 7 days); logout wipes it.
 - Shifts page: open-shift offers no longer block the own shift list offline.
+- Like "bajar el expediente" before a visit (Rafa's request): each upcoming
+  shift shows "Listo para usar sin señal" once it is saved on the phone; the
+  shift detail offers "Descargar para usar sin señal" when it is not yet.
 - Fix: Today card for an in-progress shift kept the white Card background
   (white on white); now navy as designed.
-- Validation: typecheck, 121 tests, build, lint unchanged (76). Real-browser
-  E2E (service worker on localhost + local backend): 10/10 — opens from zero
+- Validation: typecheck, 122 tests, build, lint unchanged (76). Real-browser
+  E2E (service worker on localhost + local backend): 12/12 — opens from zero
   offline with today's shift, a shift 5 days away is not stored, offline
   check-in arrives marked offline, logout wipes the phone.
 

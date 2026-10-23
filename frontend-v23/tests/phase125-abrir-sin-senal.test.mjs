@@ -33,3 +33,15 @@ test("only a kept caregiver session saves or restores shifts, and only for the s
   assert.match(auth, /await restoreShiftCache\(\);/);
   assert.match(auth, /if \(status !== "authenticated" \|\| !isKeptSession\(\)\) return;\s+startShiftCache\(\);/);
 });
+
+test("the caregiver sees when a shift is ready offline and can download it before leaving", () => {
+  const ready = read("src/features/caregiver/OfflineReady.tsx");
+  const detail = read("src/pages/caregiver/CaregiverShiftDetailPage.tsx");
+  const list = read("src/pages/caregiver/CaregiverShiftsPage.tsx");
+  assert.match(ready, /Listo para usar sin señal/);
+  assert.match(ready, /Descargar para usar sin señal/);
+  assert.match(ready, /const saved = complete && await saveShiftCacheNow\(\);/);
+  assert.match(ready, /if \(!isKeptSession\(\) \|\| !isUpcoming\(shift\)\) return null;/);
+  assert.match(detail, /<OfflineReadyCard organizationId=\{organizationId\} shift=\{shift\} \/>/);
+  assert.match(list, /<OfflineReadyMark shiftId=\{shift\.id\} compact \/>/);
+});
