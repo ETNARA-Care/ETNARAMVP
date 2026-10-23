@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
 import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
+import { AppLockOffer } from "@/features/caregiver/AppLock";
 import { prefetchUpcomingShifts } from "@/features/caregiver/prefetchShifts";
 import { isConnectivityError } from "@/features/caregiver/careEventQueue";
 import { listMyCoverageOffers, type MyCoverageOffer } from "@/api/coverageOffers";
@@ -89,6 +90,8 @@ export function CaregiverTodayPage() {
       <p className="text-sm capitalize text-[var(--color-text-muted)]">{now.toLocaleDateString("es-PR", { weekday: "long", day: "numeric", month: "long" })}</p>
       <h1 className="mt-1 font-[var(--font-display)] text-3xl text-[var(--color-navy-900)]">{greeting(now)}, {firstName}</h1>
     </header>
+
+    <AppLockOffer />
 
     {main ? <Link to={`/caregiver/shifts/${main.id}`} className="block">
       <Card className={`overflow-hidden border-0 p-0 ${main.status === "in_progress" ? "bg-[var(--color-navy-900)]! text-white" : "bg-white"}`}>

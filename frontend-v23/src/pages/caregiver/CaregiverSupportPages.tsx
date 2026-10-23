@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { AppLockSetting } from "@/features/caregiver/AppLock";
 import { useNavigate } from "react-router-dom";
 import { Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
 import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2, Upload } from "lucide-react";
@@ -326,6 +327,7 @@ export function CaregiverProfilePage() {
         )}
         </div>
       </Card>
+      <AppLockSetting />
       <Button variant="secondary" icon={<LogOut size={18} />} onClick={onLogout}>Cerrar sesión</Button>
     </div>
   );
