@@ -2,6 +2,11 @@
 
 ## In Progress
 
+### FUX-008 — Caregiver app lock with Face ID / fingerprint (Phase 12.6)
+
+- Status: ready for review (gate). Frontend only.
+- Next: SmartMatch.
+
 ### FUX-007 — Caregiver app opens with no signal (Phase 12.5)
 
 - Status: ready for review (gate). Frontend only; no backend change.

@@ -2,6 +2,24 @@
 
 ## Current Status
 
+## 2026-10-23 — Phase 12.6 bloqueo con Face ID / huella (ux/12.6-bloqueo-faceid)
+
+- Rafa: password login already works with iPhone Face ID autofill; what was
+  missing is protecting the 7-day kept caregiver session. Decision: lock on
+  open and after 5 minutes away.
+- offline/appLock.ts: WebAuthn platform credential (userVerification
+  required, UV flag checked). Local screen lock: verified by the phone, so
+  it works offline; credential id stored encrypted (secureStore); wiped on
+  logout. Only kept caregiver sessions.
+- AppLockGate in CaregiverLayout (inside the queue provider so pending
+  records keep sending): portal stays mounted but hidden while locked.
+  "Entrar con mi contraseña" signs out, warning about unsent records.
+  One-time offer on Mi día; on/off in Más.
+- Validation: typecheck, 125 tests, build, lint unchanged (76). Real-browser
+  E2E with a virtual authenticator: 12/12 (lock on reopen, failed
+  verification stays locked, unlock offline, off/on, password exit wipes the
+  phone, administrators unaffected).
+
 ## 2026-10-23 — Phase 12.5 abrir sin señal desde cero (ux/12.5-abrir-sin-senal)
 
 - public/sw.js: service worker with the app PROGRAM only (index.html, /assets,
