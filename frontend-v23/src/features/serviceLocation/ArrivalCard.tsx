@@ -46,7 +46,9 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
     } catch (e) {
       const err = e as ApiError;
       show(err?.isNetworkError ? "Sin señal. Usa «Comenzar turno»: funciona sin conexión."
-        : err?.code === "ALREADY_ARRIVED" ? "Tu llegada ya estaba registrada." : "No se pudo registrar la llegada. Puedes comenzar el turno igualmente.", "danger");
+        : err?.code === "ALREADY_ARRIVED" ? "Tu llegada ya estaba registrada."
+        : err?.code === "ARRIVAL_OUTSIDE_WINDOW" ? "Podrás registrar tu llegada desde 2 horas antes del inicio del turno."
+        : "No se pudo registrar la llegada. Puedes comenzar el turno igualmente.", "danger");
     } finally { setBusy(false); setAsking(false); }
   }
 

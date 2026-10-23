@@ -2,6 +2,14 @@
 
 ## Current Status
 
+## 2026-10-23 — Security audit fixes (claude/smartmatch-frontend-v23)
+
+- parseMapPoint: stray «%» no longer throws; out-of-range match tries next pattern; Apple «coordinate=».
+- Offline cache forgets a remembered response on 401/403/404 (address after unassignment).
+- Family arrival notice text «Llegada registrada»; «Llegué» outside its window explains when it opens.
+- Open decision: production map tile provider (VITE_MAP_TILE_URL) — OSM public tiles are not for production.
+- Checks: 157/157 static; E2E Gate 7 9/9, Gate 6 22/22, Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
 ## 2026-10-23 — Gate 7 «ETNARA En Camino» (claude/smartmatch-frontend-v23)
 
 - features/journey: CaregiverJourneyCard («Voy en camino», «Informar retraso» with minute chips and

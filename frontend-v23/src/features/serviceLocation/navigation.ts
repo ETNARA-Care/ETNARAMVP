@@ -37,10 +37,12 @@ export const PUERTO_RICO_CENTER = { lat: 18.22, lng: -66.43 };
  * sent anywhere. Returns null when no coordinates are recognised.
  */
 export function parseMapPoint(input: string): { latitude: number; longitude: number } | null {
-  const text = decodeURIComponent(input.trim());
+  // A stray «%» in a pasted link must not throw: keep the raw text then.
+  let text = input.trim();
+  try { text = decodeURIComponent(text); } catch { /* keep raw */ }
   const patterns = [
     /@(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/,                 // google.com/maps/@lat,lng,zoom
-    /[?&](?:q|ll|daddr|destination|query|sll)=(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/, // ?q=lat,lng (Google/Apple)
+    /[?&](?:q|ll|daddr|destination|query|sll|coordinate)=(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/, // ?q=lat,lng (Google/Apple)
     /!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/,                  // google place data
     /^(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)$/,              // plain "lat, lng"
   ];
@@ -51,7 +53,7 @@ export function parseMapPoint(input: string): { latitude: number; longitude: num
     const longitude = Math.round(Number(m[2]) * 1e6) / 1e6;
     // Puerto Rico and its islands (Mona to Culebra/Vieques).
     if (latitude >= 17.5 && latitude <= 18.7 && longitude >= -68 && longitude <= -65.1) return { latitude, longitude };
-    return null;
+    // Out of Puerto Rico: try the remaining patterns before giving up.
   }
   return null;
 }

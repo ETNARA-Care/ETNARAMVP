@@ -51,7 +51,7 @@ function notificationSummary(type: string): string {
   // Gate 7 «En camino»: never an address, a location or an estimated time.
   if (type === "FAMILY_CAREGIVER_EN_ROUTE") return "La cuidadora va en camino";
   if (type === "FAMILY_CAREGIVER_DELAYED") return "La cuidadora informó un retraso";
-  if (type === "FAMILY_CAREGIVER_ARRIVED") return "La cuidadora llegó al domicilio";
+  if (type === "FAMILY_CAREGIVER_ARRIVED") return "Llegada registrada";
   if (type === "SHIFT_NOT_EN_ROUTE") return "Aún no registra salida (turno en 30 min)";
   if (type === "SHIFT_DELAY_REPORTED") return "Retraso de 30 min o más informado";
   if (type === "SHIFT_STARTED") return "La cuidadora comenzó el turno";
