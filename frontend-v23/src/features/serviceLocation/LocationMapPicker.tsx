@@ -11,6 +11,24 @@ import { PUERTO_RICO_CENTER } from "./navigation";
 const TILE_URL = import.meta.env.VITE_MAP_TILE_URL || "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION = import.meta.env.VITE_MAP_TILE_ATTRIBUTION
   || '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>';
+/** 512 for Mapbox (one request covers 4x the area: lower cost, fewer requests). Default 256. */
+const TILE_SIZE = Number(import.meta.env.VITE_MAP_TILE_SIZE) === 512 ? 512 : 256;
+const ZOOM_OFFSET = TILE_SIZE === 512 ? -1 : 0;
+/** Provider logo required by some providers' terms (Mapbox); an asset we host, never hot-linked. */
+const PROVIDER_LOGO_URL = import.meta.env.VITE_MAP_LOGO_URL || "";
+
+/**
+ * Privacy of tile requests (Gate 6 + pilot review):
+ *  - only {z}/{x}/{y} and the public token travel to the provider: never a name,
+ *    an address, a clinical datum or an ETNARA identifier;
+ *  - referrerPolicy "strict-origin": the provider sees only https://etnara-care.github.io,
+ *    never the page path (it contains ids of the person served);
+ *  - keepBuffer 1 + updateWhenIdle: fewer tiles around the point (less cost, less exposure).
+ */
+export const TILE_OPTIONS: L.TileLayerOptions = {
+  maxZoom: 19, attribution: TILE_ATTRIBUTION, tileSize: TILE_SIZE, zoomOffset: ZOOM_OFFSET,
+  referrerPolicy: "strict-origin", keepBuffer: 1, updateWhenIdle: true,
+};
 
 type Point = { latitude: number; longitude: number };
 
@@ -52,7 +70,15 @@ export function LocationMapPicker({ value, onChange, center, className = "h-56" 
     if (!host.current || map.current) return;
     const start: [number, number] = value ? [value.latitude, value.longitude] : [PUERTO_RICO_CENTER.lat, PUERTO_RICO_CENTER.lng];
     const m = L.map(host.current, { center: start, zoom: value ? 18 : 9, scrollWheelZoom: false, tapTolerance: 20 });
-    L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTRIBUTION }).addTo(m);
+    L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(m);
+    if (PROVIDER_LOGO_URL) {
+      const Logo = L.Control.extend({ onAdd: () => {
+        const img = L.DomUtil.create("img") as HTMLImageElement;
+        img.src = PROVIDER_LOGO_URL; img.alt = "Proveedor del mapa"; img.style.height = "20px"; img.referrerPolicy = "no-referrer";
+        return img;
+      } });
+      new Logo({ position: "bottomleft" }).addTo(m);
+    }
     m.on("click", (e: L.LeafletMouseEvent) => {
       placeMarker(e.latlng.lat, e.latlng.lng);
       changeRef.current({ latitude: Math.round(e.latlng.lat * 1e6) / 1e6, longitude: Math.round(e.latlng.lng * 1e6) / 1e6 });
