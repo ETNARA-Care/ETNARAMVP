@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
+import { BriefcaseBusiness, Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
 import { MobileTabBar } from "./MobileTabBar";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { CareEventQueueBanner, CareEventQueueProvider } from "@/features/caregiver/CareEventQueueProvider";
@@ -54,6 +54,7 @@ export function CaregiverLayout() {
     <MobileTabBar items={[
       { to: "/caregiver/today", icon: <Home size={21}/>, label: "Mi día" },
       { to: "/caregiver/shifts", icon: <CalendarRange size={21}/>, label: "Turnos" },
+      { to: "/caregiver/smartmatch", icon: <BriefcaseBusiness size={21}/>, label: "Ofertas" },
       { to: "/caregiver/messages", icon: <MessageCircle size={21}/>, label: "Mensajes" },
       { to: "/caregiver/profile", icon: <MoreHorizontal size={21}/>, label: "Más" },
     ]}/>

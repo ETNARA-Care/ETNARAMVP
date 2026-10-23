@@ -1,0 +1,289 @@
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { CheckCircle2, History, Plus, XCircle } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
+import { getToken } from "@/auth/token";
+import {
+  createOpportunityDraft, decideApplication, getApplicationReview, listAgencyOpportunities, listDecisionHistory,
+  listPendingCounts, listReviewQueue, publishOpportunity,
+  type AgencyOpportunity, type ApplicationReview, type DecisionEvent, type ReviewQueueItem,
+} from "@/api/smartmatch";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
+import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
+import {
+  applicationLabel, EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, smartMatchErrorMessage,
+} from "@/features/smartmatch/smartmatchText";
+
+const CHECK_ROWS: { key: "membershipActive" | "credentialsEligible" | "availabilityConfigured" | "availabilityCovers" | "noUnavailabilityConflict" | "consentRecorded" | "opportunityOpen"; label: string }[] = [
+  { key: "membershipActive", label: "Membresía activa en la agencia" },
+  { key: "credentialsEligible", label: "Credenciales obligatorias vigentes y verificadas" },
+  { key: "availabilityConfigured", label: "Disponibilidad declarada" },
+  { key: "availabilityCovers", label: "Su disponibilidad cubre el horario" },
+  { key: "noUnavailabilityConflict", label: "Sin ausencias registradas en ese horario" },
+  { key: "consentRecorded", label: "Consentimiento registrado" },
+  { key: "opportunityOpen", label: "La oportunidad sigue abierta" },
+];
+
+function localInput(date: Date): string {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
+/**
+ * SmartMatch del administrador: la agencia publica oportunidades internas y
+ * decide sobre las solicitudes. Cualquier administrador de la agencia puede
+ * publicar borradores. Aprobar marca la oportunidad como cubierta; todavía no
+ * crea una asignación de turno.
+ */
+export function AgencySmartMatchPage() {
+  const { activeOrganization, roles, user } = useAuth();
+  const organizationId = activeOrganization?.id;
+  const isAdmin = roles.includes("ORGANIZATION_ADMIN");
+  const { show } = useToast();
+
+  const [items, setItems] = useState<AgencyOpportunity[] | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [loadError, setLoadError] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState(() => {
+    const start = new Date(Date.now() + 24 * 3600_000); start.setMinutes(0, 0, 0);
+    return { regionLabel: "", roleLabel: "", startsAt: localInput(start), endsAt: localInput(new Date(start.getTime() + 4 * 3600_000)) };
+  });
+  const [formError, setFormError] = useState("");
+
+  const [queueFor, setQueueFor] = useState<AgencyOpportunity | null>(null);
+  const [queue, setQueue] = useState<ReviewQueueItem[] | null>(null);
+  const [review, setReview] = useState<ApplicationReview | null>(null);
+  const [confirmApprove, setConfirmApprove] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(false);
+  const [history, setHistory] = useState<{ name: string; events: DecisionEvent[] } | null>(null);
+
+  const load = useCallback(async () => {
+    const token = getToken();
+    if (!organizationId || !token || !isAdmin) return;
+    setLoadError(false);
+    try {
+      const [opps, pending] = await Promise.all([listAgencyOpportunities(organizationId, token), listPendingCounts(organizationId, token)]);
+      setItems(opps);
+      setCounts(Object.fromEntries(pending.map((c) => [c.opportunity_id, c.pending_count])));
+    } catch { setLoadError(true); setItems([]); }
+  }, [organizationId, isAdmin]);
+  useEffect(() => { void load(); }, [load]);
+
+  const groups = useMemo(() => {
+    const all = items ?? [];
+    return {
+      drafts: all.filter((o) => o.status === "DRAFT"),
+      published: all.filter((o) => o.status === "PUBLISHED"),
+      filled: all.filter((o) => o.status === "FILLED"),
+      closed: all.filter((o) => o.status === "CANCELLED" || o.status === "EXPIRED"),
+    };
+  }, [items]);
+
+  async function submitDraft(event: FormEvent) {
+    event.preventDefault();
+    const token = getToken();
+    if (!organizationId || !token) return;
+    if (!form.regionLabel || !form.roleLabel.trim()) { setFormError("Selecciona un municipio y escribe la función."); return; }
+    if (new Date(form.endsAt) <= new Date(form.startsAt)) { setFormError("La hora de fin debe ser posterior al inicio."); return; }
+    if (new Date(form.startsAt) <= new Date()) { setFormError("El inicio debe ser en el futuro."); return; }
+    setBusy(true); setFormError("");
+    try {
+      await createOpportunityDraft(organizationId, {
+        regionLabel: form.regionLabel, roleLabel: form.roleLabel.trim(),
+        startsAt: new Date(form.startsAt).toISOString(), endsAt: new Date(form.endsAt).toISOString(),
+      }, token);
+      show("Borrador guardado. Cualquier administrador de la agencia puede publicarlo.", "success");
+      setCreateOpen(false); setForm((f) => ({ ...f, roleLabel: "" }));
+    } catch (e) { setFormError(smartMatchErrorMessage(e, "No se pudo guardar el borrador.")); }
+    finally { setBusy(false); await load(); }
+  }
+
+  async function publish(opp: AgencyOpportunity) {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    setBusy(true);
+    try { await publishOpportunity(organizationId, opp.id, token); show("Oportunidad publicada para los cuidadores de la agencia.", "success"); }
+    catch (e) { show(smartMatchErrorMessage(e, "No se pudo publicar."), "danger"); }
+    finally { setBusy(false); await load(); }
+  }
+
+  async function openQueue(opp: AgencyOpportunity) {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    setQueueFor(opp); setQueue(null);
+    try { setQueue(await listReviewQueue(organizationId, opp.id, token)); }
+    catch (e) { show(smartMatchErrorMessage(e, "No se pudieron cargar las solicitudes."), "danger"); setQueue([]); }
+  }
+
+  async function openReview(applicationId: string) {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    setReview(null); setConfirmApprove(false); setConfirmReject(false);
+    try { setReview(await getApplicationReview(organizationId, applicationId, token)); }
+    catch (e) { show(smartMatchErrorMessage(e, "No se pudo cargar la revisión."), "danger"); }
+  }
+
+  async function decide(decision: "APPROVE" | "REJECT") {
+    const token = getToken();
+    if (!organizationId || !token || !review) return;
+    setBusy(true);
+    try {
+      const result = await decideApplication(organizationId, review.application.id, decision, token);
+      show(decision === "APPROVE"
+        ? `Solicitud aprobada. La oportunidad quedó cubierta${result.closedApplications ? ` y se cerraron ${result.closedApplications} solicitudes pendientes` : ""}.`
+        : "Solicitud rechazada.", "success");
+      setReview(null);
+    } catch (e) {
+      show(smartMatchErrorMessage(e, "No se pudo registrar la decisión."), "danger");
+      await openReview(review.application.id);
+    } finally {
+      setBusy(false); setConfirmApprove(false); setConfirmReject(false);
+      if (queueFor) await openQueue(queueFor);
+      await load();
+    }
+  }
+
+  async function openHistory(item: ReviewQueueItem) {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    try { setHistory({ name: item.display_name ?? "Cuidador/a", events: await listDecisionHistory(organizationId, item.id, token) }); }
+    catch (e) { show(smartMatchErrorMessage(e, "No se pudo cargar el historial."), "danger"); }
+  }
+
+  if (!isAdmin) return <ErrorState kind="permission" />;
+
+  const opportunityCard = (opp: AgencyOpportunity) => {
+    const status = opportunityLabel(opp.status);
+    const pending = counts[opp.id] ?? 0;
+    return <Card key={opp.id} className="p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-semibold">{opp.role_label} · {opp.region_label}</p>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{formatWindow(opp.starts_at, opp.ends_at)}</p>
+          {opp.status === "PUBLISHED" && <p className="mt-1 text-sm">Solicitudes pendientes: <strong>{pending}</strong></p>}
+        </div>
+        <Badge tone={status.tone}>{status.label}</Badge>
+      </div>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        {opp.status === "DRAFT" && <Button disabled={busy} onClick={() => void publish(opp)}>Publicar</Button>}
+        {opp.status !== "DRAFT" && <Button variant="secondary" onClick={() => void openQueue(opp)}>
+          {opp.status === "PUBLISHED" ? "Revisar solicitudes" : "Ver solicitudes e historial"}
+        </Button>}
+      </div>
+    </Card>;
+  };
+
+  const section = (title: string, list: AgencyOpportunity[], empty: string) => <section className="space-y-3" aria-label={title}>
+    <h2 className="text-lg font-semibold">{title} <span className="text-[var(--color-text-muted)]">({list.length})</span></h2>
+    {list.length === 0 ? <p className="text-sm text-[var(--color-text-secondary)]">{empty}</p> : list.map(opportunityCard)}
+  </section>;
+
+  return <div className="space-y-6">
+    <PageHeader title="SmartMatch"
+      description="Oportunidades internas de tu agencia. Solo municipio, función y horario: nunca nombres de pacientes, direcciones exactas ni información clínica. La red entre agencias está deshabilitada."
+      actions={<Button icon={<Plus size={18} />} onClick={() => { setFormError(""); setCreateOpen(true); }}>Nueva oportunidad</Button>} />
+
+    {loadError && <ErrorState kind="network" onRetry={() => void load()} />}
+    {items === null && !loadError && <><Skeleton className="h-24" /><Skeleton className="h-24" /></>}
+    {items !== null && !loadError && items.length === 0 && <EmptyState title="Sin oportunidades"
+      description="Crea un borrador. Cualquier administrador de la agencia puede publicarlo." action={{ label: "Nueva oportunidad", onClick: () => setCreateOpen(true) }} />}
+    {items !== null && items.length > 0 && <>
+      {section("Publicadas", groups.published, "No hay oportunidades publicadas.")}
+      {section("Borradores", groups.drafts, "No hay borradores.")}
+      {section("Cubiertas", groups.filled, "Todavía no hay oportunidades cubiertas.")}
+      {groups.closed.length > 0 && section("Canceladas o vencidas", groups.closed, "")}
+    </>}
+
+    <Modal open={createOpen} onClose={() => !busy && setCreateOpen(false)} title="Nueva oportunidad (borrador)"
+      footer={<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="ghost" disabled={busy} onClick={() => setCreateOpen(false)}>Cancelar</Button>
+        <Button type="submit" form="smartmatch-draft" loading={busy}>Guardar borrador</Button>
+      </div>}>
+      <form id="smartmatch-draft" className="space-y-3" onSubmit={(e) => void submitDraft(e)}>
+        <Select label="Municipio" required value={form.regionLabel} onChange={(e) => setForm({ ...form, regionLabel: e.target.value })}>
+          <option value="">Selecciona un municipio</option>
+          {PUERTO_RICO_MUNICIPALITIES.map((m) => <option key={m} value={m}>{m}</option>)}
+        </Select>
+        <Input label="Función requerida" required maxLength={100} value={form.roleLabel}
+          hint="Ej.: Cuidador/a, Acompañante. No escribas nombres ni datos del paciente."
+          onChange={(e) => setForm({ ...form, roleLabel: e.target.value })} />
+        <Input label="Inicio" type="datetime-local" required value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
+        <Input label="Fin" type="datetime-local" required value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} />
+        {formError && <p role="alert" className="text-sm text-[var(--color-danger-700)]">{formError}</p>}
+        <p className="text-xs text-[var(--color-text-muted)]">Después de publicar, el horario, el municipio y la función ya no se pueden cambiar.</p>
+      </form>
+    </Modal>
+
+    <Modal open={queueFor !== null && review === null && history === null} onClose={() => setQueueFor(null)}
+      title={queueFor ? `Solicitudes · ${queueFor.role_label}, ${queueFor.region_label}` : "Solicitudes"}>
+      {queue === null && <Skeleton className="h-20" />}
+      {queue !== null && queue.length === 0 && <p className="text-sm">Todavía no hay solicitudes.</p>}
+      <ul className="space-y-2">
+        {(queue ?? []).map((item) => {
+          const status = applicationLabel(item.status, item.decision_reason);
+          return <li key={item.id} className="rounded-xl border border-[var(--color-border)] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0"><p className="font-medium">{item.display_name ?? "Cuidador/a"}</p>
+                <p className="text-xs text-[var(--color-text-muted)]">Enviada {formatDateTime(item.created_at)}</p></div>
+              <Badge tone={status.tone}>{status.label}</Badge>
+            </div>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              {item.status === "PENDING" && <Button size="md" onClick={() => void openReview(item.id)}>Revisar</Button>}
+              <Button size="md" variant="ghost" icon={<History size={16} />} onClick={() => void openHistory(item)}>Historial</Button>
+            </div>
+          </li>;
+        })}
+      </ul>
+    </Modal>
+
+    <Modal open={review !== null} onClose={() => !busy && setReview(null)} title={`Revisión · ${review?.caregiver.displayName ?? "Cuidador/a"}`}
+      footer={review && <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        {!confirmApprove && !confirmReject && <>
+          <Button variant="danger" disabled={busy} onClick={() => setConfirmReject(true)}>Rechazar</Button>
+          <Button disabled={busy || !review.checks.approvable} onClick={() => setConfirmApprove(true)}>Aprobar</Button>
+        </>}
+        {confirmApprove && <>
+          <Button variant="ghost" disabled={busy} onClick={() => setConfirmApprove(false)}>Volver</Button>
+          <Button loading={busy} onClick={() => void decide("APPROVE")}>Confirmar aprobación</Button>
+        </>}
+        {confirmReject && <>
+          <Button variant="ghost" disabled={busy} onClick={() => setConfirmReject(false)}>Volver</Button>
+          <Button variant="danger" loading={busy} onClick={() => void decide("REJECT")}>Confirmar rechazo</Button>
+        </>}
+      </div>}>
+      {review && <div className="space-y-3 text-sm">
+        <p>{formatWindow(review.opportunity.startsAt, review.opportunity.endsAt)}</p>
+        <ul className="space-y-1.5" aria-label="Requisitos verificados">
+          {CHECK_ROWS.map((row) => <li key={row.key} className="flex items-start gap-2">
+            {review.checks[row.key]
+              ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[var(--color-success-700)]" aria-label="Cumple" />
+              : <XCircle size={18} className="mt-0.5 shrink-0 text-[var(--color-danger-700)]" aria-label="No cumple" />}
+            <span>{row.label}</span>
+          </li>)}
+        </ul>
+        {!review.checks.credentialsVerifiable && review.checks.membershipActive &&
+          <p className="text-[var(--color-danger-700)]">No hay una política de credenciales aplicable: no se puede verificar.</p>}
+        {review.checks.unmetRequirementCodes.length > 0 &&
+          <p>Credenciales pendientes: <strong>{review.checks.unmetRequirementCodes.join(", ")}</strong></p>}
+        {!review.checks.approvable && <p role="status" className="rounded-xl bg-[var(--color-warning-50,#fff7e6)] p-3">
+          La aprobación está bloqueada hasta que todos los requisitos se puedan verificar.
+        </p>}
+        {confirmApprove && <p role="alert" className="rounded-xl border border-[var(--color-border)] p-3">
+          Al aprobar, la oportunidad quedará cubierta y las demás solicitudes pendientes se cerrarán. Todavía no se crea una asignación de turno.
+        </p>}
+        {confirmReject && <p role="alert" className="rounded-xl border border-[var(--color-border)] p-3">¿Confirmas que deseas rechazar esta solicitud?</p>}
+      </div>}
+    </Modal>
+
+    <Modal open={history !== null} onClose={() => setHistory(null)} title={`Historial · ${history?.name ?? ""}`}>
+      <ol className="space-y-2 text-sm">
+        {(history?.events ?? []).map((ev, i) => <li key={i} className="rounded-xl border border-[var(--color-border)] p-3">
+          <p className="font-medium">{EVENT_LABELS[ev.event_type] ?? ev.event_type}</p>
+          <p className="text-xs text-[var(--color-text-muted)]">{formatDateTime(ev.occurred_at)} · {ev.actor_user_id && ev.actor_user_id === user?.id ? "Tú" : ev.event_type === "SUBMITTED" || ev.event_type === "WITHDRAWN" ? "Cuidador/a" : "Administración"}</p>
+          {ev.decision_reason && <p className="mt-1">{REASON_LABELS[ev.decision_reason] ?? ev.decision_reason}</p>}
+        </li>)}
+      </ol>
+    </Modal>
+  </div>;
+}

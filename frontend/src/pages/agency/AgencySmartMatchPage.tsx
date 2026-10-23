@@ -75,7 +75,7 @@ function AgencySmartMatchForOrganization() {
       setNotice("Oportunidad interna publicada.");
       setRequestVersion(version => version + 1);
     } catch {
-      setError("No se pudo publicar. Solo el creador puede publicar un borrador futuro.");
+      setError("No se pudo publicar. Cualquier administrador de la agencia puede publicar un borrador cuya fecha de inicio sea futura.");
     } finally { setLoading(false); }
   }
 

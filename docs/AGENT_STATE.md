@@ -1,5 +1,19 @@
 # ETNARA Frontend Agent State
 
+## 2026-10-22 — SmartMatch Gate 4: UI in frontend-v23 (claude/smartmatch-frontend-v23)
+
+- SmartMatch was only in the legacy `frontend/` (not deployed). Integrated into `frontend-v23/`
+  with the existing UI kit and layouts: /caregiver/smartmatch (bottom tab "Ofertas") and
+  /agency/smartmatch (Operación group; hidden for supervisors, like billing).
+- Caregiver: list, 78-municipality filter, apply with explicit consent (smartmatch-consent-v1),
+  Mis solicitudes with full history, withdraw, re-apply. No travel-time estimates shown.
+- Agency: create draft, publish by any admin, review queue, live eligibility checks, approve
+  (disabled unless verifiable, then confirmed) / reject (confirmed), decision history, Cubiertas.
+- Tab label is "Ofertas": at 360px "Mensajes" already fills its 72px tab, longer labels touched.
+- Tests: tests/smartmatch-gate4.test.mjs (static); real-browser E2E at 390x844 against the local
+  backend as app_runtime with two synthetic agencies: 22/22.
+- Requires backend PR ETNARA-Care/ETNARA-Backend#198 (endpoints).
+
 ## Current Status
 
 ## 2026-10-22 — Phase 12.3 supervisor from caregiver + existing accounts (ux/12.3-supervisora-cuenta-existente)
