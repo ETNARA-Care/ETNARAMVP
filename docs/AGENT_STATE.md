@@ -2,6 +2,34 @@
 
 ## Current Status
 
+## 2026-10-23 — ETNARA Central mobile premium (claude/platform-mobile-premium)
+
+- Rafa (iPhone): organization cards too big, modals cut off, top navigation too
+  tall, «Funciones piloto» not found. Not merged / not deployed: PR for review.
+- Root causes found: (1) Tailwind v4 reads `text-[var(--x)]` as a COLOR; the
+  shared Button size class produced an invalid color, so buttons inherited the
+  parent's (white «Actualizar» on white in the navy banner) — fixed with
+  explicit `length:` keeping the rendered 1rem. The same ambiguity affects 396
+  `text-[var(--text-*)]` classes app-wide (their sizes never applied): NOT
+  changed here (would restyle every portal) — reported for a decision.
+  (2) Safari collapses a 0% flex-basis inside a max-height column: modal body
+  now `flex-auto`. (3) `--color-sage-*` only existed for [data-portal=admin]:
+  added platform-theme.css (sage scale only). (4) `max-w-md` resolves to
+  --spacing-md (24px) in this theme.
+- PlatformLayout: phones get a 56px header + bottom navigation (safe area);
+  md+ unchanged. Organizations: compact phone cards (initials, translated
+  status chip, Ver resumen / Invitar / «Más» sheet for lifecycle), desktop
+  layout kept. Modal `sheetOnMobile` / `eyebrow` / `wide` (platform only).
+  «Funciones piloto»: switches show saved state; tapping opens the existing
+  reason-required confirmation (no new API, no save on tap).
+- Validation: typecheck, 178 tests (+6), build, lint (no new errors).
+  Chromium iPhone emulation 320/375/393/430 + desktop 1280: no horizontal
+  overflow, modals fit, both switches off, confirm disabled without reason,
+  cancel keeps off, 0 JS errors, 0 feature events written. Button contrast
+  scan across agency/caregiver/family/platform (phone+desktop): before 2
+  invisible buttons, after 0. WebKit could not be installed in the sandbox:
+  real Safari check on Rafa's iPhone pending.
+
 ## 2026-10-23 — Phase 12.6 bloqueo con Face ID / huella (ux/12.6-bloqueo-faceid)
 
 - Rafa: password login already works with iPhone Face ID autofill; what was
