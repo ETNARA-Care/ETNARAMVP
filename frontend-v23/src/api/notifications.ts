@@ -54,7 +54,7 @@ function notificationSummary(type: string): string {
   if (type === "FAMILY_CAREGIVER_EN_ROUTE") return "La cuidadora va en camino";
   if (type === "FAMILY_CAREGIVER_DELAYED") return "La cuidadora informó un retraso";
   if (type === "FAMILY_CAREGIVER_ARRIVED") return "Llegada registrada";
-  // Migration 112: cancellations and reassignments are announced (never an address or a name).
+  // Migration 113: cancellations and reassignments are announced (never an address or a name).
   if (type === "SHIFT_CANCELLED") return "La agencia canceló uno de tus turnos";
   if (type === "SHIFT_UNASSIGNED") return "Ya no tienes asignado un turno";
   if (type === "FAMILY_VISIT_CANCELLED") return "La agencia canceló una visita";

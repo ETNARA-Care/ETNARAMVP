@@ -43,3 +43,9 @@ test("new notices have Spanish labels and safe links (a removed caregiver goes t
   assert.match(bell, /type === "SHIFT_UNASSIGNED"\) \{ navigate\("\/caregiver\/shifts"\); return; \}/);
   assert.ok(bell.indexOf('"SHIFT_UNASSIGNED"') < bell.indexOf('type.startsWith("SHIFT_ASSIGNMENT_")'));
 });
+
+test("agency history marks records made without signal (phone time kept)", () => {
+  const src = readFileSync(new URL("../src/features/journey/ShiftJourneyHistory.tsx", import.meta.url), "utf8");
+  assert.match(src, /d\.offline === true/);
+  assert.match(src, /Registrado sin señal \(hora del teléfono\)/);
+});

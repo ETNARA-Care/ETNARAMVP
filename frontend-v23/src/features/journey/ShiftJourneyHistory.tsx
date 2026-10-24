@@ -11,10 +11,15 @@ const KIND_TEXT: Record<string, string> = {
 };
 const day = (v: string) => new Date(v).toLocaleDateString("es-PR", { day: "numeric", month: "short", timeZone: "America/Puerto_Rico" });
 
+// Migration 113: a record made without signal keeps the phone's time; the agency sees it was sent later.
+const OFFLINE_TEXT = "Registrado sin señal (hora del teléfono)";
+
 function detailText(item: JourneyHistoryItem): string | null {
   const d = item.detail ?? {};
-  if (item.kind === "DELAY_REPORTED") return `Unos ${d.minutes} min · ${DELAY_REASON_TEXT[d.reason as DelayReason] ?? ""}`;
-  if (item.kind === "ARRIVED") return d.needsReview ? (d.reviewed ? "Revisada por la agencia" : "Pendiente de revisión") : "Cerca del lugar";
+  const offline = d.offline === true ? ` · ${OFFLINE_TEXT}` : "";
+  if (item.kind === "DELAY_REPORTED") return `Unos ${d.minutes} min · ${DELAY_REASON_TEXT[d.reason as DelayReason] ?? ""}${offline}`;
+  if (item.kind === "ARRIVED") return (d.needsReview ? (d.reviewed ? "Revisada por la agencia" : "Pendiente de revisión") : "Cerca del lugar") + offline;
+  if (item.kind === "EN_ROUTE" && d.offline === true) return OFFLINE_TEXT;
   if (["ASSIGNED", "ACCEPTED", "DECLINED", "UNASSIGNED"].includes(item.kind) && d.caregiver) return String(d.caregiver);
   return null;
 }
