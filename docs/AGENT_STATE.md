@@ -2,6 +2,12 @@
 
 ## Current Status
 
+## 2026-10-24 — PR 0: recuperación de contraseña por correo (claude/password-recovery-email)
+- «¿Olvidaste tu contraseña?» en el login → `/forgot-password` (mismo mensaje exista o no la cuenta) → correo con enlace → `/reset-password` (token leído una vez y quitado de la barra de direcciones; 12–128 caracteres con confirmación; enlace usado/vencido → «Pedir un enlace nuevo»; al terminar se cierra también la sesión local).
+- Antes el correo enlazaba a `/reset-password`, que no existía: nadie podía recuperar su contraseña.
+- Títulos del login y de estas pantallas con su tamaño real (`text-[length:var(--text-h1)]`; Tailwind v4 leía `text-[var(--text-h1)]` como color).
+- Requiere el PR del backend `claude/password-recovery-email`. Pruebas: 199/199, typecheck, build; E2E iPhone en los tres portales 35/35.
+
 ## 2026-10-24 — En Camino: cancelación, reasignación y sin señal (claude/en-camino-fixes)
 - **Cuidadora:** la tarjeta del recorrido se actualiza sola (cada 45 s y al volver a la app o recuperar la señal). Si la agencia cancela la visita o la quita del turno, ve un aviso claro.
 - **Sin señal:** «Voy en camino» y «Llegué» quedan en la cola de envío (`careEventQueue`, con `clientEventId`) y se envían al volver la señal. «Llegué» sin señal no lleva lectura GPS y queda en revisión. El recorrido se guarda en la caché cifrada del teléfono.

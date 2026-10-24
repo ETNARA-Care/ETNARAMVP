@@ -25,3 +25,16 @@ export function login(payload: LoginPayload): Promise<LoginResult> {
 export function logout(token: string): Promise<{ ok: boolean }> {
   return apiClient.post<{ ok: boolean }>("/auth/logout", undefined, token);
 }
+
+/**
+ * Recuperación por correo (backend 072/111). La respuesta es SIEMPRE la misma,
+ * exista o no la cuenta: la app nunca puede saberlo y nunca lo muestra.
+ */
+export function requestPasswordReset(email: string): Promise<{ ok: boolean }> {
+  return apiClient.post<{ ok: boolean }>("/auth/password-reset/request", { email });
+}
+
+/** Enlace de un solo uso (30 min). Al usarlo, el servidor cierra todas las sesiones de la cuenta. */
+export function confirmPasswordReset(token: string, password: string): Promise<{ ok: boolean }> {
+  return apiClient.post<{ ok: boolean }>("/auth/password-reset/confirm", { token, password });
+}
