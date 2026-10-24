@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { MoreHorizontal, X } from "lucide-react";
 import type { AdminNavGroup, AdminNavItem } from "./adminNav";
+import { PortalBottomNav } from "@/layouts/PortalBottomNav";
 
 const isActivePath = (pathname: string, item: AdminNavItem) =>
  item.end ? pathname === item.to || pathname === `${item.to}/` : pathname === item.to || pathname.startsWith(`${item.to}/`);
@@ -15,27 +16,7 @@ export function AdminMobileNav({ tabs, groups, platformLink }: { tabs: AdminNavI
 
  return (
  <>
- <nav aria-label="Navegación principal" className="fixed inset-x-0 bottom-0 z-[var(--z-nav)] border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-md lg:hidden">
- <ul className="mx-auto grid w-full max-w-[32rem] grid-cols-5">
- {tabs.map((t) => (
- <li key={t.to} className="min-w-0">
- <NavLink to={t.to} end={t.end} className={({ isActive }) => `relative flex w-full flex-col items-center gap-1 pb-2 pt-2.5 text-[0.6875rem] ${isActive ? "font-medium text-[var(--color-navy-900)]" : "text-[var(--color-text-muted)]"}`}>
- {({ isActive }) => (<>
- {isActive && <span className="absolute top-0 h-[3px] w-8 rounded-b-full bg-[var(--color-success-700)]" aria-hidden />}
- <t.icon size={21} strokeWidth={isActive ? 2 : 1.6} aria-hidden />
- <span className="max-w-full truncate px-1">{t.label}</span>
- </>)}
- </NavLink>
- </li>
- ))}
- <li className="min-w-0">
- <button type="button" onClick={() => setSheet(true)} aria-expanded={sheet} className={`relative flex w-full flex-col items-center gap-1 pb-2 pt-2.5 text-[0.6875rem] ${inMore ? "font-medium text-[var(--color-navy-900)]" : "text-[var(--color-text-muted)]"}`}>
- {inMore && <span className="absolute top-0 h-[3px] w-8 rounded-b-full bg-[var(--color-success-700)]" aria-hidden />}
- <MoreHorizontal size={21} strokeWidth={1.6} aria-hidden />Más
- </button>
- </li>
- </ul>
- </nav>
+ <PortalBottomNav tabs={tabs} hideFrom="lg" button={{ icon: MoreHorizontal, label: "Más", onClick: () => setSheet(true), active: inMore, expanded: sheet }} />
 
  {sheet && (
  <div className="fixed inset-0 z-[var(--z-modal)] lg:hidden" role="dialog" aria-modal="true" aria-label="Todas las secciones">

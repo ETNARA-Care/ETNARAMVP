@@ -1,10 +1,13 @@
 import { Outlet } from "react-router-dom";
-import { Home, HeartPulse, CalendarDays, MessageCircle, Menu } from "lucide-react";
+import { Home, HeartPulse, CalendarDays, MessageCircle, MoreHorizontal } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
-import { MobileTabBar } from "./MobileTabBar";
+import { PortalBottomNav } from "./PortalBottomNav";
+import { AccountMenu } from "./AccountMenu";
 import { FamilyRecipientProvider, FamilyRecipientSwitcher } from "@/features/family/FamilyRecipientContext";
 
 export function FamilyLayout() {
+  const { user, organizations, logout } = useAuth();
   return (
     <FamilyRecipientProvider>
     <div data-portal="family" className="min-h-dvh flex flex-col bg-[#f8f5ee] text-[#173154]">
@@ -17,19 +20,23 @@ export function FamilyLayout() {
               <span className="ml-1.5 font-display text-[1.2rem] italic text-[#66845f]">Care</span>
             </span>
           </div>
-          <NotificationBell />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <AccountMenu userLabel={user?.email ?? "Familia"} roleLabel="Familia" settingsTo="/family/profile" onLogout={logout}
+              canSwitchOrganization={organizations.length > 1} showDetailsFrom="never" />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-[760px] flex-1 px-4 py-5 pb-28 md:px-6 md:py-7">
         <FamilyRecipientSwitcher />
         <Outlet />
       </main>
-      <MobileTabBar items={[
-        { to: "/family/today", icon: <Home size={21} />, label: "Inicio" },
-        { to: "/family/activity", icon: <HeartPulse size={21} />, label: "Cuidado" },
-        { to: "/family/history", icon: <CalendarDays size={21} />, label: "Calendario" },
-        { to: "/family/messages", icon: <MessageCircle size={21} />, label: "Mensajes" },
-        { to: "/family/profile", icon: <Menu size={21} />, label: "Más" },
+      <PortalBottomNav tabs={[
+        { to: "/family/today", icon: Home, label: "Inicio" },
+        { to: "/family/activity", icon: HeartPulse, label: "Cuidado" },
+        { to: "/family/history", icon: CalendarDays, label: "Calendario" },
+        { to: "/family/messages", icon: MessageCircle, label: "Mensajes" },
+        { to: "/family/profile", icon: MoreHorizontal, label: "Más" },
       ]} />
     </div>
     </FamilyRecipientProvider>
