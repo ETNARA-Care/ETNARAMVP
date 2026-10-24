@@ -1,14 +1,28 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { BriefcaseBusiness, Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
-import { MobileTabBar } from "./MobileTabBar";
+import { PortalBottomNav } from "./PortalBottomNav";
+import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { CareEventQueueBanner, CareEventQueueProvider } from "@/features/caregiver/CareEventQueueProvider";
+import { useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { AppLockGate } from "@/features/caregiver/AppLock";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
+
+/** Menú de la cuenta: avisa antes de cerrar sesión si hay registros sin enviar (se perderían). */
+function CaregiverAccountMenu({ userLabel }: { userLabel: string }) {
+  const { logout, organizations } = useAuth();
+  const { items } = useCareEventQueue();
+  const pending = items.filter((item) => item.status !== "failed").length;
+  return (
+    <AccountMenu userLabel={userLabel} roleLabel="Cuidador/a" settingsTo="/caregiver/profile" onLogout={logout}
+      canSwitchOrganization={organizations.length > 1} showDetailsFrom="never"
+      logoutWarning={pending > 0 ? `Tienes ${pending === 1 ? "1 registro" : `${pending} registros`} sin enviar. Si cierras la sesión se perderán.` : null} />
+  );
+}
 
 export function CaregiverLayout() {
   const { activeOrganization, activeWorkerProfile, user, roles } = useAuth();
@@ -35,6 +49,7 @@ export function CaregiverLayout() {
           <p className="truncate text-xs text-[var(--color-text-muted)]">Portal del cuidador · {caregiverName}</p>
         </div>
         <NotificationBell />
+        <CaregiverAccountMenu userLabel={user?.email ?? caregiverName} />
       </div>
     </header>
 
@@ -54,12 +69,12 @@ export function CaregiverLayout() {
 
     <main className="mx-auto w-full max-w-[760px] px-4 py-5 pb-28 sm:px-6"><Outlet/></main>
 
-    <MobileTabBar items={[
-      { to: "/caregiver/today", icon: <Home size={21}/>, label: "Mi día" },
-      { to: "/caregiver/shifts", icon: <CalendarRange size={21}/>, label: "Turnos" },
-      ...(smartMatch ? [{ to: "/caregiver/smartmatch", icon: <BriefcaseBusiness size={21}/>, label: "Ofertas" }] : []),
-      { to: "/caregiver/messages", icon: <MessageCircle size={21}/>, label: "Mensajes" },
-      { to: "/caregiver/profile", icon: <MoreHorizontal size={21}/>, label: "Más" },
+    <PortalBottomNav tabs={[
+      { to: "/caregiver/today", icon: Home, label: "Mi día" },
+      { to: "/caregiver/shifts", icon: CalendarRange, label: "Turnos" },
+      ...(smartMatch ? [{ to: "/caregiver/smartmatch", icon: BriefcaseBusiness, label: "Ofertas" }] : []),
+      { to: "/caregiver/messages", icon: MessageCircle, label: "Mensajes" },
+      { to: "/caregiver/profile", icon: MoreHorizontal, label: "Más" },
     ]}/>
   </div></AppLockGate></CareEventQueueProvider>;
 }

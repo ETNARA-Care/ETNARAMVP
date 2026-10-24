@@ -2,6 +2,28 @@
 
 ## Current Status
 
+## 2026-10-24 — Navegación unificada en los tres portales (ux/navegacion-unificada)
+
+- layouts/PortalBottomNav.tsx: one bottom bar for Administrativo, Cuidador and
+  Familiar with the Administrative measures (21 px icons, 11 px labels, salvia
+  active line, translucent surface, Safari safe area). AdminMobileNav renders
+  it (with its "Más" sheet); MobileTabBar removed. Caregiver/Family bars stay
+  visible at every width (they have no sidebar); admin hides it from lg.
+- Each portal keeps its sections and routes. Caregiver "Ofertas" still appears
+  only when SmartMatch is enabled for the agency (unchanged).
+- layouts/AccountMenu.tsx: the Administrative avatar menu (Configuración,
+  Cerrar sesión, Cambiar organización when there are several) now in the
+  three headers. Configuración → /agency/settings, /caregiver/profile,
+  /family/profile. Caregiver logout asks to confirm when unsent offline
+  records would be lost. Family header keeps logo and bell, adds the avatar.
+- No change to SmartMatch, En Camino, shifts, permissions, patient data or
+  backend.
+- Validation: typecheck, 182 tests, build, lint unchanged (89). E2E at iPhone
+  size (390×844, local backend) for the three roles: 42/42 with SmartMatch off
+  and 43/43 with it on (login, every tab navigates and is active, avatar menu,
+  Configuración, Cerrar sesión clears the session and blocks the portal; the
+  three bars measure the same).
+
 ## 2026-10-23 — ETNARA Central mobile premium (claude/platform-mobile-premium)
 
 - Rafa (iPhone): organization cards too big, modals cut off, top navigation too
