@@ -15,6 +15,9 @@ export function loginErrorMessage(err: ApiError): string {
   if (err.status === 403) {
     return "No tienes acceso a esta cuenta.";
   }
+  if (err.status === 429) {
+    return "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.";
+  }
   if (err.status >= 500) {
     return "ETNARA no está disponible en este momento.";
   }
