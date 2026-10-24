@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CalendarClock, UserRound, XCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import {
@@ -17,6 +18,9 @@ import {
   type WorkerMembership,
 } from "@/api/shifts";
 import { Badge, Button, Card, EmptyState, ErrorState, Modal, PageHeader, Skeleton, StatusBadge, useToast } from "@/components/ui";
+import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
+import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
+import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -34,6 +38,8 @@ export function AgencyShiftDetailPage() {
   const { shiftId } = useParams();
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
+  const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
+  const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
   const organizationId = activeOrganization?.id;
   const [shift, setShift] = useState<Shift | null | undefined>(undefined);
@@ -135,6 +141,14 @@ export function AgencyShiftDetailPage() {
         </div>
       </Card>
 
+      {organizationId && shiftId && <ShiftVisitPanel organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
+        cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
+
+      {enCamino && organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
+
+      {smartMatch && organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId}
+        editable={shift.status !== "cancelled" && shift.status !== "completed"} />}
+
       <section>
         <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)] mb-3">Respuestas de cuidadores</h2>
         {assignments.length === 0 ? (
@@ -150,7 +164,7 @@ export function AgencyShiftDetailPage() {
                       <UserRound size={20} className="text-[var(--color-text-muted)] shrink-0" aria-hidden />
                       <div className="min-w-0">
                         <p className="font-medium text-[var(--color-text-primary)] truncate">{worker?.display_name || worker?.internal_role || "Cuidador"}</p>
-                        {assignment.responded_at && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Respondió {new Date(assignment.responded_at).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })}</p>}
+                        {assignment.responded_at && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Respondió {new Date(assignment.responded_at).toLocaleString("es-PR", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}</p>}
                       </div>
                     </div>
                     <Badge tone={responseTone(assignment.response_status)}>{responseLabels[assignment.response_status]}</Badge>

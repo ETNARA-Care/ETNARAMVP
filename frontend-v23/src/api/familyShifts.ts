@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { Journey } from "./journey";
 
 export interface FamilyCredentialSummary {
   typeCode: string;
@@ -14,6 +15,8 @@ export interface FamilyShiftSummary {
   status: string;
   checkedInAt: string | null;
   checkedOutAt: string | null;
+  /** Gate 7 «En camino» (null for visits far from today). */
+  journey?: Journey | null;
   caregiver: {
     displayName: string;
     credentials: FamilyCredentialSummary[];

@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
-import { HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck } from "lucide-react";
+import { HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
 import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
@@ -11,6 +12,7 @@ const OPERATION: AdminNavItem[] = [
  { to: "/agency/compliance", icon: ShieldCheck, label: "Compliance" },
  { to: "/agency/workers", icon: UserCog, label: "Personal" },
  { to: "/agency/shifts", icon: CalendarRange, label: "Turnos" },
+ { to: "/agency/smartmatch", icon: BriefcaseBusiness, label: "SmartMatch" },
  { to: "/agency/planning", icon: TrendingUp, label: "Planificación" },
  { to: "/agency/timesheets", icon: DollarSign, label: "Horas y facturación" },
  { to: "/agency/operations", icon: Siren, label: "Centro operacional" },
@@ -40,10 +42,12 @@ const MOBILE_TABS: AdminNavItem[] = [
 
 export function AgencyLayout() {
  const { activeOrganization, organizations, user, isPlatformAdmin, logout, roles } = useAuth();
- // Horas y facturación: solo administradores (backend 085). El supervisor no ve el enlace.
- const groups = roles.includes("ORGANIZATION_ADMIN")
-   ? GROUPS
-   : GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => item.to !== "/agency/timesheets") }));
+ // Horas y facturación y SmartMatch: solo administradores (backend 085/096). El supervisor no ve los enlaces.
+ // SmartMatch además solo para la agencia piloto (backend 108).
+ const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
+ const groups = GROUPS.map((group) => ({ ...group, items: group.items.filter((item) =>
+   (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch"))
+   && (smartMatch || item.to !== "/agency/smartmatch")) }));
  const organizationName = activeOrganization?.name ?? "Organización";
  // Acceso a Plataforma ETNARA: solo administradores de plataforma, separado del administrador de la organización.
  const platformLink = isPlatformAdmin || roles.includes("WORKER")

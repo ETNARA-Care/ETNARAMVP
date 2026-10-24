@@ -6,9 +6,11 @@ import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2, Upload 
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyCredentials, uploadMyCredentialDocument, type CredentialSummary } from "@/api/credentials";
 import { getMyAvailability, saveMyAvailability, type MyAvailability } from "@/api/availability";
+import { LocationConsentCard } from "@/features/serviceLocation/LocationConsentCard";
 
 const weekdays = [
   { value: 1, label: "Lunes" }, { value: 2, label: "Martes" }, { value: 3, label: "Miércoles" },
@@ -327,6 +329,7 @@ export function CaregiverProfilePage() {
         )}
         </div>
       </Card>
+      {activeOrganization && hasOrgFeature(activeOrganization.features, "EN_CAMINO") && <LocationConsentCard organizationId={activeOrganization.id} />}
       <AppLockSetting />
       <Button variant="secondary" icon={<LogOut size={18} />} onClick={onLogout}>Cerrar sesión</Button>
     </div>

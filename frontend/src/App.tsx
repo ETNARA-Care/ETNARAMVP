@@ -5,12 +5,15 @@ import { TopNav } from "./navigation/TopNav";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { FamilyHomePage } from "./pages/family/FamilyHomePage";
 import { AgencyDashboardRealPage } from "./pages/agency/AgencyDashboardRealPage";
+import { AgencySmartMatchPage } from "./pages/agency/AgencySmartMatchPage";
+import { SmartMatchPreviewPage } from "./pages/agency/SmartMatchPreviewPage";
 import { AgencyShiftsPage } from "./pages/agency/AgencyShiftsPage";
 import { AgencyRecipientsPage } from "./pages/agency/AgencyRecipientsPage";
 import { AgencyTeamPage } from "./pages/agency/AgencyTeamPage";
 import { AgencyTimesheetsPage } from "./pages/agency/AgencyTimesheetsPage";
 import { AgencyResidentProfilePage } from "./pages/agency/AgencyResidentProfilePage";
 import { CaregiverShiftsPage } from "./pages/caregiver/CaregiverShiftsPage";
+import { CaregiverSmartMatchPage } from "./pages/caregiver/CaregiverSmartMatchPage";
 import { CaregiverShiftWorkspacePage } from "./pages/caregiver/CaregiverShiftWorkspacePage";
 import { CaregiverCareEventFormPage } from "./pages/caregiver/CaregiverCareEventFormPage";
 import { CaregiverObservationFormPage } from "./pages/caregiver/CaregiverObservationFormPage";
@@ -38,18 +41,21 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/smartmatch-preview" element={<SmartMatchPreviewPage />} />
 
           <Route element={<RequireAuth />}>
             <Route element={<AppShell />}>
               <Route path="/" element={<RoleHomeRedirect />} />
               <Route path="/family" element={<FamilyHomePage />} />
               <Route path="/agency" element={<AgencyDashboardRealPage />} />
+              <Route path="/agency/smartmatch" element={<AgencySmartMatchPage />} />
               <Route path="/agency/turnos" element={<AgencyShiftsPage />} />
               <Route path="/agency/personas" element={<AgencyRecipientsPage />} />
               <Route path="/agency/personas/:residentId" element={<AgencyResidentProfilePage />} />
               <Route path="/agency/equipo" element={<AgencyTeamPage />} />
               <Route path="/agency/horas" element={<AgencyTimesheetsPage />} />
               <Route path="/caregiver" element={<CaregiverShiftsPage />} />
+              <Route path="/caregiver/smartmatch" element={<CaregiverSmartMatchPage />} />
               <Route path="/caregiver/shifts/:shiftId" element={<CaregiverShiftWorkspacePage />} />
               <Route path="/caregiver/shifts/:shiftId/care-events/:typeCode" element={<CaregiverCareEventFormPage />} />
               <Route path="/caregiver/shifts/:shiftId/observations/new" element={<CaregiverObservationFormPage />} />

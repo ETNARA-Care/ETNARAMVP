@@ -43,6 +43,93 @@
   offline with today's shift, a shift 5 days away is not stored, offline
   check-in arrives marked offline, logout wipes the phone.
 
+## 2026-10-23 — Security audit fixes (claude/smartmatch-frontend-v23)
+
+- parseMapPoint: stray «%» no longer throws; out-of-range match tries next pattern; Apple «coordinate=».
+- Offline cache forgets a remembered response on 401/403/404 (address after unassignment).
+- Family arrival notice text «Llegada registrada»; «Llegué» outside its window explains when it opens.
+- Open decision: production map tile provider (VITE_MAP_TILE_URL) — OSM public tiles are not for production.
+- Checks: 157/157 static; E2E Gate 7 9/9, Gate 6 22/22, Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
+## 2026-10-23 — Gate 7 «ETNARA En Camino» (claude/smartmatch-frontend-v23)
+
+- features/journey: CaregiverJourneyCard («Voy en camino», «Informar retraso» with minute chips and
+  reason categories, window from start-2h to start+1h, no location), FamilyJourneyProgress (assigned →
+  en camino → llegada registrada → servicio iniciado → finalizado, declared delay labelled «no es una
+  hora estimada», cancellation), TodayJourneysPanel (Operaciones «Hoy en ruta», risks, preventive
+  wording), ShiftJourneyHistory (agency «Historial operativo»). Bell labels/routes for 5 new notices.
+- Checks: 153/153 static; lint 0 errors; build; audit 0. E2E 390x844: Gate 7 9/9, Gate 6 22/22,
+  Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
+## 2026-10-23 — Gate 6 close: family form on iPhone, approval authorization (claude/smartmatch-frontend-v23)
+
+- Modal follows window.visualViewport when fullScreenOnMobile (iOS keyboard): sheet height = visible
+  area, buttons and focused field stay above the keyboard (data-keyboard-open).
+- Family «Solicitar corrección»: full-screen sheet, one-row footer (Cancelar + Enviar a la agencia).
+- Agency «Aprobar corrección»: current vs proposed address; when upcoming shifts use it, warning +
+  required «Autorizo…» checkbox -> confirmUpcomingShifts. Full-screen on mobile.
+- Checks: 148/148 static; E2E 390x844 Gate 6 22/22 (FM1 keyboard-aware family form, FM2 approval
+  with shifts), Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
+## 2026-10-23 — Gate 6 fix: «Ubicar en el mapa», GPS state, iPhone forms (claude/smartmatch-frontend-v23)
+
+- Badges «Dirección verificada / sin verificar» and «GPS confirmado / sin confirmar» are independent.
+- GpsConfirmModal: local search only (municipality centres from Census centroids; pasted Apple/Google
+  Maps link or "lat, lng" parsed locally, PR bounds), tap/drag marker, preview, required checkbox,
+  «Confirmar GPS». Opens after adding an address; «Corregir punto» later. No geocoding provider.
+- Map removed from the address form. Modal fullScreenOnMobile (100dvh sheet, header/footer z-10 with
+  background, safe areas, focused field scrolled into view); Leaflet container isolate z-0.
+  Tile URL/attribution configurable (VITE_MAP_TILE_URL / VITE_MAP_TILE_ATTRIBUTION).
+- Turnos: LocationSelect shows GPS state per option and a non-blocking warning. Cómo llegar: Apple,
+  Google, Waze use coordinates only when confirmed; otherwise written address + «Destino aproximado».
+- Checks: tsc, lint (0 errors), 146/146 static tests, build; E2E 390x844: Gate 6 20/20, Turnos 13/13,
+  Gate 5 21/21, Gate 4 22/22. Chromium only (no WebKit here) -> iPhone check is manual.
+
+## 2026-10-23 — Gate 6: service location, Cómo llegar, Llegué (claude/smartmatch-frontend-v23)
+
+- Resident record: «Ubicación del servicio» (ServiceLocationSection) replaces the Phase 12.1 card:
+  addresses, ZIP, access notes, Leaflet + OpenStreetMap marker (no geocoding; leaflet 1.9.4 pinned),
+  verify, primary, archive, history + caregiver access log, family permission, correction requests,
+  explicit «Actualizar turnos» when the primary address changes.
+- Turnos forms: «Dirección del servicio» (primary preselected; SmartMatch requires a choice).
+- Caregiver: «Cómo llegar» from the shift's confirmed location (Apple Maps, Google Maps, Waze);
+  «Llegué» with one-time consent modal, one getCurrentPosition reading, never blocks «Comenzar turno»;
+  consent card in profile. Agency shift detail: address, real times, lateness, arrival review.
+- Family profile: «Lugar del servicio» (permission-gated) + correction request and status.
+- SmartMatch: cancel FILLED with reason; active shift sends the admin to Turnos.
+- Tests 142/142; E2E 390x844: Gate 6 16/16, Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
+## 2026-10-23 — SmartMatch Gate 5: Crear turno con esta cuidadora (claude/smartmatch-frontend-v23)
+
+- After approval: "Solicitud aprobada" prompt with «Crear turno con esta cuidadora» / «Más tarde».
+- Filled cards: «Cubierta — pendiente de asignación» + button, or «Turno creado · …» + «Ver turno».
+- /agency/shifts?create=1&smartmatch=<id>: the Turnos create form in SmartMatch mode (caregiver and
+  schedule fixed, person receiving care from the agency, private instructions, one server call).
+- ShiftPrivateInstructions card: agency shift detail (editable) and caregiver shift detail (read).
+- Tests 134/134; browser E2E 390x844: Turnos 13/13, Gate 5 21/21, Gate 4 22/22.
+
+## 2026-10-23 — SmartMatch Gate 5: notifications, dashboard panel, mobile fixes (claude/smartmatch-frontend-v23)
+
+- Bell: numeric badge (9+), "Marcar todas", SmartMatch notifications deep-link to the exact
+  application (/agency/smartmatch?application=, /caregiver/smartmatch?tab=mine&application=).
+- Agency overview: SmartMatch panel (admins only): Pendientes / Publicadas / Cubiertas + Revisar.
+- Mobile: ScrollToTop on route change; Modal fits 100dvh with scrolling body and safe-area footer;
+  es-PR explicit date parts; short privacy lines; role Select + "Otro" mirroring server validation.
+- tests/smartmatch-gate5.test.mjs (6). Browser E2E 390x844: Gate 5 21/21, Gate 4 22/22.
+
+## 2026-10-22 — SmartMatch Gate 4: UI in frontend-v23 (claude/smartmatch-frontend-v23)
+
+- SmartMatch was only in the legacy `frontend/` (not deployed). Integrated into `frontend-v23/`
+  with the existing UI kit and layouts: /caregiver/smartmatch (bottom tab "Ofertas") and
+  /agency/smartmatch (Operación group; hidden for supervisors, like billing).
+- Caregiver: list, 78-municipality filter, apply with explicit consent (smartmatch-consent-v1),
+  Mis solicitudes with full history, withdraw, re-apply. No travel-time estimates shown.
+- Agency: create draft, publish by any admin, review queue, live eligibility checks, approve
+  (disabled unless verifiable, then confirmed) / reject (confirmed), decision history, Cubiertas.
+- Tab label is "Ofertas": at 360px "Mensajes" already fills its 72px tab, longer labels touched.
+- Tests: tests/smartmatch-gate4.test.mjs (static); real-browser E2E at 390x844 against the local
+  backend as app_runtime with two synthetic agencies: 22/22.
+- Requires backend PR ETNARA-Care/ETNARA-Backend#198 (endpoints).
 ## 2026-10-22 — Phase 12.4 modo sin señal (ux/12.4-modo-sin-senal)
 
 - offline/secureStore.ts: IndexedDB + AES-GCM with a non-extractable key; each

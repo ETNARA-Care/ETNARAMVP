@@ -8,6 +8,8 @@ import { getFamilyTimeline, listMyCareRecipients, type FamilyRecipient, type Fam
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
 import { pickRecipient, useFamilyRecipient } from "@/features/family/familyRecipient";
 import { buildDailySummary } from "@/features/family/dailySummary";
+import { FamilyJourneyProgress } from "@/features/journey/FamilyJourneyProgress";
+import { STATE_TEXT } from "@/features/journey/journeyText";
 
 function isToday(iso: string) {
   const value = new Date(iso); const today = new Date();
@@ -19,13 +21,20 @@ function recipientName(recipient: FamilyRecipient | null) {
 }
 function shiftStatus(shift?: FamilyShiftSummary) {
   if (!shift) return { tone: "neutral" as const, label: "Sin turno hoy" };
+  // Gate 7: the derived journey state (declared departure, arrival, start, finish).
+  const j = shift.journey;
+  if (j && !["UNASSIGNED", "PENDING_ACCEPTANCE"].includes(j.state)) return { tone: "success" as const, label: STATE_TEXT[j.state] };
   if (shift.checkedOutAt || shift.status === "completed") return { tone: "neutral" as const, label: "Completado" };
   if (shift.checkedInAt || shift.status === "in_progress") return { tone: "success" as const, label: "En curso" };
   if (shift.caregiver) return { tone: "success" as const, label: "Próximo" };
   return { tone: "neutral" as const, label: "Por confirmar" };
 }
 function headline(label: string) {
-  if (label === "En curso") return "El cuidado está en curso";
+  if (label === "En curso" || label === "Servicio iniciado") return "El cuidado está en curso";
+  if (label === "En camino") return "La cuidadora va en camino";
+  if (label === "Llegada registrada") return "La cuidadora llegó";
+  if (label === "Servicio finalizado") return "El servicio de hoy terminó";
+  if (label === "Cuidadora asignada") return "Cuidadora confirmada";
   if (label === "Sin turno hoy") return "Hoy no hay turno";
   if (label === "Por confirmar") return "Turno por confirmar";
   return label;
@@ -104,6 +113,7 @@ export function FamilyTodayPage() {
           </div>
           {caregiver?.credentials?.length ? <ShieldCheck size={18} className="text-[#b8c9ad]" aria-label="Profesional verificada" /> : null}
         </div>
+        {shift?.journey && <FamilyJourneyProgress journey={shift.journey} />}
       </section>
 
       {summary.length > 0 && (

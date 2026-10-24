@@ -26,7 +26,9 @@ interface StoredReads {
 const SHIFTS = /^\/organizations\/[^/]+\/me\/shifts$/;
 const PROFILE = /^\/organizations\/[^/]+\/me\/worker-profile$/;
 const RECIPIENTS = /^\/organizations\/[^/]+\/care-recipients$/;
-const SHIFT_PART = /^\/organizations\/[^/]+\/shifts\/([^/]+)\/(visit-verification|care-events)$/;
+// Gate 6: the shift's confirmed service address follows the same rule as the
+// resident's address above (encrypted, upcoming own shifts only, 7 days max).
+const SHIFT_PART = /^\/organizations\/[^/]+\/shifts\/([^/]+)\/(visit-verification|care-events|service-location)$/;
 const RECIPIENT_PART = /^\/organizations\/[^/]+\/care-recipients\/([^/]+)\/(care-plan|location)$/;
 
 /** Turnos que valen la pena tener sin señal: propios, no terminados y cercanos. */

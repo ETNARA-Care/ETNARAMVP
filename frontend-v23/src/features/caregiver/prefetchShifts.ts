@@ -1,6 +1,6 @@
 import { listShiftCareEvents } from "@/api/careEvents";
 import { getActiveCarePlan } from "@/api/carePlans";
-import { getRecipientLocation } from "@/api/recipientLocation";
+import { getShiftServiceLocation } from "@/api/serviceLocations";
 import { getVisitVerification, type Shift } from "@/api/shifts";
 
 const WINDOW_MS = 36 * 3600 * 1000;
@@ -29,7 +29,8 @@ export async function prefetchShift(organizationId: string, shift: Shift, token:
     listShiftCareEvents(organizationId, shift.id, token),
     ...(shift.care_recipient_id ? [
       getActiveCarePlan(organizationId, shift.care_recipient_id, token),
-      getRecipientLocation(organizationId, shift.care_recipient_id, token),
+      // Gate 6: the confirmed address of THIS shift, not the person's list of addresses.
+      getShiftServiceLocation(organizationId, shift.id, token),
     ] : []),
   ]);
   return results.every((result) => result.status === "fulfilled");

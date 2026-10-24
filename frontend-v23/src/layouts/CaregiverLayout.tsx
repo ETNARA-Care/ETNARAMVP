@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
+import { BriefcaseBusiness, Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
 import { MobileTabBar } from "./MobileTabBar";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { CareEventQueueBanner, CareEventQueueProvider } from "@/features/caregiver/CareEventQueueProvider";
 import { AppLockGate } from "@/features/caregiver/AppLock";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
 
 export function CaregiverLayout() {
   const { activeOrganization, activeWorkerProfile, user, roles } = useAuth();
+  const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const alsoStaff = roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR");
   const caregiverName = activeWorkerProfile?.displayName ?? user?.email ?? "Cuidador/a";
   const navigate = useNavigate();
@@ -55,6 +57,7 @@ export function CaregiverLayout() {
     <MobileTabBar items={[
       { to: "/caregiver/today", icon: <Home size={21}/>, label: "Mi día" },
       { to: "/caregiver/shifts", icon: <CalendarRange size={21}/>, label: "Turnos" },
+      ...(smartMatch ? [{ to: "/caregiver/smartmatch", icon: <BriefcaseBusiness size={21}/>, label: "Ofertas" }] : []),
       { to: "/caregiver/messages", icon: <MessageCircle size={21}/>, label: "Mensajes" },
       { to: "/caregiver/profile", icon: <MoreHorizontal size={21}/>, label: "Más" },
     ]}/>

@@ -37,6 +37,25 @@ function notificationSummary(type: string): string {
   if (type === "OPEN_SHIFT_OFFER") return "Nuevo turno disponible";
   if (type === "OPEN_SHIFT_INTERESTED") return "Una cuidadora está disponible para un turno";
   if (type === "OPEN_SHIFT_DECLINED") return "Respuesta a una oferta de turno";
+  if (type === "SMARTMATCH_APPLICATION_SUBMITTED") return "Nueva solicitud en SmartMatch";
+  if (type === "SMARTMATCH_APPLICATION_APPROVED") return "Tu solicitud fue aprobada";
+  if (type === "SMARTMATCH_APPLICATION_REJECTED") return "Tu solicitud no fue aprobada";
+  if (type === "SMARTMATCH_APPLICATION_CLOSED") return "La oportunidad se cubrió con otra persona";
+  if (type === "SMARTMATCH_OPPORTUNITY_CANCELLED") return "La agencia canceló una oportunidad que tenías aprobada";
+  if (type === "SMARTMATCH_APPLICATION_OPPORTUNITY_CANCELLED") return "La agencia canceló una oportunidad a la que te postulaste";
+  if (type === "SMARTMATCH_APPLICATION_OPPORTUNITY_EXPIRED") return "Venció una oportunidad a la que te postulaste";
+  if (type === "SHIFT_LATE_ARRIVAL") return "Turno sin llegada registrada (15 min)";
+  if (type === "SHIFT_ARRIVAL_NEEDS_REVIEW") return "Llegada pendiente de revisión";
+  if (type === "SHIFT_LOCATION_CHANGED") return "Cambió la dirección de uno de tus turnos";
+  if (type === "LOCATION_CHANGE_REQUESTED") return "Un familiar solicitó corregir una dirección";
+  if (type === "LOCATION_CHANGE_APPROVED") return "La agencia aplicó tu corrección de dirección";
+  if (type === "LOCATION_CHANGE_REJECTED") return "La agencia revisó tu corrección de dirección";
+  // Gate 7 «En camino»: never an address, a location or an estimated time.
+  if (type === "FAMILY_CAREGIVER_EN_ROUTE") return "La cuidadora va en camino";
+  if (type === "FAMILY_CAREGIVER_DELAYED") return "La cuidadora informó un retraso";
+  if (type === "FAMILY_CAREGIVER_ARRIVED") return "Llegada registrada";
+  if (type === "SHIFT_NOT_EN_ROUTE") return "Aún no registra salida (turno en 30 min)";
+  if (type === "SHIFT_DELAY_REPORTED") return "Retraso de 30 min o más informado";
   if (type === "SHIFT_STARTED") return "La cuidadora comenzó el turno";
   if (type === "SHIFT_COMPLETED") return "La cuidadora finalizó el turno";
   if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";

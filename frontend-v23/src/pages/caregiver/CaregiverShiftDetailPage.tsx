@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { useNavigate, useParams } from "react-router-dom";
 import { Activity, Bath, Check, ClipboardList, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
@@ -19,10 +20,14 @@ import {
   getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
+import { getShiftServiceLocation, type ShiftServiceLocation } from "@/api/serviceLocations";
+import { ServiceDirectionsCard } from "@/features/serviceLocation/ServiceDirectionsCard";
+import { ArrivalCard } from "@/features/serviceLocation/ArrivalCard";
+import { CaregiverJourneyCard } from "@/features/journey/CaregiverJourneyCard";
+import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
 import { OfflineReadyCard } from "@/features/caregiver/OfflineReady";
-import { getRecipientLocation, type RecipientLocation } from "@/api/recipientLocation";
-import { DirectionsCard } from "@/features/caregiver/DirectionsCard";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
+import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
 
 const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }> = [
   { code: "MEAL", label: "Comida", icon: <Utensils size={22} /> },
@@ -88,13 +93,16 @@ export function CaregiverShiftDetailPage() {
   const { shiftId } = useParams();
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
+  // «En camino» y «Llegué»: solo agencias piloto (backend 108). Sin ellos, el turno sigue con Comenzar / Finalizar.
+  const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
+  const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
   const [shift, setShift] = useState<Shift | null>(null);
   const [recipient, setRecipient] = useState<CareRecipient | undefined>();
   const [verification, setVerification] = useState<VisitVerification | null>(null);
   const [careEvents, setCareEvents] = useState<CareEvent[]>([]);
   const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
-  const [location, setLocation] = useState<RecipientLocation | null>(null);
+  const [location, setLocation] = useState<ShiftServiceLocation | null>(null);
   const [error, setError] = useState<boolean | "offline">(false);
   const [saving, setSaving] = useState(false);
   const [activeAction, setActiveAction] = useState<CareEventTypeCode | null>(null);
@@ -138,8 +146,8 @@ export function CaregiverShiftDetailPage() {
       const [carePlanRow, locationRow] = shiftRow.care_recipient_id
         ? await Promise.all([
           getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token),
-          // La dirección es ayuda, no bloquea el turno si falla.
-          getRecipientLocation(organizationId, shiftRow.care_recipient_id, token).catch(() => null),
+          // Gate 6: la dirección confirmada de ESTE turno. Es ayuda, no bloquea el turno si falla.
+          getShiftServiceLocation(organizationId, shiftRow.id, token).catch(() => null),
         ])
         : [null, null];
       setShift(shiftRow);
@@ -164,6 +172,9 @@ export function CaregiverShiftDetailPage() {
       at: event.occurredAt,
       title: (event.eventType === "check_in" ? "Llegada registrada · turno iniciado" : "Salida registrada · turno finalizado")
         + (event.recordedOffline ? " · sin conexión" : ""),
+    })),
+    ...(verification?.arrivals ?? []).map((arrival) => ({
+      id: `arrival-${arrival.occurredAt}`, at: arrival.occurredAt, title: `Llegué · ${PROXIMITY_TEXT[arrival.proximity]}`,
     })),
     ...careEvents.map((event) => ({ id: event.id, at: event.occurred_at, title: careEventSummary(event) })),
     ...queuedHere.map((item) => ({
@@ -321,6 +332,7 @@ export function CaregiverShiftDetailPage() {
         </p>
       </section>
 
+      {smartMatch && organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId} editable={false} />}
 
       {assignmentPending && (
         <Card className="flex flex-col gap-3">
@@ -336,7 +348,16 @@ export function CaregiverShiftDetailPage() {
         </Card>
       )}
 
-      {status !== "completed" && status !== "cancelled" && <DirectionsCard location={location} />}
+      {enCamino && canStart && organizationId && shiftId && !verification.arrivals?.length && (
+        // Gate 7: «Voy en camino» before the directions; remounts (and hides) once the arrival exists.
+        <CaregiverJourneyCard key={`journey-${verification.arrivals?.length ?? 0}`} organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start} />
+      )}
+
+      {status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location={location} />}
+
+      {enCamino && canStart && organizationId && shiftId && (
+        <ArrivalCard organizationId={organizationId} shiftId={shiftId} arrival={verification.arrivals?.[0] ?? null} onRecorded={() => void load()} />
+      )}
 
       {organizationId && <OfflineReadyCard organizationId={organizationId} shift={shift} />}
 

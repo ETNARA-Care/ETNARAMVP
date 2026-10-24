@@ -11,6 +11,14 @@
 
 - Status: ready for review (gate). Frontend only; no backend change.
 - Next: Face ID / fingerprint unlock (WebAuthn).
+### SM-005 — SmartMatch Gate 5: notifications, dashboard, mobile, Turnos link (PR #216, staging only)
+- Done in staging branch: bell badge + deep links, overview panel, mobile fixes, «Crear turno con esta cuidadora».
+- Gate 6 (staging): service locations, shift address, Cómo llegar (Apple/Google/Waze), Llegué with consented
+  proximity, late-arrival notices, family correction requests, FILLED cancellation.
+- Gate 6 fix (staging): GPS confirmed separately from written-address verification; «Ubicar en el mapa»;
+  approximate-destination warning; full-screen mobile forms.
+- Gate 7 (staging): «ETNARA En Camino» — declared departure/delays, family progress, «Hoy en ruta», alerts.
+- Pending: manual iPhone (Safari/WebKit) check of the GPS modal; production map tile provider contract; network (inter-agency) opportunities.
 
 ### FUX-006 — Caregiver offline mode (Phase 12.4)
 
