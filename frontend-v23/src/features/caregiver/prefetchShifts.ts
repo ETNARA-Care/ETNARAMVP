@@ -2,6 +2,7 @@ import { listShiftCareEvents } from "@/api/careEvents";
 import { getActiveCarePlan } from "@/api/carePlans";
 import { getShiftServiceLocation } from "@/api/serviceLocations";
 import { getVisitVerification, type Shift } from "@/api/shifts";
+import { getShiftJourney } from "@/api/journey";
 
 const WINDOW_MS = 36 * 3600 * 1000;
 
@@ -24,6 +25,9 @@ export function prefetchUpcomingShifts(organizationId: string, shifts: Shift[], 
 
 /** Carga (y deja recordado) todo lo que el turno necesita para abrirse sin señal. */
 export async function prefetchShift(organizationId: string, shift: Shift, token: string): Promise<boolean> {
+  // Gate 7: remember the journey of an accepted visit so «Voy en camino» shows without signal.
+  // Not part of "ready": agencies without «En camino» answer 404 here, which is fine.
+  if (shift.assignment_response_status === "accepted") void getShiftJourney(organizationId, shift.id, token).catch(() => undefined);
   const results = await Promise.allSettled([
     getVisitVerification(organizationId, shift.id, token),
     listShiftCareEvents(organizationId, shift.id, token),

@@ -5,6 +5,9 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken, isKeptSession } from "@/auth/token";
 import { createCareEvent, type CreateCareEventInput } from "@/api/careEvents";
 import { checkIn as sendCheckIn, checkOut as sendCheckOut } from "@/api/shifts";
+import type { ApiError } from "@/api/client";
+import { declareEnRoute } from "@/api/journey";
+import { recordArrival } from "@/api/serviceLocations";
 import { MAX_AGE_MS, secureDelete, secureGet, secureSet } from "@/offline/secureStore";
 import {
   CareEventQueueContext,
@@ -28,6 +31,12 @@ interface StoredQueue {
 async function deliver(item: QueuedCareEvent, token: string): Promise<void> {
   if (item.kind === "check_in") return sendCheckIn(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
   if (item.kind === "check_out") return sendCheckOut(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
+  // Gate 7: same id and real time on every retry -> the server stores it once.
+  // "Already arrived" means the visit already moved past this record: delivered, nothing to show.
+  const done = (e: unknown) => { if (!["ALREADY_ARRIVED", "JOURNEY_ALREADY_ARRIVED"].includes((e as ApiError)?.code ?? "")) throw e; };
+  if (item.kind === "en_route") { await declareEnRoute(item.organizationId, item.shiftId, token, item.input as VisitEventInput).catch(done); return; }
+  // Without signal no location is read: the arrival is stored for the agency's review.
+  if (item.kind === "arrival") { await recordArrival(item.organizationId, item.shiftId, null, token, item.input as VisitEventInput).catch(done); return; }
   await createCareEvent(item.organizationId, item.shiftId, item.input as CreateCareEventInput, token);
 }
 
@@ -167,6 +176,10 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
     enqueue(newEntry("check_in", organizationId, shiftId, "Llegada")), [enqueue]);
   const checkOut = useCallback<CareEventQueueState["checkOut"]>((organizationId, shiftId) =>
     enqueue(newEntry("check_out", organizationId, shiftId, "Salida")), [enqueue]);
+  const enRoute = useCallback<CareEventQueueState["enRoute"]>((organizationId, shiftId) =>
+    enqueue(newEntry("en_route", organizationId, shiftId, "Voy en camino")), [enqueue]);
+  const arrive = useCallback<CareEventQueueState["arrive"]>((organizationId, shiftId) =>
+    enqueue(newEntry("arrival", organizationId, shiftId, "Llegué")), [enqueue]);
 
   const value = useMemo<CareEventQueueState>(() => ({
     items,
@@ -175,9 +188,11 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
     submit,
     checkIn,
     checkOut,
+    enRoute,
+    arrive,
     retryNow: () => void flush(),
     discard: (clientEventId: string) => update(clientEventId, null),
-  }), [items, deliveredVersion, persisted, submit, checkIn, checkOut, flush, update]);
+  }), [items, deliveredVersion, persisted, submit, checkIn, checkOut, enRoute, arrive, flush, update]);
 
   return <CareEventQueueContext.Provider value={value}>{children}</CareEventQueueContext.Provider>;
 }

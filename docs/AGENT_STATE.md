@@ -2,6 +2,13 @@
 
 ## Current Status
 
+## 2026-10-24 — En Camino: cancelación, reasignación y sin señal (claude/en-camino-fixes)
+- **Cuidadora:** la tarjeta del recorrido se actualiza sola (cada 45 s y al volver a la app o recuperar la señal). Si la agencia cancela la visita o la quita del turno, ve un aviso claro.
+- **Sin señal:** «Voy en camino» y «Llegué» quedan en la cola de envío (`careEventQueue`, con `clientEventId`) y se envían al volver la señal. «Llegué» sin señal no lleva lectura GPS y queda en revisión. El recorrido se guarda en la caché cifrada del teléfono.
+- **Avisos nuevos en la campana:** `SHIFT_CANCELLED`, `SHIFT_UNASSIGNED`, `FAMILY_VISIT_CANCELLED` y `FAMILY_CAREGIVER_CHANGED`. El historial muestra la retirada del turno.
+- **Requiere** la migración backend 112 (PR del backend `claude/en-camino-fixes`).
+- **Pruebas:** typecheck, 187/187 y build. E2E en iPhone: cola sin señal, aviso de cancelación sin recargar, aviso de retirada en 1 s y textos de la campana.
+
 ## 2026-10-24 — Navegación unificada en los tres portales (ux/navegacion-unificada)
 
 - layouts/PortalBottomNav.tsx: one bottom bar for Administrativo, Cuidador and

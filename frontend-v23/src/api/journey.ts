@@ -26,8 +26,10 @@ export interface TodayJourney {
 const J = (o: string, s: string) => `/organizations/${o}/shifts/${s}/journey`;
 export const getShiftJourney = (o: string, s: string, t: string) =>
   apiClient.get<{ journey: Journey; history?: JourneyHistoryItem[] }>(J(o, s), t);
-export const declareEnRoute = (o: string, s: string, t: string) =>
-  apiClient.post<{ journey: Journey }>(`${J(o, s)}/en-route`, { clientEventId: crypto.randomUUID() }, t);
+/** Device event fields: the offline queue keeps the id and the real time so a retry never duplicates. */
+export interface JourneyEventInput { clientEventId?: string; occurredAt?: string; recordedOffline?: boolean }
+export const declareEnRoute = (o: string, s: string, t: string, input: JourneyEventInput = {}) =>
+  apiClient.post<{ journey: Journey }>(`${J(o, s)}/en-route`, { clientEventId: crypto.randomUUID(), ...input }, t);
 export const reportDelay = (o: string, s: string, minutes: DelayMinutes, reason: DelayReason, t: string) =>
   apiClient.post<{ journey: Journey }>(`${J(o, s)}/delay`, { minutes, reason, clientEventId: crypto.randomUUID() }, t);
 export const listTodayJourneys = async (o: string, t: string) =>

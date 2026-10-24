@@ -40,6 +40,10 @@ export function NotificationBell() {
       navigate(`/agency/shifts/${shiftId}`);
       return;
     }
+    // Migration 112: cancellation / reassignment. A removed caregiver no longer has the shift: open her list.
+    if (type === "SHIFT_CANCELLED" && shiftId) { navigate(`/caregiver/shifts/${shiftId}`); return; }
+    if (type === "SHIFT_UNASSIGNED") { navigate("/caregiver/shifts"); return; }
+    if (type === "FAMILY_VISIT_CANCELLED" || type === "FAMILY_CAREGIVER_CHANGED") { navigate("/family"); return; }
     // Gate 7: journey notices.
     if (type === "FAMILY_CAREGIVER_EN_ROUTE" || type === "FAMILY_CAREGIVER_DELAYED" || type === "FAMILY_CAREGIVER_ARRIVED") {
       navigate("/family");

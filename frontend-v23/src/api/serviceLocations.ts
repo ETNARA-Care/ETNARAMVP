@@ -120,10 +120,12 @@ export const grantLocationConsent = (o: string, t: string) =>
   apiClient.post(`/organizations/${o}/me/location-consent`, { consentVersion: LOCATION_CONSENT_VERSION }, t);
 export const revokeLocationConsent = (o: string, t: string) => apiClient.delete(`/organizations/${o}/me/location-consent`, t);
 /** One reading at most; omitted when there is no consent or no GPS. */
-export async function recordArrival(o: string, shiftId: string, reading: { latitude: number; longitude: number; accuracyM?: number } | null, t: string) {
+export async function recordArrival(o: string, shiftId: string, reading: { latitude: number; longitude: number; accuracyM?: number } | null, t: string,
+  event: { clientEventId?: string; occurredAt?: string; recordedOffline?: boolean } = {}) {
   return (await apiClient.post<{ arrival: Arrival }>(`/organizations/${o}/shifts/${shiftId}/arrival`, {
     ...(reading ? { latitude: reading.latitude, longitude: reading.longitude, ...(reading.accuracyM !== undefined ? { accuracyM: reading.accuracyM } : {}) } : {}),
     clientEventId: crypto.randomUUID(),
+    ...event,
   }, t)).arrival;
 }
 export const reviewArrival = (o: string, shiftId: string, membershipId: string, note: string, t: string) =>

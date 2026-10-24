@@ -22,7 +22,7 @@ async function request<T>(path:string,options:RequestOptions):Promise<T>{const h
  * Si la señal se cae, esas pantallas siguen mostrando lo último que llegó en
  * vez de un error. Se pierde al cerrar la app; nada de esto sale del teléfono.
  */
-const OFFLINE_READABLE=/\/me\/shifts$|\/me\/worker-profile$|\/shifts\/[^/]+\/(visit-verification|care-events|service-location)$|\/care-recipients(\/[^/]+\/(care-plan|location))?$/;
+const OFFLINE_READABLE=/\/me\/shifts$|\/me\/worker-profile$|\/shifts\/[^/]+\/(visit-verification|care-events|service-location|journey)$|\/care-recipients(\/[^/]+\/(care-plan|location))?$/;
 const lastResponses=new Map<string,unknown>();
 const MAX_REMEMBERED=200;
 async function getRemembering<T>(path:string,token?:string|null):Promise<T>{const key=`${token??""} ${path}`;const remember=OFFLINE_READABLE.test(path);try{const result=await request<T>(path,{method:"GET",token});if(remember){lastResponses.delete(key);lastResponses.set(key,result);if(lastResponses.size>MAX_REMEMBERED)lastResponses.delete(lastResponses.keys().next().value as string);rememberedListener?.();}return result;}catch(error){if(remember&&(error as ApiError).status===0&&lastResponses.has(key))return lastResponses.get(key) as T;const status=(error as ApiError).status;/* Access ended (e.g. unassigned): forget what was remembered, in memory and in the encrypted cache. */if(remember&&(status===401||status===403||status===404)&&lastResponses.delete(key))rememberedListener?.();throw error;}}

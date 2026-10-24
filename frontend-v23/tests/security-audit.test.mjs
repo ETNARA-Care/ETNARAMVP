@@ -17,7 +17,8 @@ test("offline cache forgets a shift's address once access ends (401/403/404), al
 
 test("the encrypted phone cache keeps the shift's confirmed address only under its upcoming-shift rule", () => {
   const cache = read("src/offline/shiftCache.ts");
-  assert.match(cache, /const SHIFT_PART = .*\(visit-verification\|care-events\|service-location\)\$\/;/);
+  // migration 112 / Gate 7: the journey state joins the same rule (no address or location in it)
+  assert.match(cache, /const SHIFT_PART = .*\(visit-verification\|care-events\|service-location\|journey\)\$\/;/);
   // the person's full address list is never prefetched for caregivers
   assert.doesNotMatch(read("src/features/caregiver/prefetchShifts.ts"), /getRecipientLocation/);
 });
