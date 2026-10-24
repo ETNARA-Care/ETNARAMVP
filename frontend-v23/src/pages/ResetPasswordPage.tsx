@@ -8,8 +8,17 @@ import type { ApiError } from "@/api/client";
 
 const TOKEN = /^[0-9a-f]{64}$/i;
 
-/** Read once, then removed from the address bar and history (it is a one-use secret). */
+/**
+ * Read once, then removed from the address bar and history (it is a one-use secret).
+ * After an SMS code the token arrives in the navigation state, never in the URL;
+ * it is removed from the history entry as well.
+ */
 function takeTokenFromUrl(): string | null {
+  const fromState = (window.history.state?.usr as { resetToken?: unknown } | undefined)?.resetToken;
+  if (fromState !== undefined) {
+    window.history.replaceState({ ...window.history.state, usr: null }, "", window.location.pathname);
+    return typeof fromState === "string" && TOKEN.test(fromState) ? fromState : null;
+  }
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
   if (token !== null) window.history.replaceState(window.history.state, "", window.location.pathname);
@@ -77,7 +86,7 @@ export function ResetPasswordPage() {
             {state === "done"
               ? "Ya puedes entrar con tu contraseña nueva. Por seguridad, cerramos la sesión en todos tus dispositivos."
               : state === "invalid"
-                ? "Este enlace venció o ya se utilizó. Los enlaces duran 30 minutos y sirven una sola vez."
+                ? "Este enlace venció o ya se utilizó. Los enlaces y códigos sirven una sola vez y vencen pronto."
                 : "Usa al menos 12 caracteres. Una frase fácil de recordar funciona bien."}
           </p>
         </div>

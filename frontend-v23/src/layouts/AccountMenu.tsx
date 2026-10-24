@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeftRight, LogOut, Settings, TriangleAlert } from "lucide-react";
+import { ArrowLeftRight, LogOut, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Avatar } from "@/components/ui";
 
 function useDismiss(open: boolean, close: () => void) {
@@ -23,7 +23,7 @@ function useDismiss(open: boolean, close: () => void) {
 
 /**
  * Menú de la cuenta desde el encabezado (avatar), igual en los tres portales:
- * Configuración y Cerrar sesión (y Cambiar organización si hay varias).
+ * Configuración, Seguridad de la cuenta y Cerrar sesión (y Cambiar organización si hay varias).
  * `logoutWarning`: si hay algo que se perdería (p. ej. registros sin enviar),
  * se pide confirmación antes de cerrar la sesión.
  */
@@ -71,6 +71,9 @@ export function AccountMenu({ userLabel, roleLabel, settingsTo, onLogout, canSwi
           )}
           <button role="menuitem" type="button" onClick={() => { close(); navigate(settingsTo); }} className={`${item} hover:bg-[var(--color-ivory-100)]`}>
             <Settings size={16} aria-hidden />Configuración
+          </button>
+          <button role="menuitem" type="button" onClick={() => { close(); navigate("/security"); }} className={`${item} hover:bg-[var(--color-ivory-100)]`}>
+            <ShieldCheck size={16} aria-hidden />Seguridad de la cuenta
           </button>
           {confirming && logoutWarning && (
             <p role="alert" className="mx-1 my-1 flex gap-2 rounded-[10px] bg-[var(--color-warning-100,#fdf3dc)] p-2.5 text-xs text-[var(--color-warning-700,#8a5a00)]">

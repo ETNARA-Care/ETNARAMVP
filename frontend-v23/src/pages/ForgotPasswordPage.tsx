@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MailCheck, KeyRound } from "lucide-react";
+import { ArrowLeft, MailCheck, KeyRound, Mail, MessageSquareText } from "lucide-react";
 import { Button, Card, Input } from "@/components/ui";
 import { requestPasswordReset } from "@/api/auth";
 import type { ApiError } from "@/api/client";
+import { getRecoveryOptions } from "@/api/accountSecurity";
+import { SmsRecovery } from "@/features/accountSecurity/SmsRecovery";
 
 /**
  * «¿Olvidaste tu contraseña?» — por correo. Pase lo que pase (cuenta
@@ -17,6 +19,14 @@ export function ForgotPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // SMS is offered only when the server says it is on; otherwise the page is exactly the e-mail one.
+  const [smsAvailable, setSmsAvailable] = useState(false);
+  const [method, setMethod] = useState<"email" | "sms">("email");
+  useEffect(() => {
+    let alive = true;
+    getRecoveryOptions().then((o) => { if (alive) setSmsAvailable(o.sms === true); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -49,11 +59,31 @@ export function ForgotPasswordPage() {
           <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-2">
             {sent
               ? "Si ese correo está registrado en ETNARA Care, te enviamos un enlace para crear una contraseña nueva. Vence en 30 minutos y solo se puede usar una vez."
-              : "Escribe el correo con el que entras a ETNARA Care. Te enviaremos un enlace para crear una contraseña nueva."}
+              : method === "sms"
+                ? "Escribe tu número verificado. Te enviaremos un código por SMS para crear una contraseña nueva."
+                : "Escribe el correo con el que entras a ETNARA Care. Te enviaremos un enlace para crear una contraseña nueva."}
           </p>
         </div>
 
-        {sent ? (
+        {!sent && smsAvailable && (
+          <div role="radiogroup" aria-label="Cómo quieres recuperar tu contraseña" className="grid grid-cols-2 gap-1 rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-1" data-testid="recovery-method">
+            {([["email", "Correo", Mail], ["sms", "SMS", MessageSquareText]] as const).map(([value, label, Icon]) => (
+              <button key={value} type="button" role="radio" aria-checked={method === value} onClick={() => { setMethod(value); setProblem(null); }}
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-[10px] text-[var(--text-small)] font-medium ${method === value ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-[var(--shadow-raised)]" : "text-[var(--color-text-secondary)]"}`}>
+                <Icon size={16} aria-hidden />{label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!sent && method === "sms" ? (
+          <>
+            <SmsRecovery onUseEmail={() => setMethod("email")} />
+            <Link to="/login" className="flex min-h-11 items-center justify-center gap-1.5 text-[var(--text-small)] font-medium text-[var(--color-text-secondary)]">
+              <ArrowLeft size={16} aria-hidden />Volver a iniciar sesión
+            </Link>
+          </>
+        ) : sent ? (
           <div className="flex flex-col gap-3" data-testid="forgot-sent">
             <p className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--text-caption)] text-[var(--color-text-secondary)]">
               ¿No llega? Revisa la carpeta de correo no deseado. Puedes pedir otro enlace en unos minutos; el anterior dejará de funcionar.
