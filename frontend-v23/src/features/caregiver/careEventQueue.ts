@@ -48,6 +48,8 @@ export interface CareEventQueueState {
   /** La cola se guarda cifrada en el teléfono (sesión de cuidador/a). */
   persisted: boolean;
   submit: (args: { organizationId: string; shiftId: string; label: string; input: Omit<CreateCareEventInput, "clientEventId" | "occurredAt"> }) => Promise<SubmitResult>;
+  /** Like submit; eventId is set when the record reached the server at once (to attach a photo). */
+  submitWithEventId: (args: { organizationId: string; shiftId: string; label: string; input: Omit<CreateCareEventInput, "clientEventId" | "occurredAt"> }) => Promise<{ outcome: SubmitResult; eventId?: string }>;
   checkIn: (organizationId: string, shiftId: string) => Promise<SubmitResult>;
   checkOut: (organizationId: string, shiftId: string) => Promise<SubmitResult>;
   /** Gate 7 «Voy en camino» and «Llegué» (sin lectura de ubicación cuando no hay señal). */
@@ -62,6 +64,7 @@ export const CareEventQueueContext = createContext<CareEventQueueState>({
   deliveredVersion: 0,
   persisted: false,
   submit: async () => "sent",
+  submitWithEventId: async () => ({ outcome: "sent" }),
   checkIn: async () => "sent",
   checkOut: async () => "sent",
   enRoute: async () => "sent",

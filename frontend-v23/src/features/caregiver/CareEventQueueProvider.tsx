@@ -28,7 +28,8 @@ interface StoredQueue {
   items: QueuedCareEvent[];
 }
 
-async function deliver(item: QueuedCareEvent, token: string): Promise<void> {
+/** Returns the saved activity's id for care records (used to attach a photo). */
+async function deliver(item: QueuedCareEvent, token: string): Promise<string | void> {
   if (item.kind === "check_in") return sendCheckIn(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
   if (item.kind === "check_out") return sendCheckOut(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
   // Gate 7: same id and real time on every retry -> the server stores it once.
@@ -37,7 +38,7 @@ async function deliver(item: QueuedCareEvent, token: string): Promise<void> {
   if (item.kind === "en_route") { await declareEnRoute(item.organizationId, item.shiftId, token, item.input as VisitEventInput).catch(done); return; }
   // Without signal no location is read: the arrival is stored for the agency's review.
   if (item.kind === "arrival") { await recordArrival(item.organizationId, item.shiftId, null, token, item.input as VisitEventInput).catch(done); return; }
-  await createCareEvent(item.organizationId, item.shiftId, item.input as CreateCareEventInput, token);
+  return (await createCareEvent(item.organizationId, item.shiftId, item.input as CreateCareEventInput, token)).id;
 }
 
 function newEntry(kind: QueuedKind, organizationId: string, shiftId: string, label: string, input: Record<string, unknown> = {}): QueuedCareEvent {
@@ -150,12 +151,12 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
   }, [pendingCount, flush, persisted, restored]);
 
   /** Envía ya si hay señal y nada delante; si no, encola (respeta el orden). */
-  const enqueue = useCallback(async (entry: QueuedCareEvent): Promise<"sent" | "queued"> => {
+  const enqueueDetailed = useCallback(async (entry: QueuedCareEvent): Promise<{ outcome: "sent" | "queued"; eventId?: string }> => {
     const token = getToken();
     if (token && navigator.onLine !== false && itemsRef.current.every((item) => item.status === "failed")) {
       try {
-        await deliver(entry, token);
-        return "sent";
+        const id = await deliver(entry, token);
+        return { outcome: "sent", ...(typeof id === "string" ? { eventId: id } : {}) };
       } catch (error) {
         if (!isConnectivityError(error)) throw error;
       }
@@ -163,14 +164,21 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
     // Llegada/salida que espera señal: el servidor la marca "sin conexión".
     if (entry.kind !== "care_event") entry.input = { ...entry.input, recordedOffline: true };
     setItems((current) => [...current, entry]);
-    return "queued";
+    return { outcome: "queued" };
   }, []);
+  const enqueue = useCallback(async (entry: QueuedCareEvent) => (await enqueueDetailed(entry)).outcome, [enqueueDetailed]);
 
   const submit = useCallback<CareEventQueueState["submit"]>(({ organizationId, shiftId, label, input }) => {
     const entry = newEntry("care_event", organizationId, shiftId, label, input as unknown as Record<string, unknown>);
     entry.typeCode = input.typeCode;
     return enqueue(entry);
   }, [enqueue]);
+  // Same record, same queue; also returns the activity id when it was sent at once (photos).
+  const submitWithEventId = useCallback<CareEventQueueState["submitWithEventId"]>(({ organizationId, shiftId, label, input }) => {
+    const entry = newEntry("care_event", organizationId, shiftId, label, input as unknown as Record<string, unknown>);
+    entry.typeCode = input.typeCode;
+    return enqueueDetailed(entry);
+  }, [enqueueDetailed]);
 
   const checkIn = useCallback<CareEventQueueState["checkIn"]>((organizationId, shiftId) =>
     enqueue(newEntry("check_in", organizationId, shiftId, "Llegada")), [enqueue]);
@@ -186,13 +194,14 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
     deliveredVersion,
     persisted,
     submit,
+    submitWithEventId,
     checkIn,
     checkOut,
     enRoute,
     arrive,
     retryNow: () => void flush(),
     discard: (clientEventId: string) => update(clientEventId, null),
-  }), [items, deliveredVersion, persisted, submit, checkIn, checkOut, enRoute, arrive, flush, update]);
+  }), [items, deliveredVersion, persisted, submit, submitWithEventId, checkIn, checkOut, enRoute, arrive, flush, update]);
 
   return <CareEventQueueContext.Provider value={value}>{children}</CareEventQueueContext.Provider>;
 }

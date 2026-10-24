@@ -2,6 +2,8 @@
 
 ## In Progress
 
+- Fotos de actividades — PR 3 Portal del Cuidador (borrador, claude/caregiver-activity-photos). Siguen PR 4 (agencia: revisión y consentimientos) y PR 5 (familia).
+
 ### PUX-001 — ETNARA Central: mobile premium layout (PR, pending Rafa's review)
 - Done in branch claude/platform-mobile-premium (see AGENT_STATE 2026-10-23).
 - Follow-up (needs approval): fix the 396 `text-[var(--text-*)]` classes so the

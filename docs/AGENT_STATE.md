@@ -2,6 +2,15 @@
 
 ## Current Status
 
+## 2026-10-24 — Fotos de actividades, Portal del Cuidador (PR 3, claude/caregiver-activity-photos)
+- **Solo con `ACTIVITY_PHOTOS`** (apagado en todas las agencias). Apagado = la interfaz no cambia.
+- Al registrar un cuidado: «Foto (opcional)» con **Tomar foto** (cámara trasera, `capture="environment"`) y **Elegir de la galería**; vista previa con **Quitar**; confirmación «Actividad guardada con foto. La agencia la revisará…».
+- **Elegibilidad** (`GET .../shifts/:id/photo-eligibility`, solo `canAttach`) al abrir cada registro; sin permiso → botones desactivados + «No se pueden añadir fotos para esta persona».
+- El teléfono redibuja la foto como JPEG ≤ 2048 px (sin EXIF); lo que el navegador no puede leer (HEIC en Android) va tal cual y el servidor lo convierte. Vista previa en memoria; nada en `localStorage`/IndexedDB ni en la cola.
+- Sin señal: la actividad entra en la cola; la foto NO se guarda (aviso). Fallo temporal de la foto → «Reintentar foto» (solo en memoria, vuelve a preguntar la elegibilidad).
+- «Fotos de este turno»: miniaturas propias (Blob por la API, token en cabecera, sin caché) con estado En revisión / Compartida / No compartida / Retirada.
+- **Requiere** backend #208 (desplegado 24-oct). Pruebas: typecheck, build, 204/204; E2E local iPhone 390×844 y Android 412×915: 20/20.
+
 ## 2026-10-24 — En Camino: cancelación, reasignación y sin señal (claude/en-camino-fixes)
 - **Cuidadora:** la tarjeta del recorrido se actualiza sola (cada 45 s y al volver a la app o recuperar la señal). Si la agencia cancela la visita o la quita del turno, ve un aviso claro.
 - **Sin señal:** «Voy en camino» y «Llegué» quedan en la cola de envío (`careEventQueue`, con `clientEventId`) y se envían al volver la señal. «Llegué» sin señal no lleva lectura GPS y queda en revisión. El recorrido se guarda en la caché cifrada del teléfono.
