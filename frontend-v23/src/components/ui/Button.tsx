@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
-type Size = "md" | "lg";
+type Size = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -21,10 +21,16 @@ const variantClasses: Record<Variant, string> = {
   danger: "bg-[var(--color-danger-700)] text-white hover:opacity-90",
 };
 
+// Tailwind v4 reads `text-[var(--x)]` as a COLOR: the old `text-[var(--text-body)]`
+// produced an invalid color, so buttons inherited their parent's text color (white
+// text on a white secondary button inside dark banners) and never got that size.
+// Explicit `length:` keeps the size buttons have always rendered with (1rem).
 const sizeClasses: Record<Size, string> = {
+  // Compact secondary actions in dense lists (40px; primary actions stay 44px+).
+  sm: "h-10 px-3 text-[length:var(--text-small)] gap-1.5",
   // 44px+ objetivo táctil (WCAG 2.2 AA) incluso en el tamaño "md"
-  md: "h-11 px-4 text-[var(--text-body)] gap-2",
-  lg: "h-13 px-6 text-[var(--text-body-lg)] gap-2.5 min-h-[52px]",
+  md: "h-11 px-4 text-[length:1rem] gap-2",
+  lg: "h-13 px-6 text-[length:1rem] gap-2.5 min-h-[52px]",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

@@ -48,9 +48,16 @@ function useVisualViewportBox(active: boolean) {
  * vienen gratis del navegador -- menos JS propio para algo tan sensible a
  * accesibilidad como un modal.
  */
-export function Modal({ open, onClose, title, children, footer, fullScreenOnMobile = false }: OverlayBaseProps & {
+export function Modal({ open, onClose, title, children, footer, fullScreenOnMobile = false, sheetOnMobile = false, eyebrow, wide = false }: OverlayBaseProps & {
   /** Long forms (addresses, map): full screen on phones, centered card from 640 px. */
   fullScreenOnMobile?: boolean;
+  /** Phones: bottom sheet (full width, up to 92% of the screen, thumb-reachable full-width
+   *  buttons, safe-area aware). From 640 px it is the usual centered card. */
+  sheetOnMobile?: boolean;
+  /** Small label above the title (e.g. «Resumen de la organización»). */
+  eyebrow?: string;
+  /** Centered card up to 640 px instead of 480 px (desktop/tablet). */
+  wide?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const keyboardBox = useVisualViewportBox(open && fullScreenOnMobile);
@@ -73,18 +80,27 @@ export function Modal({ open, onClose, title, children, footer, fullScreenOnMobi
         open:flex open:flex-col open:animate-[fadeIn_var(--duration-base)_var(--ease-standard)]
         ${fullScreenOnMobile
           ? "m-0 h-[100dvh] max-h-[100dvh] w-screen max-w-none rounded-none sm:m-auto sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:w-[min(560px,92vw)] sm:rounded-[var(--radius-lg)]"
-          : "m-auto w-[min(480px,92vw)] max-h-[calc(100dvh-2rem)] rounded-[var(--radius-lg)]"}`}
+          : sheetOnMobile
+            ? `mx-0 mt-auto mb-0 w-full max-w-none max-h-[92dvh] rounded-t-[1.5rem] rounded-b-none sm:m-auto sm:max-h-[calc(100dvh-2rem)] sm:rounded-[var(--radius-lg)] ${wide ? "sm:w-[min(640px,92vw)]" : "sm:w-[min(480px,92vw)]"}`
+            : `m-auto ${wide ? "w-[min(640px,92vw)]" : "w-[min(480px,92vw)]"} max-h-[calc(100dvh-2rem)] rounded-[var(--radius-lg)]`}`}
+      data-variant={sheetOnMobile ? "sheet" : fullScreenOnMobile ? "fullscreen" : "card"}
     >
       {/* Header and footer stay visible; only the body scrolls (tall forms on a phone).
           They sit above the body's stacking context so nothing inside it (e.g. the
           map's own z-index layers on iOS Safari) can paint over the buttons. */}
-      <div className="relative z-10 flex shrink-0 items-start justify-between gap-3 bg-[var(--color-surface,#fff)] px-[var(--spacing-md)] py-[var(--spacing-sm)] pt-[max(var(--spacing-sm),env(safe-area-inset-top))] border-b border-[var(--color-border)]">
-        <h2 className="min-w-0 break-words pt-1.5 font-display text-[1.2rem] leading-tight sm:text-[var(--text-h3)]">{title}</h2>
+      {sheetOnMobile && <div className="relative z-10 flex shrink-0 justify-center bg-[var(--color-surface,#fff)] pt-2 sm:hidden" aria-hidden><span className="h-1.5 w-10 rounded-full bg-[var(--color-ivory-200)]" /></div>}
+      <div className={`relative z-10 flex shrink-0 items-start justify-between gap-3 bg-[var(--color-surface,#fff)] border-b border-[var(--color-border)] ${sheetOnMobile ? "px-5 pb-3 pt-2 sm:px-[var(--spacing-md)] sm:py-[var(--spacing-sm)]" : "px-[var(--spacing-md)] py-[var(--spacing-sm)] pt-[max(var(--spacing-sm),env(safe-area-inset-top))]"}`}>
+        <div className="min-w-0 pt-1.5">
+          {eyebrow && <p className="mb-1 text-[length:var(--text-caption)] font-semibold uppercase tracking-[.14em] text-[var(--color-text-muted)]">{eyebrow}</p>}
+          <h2 className={`min-w-0 break-words font-display leading-tight ${sheetOnMobile ? "line-clamp-2 text-[length:1.125rem] sm:line-clamp-none sm:text-[length:var(--text-h3)]" : "text-[1.2rem] sm:text-[var(--text-h3)]"}`}>{title}</h2>
+        </div>
         <span className="shrink-0"><IconButton icon={<X size={18} />} label="Cerrar" onClick={onClose} /></span>
       </div>
+      {/* `flex-auto` (not flex-1): Safari collapses a 0% flex-basis inside a column
+          that only has a max-height, which cut the body off on iPhone. */}
       <div onFocus={keepFocusedFieldVisible}
-        className="relative isolate z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain p-[var(--spacing-md)] pb-8 [scroll-padding-bottom:6rem] [-webkit-overflow-scrolling:touch]">{children}</div>
-      {footer && <div className="relative z-10 flex shrink-0 justify-end gap-2 bg-[var(--color-surface,#fff)] border-t border-[var(--color-border)] px-[var(--spacing-md)] pt-[var(--spacing-sm)] pb-[max(var(--spacing-md),env(safe-area-inset-bottom))]">{footer}</div>}
+        className={`relative isolate z-0 min-h-0 flex-auto overflow-y-auto overscroll-contain pb-8 [scroll-padding-bottom:6rem] [-webkit-overflow-scrolling:touch] ${sheetOnMobile ? "px-4 pt-4 sm:p-[var(--spacing-md)] sm:pb-8" : "p-[var(--spacing-md)]"}`}>{children}</div>
+      {footer && <div className={`relative z-10 flex shrink-0 justify-end gap-2 bg-[var(--color-surface,#fff)] border-t border-[var(--color-border)] pt-[var(--spacing-sm)] pb-[max(var(--spacing-md),env(safe-area-inset-bottom))] ${sheetOnMobile ? "px-4 [&>*]:flex-1 sm:px-[var(--spacing-md)] sm:[&>*]:flex-none" : "px-[var(--spacing-md)]"}`}>{footer}</div>}
     </dialog>
   );
 }

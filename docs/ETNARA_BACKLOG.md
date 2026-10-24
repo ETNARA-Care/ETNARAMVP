@@ -2,6 +2,11 @@
 
 ## In Progress
 
+### PUX-001 — ETNARA Central: mobile premium layout (PR, pending Rafa's review)
+- Done in branch claude/platform-mobile-premium (see AGENT_STATE 2026-10-23).
+- Follow-up (needs approval): fix the 396 `text-[var(--text-*)]` classes so the
+  type scale applies (`text-[length:…]`); changes typography in every portal.
+
 ### FUX-008 — Caregiver app lock with Face ID / fingerprint (Phase 12.6)
 
 - Status: ready for review (gate). Frontend only.

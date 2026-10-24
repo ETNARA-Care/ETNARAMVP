@@ -1,0 +1,18 @@
+/* ==================================================================
+ ETNARA Centro Administrativo (platform) — sage palette.
+
+ Platform screens already reference --color-sage-*, but those tokens were
+ only defined for the agency portal ([data-portal="admin"]), so in the
+ platform they resolved to nothing (transparent tiles, white tab underline).
+ Only the missing sage scale is added here; every other token is unchanged.
+ ================================================================== */
+
+[data-portal="platform"] {
+ --color-sage-50: #F2F6F1;
+ --color-sage-100: #E4ECE2;
+ --color-sage-200: #CFDECF;
+ --color-sage-300: #9CC0A2;
+ --color-sage-600: #5F8A68;
+ --color-sage-700: #4E7457;
+ --color-sage-800: #3D5C45;
+}

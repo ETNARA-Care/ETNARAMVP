@@ -8,6 +8,7 @@ import { DemoStoreProvider } from "@/mocks/DemoStoreContext";
 import { AuthProvider } from "@/auth/AuthProvider";
 import "@/styles/tokens.css";
 import "@/styles/admin-theme.css";
+import "@/styles/platform-theme.css";
 
 const queryClient = new QueryClient();
 
