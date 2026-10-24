@@ -20,11 +20,14 @@ export function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   // SMS is offered only when the server says it is on; otherwise the page is exactly the e-mail one.
-  const [smsAvailable, setSmsAvailable] = useState(false);
-  const [method, setMethod] = useState<"email" | "sms">("email");
+  // During the pilot the server keeps sms:false; pilot testers open /forgot-password?metodo=sms.
+  // It reveals nothing: a code only ever goes to a number already verified on an account.
+  const [pilotSms] = useState(() => new URLSearchParams(window.location.search).get("metodo") === "sms");
+  const [smsAvailable, setSmsAvailable] = useState(pilotSms);
+  const [method, setMethod] = useState<"email" | "sms">(pilotSms ? "sms" : "email");
   useEffect(() => {
     let alive = true;
-    getRecoveryOptions().then((o) => { if (alive) setSmsAvailable(o.sms === true); }).catch(() => undefined);
+    getRecoveryOptions().then((o) => { if (alive && o.sms === true) setSmsAvailable(true); }).catch(() => undefined);
     return () => { alive = false; };
   }, []);
 

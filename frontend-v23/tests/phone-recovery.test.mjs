@@ -20,8 +20,9 @@ test("/security is signed-in only and every signed-in route goes through the pho
 });
 
 test("nothing changes while SMS is off: SMS only when the server offers it, never block on errors", () => {
-  assert.match(forgot, /const \[smsAvailable, setSmsAvailable\] = useState\(false\);/);
-  assert.match(forgot, /setSmsAvailable\(o\.sms === true\)/);
+  assert.match(forgot, /const \[smsAvailable, setSmsAvailable\] = useState\(pilotSms\);/);
+  assert.match(forgot, /get\("metodo"\) === "sms"/);
+  assert.match(forgot, /if \(alive && o\.sms === true\) setSmsAvailable\(true\)/);
   assert.match(forgot, /\{!sent && smsAvailable && \(/);
   assert.match(gate, /security\?\.phoneVerificationAvailable && security\.phoneRequired/);
   assert.match(hook, /catch \(error\) \{ setSecurity\(null\);/);
