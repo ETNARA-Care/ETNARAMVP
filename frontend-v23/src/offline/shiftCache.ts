@@ -28,7 +28,8 @@ const PROFILE = /^\/organizations\/[^/]+\/me\/worker-profile$/;
 const RECIPIENTS = /^\/organizations\/[^/]+\/care-recipients$/;
 // Gate 6: the shift's confirmed service address follows the same rule as the
 // resident's address above (encrypted, upcoming own shifts only, 7 days max).
-const SHIFT_PART = /^\/organizations\/[^/]+\/shifts\/([^/]+)\/(visit-verification|care-events|service-location)$/;
+// Gate 7: the journey state too, so «Voy en camino» still shows without signal.
+const SHIFT_PART = /^\/organizations\/[^/]+\/shifts\/([^/]+)\/(visit-verification|care-events|service-location|journey)$/;
 const RECIPIENT_PART = /^\/organizations\/[^/]+\/care-recipients\/([^/]+)\/(care-plan|location)$/;
 
 /** Turnos que valen la pena tener sin señal: propios, no terminados y cercanos. */

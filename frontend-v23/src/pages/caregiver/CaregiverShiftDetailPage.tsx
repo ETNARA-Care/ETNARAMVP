@@ -106,6 +106,8 @@ export function CaregiverShiftDetailPage() {
   const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
   const [location, setLocation] = useState<ShiftServiceLocation | null>(null);
   const [error, setError] = useState<boolean | "offline">(false);
+  /** Gate 7: the agency cancelled the visit or took this caregiver off it while the screen was open. */
+  const [goneNotice, setGoneNotice] = useState<"cancelled" | "unassigned" | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeAction, setActiveAction] = useState<CareEventTypeCode | null>(null);
   const [mealType, setMealType] = useState("Desayuno");
@@ -302,6 +304,25 @@ export function CaregiverShiftDetailPage() {
     }
   }
 
+  if (goneNotice === "cancelled" && (error || shift?.status === "cancelled")) {
+    // After a cancellation the visit is no longer readable by the caregiver: say why instead of "not found".
+    return (
+      <Card className="flex flex-col gap-3" data-testid="shift-cancelled-notice" role="status">
+        <p className="font-medium text-[var(--color-text-primary)]">La agencia canceló esta visita</p>
+        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">No tienes que ir. Si ya estabas en camino, comunícate con la agencia.</p>
+        <Button variant="secondary" onClick={() => navigate("/caregiver/shifts")}>Ver mis turnos</Button>
+      </Card>
+    );
+  }
+  if (goneNotice === "unassigned") {
+    return (
+      <Card className="flex flex-col gap-3" data-testid="shift-unassigned-notice" role="status">
+        <p className="font-medium text-[var(--color-text-primary)]">Ya no tienes asignado este turno</p>
+        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">La agencia cambió la persona asignada. No tienes que ir; si ya estabas en camino, comunícate con la agencia.</p>
+        <Button variant="secondary" onClick={() => navigate("/caregiver/shifts")}>Ver mis turnos</Button>
+      </Card>
+    );
+  }
   if (error) return <ErrorState kind={error === "offline" ? "offline" : "not_found"} onRetry={() => void load()} />;
   if (!shift || !verification) return <div className="flex flex-col gap-3"><Skeleton className="h-20" /><Skeleton className="h-32" /></div>;
 
@@ -352,7 +373,12 @@ export function CaregiverShiftDetailPage() {
 
       {enCamino && canStart && organizationId && shiftId && !verification.arrivals?.length && (
         // Gate 7: «Voy en camino» before the directions; remounts (and hides) once the arrival exists.
-        <CaregiverJourneyCard key={`journey-${verification.arrivals?.length ?? 0}`} organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start} />
+        <CaregiverJourneyCard key={`journey-${verification.arrivals?.length ?? 0}`} organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
+          onGone={(reason) => {
+            setGoneNotice(reason);
+            if (reason === "cancelled") show("La agencia canceló esta visita. No tienes que ir.", "warning");
+            void load();
+          }} />
       )}
 
       {status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location={location} />}

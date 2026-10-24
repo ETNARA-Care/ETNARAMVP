@@ -16,7 +16,7 @@ import type { CareEventTypeCode, CreateCareEventInput } from "@/api/careEvents";
  * llegada, cuidados y salida conservan su secuencia.
  */
 export type QueueStatus = "pending" | "sending" | "failed";
-export type QueuedKind = "care_event" | "check_in" | "check_out";
+export type QueuedKind = "care_event" | "check_in" | "check_out" | "en_route" | "arrival";
 
 export interface VisitEventInput {
   clientEventId?: string;
@@ -50,6 +50,9 @@ export interface CareEventQueueState {
   submit: (args: { organizationId: string; shiftId: string; label: string; input: Omit<CreateCareEventInput, "clientEventId" | "occurredAt"> }) => Promise<SubmitResult>;
   checkIn: (organizationId: string, shiftId: string) => Promise<SubmitResult>;
   checkOut: (organizationId: string, shiftId: string) => Promise<SubmitResult>;
+  /** Gate 7 «Voy en camino» and «Llegué» (sin lectura de ubicación cuando no hay señal). */
+  enRoute: (organizationId: string, shiftId: string) => Promise<SubmitResult>;
+  arrive: (organizationId: string, shiftId: string) => Promise<SubmitResult>;
   retryNow: () => void;
   discard: (clientEventId: string) => void;
 }
@@ -61,6 +64,8 @@ export const CareEventQueueContext = createContext<CareEventQueueState>({
   submit: async () => "sent",
   checkIn: async () => "sent",
   checkOut: async () => "sent",
+  enRoute: async () => "sent",
+  arrive: async () => "sent",
   retryNow: () => {},
   discard: () => {},
 });
@@ -81,11 +86,22 @@ export function failureMessage(error: unknown): string {
   if (apiError?.code === "ALREADY_CHECKED_IN") return "El turno ya tenía una llegada registrada.";
   if (apiError?.code === "NO_ACTIVE_CHECK_IN") return "No había una llegada activa para esta salida.";
   if (apiError?.code === "ASSIGNMENT_NOT_ACCEPTED") return "El turno no estaba aceptado.";
-  if (apiError?.code === "SHIFT_CANCELLED") return "El turno fue cancelado.";
+  if (apiError?.code === "SHIFT_CANCELLED" || apiError?.code === "JOURNEY_SHIFT_NOT_ACTIVE") return "El turno fue cancelado.";
+  if (apiError?.code === "JOURNEY_ASSIGNMENT_NOT_ACCEPTED") return "El turno ya no estaba aceptado.";
+  if (apiError?.code === "JOURNEY_ALREADY_ARRIVED" || apiError?.code === "ALREADY_ARRIVED") return "La llegada ya estaba registrada.";
+  if (apiError?.code === "JOURNEY_OUTSIDE_WINDOW" || apiError?.code === "ARRIVAL_OUTSIDE_WINDOW" || apiError?.code === "JOURNEY_TIME_INVALID")
+    return "Llegó demasiado tarde para el horario del turno.";
+  if (apiError?.code === "NOT_FOUND") return "El turno fue cancelado, se asignó a otra persona o ya terminó.";
   if (apiError?.code === "NO_ACTIVE_VISIT" || apiError?.status === 404) return "El turno ya terminó y no se pudo enviar.";
   if (apiError?.code === "OCCURRED_AT_OUT_OF_RANGE") return "La hora del registro quedó fuera del turno.";
   if (apiError?.code === "CLIENT_EVENT_ID_CONFLICT") return "El registro no coincide con uno ya guardado.";
   return "No se pudo enviar.";
+}
+
+/** «En camino» / «Llegué» guardados en el teléfono que aún esperan señal. */
+export function queuedJourneyState(items: QueuedCareEvent[], shiftId: string): { enRoute: boolean; arrived: boolean } {
+  const mine = items.filter((item) => item.shiftId === shiftId && item.status !== "failed");
+  return { enRoute: mine.some((item) => item.kind === "en_route"), arrived: mine.some((item) => item.kind === "arrival") };
 }
 
 /** Estado de la visita según lo que aún espera en la cola del teléfono. */

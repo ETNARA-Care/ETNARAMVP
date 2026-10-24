@@ -6,16 +6,21 @@ import { Badge, Card } from "@/components/ui";
 import { DELAY_REASON_TEXT, STATE_TEXT, time } from "./journeyText";
 
 const KIND_TEXT: Record<string, string> = {
-  ASSIGNED: "Asignada", ACCEPTED: "Aceptó el turno", DECLINED: "Rechazó el turno", EN_ROUTE: "Voy en camino",
+  ASSIGNED: "Asignada", ACCEPTED: "Aceptó el turno", DECLINED: "Rechazó el turno", UNASSIGNED: "Retirada del turno por la agencia", EN_ROUTE: "Voy en camino",
   DELAY_REPORTED: "Informó un retraso", ARRIVED: "Llegó", STARTED: "Comenzó el turno", FINISHED: "Finalizó el turno", CANCELLED: "Turno cancelado",
 };
 const day = (v: string) => new Date(v).toLocaleDateString("es-PR", { day: "numeric", month: "short", timeZone: "America/Puerto_Rico" });
 
+// Migration 113: a record made without signal keeps the phone's time; the agency sees it was sent later.
+const OFFLINE_TEXT = "Registrado sin señal (hora del teléfono)";
+
 function detailText(item: JourneyHistoryItem): string | null {
   const d = item.detail ?? {};
-  if (item.kind === "DELAY_REPORTED") return `Unos ${d.minutes} min · ${DELAY_REASON_TEXT[d.reason as DelayReason] ?? ""}`;
-  if (item.kind === "ARRIVED") return d.needsReview ? (d.reviewed ? "Revisada por la agencia" : "Pendiente de revisión") : "Cerca del lugar";
-  if (["ASSIGNED", "ACCEPTED", "DECLINED"].includes(item.kind) && d.caregiver) return String(d.caregiver);
+  const offline = d.offline === true ? ` · ${OFFLINE_TEXT}` : "";
+  if (item.kind === "DELAY_REPORTED") return `Unos ${d.minutes} min · ${DELAY_REASON_TEXT[d.reason as DelayReason] ?? ""}${offline}`;
+  if (item.kind === "ARRIVED") return (d.needsReview ? (d.reviewed ? "Revisada por la agencia" : "Pendiente de revisión") : "Cerca del lugar") + offline;
+  if (item.kind === "EN_ROUTE" && d.offline === true) return OFFLINE_TEXT;
+  if (["ASSIGNED", "ACCEPTED", "DECLINED", "UNASSIGNED"].includes(item.kind) && d.caregiver) return String(d.caregiver);
   return null;
 }
 

@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Clock, Navigation } from "lucide-react";
 import type { ApiError } from "@/api/client";
-import { DELAY_MINUTES, declareEnRoute, getShiftJourney, reportDelay, type DelayMinutes, type DelayReason, type Journey } from "@/api/journey";
+import { DELAY_MINUTES, getShiftJourney, reportDelay, type DelayMinutes, type DelayReason, type Journey } from "@/api/journey";
+import { isConnectivityError, queuedJourneyState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { getToken } from "@/auth/token";
 import { Badge, Button, Card, Modal, useToast } from "@/components/ui";
 import { DELAY_REASON_TEXT, JOURNEY_ERROR_TEXT, time } from "./journeyText";
 
 const WINDOW_BEFORE_MS = 2 * 3600_000;
 const WINDOW_AFTER_MS = 3600_000;
+/** While the card is on screen the state is re-read so a cancellation or reassignment shows up by itself. */
+const REFRESH_MS = 45_000;
+const OFFLINE_JOURNEY: Journey = { state: "ASSIGNED", enRouteAt: null, delay: null, arrivedAt: null, startedAt: null, finishedAt: null };
 
 /**
  * «Voy en camino» (Gate 7). The caregiver declares the departure and, if
@@ -15,8 +19,10 @@ const WINDOW_AFTER_MS = 3600_000;
  * and nothing is tracked: the family and the agency only see what is declared.
  * «En camino» ends by itself with «Llegué», «Comenzar turno» or a cancellation.
  */
-export function CaregiverJourneyCard({ organizationId, shiftId, scheduledStart, onChanged }: {
+export function CaregiverJourneyCard({ organizationId, shiftId, scheduledStart, onChanged, onGone }: {
   organizationId: string; shiftId: string; scheduledStart: string; onChanged?: () => void;
+  /** The visit was cancelled or is no longer assigned to this caregiver: the page reloads and explains it. */
+  onGone?: (reason: "cancelled" | "unassigned") => void;
 }) {
   const { show } = useToast();
   const [journey, setJourney] = useState<Journey | null>(null);
@@ -25,14 +31,42 @@ export function CaregiverJourneyCard({ organizationId, shiftId, scheduledStart, 
   const [minutes, setMinutes] = useState<DelayMinutes | null>(null);
   const [reason, setReason] = useState<DelayReason | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const queue = useCareEventQueue();
+  const queued = queuedJourneyState(queue.items, shiftId);
+  // Kept in a ref so an inline callback from the page never re-creates load() (no refresh loop).
+  const goneRef = useRef(onGone);
+  useEffect(() => { goneRef.current = onGone; }, [onGone]);
 
   const load = useCallback(async () => {
     const token = getToken();
     if (!token) return;
-    try { setJourney((await getShiftJourney(organizationId, shiftId, token)).journey); } catch { /* card stays hidden */ }
+    try {
+      const next = (await getShiftJourney(organizationId, shiftId, token)).journey;
+      setJourney(next);
+      if (next.state === "CANCELLED") goneRef.current?.("cancelled");
+    } catch (e) {
+      const err = e as ApiError;
+      // Without signal and nothing remembered: the accepted visit still offers «Voy en camino» (queued).
+      if (isConnectivityError(e)) setJourney((current) => current ?? OFFLINE_JOURNEY);
+      else if (err?.status === 404) { setJourney(null); goneRef.current?.("unassigned"); }
+    }
   }, [organizationId, shiftId]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); }, [load, queue.deliveredVersion]);
   useEffect(() => { const t = window.setInterval(() => setNow(Date.now()), 30_000); return () => window.clearInterval(t); }, []);
+  // Auto-refresh: every 45 s while visible, and right away when the app comes back or the signal returns.
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === "visible") void load(); };
+    const t = window.setInterval(refresh, REFRESH_MS);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("online", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [load]);
 
   const start = new Date(scheduledStart).getTime();
   const opensAt = start - WINDOW_BEFORE_MS;
@@ -44,14 +78,13 @@ export function CaregiverJourneyCard({ organizationId, shiftId, scheduledStart, 
   }
 
   async function goOnTheWay() {
-    const token = getToken();
-    if (!token) return;
     setBusy(true);
     try {
-      const r = await declareEnRoute(organizationId, shiftId, token);
-      setJourney(r.journey);
-      show("Listo: la agencia y la familia saben que vas en camino.", "success");
-      onChanged?.();
+      // Through the offline queue: sent now with signal, otherwise kept (with its real time) until it returns.
+      const result = await queue.enRoute(organizationId, shiftId);
+      show(result === "sent" ? "Listo: la agencia y la familia saben que vas en camino."
+        : "Sin señal: tu aviso quedó guardado con la hora real y se enviará solo al recuperar la señal.", result === "sent" ? "success" : "warning");
+      if (result === "sent") { await load(); onChanged?.(); }
     } catch (e) { explain(e, "No se pudo avisar. Inténtalo de nuevo."); void load(); }
     finally { setBusy(false); }
   }
@@ -69,8 +102,9 @@ export function CaregiverJourneyCard({ organizationId, shiftId, scheduledStart, 
     finally { setBusy(false); }
   }
 
-  if (!journey || !["ASSIGNED", "EN_ROUTE"].includes(journey.state)) return null;
-  const enRoute = journey.state === "EN_ROUTE";
+  if (!journey || !["ASSIGNED", "EN_ROUTE"].includes(journey.state) || queued.arrived) return null;
+  const pendingSync = queued.enRoute && journey.state !== "EN_ROUTE";
+  const enRoute = journey.state === "EN_ROUTE" || pendingSync;
 
   return (
     <Card className="flex flex-col gap-3" aria-label="En camino" data-testid="caregiver-journey">
@@ -78,7 +112,10 @@ export function CaregiverJourneyCard({ organizationId, shiftId, scheduledStart, 
         <Navigation size={22} className={`mt-0.5 shrink-0 ${enRoute ? "text-[var(--color-success-700)]" : "text-[var(--color-navy-900)]"}`} aria-hidden />
         <div className="min-w-0 flex-1">
           {enRoute
-            ? <><div className="flex flex-wrap items-center gap-2"><p className="font-medium text-[var(--color-text-primary)]">En camino desde las {time(journey.enRouteAt!)}</p><Badge tone="success">En camino</Badge></div>
+            ? pendingSync
+              ? <><div className="flex flex-wrap items-center gap-2"><p className="font-medium text-[var(--color-text-primary)]">En camino</p><Badge tone="warning">Por enviar</Badge></div>
+                  <p data-testid="journey-pending-sync" className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Sin señal: se avisará a la agencia y a la familia en cuanto vuelva la señal. Al llegar, toca «Llegué».</p></>
+              : <><div className="flex flex-wrap items-center gap-2"><p className="font-medium text-[var(--color-text-primary)]">En camino desde las {time(journey.enRouteAt!)}</p><Badge tone="success">En camino</Badge></div>
                 <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">La agencia y la familia lo saben. Al llegar, toca «Llegué».</p></>
             : <><p className="font-medium text-[var(--color-text-primary)]">¿Ya vas para allá?</p>
                 <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
@@ -89,7 +126,7 @@ export function CaregiverJourneyCard({ organizationId, shiftId, scheduledStart, 
             <Clock size={15} aria-hidden /> Retraso informado: unos {journey.delay.minutes}{journey.delay.minutes === 60 ? "+" : ""} min · {DELAY_REASON_TEXT[journey.delay.reason]}</p>}
         </div>
       </div>
-      {inWindow && <div className={enRoute ? "" : "grid grid-cols-1 gap-2"}>
+      {inWindow && !pendingSync && <div className={enRoute ? "" : "grid grid-cols-1 gap-2"}>
         {!enRoute && <Button size="lg" fullWidth icon={<Navigation size={20} />} loading={busy} onClick={() => void goOnTheWay()}>Voy en camino</Button>}
         <Button variant={enRoute ? "secondary" : "ghost"} fullWidth={!enRoute} disabled={busy} icon={<Clock size={18} />}
           onClick={() => { setMinutes(null); setReason(null); setDelayOpen(true); }}>Informar retraso</Button>

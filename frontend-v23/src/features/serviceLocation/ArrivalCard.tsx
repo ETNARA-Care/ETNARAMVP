@@ -5,6 +5,7 @@ import type { ShiftArrival } from "@/api/shifts";
 import { getLocationConsent, grantLocationConsent, recordArrival, type Arrival } from "@/api/serviceLocations";
 import { getToken } from "@/auth/token";
 import { Button, Card, Modal, useToast } from "@/components/ui";
+import { isConnectivityError, queuedJourneyState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { PROXIMITY_TEXT } from "./arrivalText";
 
 const time = (v: string) => new Date(v).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" });
@@ -33,6 +34,20 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
   const { show } = useToast();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const queue = useCareEventQueue();
+  const queuedArrival = queuedJourneyState(queue.items, shiftId).arrived;
+
+  /** No signal: keep «Llegué» with its real time; no location is read or stored while offline. */
+  async function queueArrival() {
+    try {
+      const result = await queue.arrive(organizationId, shiftId);
+      show(result === "sent" ? "Llegada registrada." : "Sin señal: tu llegada quedó guardada con la hora real y se enviará sola. La agencia la revisará porque no se pudo verificar la ubicación.",
+        result === "sent" ? "success" : "warning");
+      if (result === "sent") onRecorded();
+    } catch (e) {
+      show((e as ApiError)?.code === "ALREADY_ARRIVED" ? "Tu llegada ya estaba registrada." : "No se pudo registrar la llegada. Puedes comenzar el turno igualmente.", "danger");
+    }
+  }
 
   async function send(withReading: boolean) {
     const token = getToken();
@@ -45,8 +60,8 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
       onRecorded();
     } catch (e) {
       const err = e as ApiError;
-      show(err?.isNetworkError ? "Sin señal. Usa «Comenzar turno»: funciona sin conexión."
-        : err?.code === "ALREADY_ARRIVED" ? "Tu llegada ya estaba registrada."
+      if (isConnectivityError(e)) { await queueArrival(); return; }
+      show(err?.code === "ALREADY_ARRIVED" ? "Tu llegada ya estaba registrada."
         : err?.code === "ARRIVAL_OUTSIDE_WINDOW" ? "Podrás registrar tu llegada desde 2 horas antes del inicio del turno."
         : "No se pudo registrar la llegada. Puedes comenzar el turno igualmente.", "danger");
     } finally { setBusy(false); setAsking(false); }
@@ -61,7 +76,12 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
       setBusy(false);
       if (consent.granted) await send(true);
       else setAsking(true);
-    } catch { setBusy(false); setAsking(true); }
+    } catch (e) {
+      setBusy(false);
+      // No signal: the consent cannot be checked, so no location is read; the arrival is queued.
+      if (isConnectivityError(e) || navigator.onLine === false) { setBusy(true); await queueArrival(); setBusy(false); return; }
+      setAsking(true);
+    }
   }
 
   async function allow() {
@@ -72,6 +92,17 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
     catch { setBusy(false); show("No se pudo guardar tu consentimiento. Registra la llegada sin ubicación.", "danger"); }
   }
 
+  if (!arrival && queuedArrival) {
+    return (
+      <Card className="flex items-start gap-3" aria-label="Llegada" data-testid="arrival-pending-sync">
+        <MapPinCheck size={22} className="mt-0.5 shrink-0 text-[var(--color-warning-700)]" aria-hidden />
+        <div>
+          <p className="font-medium text-[var(--color-text-primary)]">Llegada guardada · por enviar</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Se enviará sola al recuperar la señal. Ya puedes comenzar el turno.</p>
+        </div>
+      </Card>
+    );
+  }
   if (arrival) {
     return (
       <Card className="flex items-start gap-3" aria-label="Llegada">
