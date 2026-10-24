@@ -49,7 +49,10 @@ export interface ReviewQueueItem {
 export interface ApprovalChecks {
   membershipActive: boolean; credentialsEligible: boolean; credentialsVerifiable: boolean;
   unmetRequirementCodes: string[]; availabilityConfigured: boolean; availabilityCovers: boolean;
-  noUnavailabilityConflict: boolean; consentRecorded: boolean; opportunityOpen: boolean;
+  noUnavailabilityConflict: boolean;
+  /** No other shift or approved visit at that time. Absent on servers older than migration 110. */
+  noScheduleConflict?: boolean;
+  consentRecorded: boolean; opportunityOpen: boolean;
   applicationPending: boolean; approvable: boolean;
 }
 export interface ApplicationReview {

@@ -14,12 +14,13 @@ import {
   applicationLabel, CANCELLATION_REASONS, EVENT_LABELS, OPPORTUNITY_EVENT_LABELS, formatDateTime, formatWindow, opportunityLabel, REASON_LABELS, ROLE_OPTIONS, roleLabelProblem, shiftLinkLabel, smartMatchErrorMessage,
 } from "@/features/smartmatch/smartmatchText";
 
-const CHECK_ROWS: { key: "membershipActive" | "credentialsEligible" | "availabilityConfigured" | "availabilityCovers" | "noUnavailabilityConflict" | "consentRecorded" | "opportunityOpen"; label: string }[] = [
+const CHECK_ROWS: { key: "membershipActive" | "credentialsEligible" | "availabilityConfigured" | "availabilityCovers" | "noUnavailabilityConflict" | "noScheduleConflict" | "consentRecorded" | "opportunityOpen"; label: string }[] = [
   { key: "membershipActive", label: "Membresía activa en la agencia" },
   { key: "credentialsEligible", label: "Credenciales obligatorias vigentes y verificadas" },
   { key: "availabilityConfigured", label: "Disponibilidad declarada" },
   { key: "availabilityCovers", label: "Su disponibilidad cubre el horario" },
   { key: "noUnavailabilityConflict", label: "Sin ausencias registradas en ese horario" },
+  { key: "noScheduleConflict", label: "Sin otro turno ni visita aprobada en ese horario" },
   { key: "consentRecorded", label: "Consentimiento registrado" },
   { key: "opportunityOpen", label: "La oportunidad sigue abierta" },
 ];
@@ -333,7 +334,7 @@ export function AgencySmartMatchPage() {
           {review.application.decidedAt ? ` (${formatDateTime(review.application.decidedAt)})` : ""}. No requiere acción.
         </p>}
         <ul className="space-y-1.5" aria-label="Requisitos verificados">
-          {CHECK_ROWS.map((row) => <li key={row.key} className="flex items-start gap-2">
+          {CHECK_ROWS.filter((row) => review.checks[row.key] !== undefined).map((row) => <li key={row.key} data-check={row.key} className="flex items-start gap-2">
             {review.checks[row.key]
               ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[var(--color-success-700)]" aria-label="Cumple" />
               : <XCircle size={18} className="mt-0.5 shrink-0 text-[var(--color-danger-700)]" aria-label="No cumple" />}
