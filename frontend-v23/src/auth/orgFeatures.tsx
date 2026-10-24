@@ -7,7 +7,7 @@ import { useAuth } from "./AuthProvider";
  * agency. Off by default; when off the screens and links are not shown at all
  * (the backend also answers 404 FEATURE_NOT_ENABLED).
  */
-export type OrgFeature = "SMARTMATCH" | "EN_CAMINO";
+export type OrgFeature = "SMARTMATCH" | "EN_CAMINO" | "ACTIVITY_PHOTOS";
 
 export function hasOrgFeature(features: readonly string[] | undefined | null, feature: OrgFeature): boolean {
   return Array.isArray(features) && features.includes(feature);
