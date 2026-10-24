@@ -92,12 +92,14 @@ export function smartMatchErrorMessage(error: unknown, fallback: string): string
     case "APPLICATION_NOT_PENDING": return "Esta solicitud ya no está pendiente. Actualizamos la información.";
     case "OPPORTUNITY_NOT_OPEN": return "La oportunidad ya no está abierta (cubierta, cancelada o vencida).";
     case "OPPORTUNITY_NOT_CANCELLABLE": return "Esta oportunidad ya no se puede cancelar (ya está cancelada o vencida). Actualizamos la información.";
-    case "APPROVAL_BLOCKED": return "No se puede aprobar: falta información verificable. Revisa los requisitos.";
+    case "APPROVAL_BLOCKED": return "No se puede aprobar: no cumple algún requisito (por ejemplo, ya tiene otro turno a esa hora). Revisa los requisitos.";
     case "CONCURRENT_UPDATE_RETRY": return "Otra persona estaba actuando a la vez. Inténtalo de nuevo.";
     case "NOT_FOUND_OR_NOT_PUBLISHABLE": return "Este borrador ya no se puede publicar (ya publicado o con fecha pasada).";
     case "NOT_FOUND": return "No encontramos este registro en tu agencia.";
     case "FORBIDDEN": return "Tu cuenta no tiene permiso para esta acción.";
     case "INVALID_REQUEST": return "Revisa los datos: la hora de fin debe ser posterior al inicio.";
+    case "OPPORTUNITY_TOO_LONG": return "Una oportunidad puede durar como máximo 24 horas. Divídela en varias.";
+    case "OPPORTUNITY_IN_PAST": return "La fecha de inicio ya pasó. Elige un horario futuro.";
     case "SHIFT_ALREADY_CREATED": return "Ya se creó un turno para esta oportunidad.";
     case "LINKED_SHIFT_ACTIVE": return "Esta oportunidad tiene un turno activo. Cancélalo o reasígnalo primero en Turnos.";
     case "SERVICE_LOCATION_REQUIRED": return "Confirma la dirección del servicio.";

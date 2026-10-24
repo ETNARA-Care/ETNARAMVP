@@ -141,9 +141,10 @@ export function CaregiverProfilePage() {
   async function saveAvailability() {
     const token = getToken();
     if (!token || !activeOrganization) return;
-    const invalidDay = availabilityDays.find((day) => day.enabled && day.startTime >= day.endTime);
+    // An end at or before the start means the window ends the next day (overnight); only equal times are invalid.
+    const invalidDay = availabilityDays.find((day) => day.enabled && day.startTime === day.endTime);
     if (invalidDay) {
-      show(`Verifica las horas de ${invalidDay.label}.`, "danger");
+      show(`Verifica las horas de ${invalidDay.label}: inicio y fin no pueden ser iguales.`, "danger");
       return;
     }
     setAvailabilitySaving(true);
@@ -296,6 +297,9 @@ export function CaregiverProfilePage() {
                       <Input label="Desde" type="time" value={day.startTime} onChange={(event) => updateAvailabilityDay(day.weekday, { startTime: event.target.value })} />
                       <Input label="Hasta" type="time" value={day.endTime} onChange={(event) => updateAvailabilityDay(day.weekday, { endTime: event.target.value })} />
                     </div>
+                  )}
+                  {day.enabled && day.endTime < day.startTime && (
+                    <p data-ui="overnight-hint" className="mt-2 text-[var(--text-caption)] text-[var(--color-text-secondary)]">Turno nocturno: termina al día siguiente a las {day.endTime}.</p>
                   )}
                 </div>
               ))}

@@ -53,6 +53,8 @@ function actionError(error: unknown): string {
   if (apiError.code === "ALREADY_CHECKED_IN") return "Este turno ya fue iniciado.";
   if (apiError.code === "ASSIGNMENT_NOT_ACCEPTED") return "Debes aceptar el turno antes de comenzarlo.";
   if (apiError.code === "ASSIGNMENT_ALREADY_RESPONDED") return "Esta asignación ya fue respondida.";
+  // Capa 1: solo ella recibe este aviso; no dice de qué agencia ni qué turno.
+  if (apiError.code === "MY_SCHEDULE_CONFLICT") return "Ya tienes otro turno confirmado en ese horario.";
   if (apiError.code === "NO_ACTIVE_CHECK_IN") return "No encontramos una llegada activa para finalizar.";
   if (apiError.code === "NO_ACTIVE_VISIT") return "Debes comenzar el turno antes de registrar cuidados.";
   if (apiError.code === "EVENT_TYPE_NOT_ENABLED") return "Esta acción no está habilitada para la organización.";
