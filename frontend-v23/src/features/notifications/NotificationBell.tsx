@@ -36,7 +36,7 @@ export function NotificationBell() {
     }
 
     // Gate 6: arrivals, address changes and family correction requests (never carry the address).
-    if ((type === "SHIFT_LATE_ARRIVAL" || type === "SHIFT_ARRIVAL_NEEDS_REVIEW") && shiftId) {
+    if ((type === "SHIFT_LATE_ARRIVAL" || type === "SHIFT_ARRIVAL_NEEDS_REVIEW" || type === "TIMESHEET_NEEDS_REVIEW") && shiftId) {
       navigate(`/agency/shifts/${shiftId}`);
       return;
     }

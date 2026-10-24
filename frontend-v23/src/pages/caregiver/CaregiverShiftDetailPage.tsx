@@ -59,6 +59,8 @@ function actionError(error: unknown): string {
   if (apiError.code === "NO_ACTIVE_VISIT") return "Debes comenzar el turno antes de registrar cuidados.";
   if (apiError.code === "EVENT_TYPE_NOT_ENABLED") return "Esta acción no está habilitada para la organización.";
   if (apiError.code === "NOT_FOUND") return "Este turno ya no está asignado a tu cuenta.";
+  // Unexpected server error: a short reference so the agency can find it in the log.
+  if (apiError.errorId) return `No pudimos registrar la acción. Intenta nuevamente. Código: ${apiError.errorId.slice(0, 8)}`;
   return "No pudimos registrar la acción. Intenta nuevamente.";
 }
 
