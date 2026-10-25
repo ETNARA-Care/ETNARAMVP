@@ -1,3 +1,4 @@
+import { shellEs } from "./_shellCatalog.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -10,7 +11,7 @@ test("Phase 9.4 exposes one center for the four existing agents", () => {
   const page = read("src/pages/agency/AgencyAgentCenterPage.tsx");
 
   assert.match(app, /path="agents"/);
-  assert.match(layout, /Centro de agentes/);
+  assert.match(layout, /k: "agents"/); assert.equal(shellEs("agency.items.agents"), "Centro de agentes");
   for (const request of [
     "generateOperationsAgentBriefing",
     "generateComplianceAgentBriefing",

@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Home, HeartPulse, CalendarDays, MessageCircle, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -8,6 +9,7 @@ import { FamilyRecipientProvider, FamilyRecipientSwitcher } from "@/features/fam
 
 export function FamilyLayout() {
   const { user, organizations, logout } = useAuth();
+  const { t } = useTranslation("shell");
   return (
     <FamilyRecipientProvider>
     <div data-portal="family" className="min-h-dvh flex flex-col bg-[#f8f5ee] text-[#173154]">
@@ -22,7 +24,7 @@ export function FamilyLayout() {
           </div>
           <div className="flex items-center gap-1">
             <NotificationBell />
-            <AccountMenu userLabel={user?.email ?? "Familia"} roleLabel="Familia" settingsTo="/family/profile" onLogout={logout}
+            <AccountMenu userLabel={user?.email ?? t("family.nameFallback")} roleLabel={t("roles.family")} settingsTo="/family/profile" onLogout={logout}
               canSwitchOrganization={organizations.length > 1} showDetailsFrom="never" />
           </div>
         </div>
@@ -32,11 +34,11 @@ export function FamilyLayout() {
         <Outlet />
       </main>
       <PortalBottomNav tabs={[
-        { to: "/family/today", icon: Home, label: "Inicio" },
-        { to: "/family/activity", icon: HeartPulse, label: "Cuidado" },
-        { to: "/family/history", icon: CalendarDays, label: "Calendario" },
-        { to: "/family/messages", icon: MessageCircle, label: "Mensajes" },
-        { to: "/family/profile", icon: MoreHorizontal, label: "Más" },
+        { to: "/family/today", icon: Home, label: t("family.items.home") },
+        { to: "/family/activity", icon: HeartPulse, label: t("family.items.care") },
+        { to: "/family/history", icon: CalendarDays, label: t("family.items.calendar") },
+        { to: "/family/messages", icon: MessageCircle, label: t("family.items.messages") },
+        { to: "/family/profile", icon: MoreHorizontal, label: t("family.items.more") },
       ]} />
     </div>
     </FamilyRecipientProvider>

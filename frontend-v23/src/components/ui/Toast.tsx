@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, AlertTriangle, XCircle, Info, X } from "lucide-react";
 
 type ToastTone = "success" | "warning" | "danger" | "info";
@@ -16,6 +17,15 @@ const icons: Record<ToastTone, ReactNode> = {
   danger: <XCircle size={18} className="text-[var(--color-danger-700)]" />,
   info: <Info size={18} className="text-[var(--color-accent-700)]" />,
 };
+
+function DismissButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation("common");
+  return (
+    <button onClick={onClick} aria-label={t("actions.dismissNotice")} className="opacity-70 hover:opacity-100">
+      <X size={16} />
+    </button>
+  );
+}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -45,9 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           >
             {icons[t.tone]}
             <span className="flex-1">{t.message}</span>
-            <button onClick={() => dismiss(t.id)} aria-label="Cerrar notificación" className="opacity-70 hover:opacity-100">
-              <X size={16} />
-            </button>
+            <DismissButton onClick={() => dismiss(t.id)} />
           </div>
         ))}
       </div>

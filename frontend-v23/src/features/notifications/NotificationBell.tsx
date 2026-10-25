@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, Check } from "lucide-react";
 import { IconButton, Badge } from "@/components/ui";
@@ -11,6 +12,8 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const location = useLocation();
   const { items, unread, error, reload, markRead, markAllRead } = useNotifications();
+  const { t, i18n } = useTranslation("common");
+  const language = i18n.resolvedLanguage === "en" ? "en" : "es";
 
   async function openNotification(notification: NonNullable<typeof items>[number]) {
     await markRead(notification.id);
@@ -112,7 +115,7 @@ export function NotificationBell() {
       <div className="relative">
         <IconButton
           icon={<Bell size={20} />}
-          label={unread > 0 ? `Notificaciones, ${unread} sin leer` : "Notificaciones"}
+          label={unread > 0 ? t("notifications.bellUnread", { count: unread }) : t("notifications.bell")}
           onClick={toggle}
         />
         {unread > 0 && (
@@ -132,7 +135,7 @@ export function NotificationBell() {
           <div className="fixed inset-0 z-[var(--z-overlay)]" onClick={() => setOpen(false)} aria-hidden />
           <div
             role="dialog"
-            aria-label="Notificaciones"
+            aria-label={t("notifications.title")}
             // Phones: pinned to the screen with 12 px gutters, whatever sits right of the bell in each
             // portal's header. From 640 px: the usual drop-down under the bell.
             className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-[var(--z-modal)]
@@ -141,14 +144,14 @@ export function NotificationBell() {
               shadow-[var(--shadow-raised)] overflow-hidden"
           >
             <div className="flex items-center justify-between gap-2 px-3.5 py-3 border-b border-[var(--color-border)]">
-              <p className="min-w-0 truncate font-medium text-[var(--text-body)] text-[var(--color-text-primary)]">Notificaciones</p>
+              <p className="min-w-0 truncate font-medium text-[var(--text-body)] text-[var(--color-text-primary)]">{t("notifications.title")}</p>
               {unread > 0 && (
                 <span className="flex shrink-0 items-center gap-2 whitespace-nowrap">
                   {/* The bell already shows the count; on phones the title and «Marcar todas» need the room. */}
-                  <span className="hidden sm:inline-flex"><Badge tone="accent">{unread} sin leer</Badge></span>
+                  <span className="hidden sm:inline-flex"><Badge tone="accent">{t("notifications.unread", { count: unread })}</Badge></span>
                   <button type="button" onClick={() => void markAllRead()}
                     className="min-h-8 rounded-md px-1.5 text-[var(--text-caption)] font-medium text-[var(--color-accent-700)] hover:underline">
-                    Marcar todas
+                    {t("notifications.markAll")}
                   </button>
                 </span>
               )}
@@ -160,15 +163,15 @@ export function NotificationBell() {
                   onClick={() => void reload()}
                   className="w-full text-[var(--text-small)] text-[var(--color-danger-700)] text-center py-6 px-3"
                 >
-                  No pudimos cargar las notificaciones. Toca para reintentar.
+                  {t("notifications.error")}
                 </button>
               ) : items === null ? (
                 <p className="text-[var(--text-small)] text-[var(--color-text-muted)] text-center py-6 px-3">
-                  Cargando notificaciones…
+                  {t("notifications.loading")}
                 </p>
               ) : items.length === 0 ? (
                 <p className="text-[var(--text-small)] text-[var(--color-text-muted)] text-center py-6 px-3">
-                  No tienes notificaciones nuevas.
+                  {t("notifications.empty")}
                 </p>
               ) : (
                 items.map((n) => (
@@ -185,7 +188,7 @@ export function NotificationBell() {
                     />
                     <span className="flex-1">
                       <span className="block text-[var(--text-small)] text-[var(--color-text-primary)]">{n.summary}</span>
-                      <span className="block text-[var(--text-caption)] text-[var(--color-text-muted)] mt-0.5">{notificationTime(n.createdAt)}</span>
+                      <span className="block text-[var(--text-caption)] text-[var(--color-text-muted)] mt-0.5">{notificationTime(n.createdAt, new Date(), language)}</span>
                     </span>
                     {!n.readAt && <Check size={14} className="text-[var(--color-text-muted)] mt-1.5" aria-hidden />}
                   </button>

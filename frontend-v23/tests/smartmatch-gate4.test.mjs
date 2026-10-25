@@ -1,3 +1,4 @@
+import { shellEs } from "./_shellCatalog.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -23,7 +24,7 @@ test("routes and navigation exist in the deployed frontend", () => {
   assert.match(app, /path="smartmatch" element=\{<FeatureRoute feature="SMARTMATCH" fallback="\/caregiver"><CaregiverSmartMatchPage\/><\/FeatureRoute>\}/);
   assert.match(app, /path="smartmatch" element=\{<FeatureRoute feature="SMARTMATCH" fallback="\/agency"><AgencySmartMatchPage\/><\/FeatureRoute>\}/);
   assert.match(agencyLayout, /to: "\/agency\/smartmatch"/);
-  assert.match(caregiverLayout, /\{ to: "\/caregiver\/smartmatch", icon: BriefcaseBusiness, label: "Ofertas" \}/);
+  assert.match(caregiverLayout, /\{ to: "\/caregiver\/smartmatch", icon: BriefcaseBusiness, label: t\("caregiver\.items\.offers"\) \}/); assert.equal(shellEs("caregiver.items.offers"), "Ofertas");
 });
 
 test("supervisors do not see the SmartMatch link (administrators only)", () => {

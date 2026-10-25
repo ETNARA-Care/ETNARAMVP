@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "./AuthProvider";
 import { bootstrapErrorMessage } from "./errorMessages";
 
@@ -10,12 +11,13 @@ import { bootstrapErrorMessage } from "./errorMessages";
  */
 export function ProtectedRoute() {
   const { status, error } = useAuth();
+  const { t } = useTranslation("common");
   const location = useLocation();
 
   if (status === "loading") {
     return (
       <div className="min-h-dvh flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-[var(--color-navy-800)] border-t-transparent animate-spin" aria-label="Cargando sesión" />
+        <div className="h-8 w-8 rounded-full border-2 border-[var(--color-navy-800)] border-t-transparent animate-spin" aria-label={t("loading.session")} />
       </div>
     );
   }
@@ -24,7 +26,7 @@ export function ProtectedRoute() {
     return (
       <div className="min-h-dvh flex items-center justify-center px-[var(--spacing-md)] text-center">
         <p className="text-[var(--color-text-secondary)]">
-          {error ? bootstrapErrorMessage(error) : "No pudimos recuperar tu sesión."}
+          {error ? bootstrapErrorMessage(error) : t("states.sessionLost")}
         </p>
       </div>
     );

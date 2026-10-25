@@ -1,3 +1,4 @@
+import { shellEs } from "./_shellCatalog.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -9,7 +10,7 @@ test("Agency exposes a real predictive planning destination", () => {
   const layout = read("src/layouts/AgencyLayout.tsx");
   assert.match(app, /path="planning"/);
   assert.match(layout, /to: "\/agency\/planning"/);
-  assert.match(layout, /label: "Planificación"/);
+  assert.match(layout, /k: "planning"/); assert.equal(shellEs("agency.items.planning"), "Planificación");
 });
 
 test("planning consumes the manager-only real forecast contract", () => {

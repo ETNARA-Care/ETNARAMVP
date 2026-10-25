@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type React from "react";
 import { X } from "lucide-react";
 import { IconButton } from "./Button";
@@ -15,6 +16,12 @@ interface OverlayBaseProps {
  * iPhone keyboards cover the lower half of the screen without resizing the
  * layout: bring the focused field to the middle of the scrollable body.
  */
+/** «Cerrar» / «Close» in the active language. */
+function CloseButton({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation("common");
+  return <IconButton icon={<X size={18} />} label={t("actions.close")} onClick={onClose} />;
+}
+
 function keepFocusedFieldVisible(event: React.FocusEvent<HTMLDivElement>) {
   const target = event.target as HTMLElement;
   if (!/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
@@ -94,7 +101,7 @@ export function Modal({ open, onClose, title, children, footer, fullScreenOnMobi
           {eyebrow && <p className="mb-1 text-[length:var(--text-caption)] font-semibold uppercase tracking-[.14em] text-[var(--color-text-muted)]">{eyebrow}</p>}
           <h2 className={`min-w-0 break-words font-display leading-tight ${sheetOnMobile ? "line-clamp-2 text-[length:1.125rem] sm:line-clamp-none sm:text-[length:var(--text-h3)]" : "text-[1.2rem] sm:text-[var(--text-h3)]"}`}>{title}</h2>
         </div>
-        <span className="shrink-0"><IconButton icon={<X size={18} />} label="Cerrar" onClick={onClose} /></span>
+        <span className="shrink-0"><CloseButton onClose={onClose} /></span>
       </div>
       {/* `flex-auto` (not flex-1): Safari collapses a 0% flex-basis inside a column
           that only has a max-height, which cut the body off on iPhone. */}
@@ -131,7 +138,7 @@ export function BottomSheet({ open, onClose, title, children, footer }: OverlayB
       <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-[var(--color-ivory-200)]" aria-hidden />
       <div className="flex items-center justify-between px-[var(--spacing-md)] py-[var(--spacing-sm)]">
         <h2 className="font-display text-[var(--text-h3)]">{title}</h2>
-        <IconButton icon={<X size={18} />} label="Cerrar" onClick={onClose} />
+        <CloseButton onClose={onClose} />
       </div>
       <div className="px-[var(--spacing-md)] pb-[var(--spacing-md)] overflow-y-auto">{children}</div>
       {footer && (
