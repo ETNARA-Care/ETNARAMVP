@@ -42,7 +42,7 @@ test("permission buttons only for managers while the module is on; the backend s
 test("ETNARA central: FACTURACION needs FINANZAS; the manager panel shows e-mails only and never finance data", () => {
   const card = read("src/features/platform/OrganizationFeaturesCard.tsx");
   assert.match(card, /FACTURACION: \{ title: "Facturación Premium"/);
-  assert.match(card, /"FINANZAS", "FACTURACION"\]/);
+  assert.match(card, /"FINANZAS", "FACTURACION"[,\]]/);
   assert.match(card, /const blocked = f\.code === "FACTURACION" && !f\.enabled && !finanzasOn;/);
   assert.match(card, /disabled=\{saving \|\| blocked\}/);
   assert.match(card, /f\.code === "FACTURACION" && f\.enabled && finanzasOn && !pending && <BillingManagerPanel/);

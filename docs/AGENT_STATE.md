@@ -2,6 +2,14 @@
 
 ## Current Status
 
+## 2026-10-25 — Informe de Turno F1: vista y aprobación de la agencia (claude/shift-report-f1)
+- **Requiere** el backend `claude/shift-report-f1` (migración 126). Visible solo con SHIFT_REPORTS (ETNARA central lo enciende por agencia); admin y supervisor.
+- **Pantallas:**
+  - «Informes de turno» (`/agency/shift-reports`, con enlace desde Turnos): «Por aprobar», «Aprobados» y «Todos».
+  - Tarjeta en el detalle del turno con el informe (horas reales, secciones desde los registros y secciones vacías explícitas), «Actualizar borrador», «Revisar y aprobar» (qué verá la familia, con los valores por defecto de ETNARA, y resumen opcional) e historial.
+  - Central: interruptor «Informe de turno».
+- **Sin cambios** en cuidadora, familia, Gate 6, SmartMatch, Finanzas, bilingüe ni invitaciones.
+- **Pruebas:** 249/249, tsc y build; E2E en iPhone 10/10.
 ## 2026-10-25 — Gate 6: «Llegué» separado de «Comenzar turno» (claude/llegue-arrival-clarity)
 - **Textos:** «Comenzar turno» ya no dice que registra la llegada. Ahora dice «Iniciando turno…», «Turno iniciado» y, en la línea de tiempo, «Turno iniciado» / «Turno finalizado». La cola sin señal usa «Inicio del turno» y «Final del turno».
 - **Con EN_CAMINO y sin «Llegué»** (ni guardado ni en cola): «Comenzar turno» abre «¿Registrar tu llegada primero?», con dos opciones: «Registrar «Llegué»» (lleva a la tarjeta) y «Comenzar sin «Llegué»» (inicia igual). Nunca bloquea.
