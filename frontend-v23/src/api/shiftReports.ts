@@ -60,7 +60,7 @@ export const shiftReportsApi = {
   list: (org: string, token: string, status?: "DRAFT" | "APPROVED") =>
     apiClient.get<{ reports: ShiftReportListItem[] }>(`${O(org)}/shift-reports${status ? `?status=${status}` : ""}`, token),
   forShift: (org: string, shiftId: string, token: string) =>
-    apiClient.get<{ reports: ShiftReport[]; finishedVisits: number; openVisits: number }>(`${O(org)}/shifts/${shiftId}/reports`, token),
+    apiClient.get<{ reports: ShiftReport[]; finishedVisits: number; openVisits: number }>(`${O(org)}/shifts/${shiftId}/shift-reports`, token),
   refresh: (org: string, reportId: string, token: string) =>
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/refresh`, {}, token),
   approve: (org: string, reportId: string, body: { expectedGeneratedAt: string; familySections: Partial<FamilySections>; agencySummary?: string }, token: string) =>
