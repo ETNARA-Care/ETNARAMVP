@@ -1,0 +1,9 @@
+{
+  "appName": "ETNARA Care",
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English",
+    "switchTo": "Cambiar el idioma a {{language}}"
+  }
+}

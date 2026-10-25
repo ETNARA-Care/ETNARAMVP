@@ -14,7 +14,9 @@ test("public routes and the login link exist (the e-mail points to /reset-passwo
   assert.match(app, /<Route path="\/reset-password" element=\{<ResetPasswordPage\/>\}\/>/);
   // Public: declared before the protected block.
   assert.ok(app.indexOf('path="/reset-password"') < app.indexOf("<Route element={<ProtectedRoute/>}>"));
-  assert.match(login, /<Link to="\/forgot-password"[^>]*>\s*¿Olvidaste tu contraseña\?\s*<\/Link>/);
+  // i18n (B1): the link text comes from the auth catalog, same wording in Spanish.
+  assert.match(login, /<Link to="\/forgot-password"[^>]*>\s*\{t\("login\.forgot"\)\}\s*<\/Link>/);
+  assert.equal(JSON.parse(read("../src/i18n/locales/es/auth.json")).login.forgot, "¿Olvidaste tu contraseña?");
   assert.match(api, /"\/auth\/password-reset\/request", \{ email \}/);
   assert.match(api, /"\/auth\/password-reset\/confirm", \{ token, password \}/);
 });
