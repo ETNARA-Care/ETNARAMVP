@@ -41,7 +41,12 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
     } finally { setSaving(false); }
   }
 
-  const features = data ? [...data.features].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
+  // The backend also reports switches this card does not manage (ACTIVITY_PHOTOS since 115,
+  // FINANZAS since 118). Looking up their label crashed the whole page (white screen), so only
+  // the switches with a label here are shown; the others stay as they are (off).
+  const known = (code: string): code is PilotFeatureCode => Object.prototype.hasOwnProperty.call(LABELS, code);
+  const features = data ? data.features.filter((f) => known(f.code)).sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
+  const history = data ? data.history.filter((h) => known(h.code)) : [];
   const activeCount = features.filter((f) => f.enabled).length;
 
   return (
@@ -102,11 +107,11 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
               </div>
             );
           })}
-          {data.history.length > 0 && (
+          {history.length > 0 && (
             <details className="group rounded-2xl border border-[var(--color-border)] bg-white px-3.5 py-3 text-[length:var(--text-small)]">
-              <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-[var(--color-text-primary)]"><History size={15} />Historial ({data.history.length})</summary>
+              <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-[var(--color-text-primary)]"><History size={15} />Historial ({history.length})</summary>
               <ul className="mt-2 space-y-1.5">
-                {data.history.map((h, i) => (
+                {history.map((h, i) => (
                   <li key={i} className="leading-5 text-[var(--color-text-secondary)]">
                     <span className="font-medium text-[var(--color-text-primary)]">{LABELS[h.code].title} {h.enabled ? "activada" : "desactivada"}</span> · {new Date(h.occurredAt).toLocaleString("es-PR")} · {h.reason}{h.actorEmail ? ` · ${h.actorEmail}` : ""}
                   </li>
