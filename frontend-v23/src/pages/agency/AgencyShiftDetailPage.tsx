@@ -22,6 +22,7 @@ import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstruct
 import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
 import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
 import { ShiftFinancePanel } from "@/features/finance/ShiftFinancePanel";
+import { ShiftReportPanel } from "@/features/shiftReports/ShiftReportPanel";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -43,6 +44,8 @@ export function AgencyShiftDetailPage() {
   // Finanzas (119): agency administrator only, FINANZAS on only.
   const finance = hasOrgFeature(activeOrganization?.features, "FINANZAS") && roles.includes("ORGANIZATION_ADMIN");
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
+  // Informe de Turno F1 (124): admins and supervisors, only where ETNARA central turned it on.
+  const shiftReports = hasOrgFeature(activeOrganization?.features, "SHIFT_REPORTS");
   const { show } = useToast();
   const organizationId = activeOrganization?.id;
   const [shift, setShift] = useState<Shift | null | undefined>(undefined);
@@ -148,6 +151,8 @@ export function AgencyShiftDetailPage() {
         cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
 
       {enCamino && organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
+
+      {shiftReports && organizationId && shiftId && shift.care_recipient_id && <ShiftReportPanel organizationId={organizationId} shiftId={shiftId} />}
 
       {finance && organizationId && shiftId && <ShiftFinancePanel organizationId={organizationId} shiftId={shiftId} />}
 

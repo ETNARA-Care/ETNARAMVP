@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bot, Lock, Plus, Sparkles } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Bot, ChevronRight, FileText, Lock, Plus, Sparkles } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { hasOrgFeature } from "@/auth/orgFeatures";
@@ -84,6 +84,7 @@ export function AgencyShiftsPage() {
   const { show } = useToast();
   // Finanzas (119): the administrator may choose the service; the shift itself is created exactly as before.
   const finance = hasOrgFeature(activeOrganization?.features, "FINANZAS") && roles.includes("ORGANIZATION_ADMIN");
+  const shiftReports = hasOrgFeature(activeOrganization?.features, "SHIFT_REPORTS");
   const [financeServices, setFinanceServices] = useState<FinanceService[]>([]);
   const [serviceId, setServiceId] = useState("");
   const [shifts, setShifts] = useState<Shift[] | null>(null);
@@ -335,6 +336,14 @@ export function AgencyShiftsPage() {
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Turnos" description="Asignaciones reales de la organización." actions={<Button icon={<Plus size={18} />} onClick={openCreate} disabled={eligibleWorkers.length === 0}>Crear turno</Button>} />
+      {shiftReports && (
+        <Link to="/agency/shift-reports" className="block" data-testid="shift-reports-link">
+          <Card className="flex min-h-11 items-center justify-between gap-3">
+            <span className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><FileText size={20} aria-hidden /> Informes de turno</span>
+            <ChevronRight size={18} aria-hidden className="text-[var(--color-text-muted)]" />
+          </Card>
+        </Link>
+      )}
       <Card className="border border-[var(--color-border)]">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div className="flex gap-3">

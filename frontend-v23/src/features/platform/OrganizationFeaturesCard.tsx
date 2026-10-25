@@ -10,8 +10,9 @@ const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   EN_CAMINO: { title: "En camino y «Llegué»", detail: "Aviso de salida, retrasos declarados y llegada con ubicación." },
   FINANZAS: { title: "Finanzas", detail: "Servicios y tarifas de la agencia. ETNARA central solo enciende o apaga: no ve importes ni datos financieros." },
   FACTURACION: { title: "Facturación Premium", detail: "Facturas de la agencia a sus clientes. Requiere Finanzas. ETNARA central solo enciende, apaga y designa al gestor de permisos: no ve facturas, tarifas ni importes." },
+  SHIFT_REPORTS: { title: "Informe de turno", detail: "Informe de cada visita con sus registros reales, revisado y aprobado por la agencia. ETNARA central solo enciende o apaga: no ve el contenido de los informes." },
 };
-const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS", "FACTURACION"];
+const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS", "FACTURACION", "SHIFT_REPORTS"];
 
 /**
  * ETNARA central: turn the SmartMatch pilot on or off for one agency.

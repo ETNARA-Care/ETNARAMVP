@@ -2,6 +2,15 @@
 
 ## Current Status
 
+## 2026-10-25 — Informe de Turno F1: vista y aprobación de la agencia (claude/shift-report-f1)
+- **Requiere** el backend `claude/shift-report-f1` (migración 124). Visible solo con SHIFT_REPORTS (ETNARA central lo enciende por agencia); admin y supervisor.
+- **Pantallas:**
+  - «Informes de turno» (`/agency/shift-reports`, con enlace desde Turnos): «Por aprobar», «Aprobados» y «Todos».
+  - Tarjeta en el detalle del turno con el informe (horas reales, secciones desde los registros y secciones vacías explícitas), «Actualizar borrador», «Revisar y aprobar» (qué verá la familia, con los valores por defecto de ETNARA, y resumen opcional) e historial.
+  - Central: interruptor «Informe de turno».
+- **Sin cambios** en cuidadora, familia, Gate 6, SmartMatch, Finanzas, bilingüe ni invitaciones.
+- **Pruebas:** 249/249, tsc y build; E2E en iPhone 10/10.
+
 ## 2026-10-24 — PR 0: recuperación de contraseña por correo (claude/password-recovery-email)
 - «¿Olvidaste tu contraseña?» en el login → `/forgot-password` (mismo mensaje exista o no la cuenta) → correo con enlace → `/reset-password` (token leído una vez y quitado de la barra de direcciones; 12–128 caracteres con confirmación; enlace usado/vencido → «Pedir un enlace nuevo»; al terminar se cierra también la sesión local).
 - Antes el correo enlazaba a `/reset-password`, que no existía: nadie podía recuperar su contraseña.
