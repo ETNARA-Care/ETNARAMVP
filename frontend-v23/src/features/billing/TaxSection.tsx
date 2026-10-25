@@ -17,12 +17,15 @@ export function TaxSection({ organizationId, canManage }: { organizationId: stri
   const lang = langOf(i18n.resolvedLanguage);
   const [data, setData] = useState<{ today: string; services: TaxService[] } | null>(null);
   const [editing, setEditing] = useState<TaxService | null>(null);
+  const [unsupported, setUnsupported] = useState(false);
   const load = useCallback(async () => {
     const token = getToken(); if (!token) return;
-    try { setData(await billingDraftsApi.tax(organizationId, token)); } catch { setData({ today: "", services: [] }); }
+    try { setData(await billingDraftsApi.tax(organizationId, token)); }
+    catch (e) { if ((e as { status?: number })?.status === 404) setUnsupported(true); else setData({ today: "", services: [] }); }
   }, [organizationId]);
   useEffect(() => { void load(); }, [load]);
 
+  if (unsupported) return null; // backend before F2.2 (124)
   return (
     <details className="group min-w-0 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4" data-billing-tax>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2">

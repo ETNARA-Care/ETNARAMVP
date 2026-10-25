@@ -24,10 +24,16 @@ export function InvoicesSection({ organizationId, canDraft, canManageTax, readOn
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [unsupported, setUnsupported] = useState(false);
 
   const load = useCallback(async () => {
     const token = getToken(); if (!token) return;
-    try { const r = await billingDraftsApi.list(organizationId, token); setRows(r.invoices); setDays(r.inactiveDays); setFailed(false); } catch { setFailed(true); }
+    try { const r = await billingDraftsApi.list(organizationId, token); setRows(r.invoices); setDays(r.inactiveDays); setFailed(false); }
+    catch (e) {
+      // A backend before F2.2 (124) has no /invoices route: the section is simply not shown.
+      if ((e as { status?: number })?.status === 404) { setUnsupported(true); return; }
+      setFailed(true);
+    }
   }, [organizationId]);
   useEffect(() => { void load(); }, [load]);
 
@@ -38,6 +44,7 @@ export function InvoicesSection({ organizationId, canDraft, canManageTax, readOn
   };
   const shown = (rows ?? []).filter((r) => (chip === "drafts" ? r.status === "draft" && !r.inactive : chip === "inactive" ? r.inactive : r.status === "discarded"));
 
+  if (unsupported) return null;
   return (
     <section className="flex min-w-0 flex-col gap-3" aria-labelledby="billing-invoices-title" data-billing-invoices>
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
