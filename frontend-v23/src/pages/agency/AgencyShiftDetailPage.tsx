@@ -44,7 +44,7 @@ export function AgencyShiftDetailPage() {
   // Finanzas (119): agency administrator only, FINANZAS on only.
   const finance = hasOrgFeature(activeOrganization?.features, "FINANZAS") && roles.includes("ORGANIZATION_ADMIN");
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
-  // Informe de Turno F1 (124): admins and supervisors, only where ETNARA central turned it on.
+  // Informe de Turno F1 (126): admins and supervisors, only where ETNARA central turned it on.
   const shiftReports = hasOrgFeature(activeOrganization?.features, "SHIFT_REPORTS");
   const { show } = useToast();
   const organizationId = activeOrganization?.id;

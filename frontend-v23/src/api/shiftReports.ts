@@ -1,7 +1,7 @@
 import { apiClient } from "./client";
 
 /**
- * Informe de Turno F1 (backend migration 124). Agency managers only, and only
+ * Informe de Turno F1 (backend migration 126). Agency managers only, and only
  * while ETNARA central has SHIFT_REPORTS on for the agency (404 otherwise).
  * The content is a snapshot of the shift's real records: nothing is invented and
  * free text arrives exactly as the caregiver wrote it.

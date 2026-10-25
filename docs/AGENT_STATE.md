@@ -3,7 +3,7 @@
 ## Current Status
 
 ## 2026-10-25 — Informe de Turno F1: vista y aprobación de la agencia (claude/shift-report-f1)
-- **Requiere** el backend `claude/shift-report-f1` (migración 124). Visible solo con SHIFT_REPORTS (ETNARA central lo enciende por agencia); admin y supervisor.
+- **Requiere** el backend `claude/shift-report-f1` (migración 126). Visible solo con SHIFT_REPORTS (ETNARA central lo enciende por agencia); admin y supervisor.
 - **Pantallas:**
   - «Informes de turno» (`/agency/shift-reports`, con enlace desde Turnos): «Por aprobar», «Aprobados» y «Todos».
   - Tarjeta en el detalle del turno con el informe (horas reales, secciones desde los registros y secciones vacías explícitas), «Actualizar borrador», «Revisar y aprobar» (qué verá la familia, con los valores por defecto de ETNARA, y resumen opcional) e historial.
