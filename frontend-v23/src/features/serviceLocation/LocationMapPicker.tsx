@@ -37,25 +37,29 @@ type Point = { latitude: number; longitude: number };
  * request (local search: municipality / pasted link) only moves the view, it
  * never places or confirms the marker by itself.
  */
-export function LocationMapPicker({ value, onChange, center, className = "h-56" }: {
+export function LocationMapPicker({ value, onChange, center, className = "h-56", readOnly = false }: {
   value: Point | null;
   onChange: (next: Point) => void;
   /** View request from the local search; changing it recentres the map. */
   center?: { lat: number; lng: number; zoom: number; key: string } | null;
   className?: string;
+  /** Preview only: the marker cannot be dragged nor placed until «Ajustar PIN» turns this off. */
+  readOnly?: boolean;
 }) {
   const host = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const marker = useRef<L.Marker | null>(null);
   const changeRef = useRef(onChange);
   changeRef.current = onChange;
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
 
   const placeMarker = (lat: number, lng: number) => {
     const m = map.current;
     if (!m) return;
     if (!marker.current) {
       marker.current = L.marker([lat, lng], {
-        draggable: true, keyboard: true, title: "Ubicación del servicio", autoPan: true,
+        draggable: !readOnlyRef.current, keyboard: true, title: "Ubicación del servicio", autoPan: true,
         icon: L.divIcon({ className: "", iconSize: [32, 32], iconAnchor: [16, 32],
           html: '<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--color-navy-900,#16213e);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>' }),
       }).addTo(m);
@@ -80,6 +84,7 @@ export function LocationMapPicker({ value, onChange, center, className = "h-56" 
       new Logo({ position: "bottomleft" }).addTo(m);
     }
     m.on("click", (e: L.LeafletMouseEvent) => {
+      if (readOnlyRef.current) return;
       placeMarker(e.latlng.lat, e.latlng.lng);
       changeRef.current({ latitude: Math.round(e.latlng.lat * 1e6) / 1e6, longitude: Math.round(e.latlng.lng * 1e6) / 1e6 });
     });
@@ -105,11 +110,17 @@ export function LocationMapPicker({ value, onChange, center, className = "h-56" 
     if (map.current && center) map.current.setView([center.lat, center.lng], center.zoom);
   }, [center?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const d = marker.current?.dragging;
+    if (d) { if (readOnly) d.disable(); else d.enable(); }
+  }, [readOnly]);
+
   return (
     <div
       ref={host}
       role="application"
-      aria-label="Mapa: toca para colocar el marcador y arrástralo hasta la entrada"
+      aria-label={readOnly ? "Vista previa del mapa con el PIN" : "Mapa: toca para colocar el marcador y arrástralo hasta la entrada"}
+      data-readonly={readOnly ? "true" : undefined}
       data-testid="location-map"
       // isolate + z-0: Leaflet's own z-index layers (400–1000) stay inside the map
       // and can never paint over the modal's header or buttons (iOS Safari).

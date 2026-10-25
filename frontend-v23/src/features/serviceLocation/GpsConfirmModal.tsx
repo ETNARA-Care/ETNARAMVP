@@ -3,11 +3,12 @@ import { Crosshair, ExternalLink, Search } from "lucide-react";
 import type { ApiError } from "@/api/client";
 import { confirmLocationGps, type ServiceLocation } from "@/api/serviceLocations";
 import { getToken } from "@/auth/token";
-import { Button, Checkbox, Input, Modal, Select, useToast } from "@/components/ui";
+import { Button, Checkbox, Modal, Select, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
 import { LocationMapPicker } from "./LocationMapPicker";
 import { MUNICIPALITY_CENTERS } from "./municipalityCenters";
-import { parseMapPoint, serviceAddressText } from "./navigation";
+import { serviceAddressText } from "./navigation";
+import { PasteLocation } from "./PasteLocation";
 
 type Point = { latitude: number; longitude: number };
 const fmt = (p: Point) => `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`;
@@ -26,15 +27,13 @@ export function GpsConfirmModal({ open, organizationId, recipientId, location, o
   const [point, setPoint] = useState<Point | null>(initial);
   const [municipality, setMunicipality] = useState(location?.municipality ?? "");
   const [center, setCenter] = useState<{ lat: number; lng: number; zoom: number; key: string } | null>(null);
-  const [paste, setPaste] = useState("");
-  const [pasteError, setPasteError] = useState("");
   const [sure, setSure] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // Reset for each address opened; centre on its municipality when there is no marker yet.
   useEffect(() => {
     if (!open) return;
-    setPoint(initial); setSure(false); setPaste(""); setPasteError("");
+    setPoint(initial); setSure(false);
     const m = location?.municipality ?? "";
     setMunicipality(m);
     setCenter(!initial && MUNICIPALITY_CENTERS[m] ? { ...MUNICIPALITY_CENTERS[m], zoom: 14, key: `open:${location?.id}:${m}` } : null);
@@ -45,11 +44,6 @@ export function GpsConfirmModal({ open, organizationId, recipientId, location, o
     setMunicipality(m);
     const c = MUNICIPALITY_CENTERS[m];
     if (c) setCenter({ ...c, zoom: 14, key: `m:${m}:${Date.now()}` });
-  }
-  function usePasted() {
-    const p = parseMapPoint(paste);
-    if (!p) { setPasteError("No reconocemos coordenadas de Puerto Rico. Pega el enlace de Apple Maps o Google Maps, o «18.234100, -66.048500»."); return; }
-    setPasteError(""); setPoint(p); setSure(false);
   }
 
   async function confirm() {
@@ -82,14 +76,10 @@ export function GpsConfirmModal({ open, organizationId, recipientId, location, o
             <option value="">Selecciona para centrar el mapa</option>
             {PUERTO_RICO_MUNICIPALITIES.map((m) => <option key={m} value={m}>{m}</option>)}
           </Select>
-          <div className="flex items-end gap-2">
-            <div className="min-w-0 flex-1">
-              <Input label="Enlace o coordenadas (opcional)" value={paste} onChange={(e) => setPaste(e.target.value)}
-                placeholder="Pega el enlace de Apple o Google Maps" inputMode="url" autoComplete="off" error={pasteError || undefined} />
-            </div>
-            <Button variant="secondary" disabled={!paste.trim()} onClick={usePasted}>Usar</Button>
-          </div>
-          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">La búsqueda no sale de ETNARA: solo mueve el mapa. Tú colocas el marcador.</p>
+          <PasteLocation label="Enlace de mapas o coordenadas (opcional)"
+            onPoint={(p) => { setPoint(p); setSure(false); setCenter({ lat: p.latitude, lng: p.longitude, zoom: 18, key: `p:${p.latitude},${p.longitude}` }); }}
+            onAddress={(h) => { if (!point && h.municipality) goToMunicipality(h.municipality); }} />
+          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Nada se confirma solo: revisa el marcador y confírmalo tú.</p>
         </fieldset>
 
         <LocationMapPicker value={point} onChange={(p) => { setPoint(p); setSure(false); }} center={center} className="h-[45dvh] min-h-[240px]" />
