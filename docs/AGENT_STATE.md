@@ -10,6 +10,12 @@
   - Central: interruptor «Informe de turno».
 - **Sin cambios** en cuidadora, familia, Gate 6, SmartMatch, Finanzas, bilingüe ni invitaciones.
 - **Pruebas:** 249/249, tsc y build; E2E en iPhone 10/10.
+## 2026-10-25 — Gate 6: «Llegué» separado de «Comenzar turno» (claude/llegue-arrival-clarity)
+- **Textos:** «Comenzar turno» ya no dice que registra la llegada. Ahora dice «Iniciando turno…», «Turno iniciado» y, en la línea de tiempo, «Turno iniciado» / «Turno finalizado». La cola sin señal usa «Inicio del turno» y «Final del turno».
+- **Con EN_CAMINO y sin «Llegué»** (ni guardado ni en cola): «Comenzar turno» abre «¿Registrar tu llegada primero?», con dos opciones: «Registrar «Llegué»» (lleva a la tarjeta) y «Comenzar sin «Llegué»» (inicia igual). Nunca bloquea.
+- **Agencia** (`ShiftVisitPanel`, solo con EN_CAMINO): «Inició sin «Llegué»» por cuidadora; el retraso medido desde el inicio dice «Inició N min tarde».
+- **Sin cambios de backend ni de API:** llegada, inicio y salida siguen siendo registros separados.
+- **Pruebas:** 246/246 unitarias, tsc y build; E2E en iPhone 15/15; verificadores del backend en main: Gate 6 93/93, Gate 7 36/36, En Camino 27/27, Check-out 16/16, LocationPaste 33/33, OrgFeatures 15/15.
 
 ## 2026-10-24 — PR 0: recuperación de contraseña por correo (claude/password-recovery-email)
 - «¿Olvidaste tu contraseña?» en el login → `/forgot-password` (mismo mensaje exista o no la cuenta) → correo con enlace → `/reset-password` (token leído una vez y quitado de la barra de direcciones; 12–128 caracteres con confirmación; enlace usado/vencido → «Pedir un enlace nuevo»; al terminar se cierra también la sesión local).

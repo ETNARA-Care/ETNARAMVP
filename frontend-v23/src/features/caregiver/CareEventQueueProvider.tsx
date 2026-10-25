@@ -173,9 +173,9 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
   }, [enqueue]);
 
   const checkIn = useCallback<CareEventQueueState["checkIn"]>((organizationId, shiftId) =>
-    enqueue(newEntry("check_in", organizationId, shiftId, "Llegada")), [enqueue]);
+    enqueue(newEntry("check_in", organizationId, shiftId, "Inicio del turno")), [enqueue]);
   const checkOut = useCallback<CareEventQueueState["checkOut"]>((organizationId, shiftId) =>
-    enqueue(newEntry("check_out", organizationId, shiftId, "Salida")), [enqueue]);
+    enqueue(newEntry("check_out", organizationId, shiftId, "Final del turno")), [enqueue]);
   const enRoute = useCallback<CareEventQueueState["enRoute"]>((organizationId, shiftId) =>
     enqueue(newEntry("en_route", organizationId, shiftId, "Voy en camino")), [enqueue]);
   const arrive = useCallback<CareEventQueueState["arrive"]>((organizationId, shiftId) =>

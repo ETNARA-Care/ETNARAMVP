@@ -35,12 +35,12 @@ test("the queue is saved per user and dropped after 7 days", () => {
 });
 
 test("check-in and check-out go through the queue with their own id and real time", () => {
-  assert.match(provider, /enqueue\(newEntry\("check_in", organizationId, shiftId, "Llegada"\)\)/);
-  assert.match(provider, /enqueue\(newEntry\("check_out", organizationId, shiftId, "Salida"\)\)/);
+  assert.match(provider, /enqueue\(newEntry\("check_in", organizationId, shiftId, "Inicio del turno"\)\)/);
+  assert.match(provider, /enqueue\(newEntry\("check_out", organizationId, shiftId, "Final del turno"\)\)/);
   assert.match(shifts, /\{verificationMethodCode:"CAREGIVER_SESSION",\.\.\.offline\}/);
   assert.match(detail, /await queue\.checkIn\(organizationId, shiftId\)/);
   assert.match(detail, /await queue\.checkOut\(organizationId, shiftId\)/);
-  assert.match(detail, /Tu llegada quedó guardada con la hora real/);
+  assert.match(detail, /El inicio del turno quedó guardado con la hora real/);
 });
 
 test("shift screens keep the last data in memory only, never on disk", () => {
