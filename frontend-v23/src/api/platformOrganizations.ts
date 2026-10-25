@@ -171,7 +171,7 @@ export function acceptOrganizationAdminInvitation(token: string, sessionToken: s
 }
 
 /** SmartMatch pilot switches per agency (backend migration 108). ETNARA central only. */
-export type PilotFeatureCode = "SMARTMATCH" | "EN_CAMINO" | "FINANZAS";
+export type PilotFeatureCode = "SMARTMATCH" | "EN_CAMINO" | "FINANZAS" | "FACTURACION";
 export interface OrganizationFeatures {
   features: { code: PilotFeatureCode; enabled: boolean; updatedAt: string | null }[];
   history: { code: PilotFeatureCode; enabled: boolean; reason: string; occurredAt: string; actorEmail: string | null }[];
@@ -182,4 +182,18 @@ export function getOrganizationFeatures(organizationId: string, token: string) {
 export function setOrganizationFeature(organizationId: string, code: PilotFeatureCode, enabled: boolean, reason: string, token: string) {
   return apiClient.put<{ feature: { code: PilotFeatureCode; enabled: boolean; changed: boolean } }>(
     `/platform/organizations/${encodeURIComponent(organizationId)}/features/${code}`, { enabled, reason }, token);
+}
+
+/**
+ * Facturación Premium F2.1: ETNARA central sees the agency's administrators
+ * (e-mail and whether they manage billing permissions — never invoices, rates
+ * or amounts) and designates the billing permissions manager, with a reason.
+ */
+export interface BillingAdminsForCentral { billingEnabled: boolean; admins: { membershipId: string; email: string; isManager: boolean }[] }
+export function getBillingAdmins(organizationId: string, token: string) {
+  return apiClient.get<BillingAdminsForCentral>(`/platform/organizations/${encodeURIComponent(organizationId)}/billing-admins`, token);
+}
+export function designateBillingManager(organizationId: string, membershipId: string, reason: string, token: string) {
+  return apiClient.post<{ designation: { membershipId: string; granted: number } }>(
+    `/platform/organizations/${encodeURIComponent(organizationId)}/billing-manager`, { membershipId, reason }, token);
 }
