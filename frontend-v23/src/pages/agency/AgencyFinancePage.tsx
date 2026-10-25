@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Landmark } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { Card, PageHeader } from "@/components/ui";
@@ -6,12 +7,14 @@ import { ServicesTab } from "@/features/finance/ServicesTab";
 import { CaregiversTab } from "@/features/finance/CaregiversTab";
 import { ClientsTab } from "@/features/finance/ClientsTab";
 import { HolidaysTab } from "@/features/finance/HolidaysTab";
+import { BillingTab } from "@/features/billing/BillingTab";
 
 const TABS = [
   { id: "services", label: "Servicios y tarifas" },
   { id: "caregivers", label: "Por cuidador" },
   { id: "clients", label: "Clientes" },
   { id: "holidays", label: "Feriados" },
+  { id: "billing", label: "Facturación" }, // label from the billing catalog (es/en)
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -22,6 +25,7 @@ type TabId = (typeof TABS)[number]["id"];
  */
 export function AgencyFinancePage() {
   const { roles, activeOrganization } = useAuth();
+  const { t: tBilling } = useTranslation("billing");
   const [tab, setTab] = useState<TabId>("services");
   const organizationId = activeOrganization?.id;
 
@@ -55,7 +59,7 @@ export function AgencyFinancePage() {
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
-              {t.label}
+              {t.id === "billing" ? tBilling("tab") : t.label}
             </button>
           ))}
         </div>
@@ -66,12 +70,13 @@ export function AgencyFinancePage() {
           {tab === "caregivers" && <CaregiversTab organizationId={organizationId} />}
           {tab === "clients" && <ClientsTab organizationId={organizationId} />}
           {tab === "holidays" && <HolidaysTab organizationId={organizationId} />}
+          {tab === "billing" && <BillingTab organizationId={organizationId} />}
         </>
       )}
-      <p className="flex items-start gap-2 text-xs text-[var(--color-text-muted)]">
+      {tab !== "billing" && <p className="flex items-start gap-2 text-xs text-[var(--color-text-muted)]">
         <Landmark size={14} className="mt-0.5 shrink-0" aria-hidden />
         El margen bruto es una estimación entre lo cobrado y lo pagado por el mismo servicio. No incluye nómina, contribuciones, seguros ni otros gastos: no es ganancia neta.
-      </p>
+      </p>}
     </div>
   );
 }
