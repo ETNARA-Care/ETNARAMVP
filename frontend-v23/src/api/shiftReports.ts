@@ -101,3 +101,25 @@ export const shiftReportsApi = {
   grantReviewer: (org: string, membershipId: string, token: string) => apiClient.post<{ authorized: boolean }>(`${O(org)}/shift-report-reviewers`, { membershipId }, token),
   revokeReviewer: (org: string, membershipId: string, token: string) => apiClient.post<{ authorized: boolean }>(`${O(org)}/shift-report-reviewers/${membershipId}/revoke`, {}, token),
 };
+
+// ------------------------------------------------------------------ F3: family (approved reports only)
+export interface FamilyReportItem { at: string; note?: string | null; [k: string]: unknown }
+export interface FamilyShiftReport {
+  id: string; version: number; status: "APPROVED"; approvedAt: string; serviceDate: string;
+  organization: { name: string | null }; recipient: { name: string | null }; caregiver: { name: string | null };
+  agencySummary: string | null; shown: string[];
+  sections: {
+    schedule?: { scheduledStart: string; scheduledEnd: string; arrivalAt: string | null; startAt: string | null; endAt: string | null };
+    meals?: FamilyReportItem[]; hydration?: FamilyReportItem[]; activities?: FamilyReportItem[]; mobility?: FamilyReportItem[];
+    hygiene?: FamilyReportItem[]; mood?: FamilyReportItem[];
+    observations?: { notes: Array<{ at: string; text: string | null }>; caregiverNote: { at: string; text: string } | null };
+    incidents?: Array<{ at: string; severity: string | null; description: string | null }>;
+  };
+}
+export interface FamilyShiftReportListItem { id: string; approvedAt: string; serviceDate: string; scheduledStart: string | null; scheduledEnd: string | null; caregiverName: string | null }
+const FR = (org: string, recipient: string) => `/organizations/${org}/care-recipients/${recipient}/shift-reports`;
+export const familyShiftReportsApi = {
+  list: (org: string, recipient: string, token: string) => apiClient.get<{ reports: FamilyShiftReportListItem[] }>(FR(org, recipient), token),
+  get: (org: string, recipient: string, reportId: string, token: string) => apiClient.get<{ report: FamilyShiftReport }>(`${FR(org, recipient)}/${reportId}`, token),
+  pdf: (org: string, recipient: string, reportId: string, token: string) => apiClient.getBinary(`${FR(org, recipient)}/${reportId}/pdf`, token),
+};
