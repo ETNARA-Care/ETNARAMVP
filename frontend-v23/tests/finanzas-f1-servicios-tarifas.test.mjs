@@ -12,7 +12,7 @@ test("Finanzas route exists only behind FINANZAS and only for the administrator"
   const layout = read("src/layouts/AgencyLayout.tsx");
   assert.match(layout, /item\.to !== "\/agency\/timesheets" && item\.to !== "\/agency\/smartmatch" && item\.to !== "\/agency\/finance"/);
   assert.match(layout, /\(finance \|\| item\.to !== "\/agency\/finance"\)/);
-  assert.match(read("src/auth/orgFeatures.tsx"), /export type OrgFeature = "SMARTMATCH" \| "EN_CAMINO" \| "FINANZAS";/);
+  assert.match(read("src/auth/orgFeatures.tsx"), /export type OrgFeature = "SMARTMATCH" \| "EN_CAMINO" \| "FINANZAS"[^;]*;/);
 });
 
 test("money is handled as integer cents: no floats in the finance screens", () => {

@@ -3,13 +3,15 @@ import { FlaskConical, History } from "lucide-react";
 import { getToken } from "@/auth/token";
 import { getOrganizationFeatures, setOrganizationFeature, type OrganizationFeatures, type PilotFeatureCode } from "@/api/platformOrganizations";
 import { Button, Input, Skeleton, useToast } from "@/components/ui";
+import { BillingManagerPanel } from "./BillingManagerPanel";
 
 const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   SMARTMATCH: { title: "SmartMatch", detail: "Oportunidades, postulaciones y turnos desde SmartMatch." },
   EN_CAMINO: { title: "En camino y «Llegué»", detail: "Aviso de salida, retrasos declarados y llegada con ubicación." },
   FINANZAS: { title: "Finanzas", detail: "Servicios y tarifas de la agencia. ETNARA central solo enciende o apaga: no ve importes ni datos financieros." },
+  FACTURACION: { title: "Facturación Premium", detail: "Facturas de la agencia a sus clientes. Requiere Finanzas. ETNARA central solo enciende, apaga y designa al gestor de permisos: no ve facturas, tarifas ni importes." },
 };
-const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS"];
+const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS", "FACTURACION"];
 
 /**
  * ETNARA central: turn the SmartMatch pilot on or off for one agency.
@@ -37,8 +39,8 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
       await setOrganizationFeature(organizationId, editing.code, editing.enabled, reason.trim(), token);
       toast.show(editing.enabled ? "Función activada." : "Función desactivada.", "success");
       setEditing(null); setReason(""); await load();
-    } catch {
-      toast.show("No se pudo guardar el cambio.", "danger");
+    } catch (e) {
+      toast.show((e as { code?: string })?.code === "FEATURE_REQUIRES_FINANZAS" ? "Facturación requiere Finanzas activo." : "No se pudo guardar el cambio.", "danger");
     } finally { setSaving(false); }
   }
 
@@ -47,6 +49,8 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
   const features = data ? data.features.filter((f) => f.code in LABELS).sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
   const history = data ? data.history.filter((h) => h.code in LABELS) : [];
   const activeCount = features.filter((f) => f.enabled).length;
+  const finanzasOn = features.some((f) => f.code === "FINANZAS" && f.enabled);
+  const facturacionOn = features.some((f) => f.code === "FACTURACION" && f.enabled);
 
   return (
     <section data-ui="pilot-features" aria-labelledby={`pilot-${organizationId}`}
@@ -67,6 +71,8 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
           {features.map((f) => {
             const label = LABELS[f.code];
             const pending = editing?.code === f.code;
+            // FACTURACION needs FINANZAS (the backend and the database refuse it too).
+            const blocked = f.code === "FACTURACION" && !f.enabled && !finanzasOn;
             return (
               <div key={f.code} data-ui="pilot-feature" data-code={f.code} data-state={f.enabled ? "on" : "off"}
                 className={`rounded-2xl border bg-white p-3.5 transition-shadow ${pending ? "border-[var(--color-navy-700)] shadow-[0_0_0_3px_rgba(42,58,92,.12)]" : "border-[var(--color-border)]"}`}>
@@ -78,11 +84,12 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
                       <span className={`h-1.5 w-1.5 rounded-full ${f.enabled ? "bg-[var(--color-sage-600)]" : "bg-[var(--color-slate-400)]"}`} aria-hidden />
                       {f.enabled ? "Activa" : "Apagada"}
                     </p>
+                    {blocked && <p className="mt-1 text-[length:var(--text-caption)] text-[var(--color-text-muted)]" data-ui="requires-finanzas">Requiere Finanzas activo.</p>}
                   </div>
-                  <button type="button" role="switch" aria-checked={f.enabled} disabled={saving}
+                  <button type="button" role="switch" aria-checked={f.enabled} disabled={saving || blocked}
                     aria-label={`${label.title}: ${f.enabled ? "activa" : "apagada"}. ${f.enabled ? "Desactivar" : "Activar"} (pide motivo)`}
                     onClick={() => { setEditing(pending ? null : { code: f.code, enabled: !f.enabled }); setReason(""); }}
-                    className={`relative mt-0.5 inline-flex h-8 w-[3.25rem] shrink-0 items-center rounded-full p-1 transition-colors focus-visible:outline-offset-2 ${f.enabled ? "bg-[var(--color-sage-600)]" : "bg-[var(--color-ivory-200)] ring-1 ring-inset ring-[var(--color-slate-200)]"}`}>
+                    className={`relative mt-0.5 inline-flex h-8 w-[3.25rem] shrink-0 items-center rounded-full p-1 transition-colors focus-visible:outline-offset-2 ${f.enabled ? "bg-[var(--color-sage-600)]" : "bg-[var(--color-ivory-200)] ring-1 ring-inset ring-[var(--color-slate-200)]"} disabled:cursor-not-allowed disabled:opacity-50`}>
                     <span className={`h-6 w-6 rounded-full bg-white shadow-[0_1px_3px_rgba(15,24,48,.25)] transition-transform ${f.enabled ? "translate-x-5" : "translate-x-0"}`} />
                   </button>
                 </div>
@@ -92,6 +99,9 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
                     <p className="text-[length:var(--text-small)] font-semibold text-[var(--color-text-primary)]">
                       {editing.enabled ? "Activar" : "Desactivar"} {label.title} para esta agencia
                     </p>
+                    {editing.code === "FINANZAS" && !editing.enabled && facturacionOn && (
+                      <p className="mt-1 text-[length:var(--text-caption)] leading-5 text-[var(--color-text-secondary)]">Facturación Premium quedará en modo consulta: el historial se conserva, sin nuevas facturas.</p>
+                    )}
                     <div className="mt-2">
                       <Input label="Motivo (obligatorio)" value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} />
                     </div>
@@ -103,6 +113,7 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
                     </div>
                   </div>
                 )}
+                {f.code === "FACTURACION" && f.enabled && finanzasOn && !pending && <BillingManagerPanel organizationId={organizationId} />}
               </div>
             );
           })}

@@ -1,0 +1,88 @@
+{
+  "tab": "Billing",
+  "intro": "The agency's invoices to its clients. Each action needs its own permission and is recorded.",
+  "loading": "Loading billing…",
+  "loadFailed": "Billing could not be loaded. Please try again.",
+  "retry": "Try again",
+  "premium": {
+    "eyebrow": "Premium module",
+    "title": "Professional billing",
+    "body": "Create invoices from approved hours, issue them with your own numbering and download them as PDFs with your agency's details.",
+    "how": "It is an add-on module. Ask ETNARA to turn it on for your agency."
+  },
+  "readOnly": {
+    "title": "View only",
+    "body": "Billing is turned off for the agency. The history is kept and can be viewed; invoices cannot be created, issued or voided."
+  },
+  "noPermission": "You do not have billing permissions yet. Ask the person who manages permissions at your agency.",
+  "noManager": "Your agency has several administrators. ETNARA will designate the person who manages billing permissions.",
+  "nextStage": "Drafts and invoices will appear here.",
+  "myCapabilities": "Your permissions",
+  "none": "None",
+  "you": "You",
+  "caps": {
+    "view": "View",
+    "draft": "Create drafts",
+    "issue": "Issue",
+    "void": "Void",
+    "manage": "Manage permissions"
+  },
+  "capsDetail": {
+    "view": "See drafts, issued invoices and their history.",
+    "draft": "Prepare, edit and discard drafts.",
+    "issue": "Issue invoices: assigns the number and they can no longer be edited.",
+    "void": "Void issued invoices, always with a reason.",
+    "manage": "Grant and revoke these permissions to other administrators."
+  },
+  "permissions": {
+    "title": "Billing permissions",
+    "body": "Only agency administrators can hold permissions. They are never deleted: they are revoked with a reason.",
+    "grant": "Grant",
+    "revoke": "Revoke",
+    "grantTitle": "Grant “{{capability}}”",
+    "revokeTitle": "Revoke “{{capability}}”",
+    "to": "To {{email}}",
+    "from": "From {{email}}",
+    "reason": "Reason (required)",
+    "cancel": "Cancel",
+    "granted": "Permission granted.",
+    "revoked": "Permission revoked.",
+    "lastManagerHint": "At least one person must always manage permissions.",
+    "history": "History ({{count}})",
+    "grantedLine": "{{capability}} · {{email}} · granted {{when}}",
+    "revokedLine": "revoked {{when}}",
+    "by": "by {{email}}",
+    "source": {
+      "manual": "granted by the agency",
+      "initial_single_admin": "initial (only administrator)",
+      "central_designation": "designated by ETNARA"
+    }
+  },
+  "errors": {
+    "LAST_PERMISSION_MANAGER": "You cannot revoke the last person who manages permissions. First grant “Manage permissions” to another administrator.",
+    "BILLING_PERMISSION_EXISTS": "That person already has that permission.",
+    "BILLING_PERMISSION_ADMIN_ONLY": "Only agency administrators can hold billing permissions.",
+    "BILLING_PERMISSION_ALREADY_REVOKED": "That permission was already revoked.",
+    "BILLING_READ_ONLY": "Billing is view only.",
+    "FEATURE_NOT_ENABLED": "Billing is not turned on for the agency.",
+    "BILLING_FORBIDDEN": "You do not have permission to do this.",
+    "BILLING_CONCURRENT_CHANGE": "Someone else changed permissions at the same time. Please try again.",
+    "generic": "Could not save. Please try again."
+  },
+  "central": {
+    "title": "Billing permissions manager",
+    "body": "ETNARA designates who grants billing permissions at the agency. ETNARA does not see invoices, rates or amounts.",
+    "requiresFinanzas": "Requires Finanzas to be on.",
+    "offHint": "Turn Billing on to designate the manager.",
+    "current": "Manages permissions",
+    "noneYet": "Nobody manages permissions yet.",
+    "noAdmins": "The agency has no active administrators.",
+    "candidate": "Administrator",
+    "choose": "Choose an administrator",
+    "reason": "Reason (required)",
+    "designate": "Designate manager",
+    "done": "Manager designated.",
+    "already": "That person already managed permissions.",
+    "loadFailed": "Administrators could not be loaded."
+  }
+}

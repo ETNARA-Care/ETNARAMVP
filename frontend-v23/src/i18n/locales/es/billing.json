@@ -1,0 +1,88 @@
+{
+  "tab": "Facturación",
+  "intro": "Facturas de la agencia a sus clientes. Cada acción depende de un permiso propio y queda registrada.",
+  "loading": "Cargando facturación…",
+  "loadFailed": "No se pudo cargar Facturación. Inténtalo de nuevo.",
+  "retry": "Reintentar",
+  "premium": {
+    "eyebrow": "Módulo premium",
+    "title": "Facturación profesional",
+    "body": "Crea facturas desde las horas aprobadas, emítelas con numeración propia y descárgalas en PDF con la información de tu agencia.",
+    "how": "Es un módulo adicional. Pídele a ETNARA que lo active para tu agencia."
+  },
+  "readOnly": {
+    "title": "Modo consulta",
+    "body": "Facturación está desactivada para la agencia. El historial se conserva y puede consultarse; no se pueden crear, emitir ni anular facturas."
+  },
+  "noPermission": "Aún no tienes permisos de facturación. Pídeselos a la persona que gestiona los permisos de tu agencia.",
+  "noManager": "Tu agencia tiene varios administradores. ETNARA designará a la persona que gestiona los permisos de facturación.",
+  "nextStage": "Los borradores y las facturas aparecerán aquí.",
+  "myCapabilities": "Tus permisos",
+  "none": "Ninguno",
+  "you": "Tú",
+  "caps": {
+    "view": "Consultar",
+    "draft": "Crear borradores",
+    "issue": "Emitir",
+    "void": "Anular",
+    "manage": "Gestionar permisos"
+  },
+  "capsDetail": {
+    "view": "Ver borradores, facturas emitidas y su historial.",
+    "draft": "Preparar, editar y descartar borradores.",
+    "issue": "Emitir facturas: asigna el número y ya no se pueden editar.",
+    "void": "Anular facturas emitidas, siempre con motivo.",
+    "manage": "Conceder y revocar estos permisos a otros administradores."
+  },
+  "permissions": {
+    "title": "Permisos de facturación",
+    "body": "Solo los administradores de la agencia pueden tener permisos. Nunca se borran: se revocan con motivo.",
+    "grant": "Conceder",
+    "revoke": "Revocar",
+    "grantTitle": "Conceder «{{capability}}»",
+    "revokeTitle": "Revocar «{{capability}}»",
+    "to": "A {{email}}",
+    "from": "A {{email}}",
+    "reason": "Motivo (obligatorio)",
+    "cancel": "Cancelar",
+    "granted": "Permiso concedido.",
+    "revoked": "Permiso revocado.",
+    "lastManagerHint": "Siempre debe quedar al menos una persona que gestione los permisos.",
+    "history": "Historial ({{count}})",
+    "grantedLine": "{{capability}} · {{email}} · concedido {{when}}",
+    "revokedLine": "revocado {{when}}",
+    "by": "por {{email}}",
+    "source": {
+      "manual": "concedido por la agencia",
+      "initial_single_admin": "inicial (único administrador)",
+      "central_designation": "designado por ETNARA"
+    }
+  },
+  "errors": {
+    "LAST_PERMISSION_MANAGER": "No puedes revocar a la última persona que gestiona los permisos. Concede antes «Gestionar permisos» a otro administrador.",
+    "BILLING_PERMISSION_EXISTS": "Esa persona ya tiene ese permiso.",
+    "BILLING_PERMISSION_ADMIN_ONLY": "Solo los administradores de la agencia pueden tener permisos de facturación.",
+    "BILLING_PERMISSION_ALREADY_REVOKED": "Ese permiso ya estaba revocado.",
+    "BILLING_READ_ONLY": "Facturación está en modo consulta.",
+    "FEATURE_NOT_ENABLED": "Facturación no está activa para la agencia.",
+    "BILLING_FORBIDDEN": "No tienes permiso para hacer esto.",
+    "BILLING_CONCURRENT_CHANGE": "Otra persona cambió los permisos al mismo tiempo. Vuelve a intentarlo.",
+    "generic": "No se pudo guardar. Inténtalo de nuevo."
+  },
+  "central": {
+    "title": "Gestor de permisos de facturación",
+    "body": "ETNARA designa quién concede los permisos de facturación en la agencia. ETNARA no ve facturas, tarifas ni importes.",
+    "requiresFinanzas": "Requiere Finanzas activo.",
+    "offHint": "Activa Facturación para designar al gestor.",
+    "current": "Gestiona los permisos",
+    "noneYet": "Todavía nadie gestiona los permisos.",
+    "noAdmins": "La agencia no tiene administradores activos.",
+    "candidate": "Administrador",
+    "choose": "Elige un administrador",
+    "reason": "Motivo (obligatorio)",
+    "designate": "Designar gestor",
+    "done": "Gestor designado.",
+    "already": "Esa persona ya gestionaba los permisos.",
+    "loadFailed": "No se pudieron cargar los administradores."
+  }
+}
