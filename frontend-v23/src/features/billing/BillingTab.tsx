@@ -5,6 +5,8 @@ import { getToken } from "@/auth/token";
 import { BILLING_CAPABILITIES, billingApi, type BillingAccess, type BillingAdmin, type BillingCapability, type BillingGrant, type BillingPermissions } from "@/api/billing";
 import { Badge, Button, Card, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
 import { formatDate, formatTime } from "@/i18n/format";
+import { InvoicesSection } from "./InvoicesSection";
+import { TaxSection } from "./TaxSection";
 
 type Lang = "es" | "en";
 const KNOWN_ERRORS = ["LAST_PERMISSION_MANAGER", "BILLING_PERMISSION_EXISTS", "BILLING_PERMISSION_ADMIN_ONLY", "BILLING_PERMISSION_ALREADY_REVOKED",
@@ -76,6 +78,12 @@ export function BillingTab({ organizationId }: { organizationId: string }) {
         )}
       </Card>
 
+      {(capabilities.includes("view") || capabilities.includes("draft")) && (
+        <InvoicesSection organizationId={organizationId} canDraft={capabilities.includes("draft")} canManageTax={capabilities.includes("manage")} readOnly={module.readOnly} />
+      )}
+      {(capabilities.includes("view") || capabilities.includes("draft") || capabilities.includes("manage")) && (
+        <TaxSection organizationId={organizationId} canManage={capabilities.includes("manage") && module.enabled} />
+      )}
       {perms && <PermissionsSection organizationId={organizationId} data={perms} onChanged={load} />}
     </div>
   );
