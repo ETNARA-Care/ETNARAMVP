@@ -4,7 +4,7 @@ import { getToken } from "@/auth/token";
 import { financeApi, type FinanceService, type FinanceUnit } from "@/api/finance";
 import { Badge, Button, EmptyState, ErrorState, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { ServiceDetail } from "./ServiceDetail";
-import { UNIT_HELP, UNIT_LABEL, UNIT_NAME, financeErrorText, formatDate, formatMargin, rateWithUnit } from "./money";
+import { UNIT_HELP, UNIT_LABEL, UNIT_NAME, financeErrorText, formatDate, formatMargin, isNegativeMargin, rateWithUnit } from "./money";
 
 const SUGGESTED: Array<{ name: string; unit: FinanceUnit; description: string }> = [
   { name: "Cuido en el hogar", unit: "hour", description: "Cuidado en la residencia del cliente." },
@@ -91,7 +91,8 @@ export function ServicesTab({ organizationId }: { organizationId: string }) {
                   </div>
                 </dl>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-secondary)]">
-                  <span>Margen bruto estimado: <strong className="tabular-nums text-[var(--color-sage-700,var(--color-success-700))]">{formatMargin(s.margin)}</strong></span>
+                  <span>Margen bruto estimado: <strong className={`tabular-nums ${isNegativeMargin(s.margin) ? "text-[var(--color-warning-700)]" : "text-[var(--color-sage-700,var(--color-success-700))]"}`}>{formatMargin(s.margin)}</strong></span>
+                  {isNegativeMargin(s.margin) && <span data-negative-margin-badge><Badge tone="warning">Margen negativo</Badge></span>}
                   {s.client_exceptions > 0 && <span>{s.client_exceptions} precio(s) por cliente</span>}
                   {s.caregiver_exceptions > 0 && <span>{s.caregiver_exceptions} excepción(es) de pago</span>}
                   {s.next_change && <span>Cambio programado: {formatDate(s.next_change)}</span>}

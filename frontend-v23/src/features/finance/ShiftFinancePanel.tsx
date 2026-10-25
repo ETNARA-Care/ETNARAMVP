@@ -3,7 +3,8 @@ import { Landmark, Lock, Pencil } from "lucide-react";
 import { getToken } from "@/auth/token";
 import { financeApi, type BillingClient, type FinanceService, type ShiftFinance } from "@/api/finance";
 import { Badge, Button, Card, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
-import { financeErrorText, formatCents, formatDate, formatMargin, hoursFromHundredths, rateWithUnit, UNIT_LABEL } from "./money";
+import { financeErrorText, formatCents, formatDate, formatMargin, hoursFromHundredths, isNegativeMargin, rateWithUnit, UNIT_LABEL } from "./money";
+import { NegativeMarginNotice } from "./NegativeMarginNotice";
 
 const EXCEPTION_TEXT: Record<string, string> = {
   NO_SERVICE: "Sin servicio asignado",
@@ -76,6 +77,12 @@ export function ShiftFinancePanel({ organizationId, shiftId }: { organizationId:
             value={r.estimate?.margin ? formatCents(r.estimate.margin.differenceCents) : "—"}
             hint={r.estimate?.billing && r.estimate.pay ? `${formatCents(r.estimate.billing.amountCents)} cobro · ${formatCents(r.estimate.pay.amountCents)} pago` : undefined} />
         </div>
+      )}
+      {r?.estimate?.margin && r.estimate.billing && r.estimate.pay && isNegativeMargin(r.estimate.margin) && (
+        <NegativeMarginNotice billCents={r.estimate.billing.amountCents} payCents={r.estimate.pay.amountCents} per="en este turno" />
+      )}
+      {!r?.estimate?.margin && r?.billing && r.pay && isNegativeMargin(r.unitMargin) && (
+        <NegativeMarginNotice billCents={r.billing.amountCents} payCents={r.pay.amountCents} per="por unidad" />
       )}
       {data.terms.authorizedUnitsHundredths != null && (
         <p className="text-sm">Autorizado: <strong>{hoursFromHundredths(data.terms.authorizedUnitsHundredths)}</strong> {unit === "hour" ? "h" : unit === "day" ? "día(s)" : "unidad(es)"}</p>

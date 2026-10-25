@@ -48,6 +48,12 @@ export function formatMargin(margin: Margin | null | undefined): string {
   return `${formatCents(margin.differenceCents)}${pct}`;
 }
 
+/** Billed less than paid (F1.1). Falls back to the sign when the backend does not send the flag. */
+export function isNegativeMargin(margin: Margin | null | undefined): boolean {
+  if (!margin) return false;
+  return margin.negative ?? margin.differenceCents < 0;
+}
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "sin fecha de fin";
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
@@ -71,6 +77,13 @@ export const FINANCE_ERROR: Record<string, string> = {
   FINANCE_RATE_RULE_NOT_FOR_UNIT: "Esa regla no aplica a la unidad de este servicio.",
   FINANCE_HALF_DAY_AMOUNT_REQUIRED: "Indica el importe del medio día.",
   FINANCE_RATE_SCOPE_INVALID: "Revisa a quién aplica la tarifa.",
+  FINANCE_RATE_CANCELLED: "Ese cambio de tarifa ya estaba cancelado.",
+  FINANCE_CONCURRENT_CHANGE: "Otra persona estaba cambiando estas tarifas al mismo tiempo. Inténtalo de nuevo.",
+  FINANCE_RATE_ALREADY_IN_FORCE: "Esa tarifa ya está en vigor: no se puede cancelar. Programa un precio nuevo o termínala.",
+  FINANCE_RATE_NOT_FOUND: "No se encontró esa tarifa. Actualiza la página.",
+  FINANCE_HOLIDAY_NOT_FOUND: "No se encontró ese feriado. Actualiza la página.",
+  FINANCE_HOLIDAY_ALREADY_INACTIVE: "Ese feriado ya estaba desactivado.",
+  INVALID_DATE: "Esa fecha no existe. Revísala.",
   FINANCE_SERVICE_INACTIVE: "Este servicio está desactivado. Actívalo primero.",
   FINANCE_DUPLICATE: "Ya existe un registro con ese nombre o fecha.",
   SHIFT_FINANCE_LOCKED: "Las horas de este turno ya están aprobadas: el servicio y el pagador no se pueden cambiar.",
