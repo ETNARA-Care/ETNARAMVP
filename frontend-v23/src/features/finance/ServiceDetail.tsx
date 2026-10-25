@@ -335,9 +335,9 @@ function Simulator({ organizationId, serviceId, unit, clients, caregivers, today
   return (
     <section className="flex flex-col gap-3 rounded-[var(--radius-lg)] bg-[var(--color-navy-900)] p-4 text-white" aria-label="Simulador">
       <h3 className="flex items-center gap-2 font-display text-[1.05rem]"><Calculator size={18} aria-hidden />Simulador</h3>
-      <div className="grid grid-cols-2 gap-3 [&_label]:text-white/80">
+      <div className="grid grid-cols-2 gap-3 [&_label]:text-white/80 [&>*]:min-w-0">
         <Input label="Duración (horas)" inputMode="decimal" value={hours} onChange={(e) => setHours(e.target.value)} />
-        <Input label="Fecha del servicio" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input label="Fecha del servicio" type="date" className="min-w-0 appearance-none" value={date} onChange={(e) => setDate(e.target.value)} />
         <Select label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
           <option value="">Tarifa general</option>
           {clients.map((c) => <option key={c.id} value={c.id}>{c.full_name}</option>)}
