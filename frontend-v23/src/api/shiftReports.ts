@@ -44,11 +44,28 @@ export interface ShiftReport {
   history?: ShiftReportHistoryEntry[];
   /** The reviewer worked this visit: they cannot approve it (backend 403 SHIFT_REPORT_SELF_APPROVAL). */
   ownVisit?: boolean;
+  /** F2 (128): the caregiver's 24 h review. */
+  reviewDeadlineAt?: string | null; caregiverNote?: string | null; caregiverNoteAt?: string | null; submittedAt?: string | null;
+  /** DRAFT never sent before the caregiver's 24 h ended: unchanged, the agency reviews it. */
+  caregiverWindowExpired?: boolean;
 }
 export interface ShiftReportListItem {
   id: string; shiftId: string; status: ShiftReportStatus; version: number; generatedAt: string; approvedAt: string | null;
   recipientName: string | null; caregiverName: string | null; scheduledStart: string | null; scheduledEnd: string | null;
   totals: ShiftReportContent["totals"] | null;
+  submittedAt?: string | null; reviewDeadlineAt?: string | null; caregiverWindowExpired?: boolean; hasCaregiverNote?: boolean;
+}
+
+/** F2: the caregiver's own report (no family choices, no agency summary). */
+export interface MyShiftReport {
+  id: string; shiftId: string; status: ShiftReportStatus; version: number; content: ShiftReportContent; generatedAt: string;
+  reviewDeadlineAt: string | null; caregiverNote: string | null; caregiverNoteAt: string | null; submittedAt: string | null;
+  approvedAt: string | null; canEdit: boolean;
+  history: Array<{ type: string; at: string; note: string | null; byMe: boolean }>;
+}
+export interface MyShiftReportListItem {
+  id: string; status: ShiftReportStatus; recipientName: string | null; scheduledStart: string | null; scheduledEnd: string | null;
+  reviewDeadlineAt: string | null; submittedAt: string | null; canEdit: boolean;
 }
 
 /** ETNARA's defaults for what the family sees once approved (25-oct-2026). */
@@ -61,7 +78,7 @@ export interface ShiftReportReviewer { membershipId: string; email: string; auth
 
 const O = (org: string) => `/organizations/${org}`;
 export const shiftReportsApi = {
-  list: (org: string, token: string, status?: "DRAFT" | "APPROVED") =>
+  list: (org: string, token: string, status?: "PENDING" | "DRAFT" | "SUBMITTED" | "RETURNED" | "APPROVED") =>
     apiClient.get<{ reports: ShiftReportListItem[] }>(`${O(org)}/shift-reports${status ? `?status=${status}` : ""}`, token),
   forShift: (org: string, shiftId: string, token: string) =>
     apiClient.get<{ reports: ShiftReport[]; finishedVisits: number; openVisits: number }>(`${O(org)}/shifts/${shiftId}/shift-reports`, token),
@@ -69,6 +86,15 @@ export const shiftReportsApi = {
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/refresh`, {}, token),
   approve: (org: string, reportId: string, body: { expectedGeneratedAt: string; familySections: Partial<FamilySections>; agencySummary?: string }, token: string) =>
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/approve`, body, token),
+  returnToCaregiver: (org: string, reportId: string, note: string, token: string) =>
+    apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/return`, { note }, token),
+  // F2 (128): the caregiver's own reports.
+  mine: (org: string, token: string) => apiClient.get<{ reports: MyShiftReportListItem[] }>(`${O(org)}/me/shift-reports`, token),
+  myReport: (org: string, reportId: string, token: string) => apiClient.get<{ report: MyShiftReport }>(`${O(org)}/me/shift-reports/${reportId}`, token),
+  setMyObservation: (org: string, reportId: string, text: string, token: string) =>
+    apiClient.post<{ report: MyShiftReport }>(`${O(org)}/me/shift-reports/${reportId}/observation`, { text }, token),
+  submitMine: (org: string, reportId: string, token: string) =>
+    apiClient.post<{ report: MyShiftReport }>(`${O(org)}/me/shift-reports/${reportId}/submit`, {}, token),
   /** Admins always; supervisors only when an admin authorized them. */
   access: (org: string, token: string) => apiClient.get<{ canReview: boolean; canManageReviewers: boolean }>(`${O(org)}/shift-report-access`, token),
   reviewers: (org: string, token: string) => apiClient.get<{ supervisors: ShiftReportReviewer[] }>(`${O(org)}/shift-report-reviewers`, token),

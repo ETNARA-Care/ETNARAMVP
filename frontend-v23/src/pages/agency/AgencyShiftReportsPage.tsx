@@ -8,11 +8,11 @@ import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/com
 import { STATUS_LABEL, reportDate, reportTime } from "@/features/shiftReports/reportFormat";
 import { ShiftReportReviewersCard } from "@/features/shiftReports/ShiftReportReviewersCard";
 
-/** Informe de Turno F1: the agency's list. Drafts of visits finished in the last 7 days appear on their own. */
+/** Informe de Turno F1+F2: the agency's list. «Por aprobar» = drafts, sent by the caregiver and returned; sent ones first. */
 export function AgencyShiftReportsPage() {
   const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
-  const [filter, setFilter] = useState<"DRAFT" | "APPROVED" | undefined>("DRAFT");
+  const [filter, setFilter] = useState<"PENDING" | "APPROVED" | undefined>("PENDING");
   const [reports, setReports] = useState<ShiftReportListItem[] | null | "error">(null);
   const [access, setAccess] = useState<{ canReview: boolean; canManageReviewers: boolean } | null>(null);
   const load = useCallback(async () => {
@@ -28,8 +28,8 @@ export function AgencyShiftReportsPage() {
   }, [organizationId, filter]);
   useEffect(() => { void load(); }, [load]);
 
-  const tabs: Array<{ key: "DRAFT" | "APPROVED" | undefined; label: string }> = [
-    { key: "DRAFT", label: "Por aprobar" }, { key: "APPROVED", label: "Aprobados" }, { key: undefined, label: "Todos" },
+  const tabs: Array<{ key: "PENDING" | "APPROVED" | undefined; label: string }> = [
+    { key: "PENDING", label: "Por aprobar" }, { key: "APPROVED", label: "Aprobados" }, { key: undefined, label: "Todos" },
   ];
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
@@ -49,7 +49,7 @@ export function AgencyShiftReportsPage() {
       </div>
       {reports === null ? <div className="flex flex-col gap-2"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
         : reports === "error" ? <ErrorState kind="network" onRetry={() => void load()} />
-        : reports.length === 0 ? <EmptyState icon={<FileText size={28} />} title={filter === "DRAFT" ? "No hay informes por aprobar" : "No hay informes"} description="Aparecen cuando una cuidadora finaliza su turno." />
+        : reports.length === 0 ? <EmptyState icon={<FileText size={28} />} title={filter === "PENDING" ? "No hay informes por aprobar" : "No hay informes"} description="Aparecen cuando una cuidadora finaliza su turno." />
         : (
           <ul className="flex flex-col gap-2" data-testid="shift-report-list">
             {reports.map((r) => {
@@ -65,7 +65,7 @@ export function AgencyShiftReportsPage() {
                         </p>
                         <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{r.caregiverName ?? "Cuidadora"} · {r.totals?.careEvents ?? 0} registro{r.totals?.careEvents === 1 ? "" : "s"}</p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2"><Badge tone={st.tone}>{st.text}</Badge><ChevronRight size={18} aria-hidden className="text-[var(--color-text-muted)]" /></div>
+                      <div className="flex shrink-0 items-center gap-2">{r.caregiverWindowExpired && (r.status === "DRAFT" || r.status === "RETURNED") ? <Badge tone="neutral">Plazo vencido</Badge> : <Badge tone={st.tone}>{r.status === "SUBMITTED" ? "Enviado por la cuidadora" : st.text}</Badge>}<ChevronRight size={18} aria-hidden className="text-[var(--color-text-muted)]" /></div>
                     </Card>
                   </Link>
                 </li>
