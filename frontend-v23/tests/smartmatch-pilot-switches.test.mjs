@@ -23,7 +23,7 @@ test("pilot: SmartMatch links and panels hidden without the feature", () => {
 test("pilot: «En camino» and «Llegué» hidden without EN_CAMINO; Comenzar/Finalizar untouched", () => {
   const cg = read("src/pages/caregiver/CaregiverShiftDetailPage.tsx");
   assert.match(cg, /\{enCamino && canStart && organizationId && shiftId && !verification\.arrivals\?\.length && \(/);
-  assert.match(cg, /\{enCamino && canStart && organizationId && shiftId && \(\s*<ArrivalCard/);
+  assert.match(cg, /\{enCamino && canStart && organizationId && shiftId && \(\s*<div id="arrival-card"[^>]*>\s*<ArrivalCard/);
   assert.match(cg, /\{canStart && \(\s*<div className="flex flex-col gap-2">/, "start/finish buttons are not gated");
   assert.match(read("src/pages/caregiver/CaregiverSupportPages.tsx"), /hasOrgFeature\(activeOrganization\.features, "EN_CAMINO"\) && <LocationConsentCard/);
   assert.match(read("src/pages/agency/AgencyShiftDetailPage.tsx"), /\{enCamino && organizationId && shiftId && <ShiftJourneyHistory/);
