@@ -6,7 +6,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 test("a scheduled price change can be cancelled (only while «Programada»), with a required reason", () => {
   const detail = read("src/features/finance/ServiceDetail.tsx");
-  assert.match(detail, /\{r\.status === "future" && <Button size="sm" variant="ghost" icon=\{<CalendarX2 size=\{16\} \/>\} onClick=\{\(\) => onCancel\(r\)\}>Cancelar cambio<\/Button>\}/);
+  assert.match(detail, /\{r\.status === "future" && onCancel && <Button size="sm" variant="ghost" icon=\{<CalendarX2 size=\{16\} \/>\} onClick=\{\(\) => onCancel\(r\)\}>Cancelar cambio<\/Button>\}/);
   assert.match(detail, /disabled=\{reason\.trim\(\)\.length < 3\} onClick=\{\(\) => void save\(\)\}>Cancelar este cambio<\/Button>/);
   assert.match(detail, /const live = \(r: FinanceRate\) => r\.status !== "past" && r\.status !== "cancelled";/);
   assert.match(detail, /if \(status === "cancelled"\) return <Badge tone="warning">Cancelada<\/Badge>;/);
@@ -51,6 +51,17 @@ test("new backend codes have plain-Spanish messages", () => {
   for (const code of ["FINANCE_RATE_CANCELLED", "FINANCE_RATE_ALREADY_IN_FORCE", "FINANCE_HOLIDAY_NOT_FOUND", "FINANCE_HOLIDAY_ALREADY_INACTIVE", "INVALID_DATE"]) {
     assert.match(money, new RegExp(`${code}: "`), code);
   }
+});
+
+test("a portal published before backend 121 never offers calls the backend lacks", () => {
+  const detail = read("src/features/finance/ServiceDetail.tsx");
+  assert.match(detail, /const supportsCancel = rates\.some\(\(r\) => "cancelled_at" in r\);/);
+  assert.match(detail, /onCancel=\{supportsCancel \? setCancelling : undefined\}/);
+  const tab = read("src/features/finance/HolidaysTab.tsx");
+  assert.match(tab, /const supportsDeactivate = \(rows \?\? \[\]\)\.some\(\(h\) => "active" in h\);/);
+  assert.match(tab, /\{supportsDeactivate && <Button size="sm" variant="ghost" icon=\{<CalendarOff size=\{16\} \/>\} onClick=\{\(\) => setDeactivating\(h\)\}>Desactivar<\/Button>\}/);
+  // negative margin falls back to the sign when the old backend does not send the flag
+  assert.match(read("src/features/finance/money.ts"), /return margin\.negative \?\? margin\.differenceCents < 0;/);
 });
 
 test("the #231 simulator fix stays as it was", () => {

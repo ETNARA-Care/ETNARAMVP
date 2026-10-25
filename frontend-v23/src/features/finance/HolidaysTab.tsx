@@ -10,8 +10,10 @@ import { financeErrorText, formatDate } from "./money";
  * each agency decides which days are holidays. On those days (backend 119):
  * holiday rate of that client/caregiver → their normal agreed rate →
  * general holiday rate → general normal rate.
- * F1.1 (backend 120): a holiday added by mistake is deactivated with a reason,
- * never deleted; adding the date again reactivates it.
+ * F1.1 (backend 121): a holiday added by mistake is deactivated with a reason,
+ * never deleted; adding the date again reactivates it. «Desactivar» only
+ * appears when the backend already reports `active` (backend 121 deployed),
+ * so a portal published early never offers a call the backend lacks.
  */
 export function HolidaysTab({ organizationId }: { organizationId: string }) {
   const toast = useToast();
@@ -27,6 +29,7 @@ export function HolidaysTab({ organizationId }: { organizationId: string }) {
   }, [organizationId]);
   useEffect(() => { void load(); }, [load]);
 
+  const supportsDeactivate = (rows ?? []).some((h) => "active" in h);
   const active = (rows ?? []).filter((h) => h.active !== false);
   const inactive = (rows ?? []).filter((h) => h.active === false);
 
@@ -62,7 +65,7 @@ export function HolidaysTab({ organizationId }: { organizationId: string }) {
                 <p className="font-medium">{h.name}</p>
                 <p className="tabular-nums text-xs text-[var(--color-text-secondary)]">{formatDate(h.date)}</p>
               </div>
-              <Button size="sm" variant="ghost" icon={<CalendarOff size={16} />} onClick={() => setDeactivating(h)}>Desactivar</Button>
+              {supportsDeactivate && <Button size="sm" variant="ghost" icon={<CalendarOff size={16} />} onClick={() => setDeactivating(h)}>Desactivar</Button>}
             </li>
           ))}
         </ul>

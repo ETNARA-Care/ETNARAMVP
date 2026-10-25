@@ -57,6 +57,9 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
   }
 
   const rates = data?.rates ?? [];
+  // «Cancelar cambio» only when the backend already reports cancellations (backend 121 deployed):
+  // a portal published before its backend never offers a call the backend lacks.
+  const supportsCancel = rates.some((r) => "cancelled_at" in r);
   const live = (r: FinanceRate) => r.status !== "past" && r.status !== "cancelled";
   const unit = data?.service.unit ?? "hour";
 
@@ -81,7 +84,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
               { label: "Tarifa de feriado", preset: { kind: "client", scope: "general", dayType: "holiday" } },
               { label: "Feriado para un cliente", preset: { kind: "client", scope: "client", dayType: "holiday" } },
             ]}
-            onAdd={setForm} onEnd={setEnding} onCancel={setCancelling}
+            onAdd={setForm} onEnd={setEnding} onCancel={supportsCancel ? setCancelling : undefined}
           />
           <RateSection
             title="Pago al cuidador" subtitle="Lo que se usa para calcular la compensación. Una excepción para un cuidador tiene prioridad sobre la general, también en feriado (salvo que tenga su propia tarifa de feriado)."
@@ -92,7 +95,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
               { label: "Tarifa de feriado", preset: { kind: "caregiver", scope: "general", dayType: "holiday" } },
               { label: "Feriado para un cuidador", preset: { kind: "caregiver", scope: "caregiver", dayType: "holiday" } },
             ]}
-            onAdd={setForm} onEnd={setEnding} onCancel={setCancelling}
+            onAdd={setForm} onEnd={setEnding} onCancel={supportsCancel ? setCancelling : undefined}
           />
 
           <Simulator organizationId={organizationId} serviceId={serviceId} unit={unit} clients={clients} caregivers={caregivers} today={data.today} />
@@ -163,7 +166,7 @@ function StatusPill({ status }: { status: FinanceRate["status"] }) {
 
 function RateSection({ title, subtitle, unit, rates, actions, onAdd, onEnd, onCancel, disabled }: {
   title: string; subtitle: string; unit: ServiceRates["service"]["unit"]; rates: FinanceRate[]; disabled: boolean;
-  actions: Array<{ label: string; preset: FormPreset }>; onAdd: (p: FormPreset) => void; onEnd: (r: FinanceRate) => void; onCancel: (r: FinanceRate) => void;
+  actions: Array<{ label: string; preset: FormPreset }>; onAdd: (p: FormPreset) => void; onEnd: (r: FinanceRate) => void; onCancel?: (r: FinanceRate) => void;
 }) {
   // In force first, then scheduled; within each, oldest start first.
   const order = (a: FinanceRate, b: FinanceRate) => (a.status === b.status ? a.effective_from.localeCompare(b.effective_from) : a.status === "current" ? -1 : 1);
@@ -189,7 +192,7 @@ function RateSection({ title, subtitle, unit, rates, actions, onAdd, onEnd, onCa
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold tabular-nums">{rateWithUnit(r.amount_cents, unit)}</span>
             <StatusPill status={r.status} />
-            {r.status === "future" && <Button size="sm" variant="ghost" icon={<CalendarX2 size={16} />} onClick={() => onCancel(r)}>Cancelar cambio</Button>}
+            {r.status === "future" && onCancel && <Button size="sm" variant="ghost" icon={<CalendarX2 size={16} />} onClick={() => onCancel(r)}>Cancelar cambio</Button>}
             {r.status !== "future" && r.scope !== "general" && !r.effective_to && <Button size="sm" variant="ghost" onClick={() => onEnd(r)}>Terminar</Button>}
           </div>
         </div>

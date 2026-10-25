@@ -11,7 +11,7 @@ export type RateScope = "general" | "client" | "caregiver";
 export type DayType = "standard" | "holiday";
 export type HalfDayPolicy = "review" | "proportional" | "fixed";
 
-/** `negative` (F1.1, backend 120): billed less than paid. A warning, never a block. */
+/** `negative` (F1.1, backend 121): billed less than paid. A warning, never a block. */
 export interface Margin { differenceCents: number; marginBasisPoints: number | null; negative?: boolean }
 
 export interface FinanceService {
