@@ -3,15 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, Check } from "lucide-react";
 import { IconButton, Badge } from "@/components/ui";
 import { useNotifications } from "./useNotifications";
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.max(0, Math.round(diffMs / 60000));
-  if (minutes < 1) return "ahora";
-  if (minutes < 60) return `hace ${minutes} min`;
-  const hours = Math.round(minutes / 60);
-  return `hace ${hours} h`;
-}
+import { notificationTime } from "./notificationTime";
 
 /** Campana conectada a la bandeja real del usuario autenticado. */
 export function NotificationBell() {
@@ -141,15 +133,19 @@ export function NotificationBell() {
           <div
             role="dialog"
             aria-label="Notificaciones"
-            className="absolute right-0 top-12 z-[var(--z-modal)] w-[320px] max-w-[85vw]
+            // Phones: pinned to the screen with 12 px gutters, whatever sits right of the bell in each
+            // portal's header. From 640 px: the usual drop-down under the bell.
+            className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-[var(--z-modal)]
+              sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[320px]
               bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)]
               shadow-[var(--shadow-raised)] overflow-hidden"
           >
-            <div className="flex items-center justify-between px-3.5 py-3 border-b border-[var(--color-border)]">
-              <p className="font-medium text-[var(--text-body)] text-[var(--color-text-primary)]">Notificaciones</p>
+            <div className="flex items-center justify-between gap-2 px-3.5 py-3 border-b border-[var(--color-border)]">
+              <p className="min-w-0 truncate font-medium text-[var(--text-body)] text-[var(--color-text-primary)]">Notificaciones</p>
               {unread > 0 && (
-                <span className="flex items-center gap-2">
-                  <Badge tone="accent">{unread} sin leer</Badge>
+                <span className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+                  {/* The bell already shows the count; on phones the title and «Marcar todas» need the room. */}
+                  <span className="hidden sm:inline-flex"><Badge tone="accent">{unread} sin leer</Badge></span>
                   <button type="button" onClick={() => void markAllRead()}
                     className="min-h-8 rounded-md px-1.5 text-[var(--text-caption)] font-medium text-[var(--color-accent-700)] hover:underline">
                     Marcar todas
@@ -157,7 +153,7 @@ export function NotificationBell() {
                 </span>
               )}
             </div>
-            <div className="max-h-[360px] overflow-y-auto">
+            <div className="max-h-[min(360px,calc(100dvh-8rem))] overflow-y-auto overscroll-contain">
               {error ? (
                 <button
                   type="button"
@@ -189,7 +185,7 @@ export function NotificationBell() {
                     />
                     <span className="flex-1">
                       <span className="block text-[var(--text-small)] text-[var(--color-text-primary)]">{n.summary}</span>
-                      <span className="block text-[var(--text-caption)] text-[var(--color-text-muted)] mt-0.5">{timeAgo(n.createdAt)}</span>
+                      <span className="block text-[var(--text-caption)] text-[var(--color-text-muted)] mt-0.5">{notificationTime(n.createdAt)}</span>
                     </span>
                     {!n.readAt && <Check size={14} className="text-[var(--color-text-muted)] mt-1.5" aria-hidden />}
                   </button>
