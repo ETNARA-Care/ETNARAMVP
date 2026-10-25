@@ -2,8 +2,10 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import esCommon from "./locales/es/common.json";
 import esAuth from "./locales/es/auth.json";
+import esShell from "./locales/es/shell.json";
 import enCommon from "./locales/en/common.json";
 import enAuth from "./locales/en/auth.json";
+import enShell from "./locales/en/shell.json";
 import { DEFAULT_LANGUAGE, LANGUAGES, LOCALE_TAG, initialLanguage, readSavedLanguage, saveLanguage, type Language } from "./language";
 
 /**
@@ -14,10 +16,10 @@ import { DEFAULT_LANGUAGE, LANGUAGES, LOCALE_TAG, initialLanguage, readSavedLang
  * anything users write stay exactly as they are.
  */
 export const resources = {
-  es: { common: esCommon, auth: esAuth },
-  en: { common: enCommon, auth: enAuth },
+  es: { common: esCommon, auth: esAuth, shell: esShell },
+  en: { common: enCommon, auth: enAuth, shell: enShell },
 } as const;
-export const NAMESPACES = ["common", "auth"] as const;
+export const NAMESPACES = ["common", "auth", "shell"] as const;
 
 function applyDocumentLanguage(language: Language) {
   if (typeof document !== "undefined") document.documentElement.lang = LOCALE_TAG[language];

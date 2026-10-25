@@ -29,7 +29,7 @@ test("phone layout: panel pinned inside the screen; admin header keeps the bell 
   assert.match(bell, /className="fixed inset-x-3 top-\[calc\(env\(safe-area-inset-top\)\+4\.25rem\)\]/);
   assert.match(bell, /sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-\[320px\]/);
   assert.doesNotMatch(bell, /w-\[320px\] max-w-\[85vw\]/);
-  assert.match(bell, /notificationTime\(n\.createdAt\)/);
+  assert.match(bell, /notificationTime\(n\.createdAt, new Date\(\), language\)/);
   const admin = read("../src/layouts/admin/AdminTopbar.tsx");
   assert.match(admin, /<div className="flex-1 sm:hidden" aria-hidden \/>\s*<NotificationBell \/>/);
 });

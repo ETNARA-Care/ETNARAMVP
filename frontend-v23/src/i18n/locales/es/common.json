@@ -5,5 +5,60 @@
     "es": "Español",
     "en": "English",
     "switchTo": "Cambiar el idioma a {{language}}"
+  },
+  "actions": {
+    "close": "Cerrar",
+    "retry": "Reintentar",
+    "more": "Más",
+    "dismissNotice": "Cerrar notificación"
+  },
+  "loading": {
+    "session": "Cargando sesión"
+  },
+  "states": {
+    "offline": {
+      "title": "Sin conexión",
+      "description": "No hay conexión a internet en este momento. Los cambios se guardarán al reconectar."
+    },
+    "network": {
+      "title": "Error de red",
+      "description": "No pudimos completar la solicitud. Verifica tu conexión e intenta de nuevo."
+    },
+    "server": {
+      "title": "Error del servidor",
+      "description": "Algo falló de nuestro lado. Ya lo sabemos -- intenta de nuevo en un momento."
+    },
+    "permission": {
+      "title": "Acceso no permitido",
+      "description": "Tu cuenta no tiene permiso para ver este contenido."
+    },
+    "notFound": {
+      "title": "No encontrado",
+      "description": "No pudimos encontrar lo que buscabas."
+    },
+    "sessionLost": "No pudimos recuperar tu sesión."
+  },
+  "status": {
+    "active": "Activo",
+    "assigned": "Asignado",
+    "pending": "Pendiente",
+    "completed": "Completado",
+    "cancelled": "Cancelado",
+    "in_progress": "En curso",
+    "unassigned": "Sin asignar",
+    "open": "Abierto",
+    "resolved": "Resuelto",
+    "expiring": "Por vencer",
+    "expired": "Vencido"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "bell": "Notificaciones",
+    "bellUnread": "Notificaciones, {{count}} sin leer",
+    "unread": "{{count}} sin leer",
+    "markAll": "Marcar todas",
+    "loading": "Cargando notificaciones…",
+    "empty": "No tienes notificaciones nuevas.",
+    "error": "No pudimos cargar las notificaciones. Toca para reintentar."
   }
 }

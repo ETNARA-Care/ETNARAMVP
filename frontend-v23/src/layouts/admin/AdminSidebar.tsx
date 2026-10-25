@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, NavLink } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import { AdminLogo } from "@/components/admin/AdminUI";
@@ -19,10 +20,11 @@ export function AdminSideLink({ to, icon: Icon, label, end, onNavigate }: { to: 
 }
 
 export function AdminSidebar({ groups, platformLink, organizationName }: { groups: AdminNavGroup[]; platformLink: ReactNode; organizationName: string }) {
+ const { t } = useTranslation("shell");
  return (
  <aside className="sticky top-0 hidden h-dvh w-[264px] shrink-0 flex-col bg-[var(--color-navy-950)] text-[#DEE4EE] lg:flex">
- <Link to="/agency" className="px-6 pb-6 pt-7" aria-label="ETNARA Care, ir al resumen"><AdminLogo inverted /></Link>
- <nav aria-label="Navegación principal" className="flex-1 overflow-y-auto px-3">
+ <Link to="/agency" className="px-6 pb-6 pt-7" aria-label={t("agency.homeLink")}><AdminLogo inverted /></Link>
+ <nav aria-label={t("nav.main")} className="flex-1 overflow-y-auto px-3">
  {platformLink && <div className="mb-5">{platformLink}</div>}
  {groups.map((g) => (
  <div key={g.label} className="mb-6">
@@ -33,7 +35,7 @@ export function AdminSidebar({ groups, platformLink, organizationName }: { group
  </nav>
  <div className="m-3 rounded-[12px] border border-white/10 p-4">
  <p className="truncate text-sm text-white">{organizationName}</p>
- <p className="mt-1 text-xs leading-relaxed text-white/60">Organización activa. Sus datos están separados de cualquier otra organización.</p>
+ <p className="mt-1 text-xs leading-relaxed text-white/60">{t("agency.activeOrganization")}</p>
  </div>
  </aside>
  );

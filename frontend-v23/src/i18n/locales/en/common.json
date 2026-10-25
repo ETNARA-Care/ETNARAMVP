@@ -5,5 +5,60 @@
     "es": "Español",
     "en": "English",
     "switchTo": "Change language to {{language}}"
+  },
+  "actions": {
+    "close": "Close",
+    "retry": "Try again",
+    "more": "More",
+    "dismissNotice": "Dismiss notification"
+  },
+  "loading": {
+    "session": "Loading your session"
+  },
+  "states": {
+    "offline": {
+      "title": "You're offline",
+      "description": "There's no internet connection right now. Your changes will be saved when you reconnect."
+    },
+    "network": {
+      "title": "Connection error",
+      "description": "We couldn't complete the request. Check your connection and try again."
+    },
+    "server": {
+      "title": "Server error",
+      "description": "Something went wrong on our side. We're aware of it -- please try again shortly."
+    },
+    "permission": {
+      "title": "Access not allowed",
+      "description": "Your account doesn't have permission to view this content."
+    },
+    "notFound": {
+      "title": "Not found",
+      "description": "We couldn't find what you were looking for."
+    },
+    "sessionLost": "We couldn't restore your session."
+  },
+  "status": {
+    "active": "Active",
+    "assigned": "Assigned",
+    "pending": "Pending",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "in_progress": "In progress",
+    "unassigned": "Unassigned",
+    "open": "Open",
+    "resolved": "Resolved",
+    "expiring": "Expiring soon",
+    "expired": "Expired"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bell": "Notifications",
+    "bellUnread": "Notifications, {{count}} unread",
+    "unread": "{{count}} unread",
+    "markAll": "Mark all read",
+    "loading": "Loading notifications…",
+    "empty": "You have no new notifications.",
+    "error": "We couldn't load your notifications. Tap to try again."
   }
 }

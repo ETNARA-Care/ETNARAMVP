@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Inbox, WifiOff, ServerCrash, ShieldAlert, SearchX } from "lucide-react";
 import { Button } from "./Button";
 
@@ -36,42 +37,26 @@ export function EmptyState({ icon = <Inbox size={28} />, title, description, act
 
 type ErrorKind = "offline" | "network" | "server" | "permission" | "not_found";
 
-const errorConfig: Record<ErrorKind, { icon: ReactNode; title: string; description: string }> = {
-  offline: {
-    icon: <WifiOff size={28} />,
-    title: "Sin conexión",
-    description: "No hay conexión a internet en este momento. Los cambios se guardarán al reconectar.",
-  },
-  network: {
-    icon: <WifiOff size={28} />,
-    title: "Error de red",
-    description: "No pudimos completar la solicitud. Verifica tu conexión e intenta de nuevo.",
-  },
-  server: {
-    icon: <ServerCrash size={28} />,
-    title: "Error del servidor",
-    description: "Algo falló de nuestro lado. Ya lo sabemos -- intenta de nuevo en un momento.",
-  },
-  permission: {
-    icon: <ShieldAlert size={28} />,
-    title: "Acceso no permitido",
-    description: "Tu cuenta no tiene permiso para ver este contenido.",
-  },
-  not_found: {
-    icon: <SearchX size={28} />,
-    title: "No encontrado",
-    description: "No pudimos encontrar lo que buscabas.",
-  },
+const ERROR_KEY: Record<ErrorKind, "offline" | "network" | "server" | "permission" | "notFound"> = {
+  offline: "offline", network: "network", server: "server", permission: "permission", not_found: "notFound",
+};
+const errorIcon: Record<ErrorKind, ReactNode> = {
+  offline: <WifiOff size={28} />,
+  network: <WifiOff size={28} />,
+  server: <ServerCrash size={28} />,
+  permission: <ShieldAlert size={28} />,
+  not_found: <SearchX size={28} />,
 };
 
 export function ErrorState({ kind, onRetry }: { kind: ErrorKind; onRetry?: () => void }) {
-  const cfg = errorConfig[kind];
+  const { t } = useTranslation("common");
+  const key = ERROR_KEY[kind];
   return (
     <EmptyState
-      icon={cfg.icon}
-      title={cfg.title}
-      description={cfg.description}
-      action={onRetry ? { label: "Reintentar", onClick: onRetry } : undefined}
+      icon={errorIcon[kind]}
+      title={t(`states.${key}.title`)}
+      description={t(`states.${key}.description`)}
+      action={onRetry ? { label: t("actions.retry"), onClick: onRetry } : undefined}
     />
   );
 }

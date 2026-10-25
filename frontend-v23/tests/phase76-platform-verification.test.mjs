@@ -1,3 +1,4 @@
+import { shellEs } from "./_shellCatalog.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -15,7 +16,7 @@ test("platform review is protected by independent server authority", () => {
   assert.match(app, /path="\/platform"/);
   assert.match(agencyLayout, /isPlatformAdmin/);
   assert.match(agencyLayout, /to="\/platform"/);
-  assert.match(agencyLayout, /label="Plataforma"/);
+  assert.match(agencyLayout, /label=\{t\("agency\.platform"\)\}/); assert.equal(shellEs("agency.platform"), "Plataforma");
 });
 
 test("platform no longer exposes employee credential inspection APIs", () => {

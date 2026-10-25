@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 type Tone = "neutral" | "success" | "warning" | "danger" | "accent";
 
@@ -30,22 +31,24 @@ export type DomainStatus =
   | "active" | "pending" | "completed" | "cancelled" | "in_progress" | "assigned"
   | "confirmed" | "unassigned" | "open" | "resolved" | "expiring" | "expired";
 
-const statusConfig: Record<DomainStatus, { tone: Tone; label: string }> = {
-  active: { tone: "success", label: "Activo" },
-  assigned: { tone: "accent", label: "Asignado" },
-  confirmed: { tone: "accent", label: "Asignado" },
-  pending: { tone: "warning", label: "Pendiente" },
-  completed: { tone: "neutral", label: "Completado" },
-  cancelled: { tone: "danger", label: "Cancelado" },
-  in_progress: { tone: "accent", label: "En curso" },
-  unassigned: { tone: "warning", label: "Sin asignar" },
-  open: { tone: "danger", label: "Abierto" },
-  resolved: { tone: "success", label: "Resuelto" },
-  expiring: { tone: "warning", label: "Por vencer" },
-  expired: { tone: "danger", label: "Vencido" },
+// label = key in the common catalog (status.*); the API value itself is never translated.
+const statusConfig: Record<DomainStatus, { tone: Tone; labelKey: "active" | "assigned" | "pending" | "completed" | "cancelled" | "in_progress" | "unassigned" | "open" | "resolved" | "expiring" | "expired" }> = {
+  active: { tone: "success", labelKey: "active" },
+  assigned: { tone: "accent", labelKey: "assigned" },
+  confirmed: { tone: "accent", labelKey: "assigned" },
+  pending: { tone: "warning", labelKey: "pending" },
+  completed: { tone: "neutral", labelKey: "completed" },
+  cancelled: { tone: "danger", labelKey: "cancelled" },
+  in_progress: { tone: "accent", labelKey: "in_progress" },
+  unassigned: { tone: "warning", labelKey: "unassigned" },
+  open: { tone: "danger", labelKey: "open" },
+  resolved: { tone: "success", labelKey: "resolved" },
+  expiring: { tone: "warning", labelKey: "expiring" },
+  expired: { tone: "danger", labelKey: "expired" },
 };
 
 export function StatusBadge({ status }: { status: DomainStatus }) {
+  const { t } = useTranslation("common");
   const cfg = statusConfig[status];
-  return <Badge tone={cfg.tone}>{cfg.label}</Badge>;
+  return <Badge tone={cfg.tone}>{t(`status.${cfg.labelKey}`)}</Badge>;
 }

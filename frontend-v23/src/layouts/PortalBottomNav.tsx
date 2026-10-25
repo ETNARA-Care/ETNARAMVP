@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 
 /**
@@ -32,9 +33,10 @@ function ActiveMark({ on }: { on: boolean }) {
 
 export function PortalBottomNav({ tabs, button, hideFrom }: { tabs: PortalTab[]; button?: PortalTabButton; hideFrom?: "lg" }) {
   const count = tabs.length + (button ? 1 : 0);
+  const { t } = useTranslation("shell");
   return (
     <nav
-      aria-label="Navegación principal"
+      aria-label={t("nav.main")}
       data-portal-nav
       className={`fixed inset-x-0 bottom-0 z-[var(--z-nav)] border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-md ${hideFrom === "lg" ? "lg:hidden" : ""}`}
     >

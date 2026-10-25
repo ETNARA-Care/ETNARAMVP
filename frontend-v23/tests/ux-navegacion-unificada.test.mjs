@@ -1,3 +1,4 @@
+import { shellEs } from "./_shellCatalog.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import test from "node:test";
@@ -20,19 +21,22 @@ test("one bottom bar for the three portals, with the Administrative measures and
 });
 
 test("each portal keeps its own sections and routes", () => {
-  for (const [to, label] of [["/caregiver/today", "Mi día"], ["/caregiver/shifts", "Turnos"], ["/caregiver/messages", "Mensajes"], ["/caregiver/profile", "Más"]]) {
-    assert.match(caregiver, new RegExp(`to: "${to}", icon: \\w+, label: "${label}"`));
+  // i18n (B2): labels come from the shell catalog; the Spanish wording is unchanged.
+  for (const [to, key, label] of [["/caregiver/today", "today", "Mi día"], ["/caregiver/shifts", "shifts", "Turnos"], ["/caregiver/messages", "messages", "Mensajes"], ["/caregiver/profile", "more", "Más"]]) {
+    assert.match(caregiver, new RegExp(`to: "${to}", icon: \\w+, label: t\\("caregiver\\.items\\.${key}"\\)`));
+    assert.equal(shellEs(`caregiver.items.${key}`), label);
   }
-  for (const [to, label] of [["/family/today", "Inicio"], ["/family/activity", "Cuidado"], ["/family/history", "Calendario"], ["/family/messages", "Mensajes"], ["/family/profile", "Más"]]) {
-    assert.match(family, new RegExp(`to: "${to}", icon: \\w+, label: "${label}"`));
+  for (const [to, key, label] of [["/family/today", "home", "Inicio"], ["/family/activity", "care", "Cuidado"], ["/family/history", "calendar", "Calendario"], ["/family/messages", "messages", "Mensajes"], ["/family/profile", "more", "Más"]]) {
+    assert.match(family, new RegExp(`to: "${to}", icon: \\w+, label: t\\("family\\.items\\.${key}"\\)`));
+    assert.equal(shellEs(`family.items.${key}`), label);
   }
-  assert.match(admin, /label: "Más", onClick: \(\) => setSheet\(true\)/);
+  assert.match(admin, /label: t\("actions\.more", \{ ns: "common" \}\), onClick: \(\) => setSheet\(true\)/);
 });
 
 test("account menu in the header of the three portals: Configuración and Cerrar sesión", () => {
-  assert.match(menu, />Configuración/);
-  assert.match(menu, /Cerrar sesión/);
-  assert.match(topbar, /<AccountMenu userLabel=\{userLabel\} roleLabel="Administración" settingsTo="\/agency\/settings"/);
+  assert.match(menu, /\{t\("account\.settings"\)\}/); assert.equal(shellEs("account.settings"), "Configuración");
+  assert.match(menu, /t\("account\.logout"\)/); assert.equal(shellEs("account.logout"), "Cerrar sesión");
+  assert.match(topbar, /<AccountMenu userLabel=\{userLabel\} roleLabel=\{t\("roles\.admin"\)\} settingsTo="\/agency\/settings"/);
   assert.match(caregiver, /settingsTo="\/caregiver\/profile"/);
   assert.match(family, /settingsTo="\/family\/profile"/);
   // Family header keeps the logo and the bell, plus the avatar.

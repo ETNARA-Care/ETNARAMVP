@@ -1,3 +1,4 @@
+import { shellEs } from "./_shellCatalog.mjs";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
@@ -263,7 +264,7 @@ test("Phase 5.4 Admin can inspect responses, safely cancel, and open compact wor
   assert.match(shift, /Sí, cancelar turno/);
   assert.match(workers, /\/agency\/workers\/\$\{worker\.id\}/);
   assert.match(workerProfile, /Información laboral/);
-  assert.match(layout, /label: "Resumen"/);
+  assert.match(layout, /k: "overview"/); assert.equal(shellEs("agency.items.overview"), "Resumen");
   assert.match(layout, /activeOrganization\?\.name/);
   assert.doesNotMatch(layout, /Residencial Los Almendros|Rafael Vega/);
 });

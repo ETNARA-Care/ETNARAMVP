@@ -1,0 +1,96 @@
+{
+  "nav": {
+    "main": "Main navigation",
+    "allSections": "All sections"
+  },
+  "account": {
+    "menu": "Account menu",
+    "settings": "Settings",
+    "switchOrganization": "Switch organization",
+    "logout": "Sign out",
+    "confirmLogout": "Yes, sign out",
+    "language": "Language"
+  },
+  "roles": {
+    "admin": "Administration",
+    "caregiver": "Caregiver",
+    "family": "Family"
+  },
+  "agency": {
+    "groups": {
+      "operation": "Operations",
+      "care": "Care",
+      "administration": "Administration"
+    },
+    "items": {
+      "overview": "Overview",
+      "home": "Home",
+      "compliance": "Compliance",
+      "workers": "Staff",
+      "shifts": "Shifts",
+      "smartmatch": "SmartMatch",
+      "planning": "Planning",
+      "timesheets": "Hours & billing",
+      "finance": "Finance",
+      "operations": "Operations center",
+      "residents": "Residents",
+      "quality": "Care quality",
+      "incidents": "Incidents",
+      "messages": "Messages",
+      "agents": "Agent center",
+      "settings": "Settings"
+    },
+    "platform": "Platform",
+    "myCaregiverDay": "My day as a caregiver",
+    "organizationFallback": "Organization",
+    "adminFallback": "Administrator",
+    "workspace": "Administrative workspace",
+    "homeLink": "ETNARA Care, go to overview",
+    "activeOrganization": "Active organization. Its data is kept separate from any other organization."
+  },
+  "caregiver": {
+    "portalOf": "Caregiver portal · {{name}}",
+    "nameFallback": "Caregiver",
+    "items": {
+      "today": "My day",
+      "shifts": "Shifts",
+      "offers": "Offers",
+      "messages": "Messages",
+      "more": "More"
+    },
+    "goToAgency": "Go to the agency",
+    "alsoAdmin": "You're also an administrator of {{organization}}",
+    "alsoSupervisor": "You're also a supervisor of {{organization}}",
+    "theAgency": "the agency",
+    "manageEstablishment": "Manage {{name}}",
+    "establishmentAccess": "Establishment administrator access",
+    "logoutWarning_one": "You have 1 record not yet sent. If you sign out it will be lost.",
+    "logoutWarning_other": "You have {{count}} records not yet sent. If you sign out they will be lost."
+  },
+  "family": {
+    "nameFallback": "Family",
+    "items": {
+      "home": "Home",
+      "care": "Care",
+      "calendar": "Calendar",
+      "messages": "Messages",
+      "more": "More"
+    }
+  },
+  "platform": {
+    "brand": "ETNARA Administrative Center",
+    "tag": "Platform",
+    "subtitle": "Administrative Center",
+    "nav": "ETNARA Administrative Center",
+    "organization": "Organization",
+    "items": {
+      "overview": "Overview",
+      "organizations": "Organizations",
+      "organizationsShort": "Clients",
+      "verification": "Verification",
+      "verificationShort": "Verify",
+      "tower": "ETNARA Tower",
+      "towerShort": "Tower"
+    }
+  }
+}

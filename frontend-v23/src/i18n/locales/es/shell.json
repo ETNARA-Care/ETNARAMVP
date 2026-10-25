@@ -1,0 +1,96 @@
+{
+  "nav": {
+    "main": "Navegación principal",
+    "allSections": "Todas las secciones"
+  },
+  "account": {
+    "menu": "Menú de la cuenta",
+    "settings": "Configuración",
+    "switchOrganization": "Cambiar organización",
+    "logout": "Cerrar sesión",
+    "confirmLogout": "Sí, cerrar sesión",
+    "language": "Idioma"
+  },
+  "roles": {
+    "admin": "Administración",
+    "caregiver": "Cuidador/a",
+    "family": "Familia"
+  },
+  "agency": {
+    "groups": {
+      "operation": "Operación",
+      "care": "Cuidado",
+      "administration": "Administración"
+    },
+    "items": {
+      "overview": "Resumen",
+      "home": "Inicio",
+      "compliance": "Compliance",
+      "workers": "Personal",
+      "shifts": "Turnos",
+      "smartmatch": "SmartMatch",
+      "planning": "Planificación",
+      "timesheets": "Horas y facturación",
+      "finance": "Finanzas",
+      "operations": "Centro operacional",
+      "residents": "Residentes",
+      "quality": "Calidad del cuidado",
+      "incidents": "Incidentes",
+      "messages": "Mensajes",
+      "agents": "Centro de agentes",
+      "settings": "Configuración"
+    },
+    "platform": "Plataforma",
+    "myCaregiverDay": "Mi día como cuidador/a",
+    "organizationFallback": "Organización",
+    "adminFallback": "Administrador",
+    "workspace": "Espacio administrativo",
+    "homeLink": "ETNARA Care, ir al resumen",
+    "activeOrganization": "Organización activa. Sus datos están separados de cualquier otra organización."
+  },
+  "caregiver": {
+    "portalOf": "Portal del cuidador · {{name}}",
+    "nameFallback": "Cuidador/a",
+    "items": {
+      "today": "Mi día",
+      "shifts": "Turnos",
+      "offers": "Ofertas",
+      "messages": "Mensajes",
+      "more": "Más"
+    },
+    "goToAgency": "Ir a la agencia",
+    "alsoAdmin": "También eres administrador/a de {{organization}}",
+    "alsoSupervisor": "También eres supervisor/a de {{organization}}",
+    "theAgency": "la agencia",
+    "manageEstablishment": "Administrar {{name}}",
+    "establishmentAccess": "Acceso de administrador del establecimiento",
+    "logoutWarning_one": "Tienes 1 registro sin enviar. Si cierras la sesión se perderá.",
+    "logoutWarning_other": "Tienes {{count}} registros sin enviar. Si cierras la sesión se perderán."
+  },
+  "family": {
+    "nameFallback": "Familia",
+    "items": {
+      "home": "Inicio",
+      "care": "Cuidado",
+      "calendar": "Calendario",
+      "messages": "Mensajes",
+      "more": "Más"
+    }
+  },
+  "platform": {
+    "brand": "ETNARA Centro Administrativo",
+    "tag": "Plataforma",
+    "subtitle": "Centro Administrativo",
+    "nav": "Centro Administrativo ETNARA",
+    "organization": "Organización",
+    "items": {
+      "overview": "Resumen",
+      "organizations": "Organizaciones",
+      "organizationsShort": "Clientes",
+      "verification": "Verificación",
+      "verificationShort": "Verificar",
+      "tower": "ETNARA Tower",
+      "towerShort": "Tower"
+    }
+  }
+}
