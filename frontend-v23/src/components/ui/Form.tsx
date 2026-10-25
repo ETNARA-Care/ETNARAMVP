@@ -1,7 +1,7 @@
 import { forwardRef, useId, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 const fieldBase =
-  "w-full rounded-[var(--radius-sm)] border bg-[var(--color-surface)] px-3.5 h-11 text-[var(--text-body)] " +
+  "w-full rounded-[var(--radius-sm)] border bg-[var(--color-surface)] px-3.5 h-11 " +
   "text-[var(--color-text-primary)] transition-colors placeholder:text-[var(--color-text-muted)] " +
   "disabled:opacity-50 disabled:bg-[var(--color-ivory-100)]";
 
