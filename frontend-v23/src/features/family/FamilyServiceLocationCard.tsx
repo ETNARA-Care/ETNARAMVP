@@ -6,7 +6,7 @@ import { createChangeRequest, getFamilyServiceLocation, listMyChangeRequests, ty
 import { Badge, Button, Card, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
 import type { AddressHint } from "@/features/serviceLocation/addressHint";
-import type { MapPoint } from "@/features/serviceLocation/mapLinks";
+import { inPuertoRico, type MapPoint } from "@/features/serviceLocation/mapLinks";
 import { PasteLocation } from "@/features/serviceLocation/PasteLocation";
 import { PinPreview } from "@/features/serviceLocation/PinPreview";
 
@@ -55,6 +55,7 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
     const text = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v)) as Record<string, string>;
     const body = point ? { ...text, latitude: point.latitude, longitude: point.longitude } : text;
     if (!Object.keys(body).length) { setFormError("Escribe la corrección o un mensaje para la agencia."); return; }
+    if (point && !inPuertoRico(point)) { setFormError("El PIN está fuera de Puerto Rico. Muévelo con «Ajustar PIN»."); return; }
     if (text.postalCode && !/^\d{5}(-\d{4})?$/.test(text.postalCode)) { setFormError("El código postal debe tener 5 dígitos."); return; }
     setBusy(true); setFormError("");
     try {
@@ -64,7 +65,7 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
     } catch (e) {
       const err = e as ApiError;
       setFormError(err?.status === 409 ? "Ya tienes una solicitud en revisión."
-        : err?.code === "INVALID_PAYLOAD" && point ? "El PIN debe estar en Puerto Rico." : "No se pudo enviar la solicitud.");
+        : point ? "No pudimos enviar la solicitud con el PIN. Inténtalo más tarde o envíala sin PIN." : "No se pudo enviar la solicitud.");
     } finally { setBusy(false); await load(); }
   }
 
@@ -110,7 +111,7 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
         <div className="flex flex-col gap-3">
           <p className="text-sm text-[#475467]">La agencia revisará tu solicitud antes de cambiar la dirección oficial. Completa solo lo que haya que corregir.</p>
           <PasteLocation label="Pega la ubicación (opcional)" onAddress={applyHint} onPoint={setPoint} />
-          <PinPreview point={point} municipality={form.municipality} onChange={setPoint} className="h-44" />
+          <PinPreview point={point} municipality={form.municipality} onChange={setPoint} onClear={() => setPoint(null)} className="h-44" />
           <Input label="Dirección correcta" maxLength={200} value={form.addressLine} onChange={(e) => setForm({ ...form, addressLine: e.target.value })} autoComplete="off" />
           <div className="grid grid-cols-2 gap-3">
             <Select label="Municipio" value={form.municipality} onChange={(e) => setForm({ ...form, municipality: e.target.value })}>

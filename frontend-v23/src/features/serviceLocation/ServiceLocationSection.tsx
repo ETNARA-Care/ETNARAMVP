@@ -11,7 +11,7 @@ import { Badge, Button, Card, Checkbox, Input, Modal, Select, Skeleton, Textarea
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
 import type { AddressHint } from "./addressHint";
 import { GpsConfirmModal } from "./GpsConfirmModal";
-import type { MapPoint } from "./mapLinks";
+import { inPuertoRico, type MapPoint } from "./mapLinks";
 import { serviceAddressText } from "./navigation";
 import { PasteLocation } from "./PasteLocation";
 import { PinPreview } from "./PinPreview";
@@ -111,6 +111,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
     const token = getToken();
     if (!form || !token) return;
     if (!form.useEstablishment && !form.addressLine.trim() && !form.point) { setFormError("Escribe la dirección o pega un enlace de mapas con la ubicación."); return; }
+    if (form.point && !inPuertoRico(form.point)) { setFormError("El PIN está fuera de Puerto Rico. Muévelo con «Ajustar PIN»."); return; }
     if (form.postalCode && !/^\d{5}(-\d{4})?$/.test(form.postalCode.trim())) { setFormError("El código postal debe tener 5 dígitos (ej. 00725)."); return; }
     const current = form.id ? data?.locations.find((l) => l.id === form.id) : undefined;
     if (form.id && !confirmed && (current?.upcomingShiftCount ?? 0) > 0) { setConfirmEdit(current!.upcomingShiftCount!); return; }
@@ -306,7 +307,8 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
             </div>
           </>}
           {!form.useEstablishment && <>
-            <PinPreview point={form.point} municipality={form.municipality} onChange={(p) => setForm((f) => f && ({ ...f, point: p, pinSure: false }))} />
+            <PinPreview point={form.point} municipality={form.municipality} onChange={(p) => setForm((f) => f && ({ ...f, point: p, pinSure: false }))}
+              onClear={!form.id ? () => setForm((f) => f && ({ ...f, point: null, pinSure: false })) : undefined} />
             {form.point
               ? <Checkbox label="Confirmo que el PIN está en la entrada del domicilio donde se presta el servicio." checked={form.pinSure}
                   onChange={(e) => setForm({ ...form, pinSure: e.target.checked })} />

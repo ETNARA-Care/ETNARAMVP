@@ -49,6 +49,11 @@ test("parser: coordinates as text (decimal and degrees) and links inside shared 
   assert.ok(Math.abs(d.point.latitude - 18.2341) < 0.0002 && Math.abs(d.point.longitude + 66.0485) < 0.0002);
   const shared = point("Casa de prueba\nCalle Ficticia 1, Caguas\nhttps://maps.apple.com/?ll=18.2341,-66.0485");
   assert.match(shared.placeHint ?? "", /Calle Ficticia 1/);
+  // Apple share sheet: place name, address line, link with only «q=<name>» → the address line is the hint.
+  assert.equal(point("Casa de prueba\nCalle Ficticia 12, Caguas, PR 00725\nhttps://maps.apple.com/?ll=18.2341,-66.0485&q=Casa").placeHint, "Calle Ficticia 12, Caguas, PR 00725");
+  const short = links.parseMapInput("Casa\nCalle Luna 12, Caguas 00725\nhttps://maps.app.goo.gl/AbC123xyz");
+  assert.equal(short.kind, "short-link"); assert.equal(short.placeHint, "Calle Luna 12, Caguas 00725");
+  assert.equal(short.url, "https://maps.app.goo.gl/AbC123xyz"); // only the link goes to the server
 });
 
 test("parser: short links go to the server; nothing else does", () => {
@@ -111,6 +116,7 @@ test("PIN preview: read-only until «Ajustar PIN»; centred on the town, never a
   assert.match(pin, /readOnly=\{!adjustable \|\| !adjusting\}/);
   assert.match(pin, /"Ajustar PIN"/);
   assert.match(pin, /"Colocar PIN"/);
+  assert.match(pin, />Quitar PIN</);
   assert.match(pin, /!point && c \?/);
   assert.match(picker, /if \(readOnlyRef\.current\) return;/);
   assert.match(picker, /draggable: !readOnlyRef\.current/);
@@ -139,6 +145,8 @@ test("family: proposes an address, link or PIN through the existing correction r
   // The relative never edits or confirms the official address or a shift.
   assert.doesNotMatch(code(family), /updateServiceLocation|confirmLocationGps|createServiceLocation|shift/i);
   assert.match(api, /latitude\?: number; longitude\?: number/);
+  assert.match(family, /point && !inPuertoRico\(point\)/); // checked on the phone before sending
+  assert.match(section, /form\.point && !inPuertoRico\(form\.point\)/);
 });
 
 test("agency review: sees the proposed PIN and decides whether to use it (left unconfirmed)", () => {

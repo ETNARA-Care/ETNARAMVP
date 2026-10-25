@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ExternalLink, Move } from "lucide-react";
+import { Check, ExternalLink, Move, X } from "lucide-react";
 import { Button } from "@/components/ui";
 import { LocationMapPicker } from "./LocationMapPicker";
 import { MUNICIPALITY_CENTERS } from "./municipalityCenters";
@@ -12,9 +12,11 @@ const fmt = (p: MapPoint) => `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)
  * tap places the PIN and a drag moves it. Without a PIN the map is centred on the
  * municipality (never a made-up point).
  */
-export function PinPreview({ point, onChange, municipality, adjustable = true, className = "h-52" }: {
+export function PinPreview({ point, onChange, onClear, municipality, adjustable = true, className = "h-52" }: {
   point: MapPoint | null;
   onChange?: (p: MapPoint) => void;
+  /** «Quitar PIN»: go back to no point (e.g. a wrong link was pasted). */
+  onClear?: () => void;
   municipality?: string;
   adjustable?: boolean;
   className?: string;
@@ -30,8 +32,13 @@ export function PinPreview({ point, onChange, municipality, adjustable = true, c
           {point ? <>PIN: <span className="font-mono text-[var(--color-text-primary)]">{fmt(point)}</span></> : adjusting ? "Toca el mapa en la entrada del domicilio." : "Aún no hay PIN."}
         </span>
         {adjustable && (
-          <Button type="button" size="sm" variant={adjusting ? "primary" : "secondary"} icon={adjusting ? <Check size={16} /> : <Move size={16} />}
-            onClick={() => setAdjusting((a) => !a)}>{adjusting ? "Listo" : point ? "Ajustar PIN" : "Colocar PIN"}</Button>
+          <div className="flex gap-2">
+            {point && onClear && !adjusting && (
+              <Button type="button" size="sm" variant="ghost" icon={<X size={16} />} onClick={onClear}>Quitar PIN</Button>
+            )}
+            <Button type="button" size="sm" variant={adjusting ? "primary" : "secondary"} icon={adjusting ? <Check size={16} /> : <Move size={16} />}
+              onClick={() => setAdjusting((a) => !a)}>{adjusting ? "Listo" : point ? "Ajustar PIN" : "Colocar PIN"}</Button>
+          </div>
         )}
       </div>
       {adjusting && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Toca para colocar el PIN y arrástralo hasta la entrada. Acerca con dos dedos.</p>}

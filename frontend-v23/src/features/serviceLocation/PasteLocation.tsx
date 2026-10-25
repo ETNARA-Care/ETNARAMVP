@@ -58,13 +58,15 @@ export function PasteLocation({ onPoint, onAddress, label = "Dirección o enlace
         try {
           const res = await resolveMapLink(r.url, token);
           if (res.status === "point") {
-            onPoint(res.point); applyHint(res.placeHint);
+            onPoint(res.point); applyHint(r.placeHint ?? res.placeHint);
             return say("ok", `Ubicación encontrada en ${r.source === "apple" ? "Apple Maps" : "Google Maps"}. Revisa el PIN en el mapa antes de confirmar.`);
           }
           if (res.status === "outside-pr") return say("error", "Esa ubicación está fuera de Puerto Rico.");
+          applyHint(r.placeHint); // the shared text still fills the address; the person places the PIN
           if (res.status === "no-point") return say("info", "Ese enlace no trae el punto exacto. En la app, toca el lugar exacto y vuelve a compartirlo, o coloca el PIN con «Ajustar PIN».");
           return say("error", "No pudimos leer ese enlace corto. Copia las coordenadas desde la app (mantén presionado el lugar) o coloca el PIN con «Ajustar PIN».");
         } catch (e) {
+          applyHint(r.placeHint);
           return say("error", (e as { status?: number })?.status === 429
             ? "Demasiados enlaces seguidos. Espera unos minutos o coloca el PIN con «Ajustar PIN»."
             : "No pudimos leer ese enlace ahora. Coloca el PIN con «Ajustar PIN» o inténtalo de nuevo.");
