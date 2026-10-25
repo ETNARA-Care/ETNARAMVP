@@ -20,7 +20,7 @@ test("map: OpenStreetMap tiles, marker placed by hand, no geocoding of the writt
   assert.match(map, /VITE_MAP_TILE_URL \|\| "https:\/\/tile\.openstreetmap\.org/);
   assert.match(map, /OpenStreetMap/);
   assert.match(map, /m\.on\("click"/);
-  assert.match(map, /draggable: true/);
+  assert.match(map, /draggable: !readOnlyRef\.current/); // draggable unless shown as a read-only preview
   const everything = code(allSrc("src"));
   assert.doesNotMatch(everything, /nominatim|geocod|maps\.googleapis|mapbox/i);
   assert.match(read("package.json"), /"leaflet": "1\.9\.4"/);
@@ -90,12 +90,12 @@ test("two independent states: written address verified vs GPS confirmed", () => 
 
 test("GPS modal: local search, manual marker, preview, explicit confirmation", () => {
   assert.match(gps, /MUNICIPALITY_CENTERS/);
-  assert.match(gps, /parseMapPoint\(paste\)/);
+  assert.match(gps, /<PasteLocation /); // «Pegar ubicación»: Apple/Google/Waze links and coordinates
   assert.match(gps, /<LocationMapPicker value=\{point\} onChange=\{\(p\) => \{ setPoint\(p\); setSure\(false\); \}\}/);
   assert.match(gps, /data-testid="gps-preview"/);
   assert.match(gps, /Confirmo que el marcador está en la entrada/);
   assert.match(gps, /disabled=\{!point \|\| !sure\}/);
-  assert.match(gps, /La búsqueda no sale de ETNARA/);
+  assert.match(gps, /Nada se confirma solo/);
   assert.equal((read("src/features/serviceLocation/municipalityCenters.ts").match(/^\s+"[^"]+": \{ lat:/gm) || []).length, 78);
 });
 

@@ -5,6 +5,10 @@ import { getToken } from "@/auth/token";
 import { createChangeRequest, getFamilyServiceLocation, listMyChangeRequests, type ChangeRequest, type FamilyServiceLocation } from "@/api/serviceLocations";
 import { Badge, Button, Card, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
+import type { AddressHint } from "@/features/serviceLocation/addressHint";
+import type { MapPoint } from "@/features/serviceLocation/mapLinks";
+import { PasteLocation } from "@/features/serviceLocation/PasteLocation";
+import { PinPreview } from "@/features/serviceLocation/PinPreview";
 
 const STATUS: Record<ChangeRequest["status"], { label: string; tone: "warning" | "success" | "neutral" }> = {
   PENDING: { label: "En revisión", tone: "warning" },
@@ -26,6 +30,12 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ addressLine: "", municipality: "", postalCode: "", accessNotes: "", message: "" });
   const [formError, setFormError] = useState("");
+  // Proposed PIN (from a pasted link or placed by hand). It is only a proposal: the agency reviews it.
+  const [point, setPoint] = useState<MapPoint | null>(null);
+  const applyHint = (h: AddressHint) => setForm((f) => ({ ...f,
+    addressLine: f.addressLine.trim() ? f.addressLine : h.addressLine,
+    municipality: f.municipality || h.municipality,
+    postalCode: f.postalCode.trim() ? f.postalCode : h.postalCode }));
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -42,16 +52,19 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
   async function submit() {
     const token = getToken();
     if (!token) return;
-    const body = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v)) as Record<string, string>;
+    const text = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v)) as Record<string, string>;
+    const body = point ? { ...text, latitude: point.latitude, longitude: point.longitude } : text;
     if (!Object.keys(body).length) { setFormError("Escribe la corrección o un mensaje para la agencia."); return; }
-    if (body.postalCode && !/^\d{5}(-\d{4})?$/.test(body.postalCode)) { setFormError("El código postal debe tener 5 dígitos."); return; }
+    if (text.postalCode && !/^\d{5}(-\d{4})?$/.test(text.postalCode)) { setFormError("El código postal debe tener 5 dígitos."); return; }
     setBusy(true); setFormError("");
     try {
       await createChangeRequest(recipientId, body, token);
       show("Solicitud enviada. La agencia la revisará y te avisaremos.", "success");
-      setOpen(false); setForm({ addressLine: "", municipality: "", postalCode: "", accessNotes: "", message: "" });
+      setOpen(false); setPoint(null); setForm({ addressLine: "", municipality: "", postalCode: "", accessNotes: "", message: "" });
     } catch (e) {
-      setFormError((e as ApiError)?.status === 409 ? "Ya tienes una solicitud en revisión." : "No se pudo enviar la solicitud.");
+      const err = e as ApiError;
+      setFormError(err?.status === 409 ? "Ya tienes una solicitud en revisión."
+        : err?.code === "INVALID_PAYLOAD" && point ? "El PIN debe estar en Puerto Rico." : "No se pudo enviar la solicitud.");
     } finally { setBusy(false); await load(); }
   }
 
@@ -96,6 +109,8 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
         </div>}>
         <div className="flex flex-col gap-3">
           <p className="text-sm text-[#475467]">La agencia revisará tu solicitud antes de cambiar la dirección oficial. Completa solo lo que haya que corregir.</p>
+          <PasteLocation label="Pega la ubicación (opcional)" onAddress={applyHint} onPoint={setPoint} />
+          <PinPreview point={point} municipality={form.municipality} onChange={setPoint} className="h-44" />
           <Input label="Dirección correcta" maxLength={200} value={form.addressLine} onChange={(e) => setForm({ ...form, addressLine: e.target.value })} autoComplete="off" />
           <div className="grid grid-cols-2 gap-3">
             <Select label="Municipio" value={form.municipality} onChange={(e) => setForm({ ...form, municipality: e.target.value })}>

@@ -48,6 +48,8 @@ export interface ChangeRequest {
   proposed_address_line: string | null; proposed_municipality: string | null; proposed_postal_code: string | null;
   proposed_access_notes: string | null; message: string | null; resolution_note: string | null;
   resolved_at: string | null; created_at: string; relationship_type?: string;
+  /** Migration 122: point proposed by the relative (Puerto Rico), applied unconfirmed on approval. */
+  proposed_latitude?: number | null; proposed_longitude?: number | null;
 }
 export interface FamilyPermission { id: string; relationship_type: string; is_primary_contact: boolean; can_view_service_location: boolean }
 export interface ShiftLocationOption { id: string; label: string; isPrimary: boolean; verified: boolean; gpsConfirmed: boolean; summary: string }
@@ -87,7 +89,7 @@ export const shiftLocationOptions = async (o: string, r: string, t: string) =>
   (await apiClient.get<{ options: ShiftLocationOption[] }>(`${rec(o, r)}/service-location-options`, t)).options;
 export const listChangeRequests = async (o: string, r: string, t: string) =>
   (await apiClient.get<{ requests: ChangeRequest[] }>(`${rec(o, r)}/location-change-requests`, t)).requests;
-export const resolveChangeRequest = (o: string, r: string, id: string, body: { decision: "APPROVE" | "REJECT"; note?: string; confirmUpcomingShifts?: true }, t: string) =>
+export const resolveChangeRequest = (o: string, r: string, id: string, body: { decision: "APPROVE" | "REJECT"; note?: string; confirmUpcomingShifts?: true; usePoint?: boolean }, t: string) =>
   apiClient.post(`${rec(o, r)}/location-change-requests/${id}/resolve`, body, t);
 export const listFamilyPermissions = async (o: string, r: string, t: string) =>
   (await apiClient.get<{ relatives: FamilyPermission[] }>(`${rec(o, r)}/family-location-permissions`, t)).relatives;
@@ -107,7 +109,7 @@ export async function getShiftServiceLocation(o: string, shiftId: string, t: str
 export const getFamilyServiceLocation = (r: string, t: string) => apiClient.get<FamilyServiceLocation>(`/me/care-recipients/${r}/service-location`, t);
 export const listMyChangeRequests = async (r: string, t: string) =>
   (await apiClient.get<{ requests: ChangeRequest[] }>(`/me/care-recipients/${r}/location-change-requests`, t)).requests;
-export const createChangeRequest = (r: string, body: { addressLine?: string; municipality?: string; postalCode?: string; accessNotes?: string; message?: string }, t: string) =>
+export const createChangeRequest = (r: string, body: { addressLine?: string; municipality?: string; postalCode?: string; accessNotes?: string; message?: string; latitude?: number; longitude?: number }, t: string) =>
   apiClient.post<{ request: ChangeRequest }>(`/me/care-recipients/${r}/location-change-requests`, body, t);
 
 // ------------------------------------------------------------------ arrival (Llegué)
@@ -130,3 +132,13 @@ export async function recordArrival(o: string, shiftId: string, reading: { latit
 }
 export const reviewArrival = (o: string, shiftId: string, membershipId: string, note: string, t: string) =>
   apiClient.post(`/organizations/${o}/shifts/${shiftId}/arrival/review`, { membershipId, note }, t);
+
+/**
+ * «Pegar ubicación»: only SHORT links (maps.app.goo.gl, goo.gl/maps, maps.apple/p/…) go to the
+ * server, which follows the provider's own redirect with a strict allowlist. Every other link
+ * or text is interpreted on the phone (features/serviceLocation/mapLinks.ts).
+ */
+export type ResolvedMapLink =
+  | { status: "point"; point: { latitude: number; longitude: number }; placeHint: string | null }
+  | { status: "no-point" | "outside-pr" | "unsupported" | "unreachable" | "disabled" };
+export const resolveMapLink = (url: string, t: string) => apiClient.post<ResolvedMapLink>("/maps/resolve-link", { url }, t);

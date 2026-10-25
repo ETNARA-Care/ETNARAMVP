@@ -3,14 +3,18 @@ import { CheckCircle2, Crosshair, History, MapPin, Plus, ShieldCheck } from "luc
 import type { ApiError } from "@/api/client";
 import { getToken } from "@/auth/token";
 import {
-  archiveLocation, createServiceLocation, listChangeRequests, listFamilyPermissions, listServiceLocations, locationHistory,
+  archiveLocation, confirmLocationGps, createServiceLocation, listChangeRequests, listFamilyPermissions, listServiceLocations, locationHistory,
   reassignShifts, resolveChangeRequest, setFamilyPermission, setPrimaryLocation, updateServiceLocation, verifyLocation,
   type ChangeRequest, type FamilyPermission, type LocationAccess, type LocationEvent, type ServiceLocation, type ServiceLocationsResponse,
 } from "@/api/serviceLocations";
 import { Badge, Button, Card, Checkbox, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
+import type { AddressHint } from "./addressHint";
 import { GpsConfirmModal } from "./GpsConfirmModal";
+import type { MapPoint } from "./mapLinks";
 import { serviceAddressText } from "./navigation";
+import { PasteLocation } from "./PasteLocation";
+import { PinPreview } from "./PinPreview";
 
 const when = (v: string) => new Date(v).toLocaleString("es-PR", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Puerto_Rico" });
 const day = (v: string) => new Date(v).toLocaleDateString("es-PR", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Puerto_Rico" });
@@ -31,9 +35,13 @@ const message = (e: unknown, fallback: string) => ERRORS[(e as ApiError)?.code ?
 interface FormState {
   id: string | null; label: string; useEstablishment: boolean; addressLine: string; municipality: string; postalCode: string;
   accessNotes: string; makePrimary: boolean;
+  /** «Pegar ubicación»: PIN from a pasted link or placed by hand. Confirmed only with pinSure. */
+  point: MapPoint | null; pinSure: boolean;
 }
 const emptyForm = (primary: boolean): FormState => ({ id: null, label: primary ? "Principal" : "Alterna", useEstablishment: false,
-  addressLine: "", municipality: "", postalCode: "", accessNotes: "", makePrimary: primary });
+  addressLine: "", municipality: "", postalCode: "", accessNotes: "", makePrimary: primary, point: null, pinSure: false });
+const samePoint = (a: MapPoint | null, b: { latitude: number | null; longitude: number | null } | undefined) =>
+  Boolean(a && b && a.latitude === b.latitude && a.longitude === b.longitude);
 
 /**
  * Pacientes/Residentes → Expediente → Ubicación del servicio (Gate 6).
@@ -56,6 +64,9 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
   const [shiftsAck, setShiftsAck] = useState(false);
   // Gate 6 fix: exact point confirmed separately from the written address.
   const [gpsFor, setGpsFor] = useState<ServiceLocation | null>(null);
+  // «Pegar ubicación»: a relative's PIN is applied unconfirmed; then the agency confirms it.
+  const [approveUsePoint, setApproveUsePoint] = useState(true);
+  const [gpsAfterApprove, setGpsAfterApprove] = useState<MapPoint | null>(null);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -75,19 +86,31 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
   const primaryLocation = active.find((l) => l.isPrimary) ?? null;
   const approvalShifts = primaryLocation?.upcomingShiftCount ?? 0;
   const archived = (data?.locations ?? []).filter((l) => l.archivedAt);
+  useEffect(() => {
+    // Open «Ubicar en el mapa» only once the reloaded primary carries the approved PIN (never stale data).
+    if (gpsAfterApprove && primaryLocation && samePoint(gpsAfterApprove, primaryLocation)) { setGpsAfterApprove(null); setGpsFor(primaryLocation); }
+  }, [gpsAfterApprove, primaryLocation]);
   const labelOf = (id: string | null) => data?.locations.find((l) => l.id === id)?.label ?? "Sin dirección";
 
   function openEdit(l: ServiceLocation) {
     setFormError("");
     setForm({ id: l.id, label: l.label, useEstablishment: Boolean(l.establishment), addressLine: l.addressLine ?? "",
       municipality: l.municipality ?? "", postalCode: l.postalCode ?? "", accessNotes: l.accessNotes ?? "",
-      makePrimary: l.isPrimary });
+      makePrimary: l.isPrimary, point: l.latitude != null && l.longitude != null ? { latitude: l.latitude, longitude: l.longitude } : null, pinSure: false });
+  }
+
+  /** Text found in a pasted link or address fills only the fields that are still empty. */
+  function applyHint(h: AddressHint) {
+    setForm((f) => f && ({ ...f,
+      addressLine: f.addressLine.trim() ? f.addressLine : h.addressLine,
+      municipality: f.municipality || h.municipality,
+      postalCode: f.postalCode.trim() ? f.postalCode : h.postalCode }));
   }
 
   async function save(confirmed = false) {
     const token = getToken();
     if (!form || !token) return;
-    if (!form.useEstablishment && !form.addressLine.trim()) { setFormError("Escribe la dirección física."); return; }
+    if (!form.useEstablishment && !form.addressLine.trim() && !form.point) { setFormError("Escribe la dirección o pega un enlace de mapas con la ubicación."); return; }
     if (form.postalCode && !/^\d{5}(-\d{4})?$/.test(form.postalCode.trim())) { setFormError("El código postal debe tener 5 dígitos (ej. 00725)."); return; }
     const current = form.id ? data?.locations.find((l) => l.id === form.id) : undefined;
     if (form.id && !confirmed && (current?.upcomingShiftCount ?? 0) > 0) { setConfirmEdit(current!.upcomingShiftCount!); return; }
@@ -98,16 +121,25 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
       municipality: form.useEstablishment ? null : form.municipality || null,
       postalCode: form.useEstablishment ? null : form.postalCode.trim() || null,
       accessNotes: form.accessNotes.trim() || null,
+      // A new or moved PIN is saved UNCONFIRMED; only «Confirmar ubicación» (pinSure) confirms it.
+      ...(form.point && !samePoint(form.point, current) ? { latitude: form.point.latitude, longitude: form.point.longitude } : {}),
     };
+    const confirmPin = Boolean(form.point && form.pinSure);
     setBusy(true); setFormError("");
     try {
       if (form.id) {
         await updateServiceLocation(organizationId, recipientId, form.id, input, token);
-        show("Dirección actualizada. Vuelve a verificarla.", "success");
+        if (confirmPin) await confirmLocationGps(organizationId, recipientId, form.id, form.point!, token);
+        show(confirmPin ? "Ubicación confirmada. La cuidadora navegará hasta el PIN." : "Dirección actualizada. Vuelve a verificarla.", "success");
       } else {
         const r = await createServiceLocation(organizationId, recipientId, { ...input, makePrimary: form.makePrimary }, token);
-        show("Dirección registrada. Ahora ubica el punto exacto en el mapa.", "success");
-        setGpsFor(r.location);
+        if (confirmPin) {
+          await confirmLocationGps(organizationId, recipientId, r.location.id, form.point!, token);
+          show("Ubicación registrada y confirmada. La cuidadora navegará hasta el PIN.", "success");
+        } else {
+          show("Dirección registrada. Ahora ubica el punto exacto en el mapa.", "success");
+          setGpsFor(r.location);
+        }
         if (r.shiftsOnOtherAddresses.length) setMoveOffer({ toLocationId: r.location.id, shiftIds: r.shiftsOnOtherAddresses });
       }
       setForm(null); setConfirmEdit(null);
@@ -190,8 +222,12 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
             {r.proposed_access_notes && <li>Acceso: {r.proposed_access_notes}</li>}
             {r.message && <li>Mensaje: «{r.message}»</li>}
           </ul>
+          {r.proposed_latitude != null && r.proposed_longitude != null && <div className="mt-2" data-testid="proposed-pin">
+            <p className="mb-1 font-medium">PIN propuesto por el familiar</p>
+            <PinPreview point={{ latitude: r.proposed_latitude, longitude: r.proposed_longitude }} adjustable={false} className="h-40" />
+          </div>}
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-            <Button size="md" onClick={() => { setResolutionNote(""); setShiftsAck(false); setResolving({ request: r, decision: "APPROVE" }); }}>Aprobar y aplicar</Button>
+            <Button size="md" onClick={() => { setResolutionNote(""); setShiftsAck(false); setApproveUsePoint(true); setResolving({ request: r, decision: "APPROVE" }); }}>Aprobar y aplicar</Button>
             <Button size="md" variant="secondary" onClick={() => { setResolutionNote(""); setResolving({ request: r, decision: "REJECT" }); }}>Rechazar</Button>
           </div>
         </div>
@@ -252,12 +288,13 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
       <Modal open={form !== null} onClose={() => !busy && setForm(null)} title={form?.id ? "Editar dirección" : "Añadir dirección"} fullScreenOnMobile
         footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setForm(null)}>Cancelar</Button>
-          <Button loading={busy} onClick={() => void save()}>Guardar</Button>
+          <Button loading={busy} onClick={() => void save()}>{form?.point && form.pinSure ? "Confirmar ubicación" : "Guardar"}</Button>
         </div>}>
         {form && <div className="flex flex-col gap-3">
           <Input label="Nombre de la dirección" maxLength={40} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} hint="Ej. Casa, Casa de la hija, Hogar." />
           {data?.establishment && <Checkbox label={`Usar la dirección del hogar «${data.establishment.name}»`} checked={form.useEstablishment}
             onChange={(e) => setForm({ ...form, useEstablishment: e.target.checked })} />}
+          {!form.useEstablishment && <PasteLocation onAddress={applyHint} onPoint={(p) => setForm((f) => f && ({ ...f, point: p, pinSure: false }))} />}
           {!form.useEstablishment && <>
             <Input label="Dirección física" maxLength={200} value={form.addressLine} onChange={(e) => setForm({ ...form, addressLine: e.target.value })} placeholder="Ej. Calle Luna 12, Urb. Las Flores" autoComplete="off" />
             <div className="grid grid-cols-2 gap-3">
@@ -268,10 +305,16 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
               <Input label="Código postal" inputMode="numeric" maxLength={10} value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} placeholder="00725" />
             </div>
           </>}
+          {!form.useEstablishment && <>
+            <PinPreview point={form.point} municipality={form.municipality} onChange={(p) => setForm((f) => f && ({ ...f, point: p, pinSure: false }))} />
+            {form.point
+              ? <Checkbox label="Confirmo que el PIN está en la entrada del domicilio donde se presta el servicio." checked={form.pinSure}
+                  onChange={(e) => setForm({ ...form, pinSure: e.target.checked })} />
+              : <p className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+                  Sin PIN, la navegación usa la dirección escrita y puede ser aproximada. Puedes colocarlo ahora o después con «Ubicar en el mapa».</p>}
+          </>}
           <Textarea label="Referencias de acceso" rows={3} maxLength={500} value={form.accessNotes} onChange={(e) => setForm({ ...form, accessNotes: e.target.value })}
             placeholder="Portón, timbre, dónde estacionar, mascotas…" />
-          <p className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">
-            El punto exacto se confirma en el siguiente paso, «Ubicar en el mapa». Sin él, la navegación usa la dirección escrita y puede ser aproximada.</p>
           {!form.id && active.length > 0 && <Checkbox label="Marcar como dirección principal" checked={form.makePrimary} onChange={(e) => setForm({ ...form, makePrimary: e.target.checked })} />}
           {formError && <p role="alert" className="text-[var(--text-small)] text-[var(--color-danger-700)]">{formError}</p>}
         </div>}
@@ -305,7 +348,11 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
             disabled={resolving?.decision === "APPROVE" && approvalShifts > 0 && !shiftsAck}
             onClick={() => resolving && void act(async (t) => { await resolveChangeRequest(organizationId, recipientId, resolving.request.id,
               { decision: resolving.decision, ...(resolutionNote.trim() ? { note: resolutionNote.trim() } : {}),
-                ...(resolving.decision === "APPROVE" && shiftsAck ? { confirmUpcomingShifts: true as const } : {}) }, t); setResolving(null); },
+                ...(resolving.decision === "APPROVE" && shiftsAck ? { confirmUpcomingShifts: true as const } : {}),
+                ...(resolving.decision === "APPROVE" && resolving.request.proposed_latitude != null ? { usePoint: approveUsePoint } : {}) }, t);
+              if (resolving.decision === "APPROVE" && resolving.request.proposed_latitude != null && resolving.request.proposed_longitude != null && approveUsePoint)
+                setGpsAfterApprove({ latitude: resolving.request.proposed_latitude, longitude: resolving.request.proposed_longitude });
+              setResolving(null); },
               resolving.decision === "APPROVE"
                 ? (approvalShifts > 0 ? "Corrección aplicada. Avisamos al familiar y a la cuidadora de los turnos próximos." : "Corrección aplicada a la dirección principal. Avisamos al familiar.")
                 : "Solicitud rechazada. Avisamos al familiar.",
@@ -317,7 +364,10 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
             <p className="mt-1 text-[var(--color-text-secondary)]">Propuesta: <strong className="text-[var(--color-text-primary)]">{[resolving.request.proposed_address_line, [resolving.request.proposed_municipality, resolving.request.proposed_postal_code].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "sin cambios en la dirección"}</strong></p>
             {resolving.request.proposed_access_notes && <p className="mt-1 text-[var(--color-text-secondary)]">Acceso: {resolving.request.proposed_access_notes}</p>}
           </div>
-          <p>Se aplicará a la dirección principal. Tendrás que verificarla de nuevo y, si cambia la calle o el municipio, confirmar otra vez el punto GPS.</p>
+          {resolving.request.proposed_latitude != null && resolving.request.proposed_longitude != null && <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
+            <Checkbox label="Usar el PIN propuesto (quedará sin confirmar hasta que lo revises en el mapa)" checked={approveUsePoint} onChange={(e) => setApproveUsePoint(e.target.checked)} />
+          </div>}
+          <p>Se aplicará a la dirección principal. Tendrás que verificarla de nuevo y, si cambia la calle, el municipio o el PIN, confirmar otra vez el punto GPS.</p>
           {approvalShifts > 0 && <div role="status" className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--color-warning-700)]">
             <p>{approvalShifts} turno(s) próximo(s) usan esta dirección. Los turnos no se modifican, pero la cuidadora asignada verá la dirección corregida y recibirá un aviso (sin la dirección).</p>
             <div className="mt-2"><Checkbox label={`Autorizo que ${approvalShifts === 1 ? "ese turno use" : "esos turnos usen"} la dirección corregida`} checked={shiftsAck} onChange={(e) => setShiftsAck(e.target.checked)} /></div>
