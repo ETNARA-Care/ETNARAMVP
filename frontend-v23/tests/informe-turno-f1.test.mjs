@@ -34,3 +34,15 @@ test("approval: stale-draft guard, ETNARA defaults, incidents and photos need ex
   assert.match(panel, /\(key === "incidents" \|\| key === "photos"\) \? " · requiere tu aprobación expresa"/);
   assert.match(panel, /\{report\.status === "DRAFT" && \(/); // actions only on drafts; approved is read-only
 });
+
+test("who reviews: admins, and supervisors only with an admin's express authorization; never one's own visit", () => {
+  const page = read("src/pages/agency/AgencyShiftReportsPage.tsx");
+  const card = read("src/features/shiftReports/ShiftReportReviewersCard.tsx");
+  assert.match(page, /const a = await shiftReportsApi\.access\(organizationId, token\);/);
+  assert.match(page, /if \(!a\.canReview\) return;/); // no report list request without the permission
+  assert.match(page, /\{access\?\.canManageReviewers && organizationId && <ShiftReportReviewersCard/);
+  assert.match(card, /No da acceso a Finanzas, SmartMatch ni Horas\./);
+  assert.match(panel, /if \(data === "forbidden"\) return null;/);
+  assert.match(panel, /\{report\.ownVisit\s*\? <p[^>]*data-testid="shift-report-own-visit"/);
+  assert.match(panel, /SHIFT_REPORT_SELF_APPROVAL/);
+});

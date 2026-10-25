@@ -23,13 +23,14 @@ function errorText(error: unknown) {
   if (code === "SHIFT_REPORT_CHANGED") return "El borrador cambió mientras lo revisabas. Revísalo de nuevo antes de aprobar.";
   if (code === "SHIFT_REPORT_ALREADY_APPROVED") return "Este informe ya fue aprobado.";
   if (code === "SHIFT_REPORT_NOT_DRAFT") return "Solo se puede actualizar un borrador.";
+  if (code === "SHIFT_REPORT_SELF_APPROVAL") return "No puedes aprobar el informe de un turno que trabajaste tú. Otra persona autorizada debe aprobarlo.";
   if ((error as ApiError)?.status === 0) return "No hay conexión con el servidor.";
   return "No se pudo completar la acción. Intenta de nuevo.";
 }
 
 export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: string; shiftId: string }) {
   const { show } = useToast();
-  const [data, setData] = useState<{ reports: ShiftReport[]; openVisits: number } | null | "error">(null);
+  const [data, setData] = useState<{ reports: ShiftReport[]; openVisits: number } | null | "error" | "forbidden">(null);
   const [approving, setApproving] = useState<ShiftReport | null>(null);
   const [sections, setSections] = useState<FamilySections>(FAMILY_SECTION_DEFAULTS);
   const [summary, setSummary] = useState("");
@@ -39,7 +40,7 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
     const token = getToken();
     if (!token) return;
     try { const r = await shiftReportsApi.forShift(organizationId, shiftId, token); setData({ reports: r.reports, openVisits: r.openVisits }); }
-    catch { setData("error"); }
+    catch (e) { setData((e as ApiError)?.status === 403 ? "forbidden" : "error"); }
   }, [organizationId, shiftId]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- same load-on-mount pattern as ShiftVisitPanel
   useEffect(() => { void load(); }, [load]);
@@ -62,6 +63,8 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
   }
 
   if (data === null) return <Skeleton className="h-28" />;
+  // Supervisors without an express authorization do not see report content at all.
+  if (data === "forbidden") return null;
   if (data === "error") return <Card><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">No se pudo cargar el informe de turno.</p></Card>;
   if (data.reports.length === 0) {
     return (
@@ -100,7 +103,9 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
             {report.status === "DRAFT" && (
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button variant="secondary" icon={<RefreshCw size={18} />} disabled={busy} onClick={() => void refresh(report)}>Actualizar borrador</Button>
-                <Button disabled={busy} data-testid="shift-report-approve" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Revisar y aprobar</Button>
+                {report.ownVisit
+                  ? <p className="flex min-h-11 items-center text-[var(--text-small)] text-[var(--color-text-secondary)]" data-testid="shift-report-own-visit">Trabajaste este turno: otra persona autorizada debe aprobarlo.</p>
+                  : <Button disabled={busy} data-testid="shift-report-approve" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Revisar y aprobar</Button>}
               </div>
             )}
           </Card>

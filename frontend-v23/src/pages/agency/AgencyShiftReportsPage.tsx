@@ -6,6 +6,7 @@ import { getToken } from "@/auth/token";
 import { shiftReportsApi, type ShiftReportListItem } from "@/api/shiftReports";
 import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { STATUS_LABEL, reportDate, reportTime } from "@/features/shiftReports/reportFormat";
+import { ShiftReportReviewersCard } from "@/features/shiftReports/ShiftReportReviewersCard";
 
 /** Informe de Turno F1: the agency's list. Drafts of visits finished in the last 7 days appear on their own. */
 export function AgencyShiftReportsPage() {
@@ -13,12 +14,17 @@ export function AgencyShiftReportsPage() {
   const organizationId = activeOrganization?.id;
   const [filter, setFilter] = useState<"DRAFT" | "APPROVED" | undefined>("DRAFT");
   const [reports, setReports] = useState<ShiftReportListItem[] | null | "error">(null);
+  const [access, setAccess] = useState<{ canReview: boolean; canManageReviewers: boolean } | null>(null);
   const load = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !token) return;
     setReports(null);
-    try { setReports((await shiftReportsApi.list(organizationId, token, filter)).reports); }
-    catch { setReports("error"); }
+    try {
+      const a = await shiftReportsApi.access(organizationId, token);
+      setAccess(a);
+      if (!a.canReview) return;
+      setReports((await shiftReportsApi.list(organizationId, token, filter)).reports);
+    } catch { setReports("error"); }
   }, [organizationId, filter]);
   useEffect(() => { void load(); }, [load]);
 
@@ -28,6 +34,11 @@ export function AgencyShiftReportsPage() {
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Informes de turno" description="Generados con los registros reales de cada visita. Revísalos y apruébalos antes de compartirlos." />
+      {access && !access.canReview && (
+        <Card data-testid="shift-reports-not-authorized"><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Para revisar y aprobar informes, un administrador de la agencia debe autorizarte.</p></Card>
+      )}
+      {access?.canManageReviewers && organizationId && <ShiftReportReviewersCard organizationId={organizationId} />}
+      {access?.canReview && <>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar informes">
         {tabs.map((t) => (
           <button key={t.label} type="button" aria-pressed={filter === t.key} onClick={() => setFilter(t.key)}
@@ -62,6 +73,7 @@ export function AgencyShiftReportsPage() {
             })}
           </ul>
         )}
+      </>}
     </div>
   );
 }

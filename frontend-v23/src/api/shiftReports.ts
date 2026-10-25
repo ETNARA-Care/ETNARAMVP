@@ -42,6 +42,8 @@ export interface ShiftReport {
   content: ShiftReportContent; familySections: FamilySections | null; agencySummary: string | null;
   generatedAt: string; approvedAt: string | null; approvedBy: { userId: string; email: string | null } | null;
   history?: ShiftReportHistoryEntry[];
+  /** The reviewer worked this visit: they cannot approve it (backend 403 SHIFT_REPORT_SELF_APPROVAL). */
+  ownVisit?: boolean;
 }
 export interface ShiftReportListItem {
   id: string; shiftId: string; status: ShiftReportStatus; version: number; generatedAt: string; approvedAt: string | null;
@@ -55,6 +57,8 @@ export const FAMILY_SECTION_DEFAULTS: FamilySections = {
   hygiene: false, mood: false, incidents: false, photos: false,
 };
 
+export interface ShiftReportReviewer { membershipId: string; email: string; authorized: boolean; grantedAt: string | null; grantedBy: string | null }
+
 const O = (org: string) => `/organizations/${org}`;
 export const shiftReportsApi = {
   list: (org: string, token: string, status?: "DRAFT" | "APPROVED") =>
@@ -65,4 +69,9 @@ export const shiftReportsApi = {
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/refresh`, {}, token),
   approve: (org: string, reportId: string, body: { expectedGeneratedAt: string; familySections: Partial<FamilySections>; agencySummary?: string }, token: string) =>
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/approve`, body, token),
+  /** Admins always; supervisors only when an admin authorized them. */
+  access: (org: string, token: string) => apiClient.get<{ canReview: boolean; canManageReviewers: boolean }>(`${O(org)}/shift-report-access`, token),
+  reviewers: (org: string, token: string) => apiClient.get<{ supervisors: ShiftReportReviewer[] }>(`${O(org)}/shift-report-reviewers`, token),
+  grantReviewer: (org: string, membershipId: string, token: string) => apiClient.post<{ authorized: boolean }>(`${O(org)}/shift-report-reviewers`, { membershipId }, token),
+  revokeReviewer: (org: string, membershipId: string, token: string) => apiClient.post<{ authorized: boolean }>(`${O(org)}/shift-report-reviewers/${membershipId}/revoke`, {}, token),
 };
