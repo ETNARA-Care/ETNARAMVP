@@ -5,6 +5,7 @@ import { getToken } from "@/auth/token";
 import { BILLING_CAPABILITIES, billingApi, type BillingAccess, type BillingAdmin, type BillingCapability, type BillingGrant, type BillingPermissions } from "@/api/billing";
 import { Badge, Button, Card, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
 import { formatDate, formatTime } from "@/i18n/format";
+import { BillingSettingsSection } from "./BillingSettingsSection";
 import { InvoicesSection } from "./InvoicesSection";
 import { TaxSection } from "./TaxSection";
 
@@ -78,9 +79,10 @@ export function BillingTab({ organizationId }: { organizationId: string }) {
         )}
       </Card>
 
-      {(capabilities.includes("view") || capabilities.includes("draft")) && (
-        <InvoicesSection organizationId={organizationId} canDraft={capabilities.includes("draft")} canManageTax={capabilities.includes("manage")} readOnly={module.readOnly} />
+      {capabilities.length > 0 && (
+        <InvoicesSection organizationId={organizationId} canDraft={capabilities.includes("draft")} canManageTax={capabilities.includes("manage")} canIssue={capabilities.includes("issue")} readOnly={module.readOnly} />
       )}
+      {capabilities.length > 0 && <BillingSettingsSection organizationId={organizationId} canManage={capabilities.includes("manage") && module.enabled} />}
       {(capabilities.includes("view") || capabilities.includes("draft") || capabilities.includes("manage")) && (
         <TaxSection organizationId={organizationId} canManage={capabilities.includes("manage") && module.enabled} />
       )}

@@ -33,7 +33,7 @@ export const billingApi = {
 
 // ---------------------------------------------------------------------------
 // F2.2 (backend 124): tax treatment, drafts, lines and shift reservations.
-// Issuing does not exist yet (F2.3): drafts report what would block it.
+// F2.3 (backend 127): issuing, numbering, PDF, voiding. Drafts report what blocks issuing.
 
 export type TaxTreatment = "taxable" | "exempt" | "pending";
 export interface TaxVersion { id: string; service_id: string; treatment: TaxTreatment; rate_basis_points: number | null; legal_basis: string | null; validation_note: string | null; effective_from: string; created_at: string; created_by_email: string | null }
@@ -52,10 +52,12 @@ export interface EligibleShift {
   taxTreatment: TaxTreatment; selectable: boolean;
 }
 
-export type InvoiceStatus = "draft" | "discarded";
+export type InvoiceStatus = "draft" | "discarded" | "issued" | "voided";
 export interface InvoiceSummary {
   id: string; status: InvoiceStatus; clientName: string; periodFrom: string; periodTo: string; version: number; createdAt: string; updatedAt: string;
   createdByEmail: string | null; lineCount: number; subtotalCents: number; taxPending: boolean; needsReview: boolean; inactive: boolean; discardKind: string | null;
+  /** F2.3: present once issued (absent with an older backend). */
+  numberText?: string | null; issueDate?: string | null; totalCents?: number | null;
 }
 export interface StoredSegment { line_id: string; segment_date: string; starts_at: string; ends_at: string; minutes: number; billable_minutes: number; rate_source: string | null; day_type: string | null; holiday_name: string | null; unit_price_cents: number | null; amount_cents: number }
 export interface InvoiceLine {
@@ -71,11 +73,24 @@ export interface InvoiceTotals {
 }
 export interface InvoiceDetail {
   invoice: { id: string; status: InvoiceStatus; billingClientId: string; clientName: string; periodFrom: string; periodTo: string; notes: string | null; version: number;
-    createdAt: string; updatedAt: string; createdByEmail: string | null; discardedAt: string | null; discardReason: string | null; discardKind: string | null; inactive: boolean; inactiveDays: number };
+    createdAt: string; updatedAt: string; createdByEmail: string | null; discardedAt: string | null; discardReason: string | null; discardKind: string | null; inactive: boolean; inactiveDays: number;
+    numberText?: string | null; issueDate?: string | null; issuedAt?: string | null; issuedByEmail?: string | null;
+    voidedAt?: string | null; voidReason?: string | null; voidedByEmail?: string | null; retentionUntil?: string | null };
   lines: InvoiceLine[];
   removedLines: { id: string; kind: string; description: string; amountCents: number; removedAt: string; reason: string | null }[];
   totals: InvoiceTotals; issueBlockers: string[]; canEdit: boolean;
+  documents?: InvoiceDocument[]; canIssue?: boolean; canVoid?: boolean;
 }
+export type InvoiceDocumentKind = "original" | "void_copy";
+export interface InvoiceDocument { kind: InvoiceDocumentKind; sizeBytes: number; createdAt: string }
+
+export interface BillingSettings {
+  legalName: string | null; tradeName: string | null; address: string | null; phone: string | null; email: string | null; merchantRegistration: string | null;
+  paymentTerms: string | null; footerNote: string | null; showCaregiverName: boolean; retentionYears: number; hasLogo: boolean;
+  taxValidatedAt: string | null; taxValidationNote: string | null; taxValidatedBy: string | null;
+}
+export interface BillingSettingsResponse { settings: BillingSettings; series: { prefix: string; nextNumber: number; locked: boolean }; storageConfigured: boolean; blockers: string[] }
+export type BillingSettingsInput = Partial<Omit<BillingSettings, "hasLogo" | "taxValidatedAt" | "taxValidationNote" | "taxValidatedBy">> & { prefix?: string };
 export interface ManualLineInput {
   expectedVersion: number; kind: "manual" | "discount"; description: string; justification: string; serviceId?: string | null; careRecipientId?: string | null;
   serviceDate: string; quantityHundredths: number; unitPriceCents: number; taxTreatment: TaxTreatment; taxRateBasisPoints?: number | null; taxLegalBasis?: string | null;
@@ -107,4 +122,21 @@ export const billingDraftsApi = {
     apiClient.post<{ released: number }>(`${base(org)}/invoices/${encodeURIComponent(id)}/discard`, body, token),
   recover: (org: string, id: string, body: { expectedVersion: number; reason: string }, token: string) =>
     apiClient.post<{ released: number }>(`${base(org)}/invoices/${encodeURIComponent(id)}/recover`, body, token),
+};
+
+/** F2.3 (backend 127). The PDF and the logo are read with the session (no public or signed links). */
+export const billingIssueApi = {
+  settings: (org: string, token: string) => apiClient.get<BillingSettingsResponse>(`${base(org)}/settings`, token),
+  updateSettings: (org: string, body: BillingSettingsInput, token: string) => apiClient.put<{ ok: true }>(`${base(org)}/settings`, body, token),
+  taxValidation: (org: string, body: { validated: boolean; note: string }, token: string) =>
+    apiClient.post<{ ok: true }>(`${base(org)}/settings/tax-validation`, body, token),
+  uploadLogo: (org: string, file: Blob, token: string) =>
+    apiClient.postBinary<{ sha256: string; bytes: number }>(`${base(org)}/settings/logo`, file, file.type, token),
+  logo: (org: string, token: string) => apiClient.getBinary(`${base(org)}/settings/logo`, token),
+  issue: (org: string, id: string, body: { expectedVersion: number }, token: string) =>
+    apiClient.post<{ issued: { number: string; totalCents: number } }>(`${base(org)}/invoices/${encodeURIComponent(id)}/issue`, body, token),
+  void: (org: string, id: string, body: { expectedVersion: number; reason: string }, token: string) =>
+    apiClient.post<{ voided: { released: number } }>(`${base(org)}/invoices/${encodeURIComponent(id)}/void`, body, token),
+  pdf: (org: string, id: string, kind: InvoiceDocumentKind, token: string) =>
+    apiClient.getBinary(`${base(org)}/invoices/${encodeURIComponent(id)}/pdf?kind=${kind}`, token),
 };

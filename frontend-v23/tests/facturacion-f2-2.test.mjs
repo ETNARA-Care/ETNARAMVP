@@ -18,22 +18,22 @@ test("F2.2 screens use the billing catalog: no hard-coded text, every key exists
   }
 });
 
-test("the journey Finanzas → Facturación → Nueva factura → cliente → turnos → revisar exists, and issuing is not offered yet", () => {
+test("the journey Finanzas → Facturación → Nueva factura → cliente → turnos → revisar exists; issuing lives only in the F2.3 views", () => {
   const tab = read("src/features/billing/BillingTab.tsx");
   assert.match(tab, /<InvoicesSection organizationId=\{organizationId\} canDraft=\{capabilities\.includes\("draft"\)\}/);
   const wizard = read("src/features/billing/NewInvoiceWizard.tsx");
   for (const step of ["step === 1", "step === 2", "step === 3", "step === 4"]) assert.ok(wizard.includes(step));
   assert.match(wizard, /billingDraftsApi\.create\(/);
   assert.match(wizard, /billingDraftsApi\.addShifts\(/);
-  const all = FILES.map(read).join("\n");
-  assert.doesNotMatch(all, /\/issue|issueInvoice|emitir\(/i);
+  // F2.3 adds issuing only in DraftView (billingIssueApi); the wizard, shift list and tax screen never issue.
+  for (const f of FILES.filter((x) => !x.endsWith("DraftView.tsx"))) assert.doesNotMatch(read(f), /\/issue|billingIssueApi|issueInvoice/i, f);
   assert.match(read("src/i18n/locales/es/billing.json"), /"ISSUING_NOT_AVAILABLE": "La emisión llega en la siguiente etapa"/);
 });
 
 test("every change sends the version shown; DRAFT_CHANGED reloads", () => {
   const view = read("src/features/billing/DraftView.tsx");
   assert.match(view, /expectedVersion: v/);
-  assert.match(view, /code === "DRAFT_CHANGED"\) await load\(\)/);
+  assert.match(view, /code === "DRAFT_CHANGED" \|\| code === "ISSUE_BLOCKED"[^)]*\) \{ setDialog\(null\); await load\(\); \}/);
 });
 
 test("nothing tax-related is preselected: manual lines and services require an explicit choice", () => {

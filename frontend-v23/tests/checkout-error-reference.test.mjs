@@ -11,7 +11,8 @@ const bell = read("../src/features/notifications/NotificationBell.tsx");
 test("API errors keep the server's errorId only when it looks like a reference id", () => {
   assert.match(client, /errorId\?:string;/);
   assert.match(client, /const ERROR_ID=\/\^\[0-9a-f-\]\{36\}\$\/i;/);
-  assert.equal((client.match(/errorId:errorIdOf\((body|responseBody)\)/g) ?? []).length, 2);
+  // request, postBinary and getBinary (F2.3 PDFs) all keep the reference the same way.
+  assert.equal((client.match(/errorId:errorIdOf\((body|responseBody)\)/g) ?? []).length, 3);
 });
 
 test("the caregiver sees a short reference for unexpected errors, nothing else from the server", () => {
