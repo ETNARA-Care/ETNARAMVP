@@ -7,8 +7,9 @@ import { financeErrorText, formatDate } from "./money";
 
 /**
  * Optional agency holiday calendar. ETNARA does not assume any official list:
- * each agency decides which days are holidays. On those days the holiday
- * version of a rate (when one exists) is used first.
+ * each agency decides which days are holidays. On those days (backend 119):
+ * holiday rate of that client/caregiver → their normal agreed rate →
+ * general holiday rate → general normal rate.
  */
 export function HolidaysTab({ organizationId }: { organizationId: string }) {
   const toast = useToast();
@@ -34,7 +35,8 @@ export function HolidaysTab({ organizationId }: { organizationId: string }) {
   return (
     <section className="flex flex-col gap-4" aria-label="Feriados">
       <p className="text-sm text-[var(--color-text-secondary)]">
-        Opcional. Marca los días que tu agencia cobra o paga distinto. Solo afecta a los servicios que tengan una «Tarifa de feriado»; si no la tienen, se usa la tarifa normal.
+        Opcional. Marca los días que tu agencia cobra o paga distinto. Solo afecta a los servicios que tengan una «Tarifa de feriado».
+        Un precio acordado con un cliente (o una excepción de un cuidador) se mantiene en feriado, salvo que ese cliente o cuidador tenga su propia tarifa de feriado.
       </p>
       <div className="grid gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-[180px_1fr_auto] sm:items-end">
         <Input label="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value)} />

@@ -68,22 +68,24 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
           </div>
 
           <RateSection
-            title="Cobro al cliente" subtitle="Lo que la agencia factura. Un precio negociado con un cliente tiene prioridad sobre el general."
+            title="Cobro al cliente" subtitle="Lo que la agencia factura. Un precio negociado con un cliente tiene prioridad sobre el general, también en feriado (salvo que ese cliente tenga su propia tarifa de feriado)."
             unit={unit} rates={rates.filter((r) => r.rate_kind === "client" && live(r))} disabled={!data.service.active}
             actions={[
               { label: "Cambiar tarifa general", preset: { kind: "client", scope: "general", dayType: "standard" } },
               { label: "Precio especial por cliente", preset: { kind: "client", scope: "client", dayType: "standard" } },
               { label: "Tarifa de feriado", preset: { kind: "client", scope: "general", dayType: "holiday" } },
+              { label: "Feriado para un cliente", preset: { kind: "client", scope: "client", dayType: "holiday" } },
             ]}
             onAdd={setForm} onEnd={setEnding}
           />
           <RateSection
-            title="Pago al cuidador" subtitle="Lo que se usa para calcular la compensación. Una excepción para un cuidador tiene prioridad sobre la general."
+            title="Pago al cuidador" subtitle="Lo que se usa para calcular la compensación. Una excepción para un cuidador tiene prioridad sobre la general, también en feriado (salvo que tenga su propia tarifa de feriado)."
             unit={unit} rates={rates.filter((r) => r.rate_kind === "caregiver" && live(r))} disabled={!data.service.active}
             actions={[
               { label: "Cambiar tarifa general", preset: { kind: "caregiver", scope: "general", dayType: "standard" } },
               { label: "Excepción por cuidador", preset: { kind: "caregiver", scope: "caregiver", dayType: "standard" } },
               { label: "Tarifa de feriado", preset: { kind: "caregiver", scope: "general", dayType: "holiday" } },
+              { label: "Feriado para un cuidador", preset: { kind: "caregiver", scope: "caregiver", dayType: "holiday" } },
             ]}
             onAdd={setForm} onEnd={setEnding}
           />
@@ -214,7 +216,7 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
   const valid = cents !== null && (preset.scope === "general" || Boolean(targetId)) && (!needsReason || reason.trim().length >= 3)
     && (halfPolicy !== "fixed" || unit !== "day" || halfCents !== null);
 
-  const title = `${preset.dayType === "holiday" ? "Tarifa de feriado" : preset.scope === "client" ? "Precio especial por cliente" : preset.scope === "caregiver" ? "Excepción de pago por cuidador" : "Tarifa general"} · ${preset.kind === "client" ? "cobro" : "pago"}`;
+  const title = `${preset.dayType === "holiday" ? (preset.scope === "general" ? "Tarifa de feriado" : preset.scope === "client" ? "Feriado para un cliente" : "Feriado para un cuidador") : preset.scope === "client" ? "Precio especial por cliente" : preset.scope === "caregiver" ? "Excepción de pago por cuidador" : "Tarifa general"} · ${preset.kind === "client" ? "cobro" : "pago"}`;
 
   async function save() {
     const token = getToken(); if (!token || cents === null) return;

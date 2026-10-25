@@ -33,6 +33,10 @@ test("billing and pay rates are presented separately, with client and caregiver 
   assert.match(detail, /label: "Precio especial por cliente", preset: \{ kind: "client", scope: "client"/);
   assert.match(detail, /label: "Excepción por cuidador", preset: \{ kind: "caregiver", scope: "caregiver"/);
   assert.match(detail, /label: "Tarifa de feriado"/);
+  // Holiday priority (24-oct): agreed client/caregiver rate prevails unless they have their own holiday rate.
+  assert.match(detail, /label: "Feriado para un cliente", preset: \{ kind: "client", scope: "client", dayType: "holiday" \}/);
+  assert.match(detail, /label: "Feriado para un cuidador", preset: \{ kind: "caregiver", scope: "caregiver", dayType: "holiday" \}/);
+  assert.match(read("src/features/finance/HolidaysTab.tsx"), /se mantiene en feriado, salvo que ese cliente o cuidador tenga su propia tarifa de feriado/);
   assert.match(detail, /Historial de precios/);
 });
 
