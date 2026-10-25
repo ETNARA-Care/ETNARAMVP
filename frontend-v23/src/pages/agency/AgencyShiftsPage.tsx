@@ -3,6 +3,8 @@ import { Bot, Lock, Plus, Sparkles } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
+import { hasOrgFeature } from "@/auth/orgFeatures";
+import { financeApi, type FinanceService } from "@/api/finance";
 import type { ApiError } from "@/api/client";
 import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import { generateCoverageAgentBriefing, type CoverageAgentBriefing } from "@/api/coverageAgent";
@@ -78,8 +80,12 @@ function firstBlockingReason(worker: AssignableWorker): string | null {
 export function AgencyShiftsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, roles } = useAuth();
   const { show } = useToast();
+  // Finanzas (119): the administrator may choose the service; the shift itself is created exactly as before.
+  const finance = hasOrgFeature(activeOrganization?.features, "FINANZAS") && roles.includes("ORGANIZATION_ADMIN");
+  const [financeServices, setFinanceServices] = useState<FinanceService[]>([]);
+  const [serviceId, setServiceId] = useState("");
   const [shifts, setShifts] = useState<Shift[] | null>(null);
   const [recipients, setRecipients] = useState<CareRecipient[]>([]);
   const [workers, setWorkers] = useState<AssignableWorker[]>([]);
@@ -142,6 +148,11 @@ export function AgencyShiftsPage() {
   }, [organizationId]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const token = getToken();
+    if (!finance || !creating || !organizationId || !token) return;
+    financeApi.listServices(organizationId, token).then((r) => setFinanceServices(r.services)).catch(() => setFinanceServices([]));
+  }, [finance, creating, organizationId]);
 
   useEffect(() => {
     const token = getToken();
@@ -261,6 +272,11 @@ export function AgencyShiftsPage() {
         ...(genericLocationId ? { serviceLocationId: genericLocationId } : {}),
         requiredRole: workerById[effectiveWorkerId]?.internal_role ?? "Cuidador/a",
       }, token);
+      if (finance && serviceId) {
+        // Separate call (admin only): if it fails the shift still exists, without a service.
+        try { await financeApi.setShift(organizationId, shift.id, { serviceId }, token); }
+        catch { show("Turno creado, pero no se pudo guardar el servicio. Asígnalo desde el detalle del turno.", "warning"); }
+      }
       await assignShift(organizationId, shift.id, effectiveWorkerId, token);
       setCreating(false);
       show(`Asignación enviada a ${workerById[effectiveWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
@@ -464,6 +480,7 @@ export function AgencyShiftsPage() {
         <div className="flex flex-col gap-4">
           <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => { setRecipientId(event.target.value); setCoverageCandidates(null); }} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
           <LocationSelect options={genericLocations} value={genericLocationId} onChange={(id) => setLocationChoice((c) => ({ ...c, [effectiveRecipientId]: id }))} />
+          {finance && <Select label="Servicio" value={serviceId} onChange={(event) => setServiceId(event.target.value)} hint="Opcional. Define las tarifas de cobro y de pago de este turno."><option value="">Sin servicio (o el del residente)</option>{financeServices.filter((s) => s.active).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</Select>}
           <Select label="Cuidadora apta" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); const recommendation = coverageCandidates?.find((candidate) => candidate.membershipId === worker.id); const unavailable = recommendation && !recommendation.recommended; return <option key={worker.id} value={worker.id} disabled={reason !== null || unavailable}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : unavailable ? " — Conflicto o requisito pendiente" : " — Apta"}</option>; })}</Select>
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
           <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => { setTimes((current) => ({ ...current, start: event.target.value })); setCoverageCandidates(null); }} required />
