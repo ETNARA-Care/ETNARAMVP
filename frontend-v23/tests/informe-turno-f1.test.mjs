@@ -15,7 +15,7 @@ test("Informe de Turno F1 only where ETNARA central turned SHIFT_REPORTS on (age
   assert.match(detail, /const shiftReports = hasOrgFeature\(activeOrganization\?\.features, "SHIFT_REPORTS"\);/);
   assert.match(detail, /\{shiftReports && organizationId && shiftId && shift\.care_recipient_id && <ShiftReportPanel/);
   assert.match(shifts, /\{shiftReports && \(\s*<Link to="\/agency\/shift-reports"/);
-  assert.doesNotMatch(app, /caregiver\/[^"]*shift-report|family\/[^"]*shift-report/); // F2/F3 not built
+  assert.doesNotMatch(app, /family\/[^"]*shift-report/); // F3 not built here
   assert.match(read("src/features/platform/OrganizationFeaturesCard.tsx"), /SHIFT_REPORTS: \{ title: "Informe de turno"/);
 });
 
@@ -32,7 +32,9 @@ test("approval: stale-draft guard, ETNARA defaults, incidents and photos need ex
   assert.match(panel, /expectedGeneratedAt: approving\.generatedAt/);
   assert.match(api, /schedule: true, meals: true, hydration: true, activities: true, mobility: true, observations: true,\s+hygiene: false, mood: false, incidents: false, photos: false/);
   assert.match(panel, /\(key === "incidents" \|\| key === "photos"\) \? " · requiere tu aprobación expresa"/);
-  assert.match(panel, /\{report\.status === "DRAFT" && \(/); // actions only on drafts; approved is read-only
+  // actions only before approval; approved is read-only (F2 adds SUBMITTED / RETURNED)
+  assert.match(panel, /\{\(report\.status === "DRAFT" \|\| report\.status === "SUBMITTED" \|\| report\.status === "RETURNED"\) && \(/);
+  assert.doesNotMatch(panel, /report\.status === "APPROVED" && \(\s*<div className="mt-3 grid/);
 });
 
 test("who reviews: admins, and supervisors only with an admin's express authorization; never one's own visit", () => {

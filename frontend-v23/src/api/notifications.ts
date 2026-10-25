@@ -64,6 +64,8 @@ function notificationSummary(type: string): string {
   if (type === "SHIFT_DELAY_REPORTED") return "Retraso de 30 min o más informado";
   if (type === "SHIFT_STARTED") return "La cuidadora comenzó el turno";
   if (type === "SHIFT_COMPLETED") return "La cuidadora finalizó el turno";
+  if (type === "SHIFT_REPORT_READY") return "Tu informe de turno está listo para revisar";
+  if (type === "SHIFT_REPORT_RETURNED") return "La agencia devolvió tu informe de turno";
   if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";
   if (type === "CREDENTIAL_EXPIRED") return "Credencial vencida";
   if (type === "CREDENTIAL_REVIEW_PENDING") return "Credencial pendiente de revisión";

@@ -7,7 +7,7 @@ import { Badge, Button, Card, Modal, Skeleton, Textarea, useToast } from "@/comp
 import { ShiftReportView } from "./ShiftReportView";
 import { STATUS_LABEL, reportTime } from "./reportFormat";
 
-/** Agency view of a shift's report(s) (Informe de Turno F1): read, refresh a draft, approve. */
+/** Agency view of a shift's report(s) (Informe de Turno F1+F2): read, refresh a draft, return to the caregiver, approve. */
 const FAMILY_LABEL: Record<FamilySectionKey, string> = {
   schedule: "Horarios del turno", meals: "Alimentación", hydration: "Hidratación", activities: "Actividades y acompañamiento",
   mobility: "Movilidad", observations: "Observaciones de la cuidadora", hygiene: "Higiene", mood: "Ánimo",
@@ -23,6 +23,8 @@ function errorText(error: unknown) {
   if (code === "SHIFT_REPORT_CHANGED") return "El borrador cambió mientras lo revisabas. Revísalo de nuevo antes de aprobar.";
   if (code === "SHIFT_REPORT_ALREADY_APPROVED") return "Este informe ya fue aprobado.";
   if (code === "SHIFT_REPORT_NOT_DRAFT") return "Solo se puede actualizar un borrador.";
+  if (code === "SHIFT_REPORT_WINDOW_CLOSED") return "Pasaron las 24 horas de la cuidadora: ya no se puede devolver. Puedes aprobarlo.";
+  if (code === "SHIFT_REPORT_NOT_SUBMITTED") return "Solo se puede devolver un informe enviado por la cuidadora.";
   if (code === "SHIFT_REPORT_SELF_APPROVAL") return "No puedes aprobar el informe de un turno que trabajaste tú. Otra persona autorizada debe aprobarlo.";
   if ((error as ApiError)?.status === 0) return "No hay conexión con el servidor.";
   return "No se pudo completar la acción. Intenta de nuevo.";
@@ -35,6 +37,8 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
   const [sections, setSections] = useState<FamilySections>(FAMILY_SECTION_DEFAULTS);
   const [summary, setSummary] = useState("");
   const [busy, setBusy] = useState(false);
+  const [returning, setReturning] = useState<ShiftReport | null>(null);
+  const [returnNote, setReturnNote] = useState("");
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -62,6 +66,14 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
     finally { setBusy(false); await load(); }
   }
 
+  async function sendBack() {
+    const token = getToken(); if (!token || !returning || !returnNote.trim()) return;
+    setBusy(true);
+    try { await shiftReportsApi.returnToCaregiver(organizationId, returning.id, returnNote.trim(), token); show("Informe devuelto a la cuidadora.", "success"); setReturning(null); }
+    catch (e) { show(errorText(e), "danger"); }
+    finally { setBusy(false); await load(); }
+  }
+
   if (data === null) return <Skeleton className="h-28" />;
   // Supervisors without an express authorization do not see report content at all.
   if (data === "forbidden") return null;
@@ -82,9 +94,20 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
           <Card key={report.id} aria-label="Informe de turno" data-testid="shift-report">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><FileText size={20} aria-hidden /> Informe de turno{report.version > 1 ? ` · versión ${report.version}` : ""}</p>
-              <Badge tone={status.tone}>{status.text}</Badge>
+              <span className="flex flex-wrap gap-1">
+                <Badge tone={status.tone}>{status.text}</Badge>
+                {report.caregiverWindowExpired && (report.status === "DRAFT" || report.status === "RETURNED") && <Badge tone="neutral" data-testid="shift-report-expired">Plazo de la cuidadora vencido</Badge>}
+              </span>
             </div>
+            {report.status === "SUBMITTED" && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">La cuidadora lo revisó y lo envió{report.submittedAt ? ` a las ${reportTime(report.submittedAt)}` : ""}.</p>}
+            {(report.status === "DRAFT" || report.status === "RETURNED") && !report.caregiverWindowExpired && report.reviewDeadlineAt && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">La cuidadora puede revisarlo hasta las {reportTime(report.reviewDeadlineAt)}.</p>}
             <ShiftReportView content={report.content} />
+            {report.caregiverNote && (
+              <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--text-small)]" data-testid="shift-report-caregiver-note">
+                <p className="font-medium">Observación final de la cuidadora{report.caregiverNoteAt ? ` · ${reportTime(report.caregiverNoteAt)}` : ""}</p>
+                <p className="mt-1 whitespace-pre-line text-[var(--color-text-secondary)]">{report.caregiverNote}</p>
+              </div>
+            )}
             {report.status === "APPROVED" && report.familySections && (
               <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-[var(--text-small)]" data-testid="shift-report-approved">
                 <p className="font-medium">Aprobado {report.approvedAt ? reportTime(report.approvedAt) : ""}{report.approvedBy?.email ? ` · ${report.approvedBy.email}` : ""}</p>
@@ -100,9 +123,11 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
                 </ul>
               </details>
             )}
-            {report.status === "DRAFT" && (
+            {(report.status === "DRAFT" || report.status === "SUBMITTED" || report.status === "RETURNED") && (
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Button variant="secondary" icon={<RefreshCw size={18} />} disabled={busy} onClick={() => void refresh(report)}>Actualizar borrador</Button>
+                {report.status !== "SUBMITTED" && <Button variant="secondary" icon={<RefreshCw size={18} />} disabled={busy} onClick={() => void refresh(report)}>Actualizar borrador</Button>}
+                {report.status === "SUBMITTED" && !report.caregiverWindowExpired && !report.ownVisit &&
+                  <Button variant="secondary" disabled={busy} data-testid="shift-report-return" onClick={() => { setReturnNote(""); setReturning(report); }}>Devolver a la cuidadora</Button>}
                 {report.ownVisit
                   ? <p className="flex min-h-11 items-center text-[var(--text-small)] text-[var(--color-text-secondary)]" data-testid="shift-report-own-visit">Trabajaste este turno: otra persona autorizada debe aprobarlo.</p>
                   : <Button disabled={busy} data-testid="shift-report-approve" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Revisar y aprobar</Button>}
@@ -111,6 +136,16 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
           </Card>
         );
       })}
+      <Modal open={returning !== null} onClose={() => !busy && setReturning(null)} title="Devolver a la cuidadora" sheetOnMobile
+        footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="ghost" disabled={busy} onClick={() => setReturning(null)}>Volver</Button>
+          <Button loading={busy} disabled={!returnNote.trim()} data-testid="shift-report-confirm-return" onClick={() => void sendBack()}>Devolver</Button>
+        </div>}>
+        <div className="flex flex-col gap-3 text-[var(--text-small)]">
+          <p className="text-[var(--color-text-secondary)]">La cuidadora verá tu nota y podrá corregir su observación final dentro de su plazo de 24 horas. Sus registros del turno no cambian.</p>
+          <Textarea label="Qué debe revisar" rows={3} maxLength={1000} value={returnNote} onChange={(e) => setReturnNote(e.target.value)} data-testid="shift-report-return-note" />
+        </div>
+      </Modal>
       <Modal open={approving !== null} onClose={() => !busy && setApproving(null)} title="Aprobar informe de turno" sheetOnMobile
         footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setApproving(null)}>Volver</Button>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, ChevronRight, Clock3, ShieldCheck } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock3, FileText, ShieldCheck } from "lucide-react";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
@@ -21,6 +22,8 @@ function formatResponseDeadline(value: string): string {
 
 export function CaregiverShiftsPage() {
   const { activeOrganization } = useAuth();
+  // Informe de Turno F2: her own reports, only where ETNARA central turned SHIFT_REPORTS on.
+  const shiftReports = hasOrgFeature(activeOrganization?.features, "SHIFT_REPORTS");
   const [shifts, setShifts] = useState<Shift[] | null>(null);
   const [recipients, setRecipients] = useState<CareRecipient[]>([]);
   const [offers, setOffers] = useState<MyCoverageOffer[]>([]);
@@ -102,6 +105,13 @@ export function CaregiverShiftsPage() {
       <h1 className="mt-1 font-[var(--font-display)] text-3xl text-[var(--color-navy-900)]">Turnos</h1>
       <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Tus asignaciones y oportunidades de cobertura.</p>
     </header>
+
+    {shiftReports && <Link to="/caregiver/shift-reports" className="block" data-testid="my-reports-link">
+      <Card className="flex min-h-11 items-center justify-between gap-3">
+        <span className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><FileText size={20} aria-hidden /> Mis informes de turno</span>
+        <ChevronRight size={18} aria-hidden className="text-[var(--color-text-muted)]" />
+      </Card>
+    </Link>}
 
     {offers.length > 0 && <section>
       <div className="mb-3 flex items-center gap-2"><Clock3 size={18} className="text-[var(--color-accent-700)]"/><h2 className="font-semibold text-[var(--color-navy-900)]">Turnos disponibles</h2></div>
