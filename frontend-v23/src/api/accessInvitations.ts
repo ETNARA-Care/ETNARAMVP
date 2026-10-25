@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, type ApiError } from "./client";
 
 export type AccessInvitationStatus = "pending" | "accepted" | "expired" | "revoked";
 
@@ -48,17 +48,26 @@ export async function createAccessInvitation(organizationId: string, input: Work
  * pending; retrying re-uses it, no duplicate) and 429 RESEND_TOO_SOON.
  */
 export interface FamilyInvitationSent { invitation: AccessInvitation; emailDelivery: { status: "sent" }; resent: boolean }
-export function sendFamilyInvitation(organizationId: string, input: Omit<FamilyInput, "type">, token: string) {
-  return apiClient.post<FamilyInvitationSent>(
+/**
+ * A 2xx alone is not proof of an e-mail: only an explicit emailDelivery "sent" is. (A backend
+ * without e-mail support answers 201 with a shareable link instead; that must never read as «enviada».)
+ */
+function requireSent(result: FamilyInvitationSent | null): FamilyInvitationSent {
+  if (result?.emailDelivery?.status !== "sent") throw { status: 0, code: "EMAIL_NOT_CONFIRMED" } satisfies ApiError;
+  return result;
+}
+
+export async function sendFamilyInvitation(organizationId: string, input: Omit<FamilyInput, "type">, token: string) {
+  return requireSent(await apiClient.post<FamilyInvitationSent>(
     `/organizations/${organizationId}/access-invitations`, { type: "family", ...input }, token,
-  );
+  ));
 }
 
 /** «Reenviar»: new 7-day link by e-mail; the previous link stops working only once the e-mail is accepted. */
-export function resendFamilyInvitation(organizationId: string, invitationId: string, token: string) {
-  return apiClient.post<FamilyInvitationSent>(
+export async function resendFamilyInvitation(organizationId: string, invitationId: string, token: string) {
+  return requireSent(await apiClient.post<FamilyInvitationSent>(
     `/organizations/${organizationId}/access-invitations/${invitationId}/resend`, undefined, token,
-  );
+  ));
 }
 
 export async function listAccessInvitations(

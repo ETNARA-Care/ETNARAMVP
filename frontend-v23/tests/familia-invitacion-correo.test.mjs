@@ -13,12 +13,19 @@ const panel = read("src/pages/agency/AccessInvitationPanel.tsx");
 const activation = read("src/pages/ActivateInvitationPage.tsx");
 
 test("api: family invitations are sent by e-mail and never return a link", () => {
-  assert.match(api, /export function sendFamilyInvitation\(organizationId: string, input: Omit<FamilyInput, "type">, token: string\)/);
+  assert.match(api, /export async function sendFamilyInvitation\(organizationId: string, input: Omit<FamilyInput, "type">, token: string\)/);
   assert.match(api, /apiClient\.post<FamilyInvitationSent>\(\s*`\/organizations\/\$\{organizationId\}\/access-invitations`, \{ type: "family", \.\.\.input \}, token,/);
   assert.match(api, /export interface FamilyInvitationSent \{ invitation: AccessInvitation; emailDelivery: \{ status: "sent" \}; resent: boolean \}/);
   const familyApi = api.slice(api.indexOf("export interface FamilyInvitationSent"), api.indexOf("export async function listAccessInvitations"));
   assert.doesNotMatch(familyApi, /token: string \}/, "no token in family responses");
   assert.match(api, /`\/organizations\/\$\{organizationId\}\/access-invitations\/\$\{invitationId\}\/resend`/);
+});
+
+test("api: a 2xx is not enough — confirmation requires an explicit emailDelivery «sent»", () => {
+  assert.match(api, /function requireSent\(result: FamilyInvitationSent \| null\): FamilyInvitationSent \{\s*if \(result\?\.emailDelivery\?\.status !== "sent"\) throw \{ status: 0, code: "EMAIL_NOT_CONFIRMED" \}/);
+  assert.match(api, /return requireSent\(await apiClient\.post<FamilyInvitationSent>\(\s*`\/organizations\/\$\{organizationId\}\/access-invitations`/);
+  assert.match(api, /return requireSent\(await apiClient\.post<FamilyInvitationSent>\(\s*`\/organizations\/\$\{organizationId\}\/access-invitations\/\$\{invitationId\}\/resend`/);
+  assert.match(panel, /code === "EMAIL_NOT_CONFIRMED"/);
 });
 
 test("api: staff (worker) invitations keep their shared link", () => {

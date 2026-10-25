@@ -28,13 +28,14 @@ const labels = {
 /** Why a family invitation e-mail was not sent, in words an agency can act on. */
 function familySendError(error: unknown): string {
   const { status, code } = (error ?? {}) as ApiError;
+  if (code === "EMAIL_NOT_CONFIRMED") return "No pudimos confirmar que el correo se haya enviado. Revisa la lista antes de reintentar; si no dice «Correo enviado», usa «Reenviar».";
   if (code === "RESEND_TOO_SOON" || status === 429) return "Ya enviamos este correo hace menos de un minuto. Espera un momento y vuelve a intentarlo.";
   if (code === "EMAIL_NOT_CONFIGURED") return "El envío de correos no está disponible en este momento. La invitación quedó pendiente; vuelve a intentarlo más tarde o avisa a ETNARA.";
   if (code === "INVITATION_EMAIL_FAILED") return "No pudimos enviar el correo. La invitación quedó pendiente y no se duplicará: revisa la dirección y vuelve a intentarlo.";
   if (code === "RECIPIENT_NOT_ACTIVE") return "Este residente no está activo; no se puede invitar a familiares.";
   if (code === "INVITATION_NOT_RESENDABLE") return "Esta invitación ya fue aceptada o revocada; no se puede reenviar.";
   if (status === 403) return "No tienes permiso para invitar familiares.";
-  if (status === 0) return "Sin conexión. No se envió nada; vuelve a intentarlo cuando tengas señal.";
+  if (status === 0 && (error as ApiError | undefined)?.isNetworkError) return "Se perdió la conexión. Revisa la lista: si dice «Correo enviado», la invitación ya salió; si no, vuelve a intentarlo cuando tengas señal.";
   return "No pudimos enviar la invitación. Vuelve a intentarlo.";
 }
 
