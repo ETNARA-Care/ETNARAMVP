@@ -224,7 +224,9 @@
     "taxRate": "Rate (%)",
     "legalBasis": "Legal basis for the exemption",
     "add": "Add",
-    "serviceNeedsResident": "If you choose a service, choose the resident too."
+    "serviceNeedsResident": "If you choose a service, choose the resident too.",
+    "quantityInvalid": "Between 0.01 and 1,000, up to 2 decimals.",
+    "priceInvalid": "Between $0.00 and $100,000.00."
   },
   "tax": {
     "title": "IVU treatment",

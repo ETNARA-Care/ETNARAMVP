@@ -53,3 +53,14 @@ test("mobile: full-screen wizard and draft, sheets for reasons, long names wrap,
   assert.match(view, /sticky bottom-0/);
   assert.match(read("src/features/billing/InvoicesSection.tsx"), /break-words/);
 });
+
+test("manual lines: the portal uses the backend limits ($100,000.00 per unit, 1,000 units) with a clear message", () => {
+  const f = read("src/features/billing/billingFormat.ts");
+  assert.match(f, /UNIT_PRICE_MAX_CENTS = 10_000_000/);
+  assert.match(f, /QUANTITY_MAX_HUNDREDTHS = 100_000/);
+  assert.match(f, /return cents <= UNIT_PRICE_MAX_CENTS \? cents : NaN;/);
+  assert.match(f, /return q > 0 && q <= QUANTITY_MAX_HUNDREDTHS \? q : NaN;/);
+  const view = read("src/features/billing/DraftView.tsx");
+  assert.match(view, /t\("manual\.quantityInvalid"\)/);
+  assert.match(view, /t\("manual\.priceInvalid"\)/);
+});

@@ -279,8 +279,8 @@ function ManualDialog({ organizationId, data, discount, busy, onClose, onAdd }: 
             </Select>
           )}
           <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
-            <Input label={t("manual.quantity")} inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} error={qty && Number.isNaN(q) ? " " : undefined} />
-            <Input label={t("manual.price")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} error={price && Number.isNaN(p) ? " " : undefined} />
+            <Input label={t("manual.quantity")} inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} error={qty && Number.isNaN(q) ? t("manual.quantityInvalid") : undefined} />
+            <Input label={t("manual.price")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} error={price && Number.isNaN(p) ? t("manual.priceInvalid") : undefined} />
           </div>
           <Select label={t("manual.taxChoice")} value={treatment} onChange={(e) => setTreatment(e.target.value as TaxTreatment | "")}>
             <option value="">—</option>

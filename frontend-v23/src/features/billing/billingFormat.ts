@@ -43,16 +43,20 @@ export function parsePercent(input: string): number {
   const bp = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
   return bp >= 1 && bp <= 5000 ? bp : NaN;
 }
-/** "25", "25.50", "$1,025.00" → cents; NaN when invalid. */
+/** Same limits as the backend for manual lines (drafts.service manualLineSchema). */
+export const UNIT_PRICE_MAX_CENTS = 10_000_000; // $100,000.00
+export const QUANTITY_MAX_HUNDREDTHS = 100_000; // 1,000
+/** "25", "25.50", "$1,025.00" → cents; NaN when invalid or above the backend limit. */
 export function parseMoney(input: string): number {
   const m = /^\$?(\d{1,7})(?:[.,](\d{1,2}))?$/.exec(input.trim().replace(/,(?=\d{3}\b)/g, ""));
   if (!m) return NaN;
-  return Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
+  const cents = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
+  return cents <= UNIT_PRICE_MAX_CENTS ? cents : NaN;
 }
-/** "1", "1.5" → hundredths; NaN when invalid. */
+/** "1", "1.5" → hundredths; NaN when invalid or above the backend limit. */
 export function parseQuantity(input: string): number {
   const m = /^(\d{1,4})(?:[.,](\d{1,2}))?$/.exec(input.trim());
   if (!m) return NaN;
   const q = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
-  return q > 0 ? q : NaN;
+  return q > 0 && q <= QUANTITY_MAX_HUNDREDTHS ? q : NaN;
 }
