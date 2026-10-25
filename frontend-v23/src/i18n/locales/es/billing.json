@@ -178,7 +178,7 @@
       "discount": "Descuento"
     },
     "segments": "Tramos ({{count}})",
-    "segmentLine": "{{date}} · {{from}}–{{to}} · {{hours}}",
+    "segmentLine": "{{date}} · {{from}}–{{to}} reales · {{hours}} facturadas",
     "holiday": "Feriado: {{name}}",
     "clientRate": "precio del cliente",
     "generalRate": "general",
@@ -257,7 +257,10 @@
     "NO_BILLING_RATE": "Sin tarifa de cobro",
     "PARTIAL_DAY": "Día parcial: decide la regla",
     "SHIFT_CANCELLED": "Turno cancelado",
-    "NO_TIME": "Sin tiempo facturable"
+    "NO_TIME": "Sin tiempo facturable",
+    "TIMESHEETS_OVERLAP": "Hojas de horas que se solapan: factúralo con una línea manual justificada",
+    "APPROVED_EXCEEDS_RECORDED": "Se aprobó más tiempo del registrado: factúralo con una línea manual justificada",
+    "REAL_TIMES_MISSING": "Faltan la entrada o la salida reales"
   },
   "warnings": {
     "DAY_ALMOST_COMPLETE": "Faltan {{minutes}} min para un día completo: revisa",

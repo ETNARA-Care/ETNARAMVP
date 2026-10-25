@@ -178,7 +178,7 @@
       "discount": "Discount"
     },
     "segments": "Segments ({{count}})",
-    "segmentLine": "{{date}} · {{from}}–{{to}} · {{hours}}",
+    "segmentLine": "{{date}} · {{from}}–{{to}} actual · {{hours}} billed",
     "holiday": "Holiday: {{name}}",
     "clientRate": "client price",
     "generalRate": "general",
@@ -257,7 +257,10 @@
     "NO_BILLING_RATE": "No billing rate",
     "PARTIAL_DAY": "Partial day: decide the rule",
     "SHIFT_CANCELLED": "Shift cancelled",
-    "NO_TIME": "No billable time"
+    "NO_TIME": "No billable time",
+    "TIMESHEETS_OVERLAP": "Overlapping timesheets: bill it with a justified manual line",
+    "APPROVED_EXCEEDS_RECORDED": "More time approved than recorded: bill it with a justified manual line",
+    "REAL_TIMES_MISSING": "The actual check-in or check-out is missing"
   },
   "warnings": {
     "DAY_ALMOST_COMPLETE": "{{minutes}} min short of a full day: review",

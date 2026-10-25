@@ -64,3 +64,11 @@ test("manual lines: the portal uses the backend limits ($100,000.00 per unit, 1,
   assert.match(view, /t\("manual\.quantityInvalid"\)/);
   assert.match(view, /t\("manual\.priceInvalid"\)/);
 });
+
+test("D1/D4: segments show the real interval and the billed minutes; new exception codes have messages in es and en", () => {
+  const es = JSON.parse(read("src/i18n/locales/es/billing.json"));
+  const en = JSON.parse(read("src/i18n/locales/en/billing.json"));
+  for (const c of ["TIMESHEETS_OVERLAP", "APPROVED_EXCEEDS_RECORDED", "REAL_TIMES_MISSING"]) assert.ok(es.exceptions[c] && en.exceptions[c], c);
+  assert.match(es.draft.segmentLine, /reales · \{\{hours\}\} facturadas/);
+  assert.match(read("src/features/billing/EligibleShifts.tsx"), /const rows = all\.filter\(\(r\) => r\.minutes > 0\)/);
+});

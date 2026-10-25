@@ -55,9 +55,11 @@ export const fromPriced = (segments: EligibleShift["segments"]): SegmentRow[] =>
   holiday: s.rate?.holiday ?? null, source: s.rate?.source ?? null, price: s.rate?.amountCents ?? null,
 }));
 
-export function Segments({ rows }: { rows: SegmentRow[] }) {
+export function Segments({ rows: all }: { rows: SegmentRow[] }) {
   const { t, i18n } = useTranslation("billing");
   const lang = langOf(i18n.resolvedLanguage);
+  // A few real seconds before midnight may receive no approved minute (D1): kept in the record, not listed.
+  const rows = all.filter((r) => r.minutes > 0);
   return (
     <details className="group mt-2 ml-8 min-w-0 text-xs" data-segments>
       <summary className="flex cursor-pointer list-none items-center gap-1 font-medium text-[var(--color-navy-700)]"><ChevronDown size={13} className="transition group-open:rotate-180" aria-hidden />{t("draft.segments", { count: rows.length })}</summary>
