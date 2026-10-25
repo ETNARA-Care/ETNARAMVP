@@ -23,6 +23,10 @@ export function AdminTopbar({ organizationName, canSwitchOrganization, userLabel
  </Link>
  )}
  </div>
+ {/* Phones: the organisation block above is hidden, so this spacer keeps the bell and the
+     account menu at the right edge (as in the Family and Caregiver headers). Without it they sat
+     next to the logo and the right-aligned notification panel opened off the left of the screen. */}
+ <div className="flex-1 sm:hidden" aria-hidden />
  <NotificationBell />
  <AccountMenu userLabel={userLabel} roleLabel="Administración" settingsTo="/agency/settings" onLogout={onLogout} canSwitchOrganization={canSwitchOrganization} />
  </div>
