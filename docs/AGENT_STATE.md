@@ -2,6 +2,13 @@
 
 ## Current Status
 
+## 2026-10-25 — Facturación Premium F2.3 (portal): emitir, PDF, anular, datos de facturación (claude/facturacion-f2-3)
+- Borrador → «Emitir factura» (solo con billing.issue; desactivado mientras la lista «Antes de emitir» no esté vacía) → confirmación con total y aviso de que no se puede editar ni borrar → número consecutivo (FAC-000001…).
+- Emitida/anulada: número, quién y cuándo, retención, sin acciones de edición; «Descargar PDF» y «Descargar copia ANULADA» leídos con la sesión (blob, sin enlaces públicos ni firmados, `cache: no-store`). «Anular factura» (billing.void) exige motivo; los turnos quedan libres.
+- Lista: chips Emitidas y Anuladas (número, fecha, total; anuladas tachadas).
+- «Datos de facturación»: lo que bloquea la emisión, perfil del emisor, prefijo (fijo tras la primera emisión), retención ≥ 6 años, nombre del cuidador apagado por defecto, logo PNG/JPEG ≤ 300 KB, validación de IVU con casilla y nota obligatoria. Solo billing.manage edita. Con un backend anterior la sección se oculta (404).
+- Requiere el backend #221 (migración 127) y el portal #241 (F2.2). Pruebas: 259/259, build; E2E iPhone 22/22 con backend local + S3 local (moto), PDF verificado con pdftotext.
+
 ## 2026-10-25 — Informe de Turno F1: vista y aprobación de la agencia (claude/shift-report-f1)
 - **Requiere** el backend `claude/shift-report-f1` (migración 126). Visible solo con SHIFT_REPORTS (ETNARA central lo enciende por agencia); admin y supervisor.
 - **Pantallas:**

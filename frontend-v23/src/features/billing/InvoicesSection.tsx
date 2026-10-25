@@ -8,14 +8,15 @@ import { day, langOf, money } from "./billingFormat";
 import { NewInvoiceWizard } from "./NewInvoiceWizard";
 import { DraftView } from "./DraftView";
 
-type Chip = "drafts" | "inactive" | "discarded";
+type Chip = "drafts" | "inactive" | "issued" | "voided" | "discarded";
 
 /**
  * Finanzas → Facturación → «Facturas» (F2.2). Drafts, inactive drafts (14 days
  * without changes: only marked) and discarded drafts. «Nueva factura» only for
  * billing.draft; reading needs billing.view or billing.draft (backend + RLS).
+ * F2.3: issued and voided invoices, newest number first (order from the backend).
  */
-export function InvoicesSection({ organizationId, canDraft, canManageTax, readOnly }: { organizationId: string; canDraft: boolean; canManageTax: boolean; readOnly: boolean }) {
+export function InvoicesSection({ organizationId, canDraft, canManageTax, canIssue = false, readOnly }: { organizationId: string; canDraft: boolean; canManageTax: boolean; canIssue?: boolean; readOnly: boolean }) {
   const { t, i18n } = useTranslation("billing");
   const lang = langOf(i18n.resolvedLanguage);
   const [rows, setRows] = useState<InvoiceSummary[] | null>(null);
@@ -40,9 +41,11 @@ export function InvoicesSection({ organizationId, canDraft, canManageTax, readOn
   const counts = {
     drafts: rows?.filter((r) => r.status === "draft" && !r.inactive).length ?? 0,
     inactive: rows?.filter((r) => r.inactive).length ?? 0,
+    issued: rows?.filter((r) => r.status === "issued").length ?? 0,
+    voided: rows?.filter((r) => r.status === "voided").length ?? 0,
     discarded: rows?.filter((r) => r.status === "discarded").length ?? 0,
   };
-  const shown = (rows ?? []).filter((r) => (chip === "drafts" ? r.status === "draft" && !r.inactive : chip === "inactive" ? r.inactive : r.status === "discarded"));
+  const shown = (rows ?? []).filter((r) => (chip === "drafts" ? r.status === "draft" && !r.inactive : chip === "inactive" ? r.inactive : r.status === chip));
 
   if (unsupported) return null;
   return (
@@ -54,7 +57,7 @@ export function InvoicesSection({ organizationId, canDraft, canManageTax, readOn
 
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <div role="tablist" className="inline-flex gap-1 rounded-[var(--radius-pill)] bg-[var(--color-ivory-100)] p-1">
-          {(["drafts", "inactive", "discarded"] as Chip[]).map((c) => (
+          {(["drafts", "inactive", "issued", "voided", "discarded"] as Chip[]).map((c) => (
             <button key={c} type="button" role="tab" aria-selected={chip === c} onClick={() => setChip(c)} data-chip={c}
               className={`h-9 shrink-0 whitespace-nowrap rounded-[var(--radius-pill)] px-3.5 text-sm font-medium ${chip === c ? "bg-[var(--color-navy-900)] text-white" : "text-[var(--color-text-secondary)]"}`}>
               {t(`invoices.chips.${c}`)} <span className="tabular-nums opacity-80">{counts[c]}</span>
@@ -68,7 +71,7 @@ export function InvoicesSection({ organizationId, canDraft, canManageTax, readOn
         : shown.length === 0 ? (
           <Card className="flex items-start gap-3" data-billing-empty>
             <FileText size={18} className="mt-0.5 shrink-0 text-[var(--color-text-muted)]" aria-hidden />
-            <div className="min-w-0"><p className="font-medium">{t("invoices.empty")}</p>{canDraft && <p className="text-sm text-[var(--color-text-secondary)]">{t("invoices.emptyHint")}</p>}</div>
+            <div className="min-w-0"><p className="font-medium">{t(chip === "issued" || chip === "voided" ? "invoices.emptyIssued" : "invoices.empty")}</p>{canDraft && <p className="text-sm text-[var(--color-text-secondary)]">{t("invoices.emptyHint")}</p>}</div>
           </Card>
         ) : (
           <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2 [&>li]:min-w-0">
@@ -77,12 +80,16 @@ export function InvoicesSection({ organizationId, canDraft, canManageTax, readOn
                 <button type="button" onClick={() => setOpen(r.id)} data-invoice-card={r.id}
                   className="w-full min-w-0 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left shadow-[var(--shadow-card)] transition hover:border-[var(--color-navy-700)]">
                   <div className="flex min-w-0 items-start justify-between gap-2">
-                    <p className="min-w-0 break-words font-medium leading-snug">{r.clientName}</p>
-                    <span className="shrink-0 font-semibold tabular-nums">{money(r.subtotalCents, lang)}</span>
+                    <div className="min-w-0">
+                      {r.numberText && <p className="font-mono text-xs font-semibold tracking-wide text-[var(--color-navy-700)]" data-invoice-number>{r.numberText}</p>}
+                      <p className="min-w-0 break-words font-medium leading-snug">{r.clientName}</p>
+                    </div>
+                    <span className={`shrink-0 font-semibold tabular-nums ${r.status === "voided" ? "line-through opacity-60" : ""}`}>{money(r.totalCents ?? r.subtotalCents, lang)}</span>
                   </div>
                   <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{t("invoices.period", { from: day(r.periodFrom, lang), to: day(r.periodTo, lang) })} · {t("invoices.lines", { count: r.lineCount })}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Badge tone={r.status === "draft" ? "neutral" : "warning"}>{t(`invoices.status.${r.status}`)}</Badge>
+                    <Badge tone={r.status === "draft" ? "neutral" : r.status === "issued" ? "success" : "warning"}>{t(`invoices.status.${r.status}`)}</Badge>
+                    {r.issueDate && <span className="text-xs text-[var(--color-text-muted)]">{day(r.issueDate, lang)}</span>}
                     {r.inactive && <Badge tone="warning"><Clock size={12} className="mr-1 inline" aria-hidden />{t("invoices.inactiveBadge")}</Badge>}
                     {r.taxPending && <Badge tone="warning">{t("blockers.TAX_PENDING")}</Badge>}
                   </div>
@@ -94,7 +101,7 @@ export function InvoicesSection({ organizationId, canDraft, canManageTax, readOn
         )}
 
       {creating && <NewInvoiceWizard organizationId={organizationId} onClose={() => setCreating(false)} onCreated={(id) => { setCreating(false); void load(); setOpen(id); }} />}
-      {open && <DraftView organizationId={organizationId} invoiceId={open} canManageTax={canManageTax} onClose={() => { setOpen(null); void load(); }} />}
+      {open && <DraftView organizationId={organizationId} invoiceId={open} canManageTax={canManageTax} canIssueCap={canIssue && !readOnly} onClose={() => { setOpen(null); void load(); }} />}
     </section>
   );
 }

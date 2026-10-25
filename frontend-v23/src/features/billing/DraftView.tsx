@@ -1,22 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Ban, Clock, FileClock, Minus, Plus, RefreshCcw, Trash2 } from "lucide-react";
+import { AlertTriangle, Ban, BadgeCheck, Clock, Download, FileCheck2, FileClock, Minus, Plus, RefreshCcw, Trash2, XCircle } from "lucide-react";
 import { getToken } from "@/auth/token";
-import { billingDraftsApi, type BillingClientOption, type BillingServiceOption, type EligibleShift, type InvoiceDetail, type InvoiceLine, type TaxTreatment } from "@/api/billing";
+import { billingDraftsApi, billingIssueApi, type BillingClientOption, type InvoiceDocumentKind, type BillingServiceOption, type EligibleShift, type InvoiceDetail, type InvoiceLine, type TaxTreatment } from "@/api/billing";
 import { Badge, Button, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { LOCALE_TAG } from "@/i18n/language";
-import { day, errorText, hours, langOf, money, parseMoney, parsePercent, parseQuantity, percent, taxLabel, time, tx } from "./billingFormat";
+import { dateTime, day, errorText, hours, langOf, money, parseMoney, parsePercent, parseQuantity, percent, taxLabel, time, tx } from "./billingFormat";
 import { EligibleShifts, Segments } from "./EligibleShifts";
 
-type Dialog = null | { kind: "remove"; line: InvoiceLine } | { kind: "discard" } | { kind: "recover" } | { kind: "manual"; discount: boolean } | { kind: "shifts" } | { kind: "edit" };
+type Dialog = null | { kind: "remove"; line: InvoiceLine } | { kind: "discard" } | { kind: "recover" } | { kind: "manual"; discount: boolean } | { kind: "shifts" } | { kind: "edit" } | { kind: "issue" } | { kind: "void" };
 
 /**
  * One draft (F2.2): lines (shift / manual / discount) with the overnight
  * segments, amounts always visible, warnings and what would block issuing.
  * Every change sends the version the screen shows; if someone else changed
  * the draft the backend answers DRAFT_CHANGED and the screen reloads.
+ * F2.3: «Emitir» (billing.issue) assigns the next consecutive number and saves
+ * the PDF; an issued invoice is never edited or deleted, only voided with a
+ * reason (billing.void). The backend decides; this screen only hides.
  */
-export function DraftView({ organizationId, invoiceId, canManageTax, onClose }: { organizationId: string; invoiceId: string; canManageTax: boolean; onClose: () => void }) {
+export function DraftView({ organizationId, invoiceId, canManageTax, canIssueCap = false, onClose }: { organizationId: string; invoiceId: string; canManageTax: boolean; canIssueCap?: boolean; onClose: () => void }) {
   const { t, i18n } = useTranslation("billing");
   const lang = langOf(i18n.resolvedLanguage);
   const toast = useToast();
@@ -36,19 +39,36 @@ export function DraftView({ organizationId, invoiceId, canManageTax, onClose }: 
     const token = getToken(); if (!token || !data) return false;
     setBusy(true);
     try { await work(token, data.invoice.version); toast.show(ok, "success"); setDialog(null); await load(); return true; }
-    catch (e) { toast.show(errorText(t, e), "danger"); if ((e as { code?: string })?.code === "DRAFT_CHANGED") await load(); return false; }
+    catch (e) { toast.show(errorText(t, e), "danger"); const code = (e as { code?: string })?.code; if (code === "DRAFT_CHANGED" || code === "ISSUE_BLOCKED" || code === "ALREADY_ISSUED" || code === "ALREADY_VOIDED") { setDialog(null); await load(); } return false; }
     finally { setBusy(false); }
   }
 
   const inv = data?.invoice;
   const editable = Boolean(data?.canEdit);
   const anyRateChanged = data?.lines.some((l) => l.rateChanged);
+  const final = inv?.status === "issued" || inv?.status === "voided";
+  const [downloading, setDownloading] = useState<InvoiceDocumentKind | null>(null);
+
+  /** Reads the stored PDF with the session and saves it; nothing is cached or shared by link. */
+  async function download(kind: InvoiceDocumentKind) {
+    const token = getToken(); if (!token || !inv) return;
+    setDownloading(kind);
+    try {
+      const blob = await billingIssueApi.pdf(organizationId, inv.id, kind, token);
+      const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = `${inv.numberText ?? "factura"}${kind === "void_copy" ? "-ANULADA" : ""}.pdf`; a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch (e) { toast.show(errorText(t, e), "danger"); }
+    finally { setDownloading(null); }
+  }
 
   return (
-    <Modal open onClose={onClose} fullScreenOnMobile wide eyebrow={inv ? `${t(`invoices.status.${inv.status}`)} · ${t("draft.version", { n: inv.version })}` : undefined}
+    <Modal open onClose={onClose} fullScreenOnMobile wide eyebrow={inv ? (final && inv.numberText ? `${t(`invoices.status.${inv.status}`)} · ${inv.numberText}` : `${t(`invoices.status.${inv.status}`)} · ${t("draft.version", { n: inv.version })}`) : undefined}
       title={inv?.clientName ?? t("draft.title")}>
       {!data || !inv ? <Skeleton className="h-64" /> : (
-        <div className="flex min-w-0 flex-col gap-4" data-draft={inv.id} data-version={inv.version}>
+        <div className="flex min-w-0 flex-col gap-4" data-draft={inv.id} data-version={inv.version} data-status={inv.status}>
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-text-secondary)]">
             <span>{t("draft.period")}: <span className="font-medium text-[var(--color-text-primary)]">{day(inv.periodFrom, lang)} – {day(inv.periodTo, lang)}</span></span>
             {inv.notes && <span className="min-w-0 break-words">· {inv.notes}</span>}
@@ -56,6 +76,26 @@ export function DraftView({ organizationId, invoiceId, canManageTax, onClose }: 
           </div>
 
           {inv.status === "discarded" && <p className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-sm" data-draft-discarded><Ban size={14} className="mr-1 inline" aria-hidden />{t("draft.discarded", { reason: inv.discardReason ?? "" })}</p>}
+          {final && (
+            <div className={`flex min-w-0 items-start gap-2 rounded-[var(--radius-md)] border p-3 text-sm ${inv.status === "voided" ? "border-[var(--color-danger-700)]/40 bg-red-50" : "border-[var(--color-sage-700)]/30 bg-[var(--color-sage-100)]"}`} data-invoice-final={inv.status}>
+              {inv.status === "voided" ? <XCircle size={16} className="mt-0.5 shrink-0 text-[var(--color-danger-700)]" aria-hidden /> : <BadgeCheck size={16} className="mt-0.5 shrink-0 text-[var(--color-sage-800)]" aria-hidden />}
+              <div className="min-w-0 flex-1 break-words">
+                <p className="font-semibold" data-invoice-number>{t("issue.numberLine", { number: inv.numberText ?? "—" })}</p>
+                {inv.issuedAt && <p className="text-[var(--color-text-secondary)]">{t("issue.issuedLine", { when: dateTime(inv.issuedAt, lang), email: inv.issuedByEmail ?? "—" })}</p>}
+                {inv.status === "voided" && inv.voidedAt && <p className="text-[var(--color-danger-700)]">{t("issue.voidedLine", { when: dateTime(inv.voidedAt, lang), email: inv.voidedByEmail ?? "—", reason: inv.voidReason ?? "" })}</p>}
+                {inv.retentionUntil && <p className="text-xs text-[var(--color-text-muted)]">{t("issue.retention", { date: day(inv.retentionUntil.slice(0, 10), lang) })}</p>}
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("issue.immutable")}</p>
+              </div>
+            </div>
+          )}
+          {final && (data.documents?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-2" data-invoice-documents>
+              {data.documents!.map((d) => (
+                <Button key={d.kind} size="sm" variant="secondary" icon={<Download size={15} />} loading={downloading === d.kind} disabled={downloading !== null}
+                  onClick={() => void download(d.kind)} data-download={d.kind}>{t(`issue.download.${d.kind}`)}</Button>
+              ))}
+            </div>
+          )}
           {inv.inactive && (
             <div className="flex items-start gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-ivory-50)] p-3 text-sm" data-draft-inactive>
               <Clock size={16} className="mt-0.5 shrink-0" aria-hidden />
@@ -121,12 +161,20 @@ export function DraftView({ organizationId, invoiceId, canManageTax, onClose }: 
             </div>
           )}
 
+          {inv.status === "draft" && canIssueCap && (
+            <div className="flex min-w-0 flex-col gap-1" data-issue-action>
+              <Button icon={<FileCheck2 size={16} />} disabled={!data.canIssue || busy} onClick={() => setDialog({ kind: "issue" })} data-issue>{t("issue.button")}</Button>
+              {!data.canIssue && <p className="text-xs text-[var(--color-text-muted)]">{t("issue.blockedHint")}</p>}
+            </div>
+          )}
+
           {data.removedLines.length > 0 && (
             <details className="text-sm" data-removed-lines><summary className="cursor-pointer text-[var(--color-text-secondary)]">{t("draft.removed", { count: data.removedLines.length })}</summary>
               <ul className="mt-1 space-y-1 text-xs text-[var(--color-text-muted)]">{data.removedLines.map((r) => <li key={r.id} className="break-words">{r.description} · {money(r.amountCents, lang)}{r.reason ? ` · ${r.reason}` : ""}</li>)}</ul></details>
           )}
 
           {editable && <Button variant="ghost" className="self-start text-[var(--color-danger-700)]" icon={<Ban size={15} />} onClick={() => setDialog({ kind: "discard" })} data-draft-discard>{t("draft.discard")}</Button>}
+          {data.canVoid && <Button variant="ghost" className="self-start text-[var(--color-danger-700)]" icon={<XCircle size={15} />} onClick={() => setDialog({ kind: "void" })} data-invoice-void>{t("issue.void")}</Button>}
         </div>
       )}
 
@@ -141,6 +189,22 @@ export function DraftView({ organizationId, invoiceId, canManageTax, onClose }: 
       {data && inv && dialog?.kind === "recover" && (
         <ReasonDialog title={t("draft.recoverTitle")} body={t("draft.recoverBody", { days: inv.inactiveDays })} label={t("draft.reason")} required busy={busy} confirm={t("draft.recover")} danger
           onClose={() => setDialog(null)} onConfirm={(reason) => void act((tk, v) => billingDraftsApi.recover(organizationId, inv.id, { expectedVersion: v, reason }, tk), t("draft.recovered"))} />
+      )}
+      {data && inv && dialog?.kind === "issue" && (
+        <Modal open onClose={() => setDialog(null)} title={t("issue.confirmTitle")} sheetOnMobile
+          footer={<><Button variant="secondary" onClick={() => setDialog(null)}>{t("permissions.cancel")}</Button>
+            <Button loading={busy} disabled={busy} data-issue-confirm
+              onClick={() => void act((tk, v) => billingIssueApi.issue(organizationId, inv.id, { expectedVersion: v }, tk), t("issue.done"))}>{t("issue.confirm")}</Button></>}>
+          <div className="flex flex-col gap-2 text-sm" data-issue-dialog>
+            <p className="break-words font-medium">{inv.clientName} · {money(data.totals.totalCents, lang)}</p>
+            <p className="text-[var(--color-text-secondary)]">{t("issue.confirmBody")}</p>
+            <p className="text-[var(--color-text-muted)]">{t("issue.confirmImmutable")}</p>
+          </div>
+        </Modal>
+      )}
+      {data && inv && dialog?.kind === "void" && (
+        <ReasonDialog title={t("issue.voidTitle", { number: inv.numberText ?? "" })} body={t("issue.voidBody")} label={t("draft.reason")} required busy={busy} confirm={t("issue.void")} danger
+          onClose={() => setDialog(null)} onConfirm={(reason) => void act((tk, v) => billingIssueApi.void(organizationId, inv.id, { expectedVersion: v, reason }, tk), t("issue.voided"))} />
       )}
       {data && inv && dialog?.kind === "edit" && (
         <EditDialog data={data} busy={busy} onClose={() => setDialog(null)}

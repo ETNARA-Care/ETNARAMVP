@@ -2,6 +2,9 @@
 
 ## In Progress
 
+### BILL-F2.3 — Facturación Premium F2.3 portal (issue, PDF, void, billing details)
+- Branch claude/facturacion-f2-3 (draft PR, on top of F2.2 #241). Needs backend #221. Not authorized: merge, deploy.
+
 ### PUX-001 — ETNARA Central: mobile premium layout (PR, pending Rafa's review)
 - Done in branch claude/platform-mobile-premium (see AGENT_STATE 2026-10-23).
 - Follow-up (needs approval): fix the 396 `text-[var(--text-*)]` classes so the
