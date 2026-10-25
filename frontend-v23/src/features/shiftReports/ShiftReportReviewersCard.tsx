@@ -8,7 +8,7 @@ import { reportTime } from "./reportFormat";
 /**
  * Agency administrators choose which supervisors may review and approve shift
  * reports. Independent of Finanzas, SmartMatch and Horas. Revoking keeps the
- * record of who authorized and who revoked (backend 124).
+ * record of who authorized and who revoked (backend 126).
  */
 export function ShiftReportReviewersCard({ organizationId }: { organizationId: string }) {
   const { show } = useToast();
