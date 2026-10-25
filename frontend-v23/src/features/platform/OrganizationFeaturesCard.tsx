@@ -7,8 +7,9 @@ import { Button, Input, Skeleton, useToast } from "@/components/ui";
 const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   SMARTMATCH: { title: "SmartMatch", detail: "Oportunidades, postulaciones y turnos desde SmartMatch." },
   EN_CAMINO: { title: "En camino y «Llegué»", detail: "Aviso de salida, retrasos declarados y llegada con ubicación." },
+  FINANZAS: { title: "Finanzas", detail: "Servicios y tarifas de la agencia. ETNARA central solo enciende o apaga: no ve importes ni datos financieros." },
 };
-const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO"];
+const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS"];
 
 /**
  * ETNARA central: turn the SmartMatch pilot on or off for one agency.
@@ -41,7 +42,10 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
     } finally { setSaving(false); }
   }
 
-  const features = data ? [...data.features].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
+  // Only switches this screen knows how to describe: a code added by a newer backend
+  // (e.g. ACTIVITY_PHOTOS) is skipped instead of breaking the whole card.
+  const features = data ? data.features.filter((f) => f.code in LABELS).sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
+  const history = data ? data.history.filter((h) => h.code in LABELS) : [];
   const activeCount = features.filter((f) => f.enabled).length;
 
   return (
@@ -102,11 +106,11 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
               </div>
             );
           })}
-          {data.history.length > 0 && (
+          {history.length > 0 && (
             <details className="group rounded-2xl border border-[var(--color-border)] bg-white px-3.5 py-3 text-[length:var(--text-small)]">
-              <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-[var(--color-text-primary)]"><History size={15} />Historial ({data.history.length})</summary>
+              <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-[var(--color-text-primary)]"><History size={15} />Historial ({history.length})</summary>
               <ul className="mt-2 space-y-1.5">
-                {data.history.map((h, i) => (
+                {history.map((h, i) => (
                   <li key={i} className="leading-5 text-[var(--color-text-secondary)]">
                     <span className="font-medium text-[var(--color-text-primary)]">{LABELS[h.code].title} {h.enabled ? "activada" : "desactivada"}</span> · {new Date(h.occurredAt).toLocaleString("es-PR")} · {h.reason}{h.actorEmail ? ` · ${h.actorEmail}` : ""}
                   </li>

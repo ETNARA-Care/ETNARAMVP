@@ -21,6 +21,7 @@ import { Badge, Button, Card, EmptyState, ErrorState, Modal, PageHeader, Skeleto
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
 import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
 import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
+import { ShiftFinancePanel } from "@/features/finance/ShiftFinancePanel";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -37,8 +38,10 @@ function responseTone(status: Assignment["response_status"]): "warning" | "succe
 export function AgencyShiftDetailPage() {
   const { shiftId } = useParams();
   const navigate = useNavigate();
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, roles } = useAuth();
   const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
+  // Finanzas (119): agency administrator only, FINANZAS on only.
+  const finance = hasOrgFeature(activeOrganization?.features, "FINANZAS") && roles.includes("ORGANIZATION_ADMIN");
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
   const organizationId = activeOrganization?.id;
@@ -145,6 +148,8 @@ export function AgencyShiftDetailPage() {
         cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
 
       {enCamino && organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
+
+      {finance && organizationId && shiftId && <ShiftFinancePanel organizationId={organizationId} shiftId={shiftId} />}
 
       {smartMatch && organizationId && shiftId && <ShiftPrivateInstructions organizationId={organizationId} shiftId={shiftId}
         editable={shift.status !== "cancelled" && shift.status !== "completed"} />}
