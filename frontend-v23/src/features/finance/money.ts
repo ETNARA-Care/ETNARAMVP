@@ -13,12 +13,16 @@ export function formatCents(cents: number | null | undefined): string {
   return `${negative ? "−" : ""}$${dollars}.${rest}`;
 }
 
-/** "25", "25.5", "$1,025.00" → cents. Returns null when the text is not a valid amount. */
+/** Same limit as the backend for a rate or a fixed half day ($10,000.00, finance.service amountCents max). */
+export const RATE_MAX_CENTS = 1_000_000;
+
+/** "25", "25.5", "$1,025.00" → cents. Returns null when the text is not a valid amount or is above RATE_MAX_CENTS. */
 export function parseDollars(text: string): number | null {
   const cleaned = text.trim().replace(/^\$/, "").replace(/,/g, "");
   const match = /^(\d{1,7})(?:\.(\d{1,2}))?$/.exec(cleaned);
   if (!match) return null;
-  return Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+  const cents = Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+  return cents <= RATE_MAX_CENTS ? cents : null;
 }
 
 export function centsToInput(cents: number | null | undefined): string {

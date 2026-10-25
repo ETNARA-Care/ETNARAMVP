@@ -286,7 +286,7 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
           </Select>
         )}
         <Input label={`Importe ${UNIT_LABEL[unit]} (USD)`} required inputMode="decimal" placeholder="0.00" value={amount}
-          onChange={(e) => setAmount(e.target.value)} error={amount && cents === null ? "Escribe un importe como 25 o 25.50" : undefined}
+          onChange={(e) => setAmount(e.target.value)} error={amount && cents === null ? "Escribe un importe como 25 o 25.50 (máximo $10,000.00)" : undefined}
           hint={current ? `Vigente ahora: ${rateWithUnit(current.amount_cents, unit)}` : undefined} />
         <DateField label="Vigente desde" required value={from} onChange={setFrom}
           hint={from < today ? "Fecha pasada: solo se permite para cubrir días sin tarifa, nunca para cambiar un precio ya vigente." : "Lo ya prestado antes de esta fecha conserva su precio."} />
@@ -306,7 +306,7 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
             </Select>
             {halfPolicy === "fixed" && (
               <Input label="Importe del medio día (USD)" inputMode="decimal" placeholder="0.00" value={halfAmount} onChange={(e) => setHalfAmount(e.target.value)}
-                error={halfAmount && halfCents === null ? "Importe no válido" : undefined} />
+                error={halfAmount && halfCents === null ? "Importe no válido (máximo $10,000.00)" : undefined} />
             )}
           </>
         )}
