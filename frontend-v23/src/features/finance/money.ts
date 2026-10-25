@@ -1,11 +1,14 @@
 import type { FinanceUnit, HalfDayPolicy, Margin } from "@/api/finance";
+import { currentLanguage } from "@/i18n";
+import { formatDate as formatInstantDate, formatTime } from "@/i18n/format";
+import { LOCALE_TAG, type Language } from "@/i18n/language";
 
 /** Money is handled as integer cents end to end; text is parsed without floats. */
 export function formatCents(cents: number | null | undefined): string {
   if (cents === null || cents === undefined) return "—";
   const negative = cents < 0;
   const abs = Math.abs(cents);
-  const dollars = Math.trunc(abs / 100).toLocaleString("es-PR");
+  const dollars = Math.trunc(abs / 100).toLocaleString(LOCALE_TAG[currentLanguage()]);
   const rest = String(abs % 100).padStart(2, "0");
   return `${negative ? "−" : ""}$${dollars}.${rest}`;
 }
@@ -44,7 +47,7 @@ export function rateWithUnit(cents: number | null | undefined, unit: FinanceUnit
 
 export function formatMargin(margin: Margin | null | undefined): string {
   if (!margin) return "—";
-  const pct = margin.marginBasisPoints === null ? "" : ` · ${(margin.marginBasisPoints / 100).toLocaleString("es-PR", { maximumFractionDigits: 1 })} %`;
+  const pct = margin.marginBasisPoints === null ? "" : ` · ${(margin.marginBasisPoints / 100).toLocaleString(LOCALE_TAG[currentLanguage()], { maximumFractionDigits: 1 })} %`;
   return `${formatCents(margin.differenceCents)}${pct}`;
 }
 
@@ -54,15 +57,30 @@ export function isNegativeMargin(margin: Margin | null | undefined): boolean {
   return margin.negative ?? margin.differenceCents < 0;
 }
 
-export function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "sin fecha de fin";
+/**
+ * A calendar day (YYYY-MM-DD, already a Puerto Rico day) in the app's language
+ * (F1.1 visual: dates followed the browser, not the language chosen in ETNARA).
+ * Formatted at UTC on purpose: the day never shifts.
+ */
+export function formatIsoDate(iso: string, language: Language = currentLanguage(), options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }): string {
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("es-PR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(LOCALE_TAG[language], { ...options, timeZone: "UTC" });
+}
+
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return currentLanguage() === "en" ? "no end date" : "sin fecha de fin";
+  return formatIsoDate(iso);
+}
+
+/** An instant (history, audit) in the app's language, Puerto Rico time. */
+export function formatDateTime(instant: string): string {
+  const language = currentLanguage();
+  return `${formatInstantDate(instant, language, { day: "numeric", month: "short", year: "numeric" })}, ${formatTime(instant, language)}`;
 }
 
 export function hoursFromHundredths(hundredths: number | null | undefined): string {
   if (hundredths === null || hundredths === undefined) return "—";
-  return (hundredths / 100).toLocaleString("es-PR", { maximumFractionDigits: 2 });
+  return (hundredths / 100).toLocaleString(LOCALE_TAG[currentLanguage()], { maximumFractionDigits: 2 });
 }
 
 /** Text from the API error codes of Finanzas, in plain Spanish. */

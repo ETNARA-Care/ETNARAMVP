@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock, CalendarX2, Calculator, History, Plus, Power } from "lucide-react";
+import { DateField } from "./DateField";
 import { getToken } from "@/auth/token";
 import {
   financeApi, type BillingClient, type CaregiverRates, type DayType, type FinanceRate, type HalfDayPolicy, type NewRate,
@@ -7,7 +8,7 @@ import {
 } from "@/api/finance";
 import { Badge, Button, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import {
-  HALF_DAY_LABEL, UNIT_HELP, UNIT_LABEL, financeErrorText, formatCents, formatDate, formatMargin, hoursFromHundredths, isNegativeMargin, parseDollars, rateWithUnit,
+  HALF_DAY_LABEL, UNIT_HELP, UNIT_LABEL, financeErrorText, formatCents, formatDate, formatDateTime, formatMargin, hoursFromHundredths, isNegativeMargin, parseDollars, rateWithUnit,
 } from "./money";
 import { NegativeMarginNotice } from "./NegativeMarginNotice";
 
@@ -125,7 +126,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
                 <ul className="mt-2 flex flex-col gap-1">
                   {data.history.map((h, i) => (
                     <li key={i} className="text-xs text-[var(--color-text-secondary)]">
-                      {new Date(h.occurred_at).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })} · {ACTION_LABEL[h.action] ?? h.action} · {h.actor_email ?? ""}
+                      {formatDateTime(h.occurred_at)} · {ACTION_LABEL[h.action] ?? h.action} · {h.actor_email ?? ""}
                     </li>
                   ))}
                 </ul>
@@ -287,7 +288,7 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
         <Input label={`Importe ${UNIT_LABEL[unit]} (USD)`} required inputMode="decimal" placeholder="0.00" value={amount}
           onChange={(e) => setAmount(e.target.value)} error={amount && cents === null ? "Escribe un importe como 25 o 25.50" : undefined}
           hint={current ? `Vigente ahora: ${rateWithUnit(current.amount_cents, unit)}` : undefined} />
-        <Input label="Vigente desde" type="date" required value={from} onChange={(e) => setFrom(e.target.value)}
+        <DateField label="Vigente desde" required value={from} onChange={setFrom}
           hint={from < today ? "Fecha pasada: solo se permite para cubrir días sin tarifa, nunca para cambiar un precio ya vigente." : "Lo ya prestado antes de esta fecha conserva su precio."} />
         {unit === "hour" && (
           <div className="grid grid-cols-2 gap-3">
@@ -376,11 +377,16 @@ function EndRateModal({ organizationId, rate, today, onClose, onSaved }: { organ
     <Modal open onClose={onClose} title={`Terminar · ${targetLabel(rate)}`} sheetOnMobile
       footer={<><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button loading={saving} disabled={reason.trim().length < 3} onClick={() => void save()}>Terminar tarifa</Button></>}>
       <div className="flex flex-col gap-4">
-        <Input label="Último día vigente" type="date" value={to} min={rate.effective_from} onChange={(e) => setTo(e.target.value)} />
+        <DateField label="Último día vigente" value={to} min={rate.effective_from} onChange={setTo} />
         <Textarea label="Motivo" required rows={2} maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} />
       </div>
     </Modal>
   );
+}
+
+/** A native select never wraps: a name too long for the field is shown in full under it (F1.1 visual). */
+function longName(name: string | null | undefined): string | undefined {
+  return name && name.length > 26 ? name : undefined;
 }
 
 function Simulator({ organizationId, serviceId, unit, clients, caregivers, today }: {
@@ -411,14 +417,19 @@ function Simulator({ organizationId, serviceId, unit, clients, caregivers, today
   return (
     <section className="flex flex-col gap-3 rounded-[var(--radius-lg)] bg-[var(--color-navy-900)] p-4 text-white" aria-label="Simulador">
       <h3 className="flex items-center gap-2 font-display text-[1.05rem]"><Calculator size={18} aria-hidden />Simulador</h3>
+      {/* Duration and date share a row; client and caregiver get the full width on a phone so a long
+          name is not cut mid-word (F1.1 visual). */}
       <div className="grid grid-cols-2 gap-3 [&_label]:text-white/80 [&>*]:min-w-0">
         <Input label="Duración (horas)" inputMode="decimal" value={hours} onChange={(e) => setHours(e.target.value)} />
-        <Input label="Fecha del servicio" type="date" className="min-w-0 appearance-none" value={date} onChange={(e) => setDate(e.target.value)} />
+        <DateField label="Fecha del servicio" tone="dark" value={date} onChange={setDate} />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&_label]:text-white/80 [&_p]:!text-white/70 [&>*]:min-w-0" data-simulator-people>
         <Select label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
           <option value="">Tarifa general</option>
           {clients.map((c) => <option key={c.id} value={c.id}>{c.full_name}</option>)}
         </Select>
-        <Select label="Cuidador/a" value={membershipId} onChange={(e) => setMembershipId(e.target.value)}>
+        <Select label="Cuidador/a" value={membershipId} onChange={(e) => setMembershipId(e.target.value)}
+          hint={longName(caregivers.find((c) => c.membership_id === membershipId)?.display_name)}>
           <option value="">Tarifa general</option>
           {caregivers.map((c) => <option key={c.membership_id} value={c.membership_id}>{c.display_name ?? "Cuidador/a"}</option>)}
         </Select>
@@ -451,12 +462,16 @@ function Simulator({ organizationId, serviceId, unit, clients, caregivers, today
           : null;
       })()}
       {result && (
-        <p className="text-xs text-white/65">
-          {est?.billing ? `Cantidad: ${hoursFromHundredths(est.billing.quantityHundredths)} ${unit === "hour" ? "h" : unit === "day" ? "día(s)" : "unidad"}. ` : ""}
-          {result.holiday ? `Feriado: ${result.holiday}. ` : ""}
-          {(est?.billing?.needsReview || est?.pay?.needsReview) ? "Día incompleto: la agencia decide cómo cobrarlo y pagarlo. " : ""}
-          <CalendarClock size={12} className="inline" aria-hidden /> Se usa la tarifa vigente en la fecha del servicio (hora de Puerto Rico); un turno que cruza la medianoche usa la fecha en que empieza.
-        </p>
+        <div className="flex min-w-0 flex-col gap-1 text-xs text-white/65" data-simulator-notes>
+          {est?.billing && <p>Cantidad: {hoursFromHundredths(est.billing.quantityHundredths)} {unit === "hour" ? "h" : unit === "day" ? "día(s)" : "unidad"}</p>}
+          {result.holiday && <p>Feriado: {result.holiday}</p>}
+          {(est?.billing?.needsReview || est?.pay?.needsReview) && <p>Día incompleto: la agencia decide cómo cobrarlo y pagarlo.</p>}
+          {/* Icon in its own column: inline inside the sentence it overlapped the text on iPhone (F1.1 visual). */}
+          <p className="flex items-start gap-1.5">
+            <CalendarClock size={14} className="mt-px shrink-0" aria-hidden />
+            <span className="min-w-0">Se usa la tarifa vigente en la fecha del servicio (hora de Puerto Rico); un turno que cruza la medianoche usa la fecha en que empieza.</span>
+          </p>
+        </div>
       )}
     </section>
   );

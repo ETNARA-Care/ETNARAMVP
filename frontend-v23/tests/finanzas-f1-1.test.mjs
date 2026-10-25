@@ -67,5 +67,5 @@ test("a portal published before backend 121 never offers calls the backend lacks
 test("the #231 simulator fix stays as it was", () => {
   const detail = read("src/features/finance/ServiceDetail.tsx");
   assert.match(detail, /<div className="grid grid-cols-2 gap-3 \[&_label\]:text-white\/80 \[&>\*\]:min-w-0">/);
-  assert.match(detail, /<Input label="Fecha del servicio" type="date" className="min-w-0 appearance-none"/);
+  assert.match(detail, /<DateField label="Fecha del servicio" tone="dark" value=\{date\} onChange=\{setDate\} \/>/);
 });
