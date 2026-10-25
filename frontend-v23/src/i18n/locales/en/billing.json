@@ -178,7 +178,7 @@
       "discount": "Discount"
     },
     "segments": "Segments ({{count}})",
-    "segmentLine": "{{date}} · {{from}}–{{to}} actual · {{hours}} billed",
+    "segmentLine": "{{date}} · {{from}}–{{to}} actual · {{hours}} approved",
     "holiday": "Holiday: {{name}}",
     "clientRate": "client price",
     "generalRate": "general",

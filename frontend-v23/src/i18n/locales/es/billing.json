@@ -178,7 +178,7 @@
       "discount": "Descuento"
     },
     "segments": "Tramos ({{count}})",
-    "segmentLine": "{{date}} · {{from}}–{{to}} reales · {{hours}} facturadas",
+    "segmentLine": "{{date}} · {{from}}–{{to}} reales · {{hours}} aprobadas",
     "holiday": "Feriado: {{name}}",
     "clientRate": "precio del cliente",
     "generalRate": "general",
