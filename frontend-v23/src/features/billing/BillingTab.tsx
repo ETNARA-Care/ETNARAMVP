@@ -30,7 +30,11 @@ export function BillingTab({ organizationId }: { organizationId: string }) {
       setAccess(a);
       setPerms(a.capabilities.includes("view") ? await billingApi.permissions(organizationId, token) : null);
       setFailed(false);
-    } catch { setFailed(true); }
+    } catch (e) {
+      // A backend without Facturación (before 123) has no /billing route: show the module as off.
+      if ((e as { status?: number })?.status === 404) { setAccess({ module: { finanzas: true, facturacion: false, enabled: false, readOnly: true }, capabilities: [] }); setPerms(null); setFailed(false); return; }
+      setFailed(true);
+    }
   }, [organizationId]);
   useEffect(() => { void load(); }, [load]);
 
