@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Calculator, History, Plus, Power } from "lucide-react";
+import { CalendarClock, CalendarX2, Calculator, History, Plus, Power } from "lucide-react";
 import { getToken } from "@/auth/token";
 import {
   financeApi, type BillingClient, type CaregiverRates, type DayType, type FinanceRate, type HalfDayPolicy, type NewRate,
@@ -7,8 +7,11 @@ import {
 } from "@/api/finance";
 import { Badge, Button, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import {
-  HALF_DAY_LABEL, UNIT_HELP, UNIT_LABEL, financeErrorText, formatCents, formatDate, formatMargin, hoursFromHundredths, parseDollars, rateWithUnit,
+  HALF_DAY_LABEL, UNIT_HELP, UNIT_LABEL, financeErrorText, formatCents, formatDate, formatMargin, hoursFromHundredths, isNegativeMargin, parseDollars, rateWithUnit,
 } from "./money";
+import { NegativeMarginNotice } from "./NegativeMarginNotice";
+
+const PER_UNIT: Record<ServiceRates["service"]["unit"], string> = { hour: "por hora", shift: "por turno", day: "por día", fixed: "por servicio" };
 
 interface Props { organizationId: string; serviceId: string; onClose: () => void; onChanged: () => void }
 type FormPreset = { kind: RateKind; scope: RateScope; dayType: DayType; targetId?: string | null };
@@ -17,6 +20,7 @@ const ACTION_LABEL: Record<string, string> = {
   FINANCE_SERVICE_CREATED: "Servicio creado", FINANCE_SERVICE_UPDATED: "Servicio editado",
   FINANCE_SERVICE_DEACTIVATED: "Servicio desactivado", FINANCE_SERVICE_ACTIVATED: "Servicio activado",
   FINANCE_RATE_CREATED: "Nueva tarifa", FINANCE_RATE_ENDED: "Tarifa terminada",
+  FINANCE_RATE_CANCELLED: "Cambio programado cancelado", FINANCE_RATE_REOPENED: "Tarifa anterior restablecida",
 };
 
 export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }: Props) {
@@ -27,6 +31,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
   const [caregivers, setCaregivers] = useState<CaregiverRates[]>([]);
   const [form, setForm] = useState<FormPreset | null>(null);
   const [ending, setEnding] = useState<FinanceRate | null>(null);
+  const [cancelling, setCancelling] = useState<FinanceRate | null>(null);
   const [togglingActive, setTogglingActive] = useState(false);
 
   const load = useCallback(async () => {
@@ -52,7 +57,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
   }
 
   const rates = data?.rates ?? [];
-  const live = (r: FinanceRate) => r.status !== "past";
+  const live = (r: FinanceRate) => r.status !== "past" && r.status !== "cancelled";
   const unit = data?.service.unit ?? "hour";
 
   return (
@@ -76,7 +81,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
               { label: "Tarifa de feriado", preset: { kind: "client", scope: "general", dayType: "holiday" } },
               { label: "Feriado para un cliente", preset: { kind: "client", scope: "client", dayType: "holiday" } },
             ]}
-            onAdd={setForm} onEnd={setEnding}
+            onAdd={setForm} onEnd={setEnding} onCancel={setCancelling}
           />
           <RateSection
             title="Pago al cuidador" subtitle="Lo que se usa para calcular la compensación. Una excepción para un cuidador tiene prioridad sobre la general, también en feriado (salvo que tenga su propia tarifa de feriado)."
@@ -87,7 +92,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
               { label: "Tarifa de feriado", preset: { kind: "caregiver", scope: "general", dayType: "holiday" } },
               { label: "Feriado para un cuidador", preset: { kind: "caregiver", scope: "caregiver", dayType: "holiday" } },
             ]}
-            onAdd={setForm} onEnd={setEnding}
+            onAdd={setForm} onEnd={setEnding} onCancel={setCancelling}
           />
 
           <Simulator organizationId={organizationId} serviceId={serviceId} unit={unit} clients={clients} caregivers={caregivers} today={data.today} />
@@ -100,7 +105,7 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
                   <li key={r.id} className="flex flex-wrap items-start justify-between gap-2 px-3 py-2.5 text-sm">
                     <div className="min-w-0">
                       <p className="font-medium">{r.rate_kind === "client" ? "Cobro" : "Pago"} · {targetLabel(r)}{r.day_type === "holiday" ? " · feriado" : ""}</p>
-                      <p className="text-xs text-[var(--color-text-secondary)]">{formatDate(r.effective_from)} → {formatDate(r.effective_to)}{r.reason ? ` · ${r.reason}` : ""}{r.end_reason ? ` · Fin: ${r.end_reason}` : ""}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)]">{formatDate(r.effective_from)} → {formatDate(r.effective_to)}{r.reason ? ` · ${r.reason}` : ""}{r.end_reason ? ` · Fin: ${r.end_reason}` : ""}{r.cancel_reason ? ` · Cancelada: ${r.cancel_reason}` : ""}</p>
                       <p className="text-xs text-[var(--color-text-muted)]">{r.created_by_email ?? ""}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -131,6 +136,10 @@ export function ServiceDetail({ organizationId, serviceId, onClose, onChanged }:
           rates={rates} clients={clients} caregivers={caregivers}
           onClose={() => setForm(null)} onSaved={async () => { setForm(null); await load(); onChanged(); }} />
       )}
+      {cancelling && data && (
+        <CancelRateModal organizationId={organizationId} rate={cancelling} unit={unit}
+          onClose={() => setCancelling(null)} onSaved={async () => { setCancelling(null); await load(); onChanged(); }} />
+      )}
       {ending && data && (
         <EndRateModal organizationId={organizationId} rate={ending} today={data.today}
           onClose={() => setEnding(null)} onSaved={async () => { setEnding(null); await load(); onChanged(); }} />
@@ -148,12 +157,13 @@ function targetLabel(r: FinanceRate): string {
 function StatusPill({ status }: { status: FinanceRate["status"] }) {
   if (status === "current") return <Badge tone="success">Vigente</Badge>;
   if (status === "future") return <Badge tone="accent">Programada</Badge>;
+  if (status === "cancelled") return <Badge tone="warning">Cancelada</Badge>;
   return <Badge>Anterior</Badge>;
 }
 
-function RateSection({ title, subtitle, unit, rates, actions, onAdd, onEnd, disabled }: {
+function RateSection({ title, subtitle, unit, rates, actions, onAdd, onEnd, onCancel, disabled }: {
   title: string; subtitle: string; unit: ServiceRates["service"]["unit"]; rates: FinanceRate[]; disabled: boolean;
-  actions: Array<{ label: string; preset: FormPreset }>; onAdd: (p: FormPreset) => void; onEnd: (r: FinanceRate) => void;
+  actions: Array<{ label: string; preset: FormPreset }>; onAdd: (p: FormPreset) => void; onEnd: (r: FinanceRate) => void; onCancel: (r: FinanceRate) => void;
 }) {
   // In force first, then scheduled; within each, oldest start first.
   const order = (a: FinanceRate, b: FinanceRate) => (a.status === b.status ? a.effective_from.localeCompare(b.effective_from) : a.status === "current" ? -1 : 1);
@@ -179,7 +189,8 @@ function RateSection({ title, subtitle, unit, rates, actions, onAdd, onEnd, disa
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold tabular-nums">{rateWithUnit(r.amount_cents, unit)}</span>
             <StatusPill status={r.status} />
-            {r.scope !== "general" && !r.effective_to && <Button size="sm" variant="ghost" onClick={() => onEnd(r)}>Terminar</Button>}
+            {r.status === "future" && <Button size="sm" variant="ghost" icon={<CalendarX2 size={16} />} onClick={() => onCancel(r)}>Cancelar cambio</Button>}
+            {r.status !== "future" && r.scope !== "general" && !r.effective_to && <Button size="sm" variant="ghost" onClick={() => onEnd(r)}>Terminar</Button>}
           </div>
         </div>
       ))}
@@ -207,19 +218,32 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
   const [halfAmount, setHalfAmount] = useState("");
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmingNegative, setConfirmingNegative] = useState(false);
 
   const current = useMemo(() => rates.find((r) => r.rate_kind === preset.kind && r.scope === preset.scope && r.day_type === preset.dayType
     && r.status !== "past" && (preset.scope === "general" || (preset.scope === "client" ? r.billing_client_id === targetId : r.membership_id === targetId))), [rates, preset, targetId]);
   const cents = parseDollars(amount);
   const halfCents = halfPolicy === "fixed" ? parseDollars(halfAmount) : null;
   const needsReason = Boolean(current) || from < today;
+  // F1.1: compare with the general rate of the other side in force on that day (holiday version on holidays when there is one).
+  const counterpart = useMemo(() => {
+    const other: RateKind = preset.kind === "client" ? "caregiver" : "client";
+    const inForce = (r: FinanceRate) => r.rate_kind === other && r.scope === "general" && r.status !== "cancelled"
+      && r.effective_from <= from && (!r.effective_to || r.effective_to >= from);
+    return rates.find((r) => inForce(r) && r.day_type === preset.dayType) ?? rates.find((r) => inForce(r) && r.day_type === "standard") ?? null;
+  }, [rates, preset, from]);
+  const billCents = preset.kind === "client" ? cents : counterpart?.amount_cents ?? null;
+  const payCents = preset.kind === "caregiver" ? cents : counterpart?.amount_cents ?? null;
+  const negative = billCents !== null && payCents !== null && billCents < payCents;
   const valid = cents !== null && (preset.scope === "general" || Boolean(targetId)) && (!needsReason || reason.trim().length >= 3)
     && (halfPolicy !== "fixed" || unit !== "day" || halfCents !== null);
 
   const title = `${preset.dayType === "holiday" ? (preset.scope === "general" ? "Tarifa de feriado" : preset.scope === "client" ? "Feriado para un cliente" : "Feriado para un cuidador") : preset.scope === "client" ? "Precio especial por cliente" : preset.scope === "caregiver" ? "Excepción de pago por cuidador" : "Tarifa general"} · ${preset.kind === "client" ? "cobro" : "pago"}`;
 
-  async function save() {
+  async function save(confirmedNegative = false) {
     const token = getToken(); if (!token || cents === null) return;
+    if (negative && !confirmedNegative) { setConfirmingNegative(true); return; }
+    setConfirmingNegative(false);
     const body: NewRate = {
       rateKind: preset.kind, scope: preset.scope, dayType: preset.dayType, amountCents: cents, effectiveFrom: from,
       billingClientId: preset.scope === "client" ? targetId : null, membershipId: preset.scope === "caregiver" ? targetId : null,
@@ -241,6 +265,9 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
     <Modal open onClose={onClose} title={title} sheetOnMobile
       footer={<><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button loading={saving} disabled={!valid} onClick={() => void save()}>Guardar tarifa</Button></>}>
       <div className="flex flex-col gap-4">
+        {negative && billCents !== null && payCents !== null && (
+          <NegativeMarginNotice billCents={billCents} payCents={payCents} per={PER_UNIT[unit]} />
+        )}
         {preset.scope === "client" && (
           <Select label="Cliente" required value={targetId} onChange={(e) => setTargetId(e.target.value)}
             hint={clients.length === 0 ? "Primero añade el cliente en la pestaña «Clientes»." : undefined}>
@@ -280,6 +307,52 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
           </>
         )}
         <Textarea label={needsReason ? "Motivo del cambio" : "Motivo (opcional)"} required={needsReason} rows={2} maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} />
+      </div>
+      {confirmingNegative && billCents !== null && payCents !== null && (
+        <Modal open onClose={() => setConfirmingNegative(false)} title="¿Guardar con margen negativo?" sheetOnMobile
+          footer={<><Button variant="secondary" onClick={() => setConfirmingNegative(false)}>Revisar</Button>
+            <Button loading={saving} onClick={() => void save(true)}>Guardar igualmente</Button></>}>
+          <div className="flex flex-col gap-3" data-confirm-negative>
+            <NegativeMarginNotice billCents={billCents} payCents={payCents} per={PER_UNIT[unit]} />
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Con esta tarifa pagarás más de lo que cobras, comparado con la tarifa general del otro lado vigente el {formatDate(from)}.
+              No se bloquea: guárdala si es intencionado (por ejemplo, un descuento acordado o una cuidadora especializada).
+            </p>
+          </div>
+        </Modal>
+      )}
+    </Modal>
+  );
+}
+
+function CancelRateModal({ organizationId, rate, unit, onClose, onSaved }: {
+  organizationId: string; rate: FinanceRate; unit: ServiceRates["service"]["unit"]; onClose: () => void; onSaved: () => void | Promise<void>;
+}) {
+  const toast = useToast();
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+  async function save() {
+    const token = getToken(); if (!token) return;
+    setSaving(true);
+    try {
+      const r = await financeApi.cancelRate(organizationId, rate.id, reason.trim(), token);
+      toast.show(r.reopened ? `Cambio cancelado. Se mantiene ${rateWithUnit(r.reopened.amount_cents, unit)}.` : "Cambio programado cancelado.", "success");
+      await onSaved();
+    } catch (e) { toast.show(financeErrorText(e), "danger"); } finally { setSaving(false); }
+  }
+  return (
+    <Modal open onClose={onClose} title="Cancelar cambio programado" sheetOnMobile
+      footer={<><Button variant="secondary" onClick={onClose}>Volver</Button>
+        <Button variant="danger" loading={saving} disabled={reason.trim().length < 3} onClick={() => void save()}>Cancelar este cambio</Button></>}>
+      <div className="flex flex-col gap-4" data-cancel-rate>
+        <p className="text-sm">
+          <strong>{targetLabel(rate)}{rate.day_type === "holiday" ? " · feriado" : ""}</strong>: {rateWithUnit(rate.amount_cents, unit)} desde el {formatDate(rate.effective_from)}.
+        </p>
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          Aún no ha entrado en vigor. Al cancelarlo, el precio anterior sigue vigente como estaba. El cambio cancelado queda en el historial con su motivo; no se borra.
+        </p>
+        <Textarea label="Motivo de la cancelación" required rows={2} maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)}
+          placeholder="Ej.: error al escribir el importe" />
       </div>
     </Modal>
   );
@@ -366,6 +439,14 @@ function Simulator({ organizationId, serviceId, unit, clients, caregivers, today
           </div>
         </dl>
       )}
+      {result && !failed && (() => {
+        const bill = est?.margin && est.billing && est.pay ? est.billing.amountCents : result.billing?.amountCents;
+        const pay = est?.margin && est.billing && est.pay ? est.pay.amountCents : result.pay?.amountCents;
+        const negative = est?.margin ? isNegativeMargin(est.margin) : isNegativeMargin(result.unitMargin);
+        return negative && bill !== undefined && pay !== undefined
+          ? <NegativeMarginNotice tone="dark" billCents={bill} payCents={pay} per={est?.margin ? "en este servicio" : PER_UNIT[unit]} />
+          : null;
+      })()}
       {result && (
         <p className="text-xs text-white/65">
           {est?.billing ? `Cantidad: ${hoursFromHundredths(est.billing.quantityHundredths)} ${unit === "hour" ? "h" : unit === "day" ? "día(s)" : "unidad"}. ` : ""}
