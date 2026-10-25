@@ -96,6 +96,9 @@ export function DraftView({ organizationId, invoiceId, canManageTax, onClose }: 
                     {l.kind !== "shift" && <p className="text-xs text-[var(--color-text-secondary)]">{t("draft.quantity", { qty: (l.quantity_hundredths / 100).toLocaleString(LOCALE_TAG[lang]), price: money(l.unit_price_cents ?? 0, lang) })}</p>}
                     {l.justification && <p className="mt-0.5 break-words text-xs text-[var(--color-text-muted)]">{t("draft.justification")}: {l.justification}</p>}
                     <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">IVU · {taxLabel(t, l.tax_treatment, l.tax_rate_basis_points, lang)}{l.tax_legal_basis ? ` · ${l.tax_legal_basis}` : ""}</p>
+                    {l.needs_review && (
+                      <ul className="mt-1 flex flex-wrap gap-1" data-line-review>{l.review_reasons.map((r) => <li key={r}><Badge tone="warning">{tx(t, `exceptions.${r}`, "blockers.NEEDS_REVIEW")}</Badge></li>)}</ul>
+                    )}
                     {l.rateChanged && <p className="mt-1 text-xs text-amber-700">{t("draft.rateChanged")}</p>}
                     {l.warnings.map((w) => <p key={w.code} className="mt-1 text-xs text-amber-700">{tx(t, `warnings.${w.code}`, "draft.rateChanged", { minutes: w.minutes })}</p>)}
                   </div>
