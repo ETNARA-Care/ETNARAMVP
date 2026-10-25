@@ -6,7 +6,7 @@ import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
-import { isConnectivityError, queuedVisitState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
+import { isConnectivityError, queuedJourneyState, queuedVisitState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { createIncident } from "@/api/incidents";
 import {
   getActiveCarePlan,
@@ -127,6 +127,8 @@ export function CaregiverShiftDetailPage() {
   const [incidentActions, setIncidentActions] = useState("");
   const [rejectionOpen, setRejectionOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
+  /** «Comenzar turno» without «Llegué»: offer it first, never require it (Gate 6). */
+  const [arrivalPromptOpen, setArrivalPromptOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const organizationId = activeOrganization?.id;
   const queue = useCareEventQueue();
@@ -176,7 +178,7 @@ export function CaregiverShiftDetailPage() {
     ...(verification?.events ?? []).map((event) => ({
       id: event.id,
       at: event.occurredAt,
-      title: (event.eventType === "check_in" ? "Llegada registrada · turno iniciado" : "Salida registrada · turno finalizado")
+      title: (event.eventType === "check_in" ? "Turno iniciado" : "Turno finalizado")
         + (event.recordedOffline ? " · sin conexión" : ""),
     })),
     ...(verification?.arrivals ?? []).map((arrival) => ({
@@ -200,8 +202,8 @@ export function CaregiverShiftDetailPage() {
     setSaving(true);
     try {
       const outcome = await queue.checkIn(organizationId, shiftId);
-      if (outcome === "queued") show("Sin señal. Tu llegada quedó guardada con la hora real y se enviará sola.", "warning");
-      else { show("Llegada registrada. Turno iniciado.", "success"); await load(); }
+      if (outcome === "queued") show("Sin señal. El inicio del turno quedó guardado con la hora real y se enviará solo.", "warning");
+      else { show("Turno iniciado.", "success"); await load(); }
     } catch (requestError) { show(actionError(requestError), "danger"); }
     finally { setSaving(false); }
   }
@@ -212,7 +214,7 @@ export function CaregiverShiftDetailPage() {
     setSaving(true);
     try {
       const outcome = await queue.checkOut(organizationId, shiftId);
-      show(outcome === "queued" ? "Sin señal. Tu salida quedó guardada con la hora real y se enviará sola." : "Salida registrada. Turno finalizado.", outcome === "queued" ? "warning" : "success");
+      show(outcome === "queued" ? "Sin señal. El final del turno quedó guardado con la hora real y se enviará solo." : "Turno finalizado.", outcome === "queued" ? "warning" : "success");
       navigate("/caregiver/shifts");
     } catch (requestError) { show(actionError(requestError), "danger"); }
     finally { setSaving(false); }
@@ -337,6 +339,15 @@ export function CaregiverShiftDetailPage() {
   // Solo si la cola se guarda en el teléfono se puede finalizar con pendientes:
   // la salida se envía después de ellos, en orden.
   const finishBlocked = waitingHere.length > 0 && !queue.persisted;
+  // «Llegué» is separate from «Comenzar turno»: stored, or saved on the phone waiting for signal.
+  const arrivedHere = Boolean(verification.arrivals?.length) || (shiftId ? queuedJourneyState(queue.items, shiftId).arrived : false);
+  const offerArrival = enCamino && !arrivedHere;
+  function goToArrival() {
+    setArrivalPromptOpen(false);
+    const card = document.getElementById("arrival-card");
+    card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    card?.focus({ preventScroll: true });
+  }
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
@@ -386,15 +397,17 @@ export function CaregiverShiftDetailPage() {
       {status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location={location} />}
 
       {enCamino && canStart && organizationId && shiftId && (
-        <ArrivalCard organizationId={organizationId} shiftId={shiftId} arrival={verification.arrivals?.[0] ?? null} onRecorded={() => void load()} />
+        <div id="arrival-card" tabIndex={-1} className="outline-none" data-testid="arrival-card-anchor">
+          <ArrivalCard organizationId={organizationId} shiftId={shiftId} arrival={verification.arrivals?.[0] ?? null} onRecorded={() => void load()} />
+        </div>
       )}
 
       {organizationId && <OfflineReadyCard organizationId={organizationId} shift={shift} />}
 
       {canStart && (
         <div className="flex flex-col gap-2">
-          <Button size="lg" fullWidth icon={<LogIn size={20} />} disabled={saving} onClick={() => void startShift()}>{saving ? "Registrando llegada..." : "Comenzar turno"}</Button>
-          <p className="text-center text-[var(--text-caption)] text-[var(--color-text-muted)]">Al comenzar se registra tu llegada y podrás anotar los cuidados.</p>
+          <Button size="lg" fullWidth icon={<LogIn size={20} />} disabled={saving} onClick={() => (offerArrival ? setArrivalPromptOpen(true) : void startShift())} data-testid="start-shift">{saving ? "Iniciando turno..." : "Comenzar turno"}</Button>
+          <p className="text-center text-[var(--text-caption)] text-[var(--color-text-muted)]">{offerArrival ? "Si ya llegaste, toca primero «Llegué». Al comenzar podrás anotar los cuidados." : "Al comenzar podrás anotar los cuidados."}</p>
         </div>
       )}
 
@@ -486,8 +499,20 @@ export function CaregiverShiftDetailPage() {
 
       <Card>
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>
-        {timelineEntries.length > 0 ? <Timeline entries={timelineEntries} /> : <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Aún no se ha registrado la llegada.</p>}
+        {timelineEntries.length > 0 ? <Timeline entries={timelineEntries} /> : <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Aún no hay actividad en este turno.</p>}
       </Card>
+
+      <BottomSheet
+        open={arrivalPromptOpen}
+        onClose={() => !saving && setArrivalPromptOpen(false)}
+        title="¿Registrar tu llegada primero?"
+        footer={<><Button variant="secondary" fullWidth disabled={saving} data-testid="start-without-arrival" onClick={() => { setArrivalPromptOpen(false); void startShift(); }}>Comenzar sin «Llegué»</Button><Button fullWidth disabled={saving} data-testid="go-to-arrival" onClick={goToArrival}>Registrar «Llegué»</Button></>}
+      >
+        <div className="flex flex-col gap-2 text-sm text-[var(--color-text-secondary)]" data-testid="arrival-prompt">
+          <p>«Llegué» le confirma a la agencia que estás en el lugar del servicio. Es distinto de comenzar el turno.</p>
+          <p>Si no puedes registrarlo ahora, puedes comenzar igual. La agencia verá que el turno inició sin «Llegué».</p>
+        </div>
+      </BottomSheet>
 
       <BottomSheet
         open={finishOpen}
