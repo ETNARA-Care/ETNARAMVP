@@ -173,8 +173,9 @@ export function acceptOrganizationAdminInvitation(token: string, sessionToken: s
 /** SmartMatch pilot switches per agency (backend migration 108). ETNARA central only. */
 export type PilotFeatureCode = "SMARTMATCH" | "EN_CAMINO";
 export interface OrganizationFeatures {
-  features: { code: PilotFeatureCode; enabled: boolean; updatedAt: string | null }[];
-  history: { code: PilotFeatureCode; enabled: boolean; reason: string; occurredAt: string; actorEmail: string | null }[];
+  /** Codes are as sent by the backend, which can add switches before this app knows them. */
+  features: { code: string; enabled: boolean; updatedAt: string | null }[];
+  history: { code: string; enabled: boolean; reason: string; occurredAt: string; actorEmail: string | null }[];
 }
 export function getOrganizationFeatures(organizationId: string, token: string) {
   return apiClient.get<OrganizationFeatures>(`/platform/organizations/${encodeURIComponent(organizationId)}/features`, token);

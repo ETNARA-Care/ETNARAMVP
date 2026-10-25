@@ -9,6 +9,8 @@ const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   EN_CAMINO: { title: "En camino y «Llegué»", detail: "Aviso de salida, retrasos declarados y llegada con ubicación." },
 };
 const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO"];
+/** The backend may announce switches this screen does not manage yet (e.g. ACTIVITY_PHOTOS, FINANZAS). */
+const isKnown = <T extends { code: string }>(row: T): row is T & { code: PilotFeatureCode } => Object.prototype.hasOwnProperty.call(LABELS, row.code);
 
 /**
  * ETNARA central: turn the SmartMatch pilot on or off for one agency.
@@ -41,8 +43,9 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
     } finally { setSaving(false); }
   }
 
-  const features = data ? [...data.features].sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
+  const features = data ? data.features.filter(isKnown).sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
   const activeCount = features.filter((f) => f.enabled).length;
+  const history = data ? data.history.filter(isKnown) : [];
 
   return (
     <section data-ui="pilot-features" aria-labelledby={`pilot-${organizationId}`}
@@ -102,11 +105,11 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
               </div>
             );
           })}
-          {data.history.length > 0 && (
+          {history.length > 0 && (
             <details className="group rounded-2xl border border-[var(--color-border)] bg-white px-3.5 py-3 text-[length:var(--text-small)]">
-              <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-[var(--color-text-primary)]"><History size={15} />Historial ({data.history.length})</summary>
+              <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-[var(--color-text-primary)]"><History size={15} />Historial ({history.length})</summary>
               <ul className="mt-2 space-y-1.5">
-                {data.history.map((h, i) => (
+                {history.map((h, i) => (
                   <li key={i} className="leading-5 text-[var(--color-text-secondary)]">
                     <span className="font-medium text-[var(--color-text-primary)]">{LABELS[h.code].title} {h.enabled ? "activada" : "desactivada"}</span> · {new Date(h.occurredAt).toLocaleString("es-PR")} · {h.reason}{h.actorEmail ? ` · ${h.actorEmail}` : ""}
                   </li>
