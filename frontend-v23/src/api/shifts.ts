@@ -14,6 +14,8 @@ export interface Shift {
   assignment_count?: number;
   assignment_id?: string;
   assignment_response_status?: "pending" | "accepted";
+  /** Name only, for the caregiver's own visits (also past ones). */
+  care_recipient_display_name?: string | null;
 }
 
 export interface CareRecipient { id:string; organization_id:string; first_name:string; last_name:string; preferred_name:string|null; date_of_birth:string|null; allergies:string[]|null; preferences:unknown; routines:unknown; status:string; room_id:string|null; created_at:string; updated_at:string; archived_at:string|null; }
@@ -62,4 +64,6 @@ export async function checkOut(organizationId:string,shiftId:string,token:string
 /** Private operational instructions: agency managers and the assigned caregiver only (null = none or no access). */
 export async function getShiftPrivateInstructions(organizationId:string,shiftId:string,token:string):Promise<{instructions:string;updated_at:string}|null>{try{const r=await apiClient.get<{instructions:{instructions:string;updated_at:string}}>(`/organizations/${organizationId}/shifts/${shiftId}/private-instructions`,token);return r.instructions;}catch(error){if((error as {status?:number}).status===404)return null;throw error;}}
 export async function saveShiftPrivateInstructions(organizationId:string,shiftId:string,instructions:string,token:string):Promise<{instructions:string;updated_at:string}>{const r=await apiClient.put<{instructions:{instructions:string;updated_at:string}}>(`/organizations/${organizationId}/shifts/${shiftId}/private-instructions`,{instructions},token);return r.instructions;}
+/** Name of the person a shift is for: full record when visible, else the name /me/shifts carries. */
+export function shiftRecipientName(shift:{care_recipient_display_name?:string|null}|null|undefined,recipient:CareRecipient|undefined):string{return recipient?recipientName(recipient):(shift?.care_recipient_display_name||recipientName(undefined));}
 export function recipientName(recipient:CareRecipient|undefined):string{return recipient?.preferred_name||`${recipient?.first_name||"Persona"} ${recipient?.last_name||"atendida"}`.trim();}

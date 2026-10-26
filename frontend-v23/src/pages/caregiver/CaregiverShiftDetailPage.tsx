@@ -17,7 +17,7 @@ import {
   type CarePlanTaskPriority,
 } from "@/api/carePlans";
 import {
-  getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
+  getVisitVerification, listCareRecipients, listMyShifts, shiftRecipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
 import { getShiftServiceLocation, type ShiftServiceLocation } from "@/api/serviceLocations";
@@ -356,7 +356,7 @@ export function CaregiverShiftDetailPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${canFinish ? "text-white/60" : "text-[var(--color-text-muted)]"}`}>{canFinish ? "Turno activo" : "Detalle del turno"}</p>
-            <h1 className="mt-1 truncate font-[var(--font-serif)] text-2xl">{recipientName(recipient)}</h1>
+            <h1 className="mt-1 truncate font-[var(--font-serif)] text-2xl">{shiftRecipientName(shift, recipient)}</h1>
           </div>
           {canFinish
             ? <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">En curso</span>
@@ -495,7 +495,7 @@ export function CaregiverShiftDetailPage() {
         </div>
       )}
 
-      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {recipientName(recipient)}</Button>
+      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {shiftRecipientName(shift, recipient)}</Button>
 
       <Card>
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>
