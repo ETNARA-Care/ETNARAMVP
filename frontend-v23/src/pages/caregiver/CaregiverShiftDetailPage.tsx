@@ -153,7 +153,12 @@ export function CaregiverShiftDetailPage() {
       if (!shiftRow) throw new Error("SHIFT_NOT_ASSIGNED");
       const [carePlanRow, locationRow] = shiftRow.care_recipient_id
         ? await Promise.all([
-          getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token),
+          // El plan es de la asignación vigente: en una visita pasada puede no estar disponible
+          // (null o 403). La visita se abre igual; solo un error de conexión se propaga.
+          getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token).catch((planError) => {
+            if (isConnectivityError(planError)) throw planError;
+            return null;
+          }),
           // Gate 6: la dirección confirmada de ESTE turno. Es ayuda, no bloquea el turno si falla.
           getShiftServiceLocation(organizationId, shiftRow.id, token).catch(() => null),
         ])
@@ -442,7 +447,7 @@ export function CaregiverShiftDetailPage() {
           <div className="flex items-center gap-2"><ClipboardList size={20} /><p className="font-medium text-[var(--color-text-primary)]">Plan de cuidado</p></div>
           {carePlan && <Badge tone={carePlan.plan_details.supportLevel === "COMPLEX" || carePlan.plan_details.supportLevel === "HIGH" ? "warning" : "accent"}>{supportLevelLabels[carePlan.plan_details.supportLevel]}</Badge>}
         </div>
-        {!carePlan ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Administración todavía no ha publicado un plan para este residente.</p> : (
+        {!carePlan ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">{status === "completed" ? "El plan de cuidado solo se muestra mientras la visita está asignada." : "Administración todavía no ha publicado un plan para este residente."}</p> : (
           <div className="flex flex-col gap-3">
             {carePlan.plan_details.precautions.length > 0 && (
               <div className="rounded-[var(--radius-sm)] bg-[var(--color-warning-100)] p-3">

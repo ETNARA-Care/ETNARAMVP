@@ -18,3 +18,10 @@ test("caregiver shift lists and detail fall back to the name /me/shifts carries"
     assert.doesNotMatch(source, /\brecipientName\(/, page);
   }
 });
+
+test("a finished visit opens even when the care plan is not available to the caregiver", () => {
+  const source = read("src/pages/caregiver/CaregiverShiftDetailPage.tsx");
+  // 403 (backend 4eec59c) or null (backend #228): the visit still loads; only connectivity errors propagate.
+  assert.match(source, /getActiveCarePlan\([^)]*\)\.catch\(\(planError\) => \{\s*if \(isConnectivityError\(planError\)\) throw planError;\s*return null;/);
+  assert.match(source, /El plan de cuidado solo se muestra mientras la visita está asignada\./);
+});
