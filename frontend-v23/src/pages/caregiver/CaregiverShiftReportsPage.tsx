@@ -4,8 +4,9 @@ import { ChevronRight, FileText } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { shiftReportsApi, type MyShiftReportListItem } from "@/api/shiftReports";
-import { Badge, Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
-import { reportDate, reportTime } from "@/features/shiftReports/reportFormat";
+import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
+import { StatusChip } from "@/features/shiftReports/StatusChip";
+import { reportShortDate, reportTime } from "@/features/shiftReports/reportFormat";
 import { caregiverStatus } from "@/features/shiftReports/caregiverStatus";
 
 /** Informe de Turno F2: the caregiver's own reports (only her visits). */
@@ -37,14 +38,15 @@ export function CaregiverShiftReportsPage() {
               const st = caregiverStatus(r.status, r.canEdit);
               return (
                 <li key={r.id}>
-                  <Link to={`/caregiver/shift-reports/${r.id}`} className="block">
-                    <Card className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-[var(--color-text-primary)]">{r.recipientName ?? "Residente"}</p>
-                        <p className="text-sm text-[var(--color-text-secondary)] first-letter:uppercase">{r.scheduledStart ? `${reportDate(r.scheduledStart)} · ${reportTime(r.scheduledStart)}` : ""}</p>
-                        {r.canEdit && r.reviewDeadlineAt && <p className="text-xs text-[var(--color-warning-700)]">Envíalo antes de las {reportTime(r.reviewDeadlineAt)} · {reportDate(r.reviewDeadlineAt)}</p>}
+                  <Link to={`/caregiver/shift-reports/${r.id}`} className="block" data-testid="my-report-card">
+                    <Card className="flex flex-col gap-1.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="min-w-0 break-words font-medium text-[var(--color-text-primary)]">{r.recipientName ?? "Residente"}</p>
+                        <ChevronRight size={18} aria-hidden className="mt-0.5 shrink-0 text-[var(--color-text-muted)]" />
                       </div>
-                      <div className="flex shrink-0 items-center gap-2"><Badge tone={st.tone}>{st.text}</Badge><ChevronRight size={18} aria-hidden className="text-[var(--color-text-muted)]" /></div>
+                      {r.scheduledStart && <p className="text-sm text-[var(--color-text-secondary)] first-letter:uppercase">{reportShortDate(r.scheduledStart)} · {reportTime(r.scheduledStart)}</p>}
+                      {r.canEdit && r.reviewDeadlineAt && <p className="text-xs text-[var(--color-warning-700)]">Envíalo antes de: {reportShortDate(r.reviewDeadlineAt)}, {reportTime(r.reviewDeadlineAt)}</p>}
+                      <div className="pt-0.5"><StatusChip tone={st.tone} testId="my-report-status">{st.text}</StatusChip></div>
                     </Card>
                   </Link>
                 </li>
