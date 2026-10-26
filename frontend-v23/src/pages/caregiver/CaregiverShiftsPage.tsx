@@ -4,7 +4,7 @@ import { CalendarDays, ChevronRight, Clock3, FileText, ShieldCheck } from "lucid
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
-import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
+import { listCareRecipients, listMyShifts, shiftRecipientName, type CareRecipient, type Shift } from "@/api/shifts";
 import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
 import { prefetchUpcomingShifts } from "@/features/caregiver/prefetchShifts";
 import { isConnectivityError } from "@/features/caregiver/careEventQueue";
@@ -87,7 +87,7 @@ export function CaregiverShiftsPage() {
       <Card className="flex items-center gap-4 border-[var(--color-border)] bg-white p-4 transition-shadow hover:shadow-[var(--shadow-card)]">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--color-ivory-100)] text-[var(--color-navy-900)]"><CalendarDays size={20}/></span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-[var(--color-navy-900)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
+          <p className="truncate font-semibold text-[var(--color-navy-900)]">{shiftRecipientName(shift, recipientById[shift.care_recipient_id ?? ""])}</p>
           <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
           <OfflineReadyMark shiftId={shift.id} compact />
         </div>

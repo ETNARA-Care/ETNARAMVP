@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, ChevronRight, Clock3 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
-import { listCareRecipients, listMyShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
+import { listCareRecipients, listMyShifts, shiftRecipientName, type CareRecipient, type Shift } from "@/api/shifts";
 import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
 import { AppLockOffer } from "@/features/caregiver/AppLock";
 import { prefetchUpcomingShifts } from "@/features/caregiver/prefetchShifts";
@@ -99,7 +99,7 @@ export function CaregiverTodayPage() {
           <div className="mb-5 flex items-start justify-between gap-3">
             <div>
               <p className={`text-xs font-semibold uppercase tracking-[0.12em] ${main.status === "in_progress" ? "text-white/65" : "text-[var(--color-text-muted)]"}`}>Turno de hoy</p>
-              <h2 className={`mt-1 text-xl font-semibold ${main.status === "in_progress" ? "text-white" : "text-[var(--color-navy-900)]"}`}>{recipientName(recipientById[main.care_recipient_id ?? ""])}</h2>
+              <h2 className={`mt-1 text-xl font-semibold ${main.status === "in_progress" ? "text-white" : "text-[var(--color-navy-900)]"}`}>{shiftRecipientName(main, recipientById[main.care_recipient_id ?? ""])}</h2>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${main.assignment_response_status === "pending" ? "bg-amber-100 text-amber-800" : main.status === "in_progress" ? "bg-white/15 text-white" : "bg-[var(--color-success-100)] text-[var(--color-navy-900)]"}`}>{shiftLabel(main)}</span>
           </div>
@@ -130,7 +130,7 @@ export function CaregiverTodayPage() {
       <Card className="divide-y divide-[var(--color-border)] p-0">
         {upcoming.map((shift) => <Link key={shift.id} to={`/caregiver/shifts/${shift.id}`} className="flex items-center gap-3 p-4">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-ivory-100)] text-[var(--color-navy-900)]"><CalendarDays size={19}/></span>
-          <div className="min-w-0 flex-1"><p className="truncate font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p><p className="text-sm text-[var(--color-text-secondary)]">{new Date(shift.scheduled_start).toLocaleDateString("es-PR", { weekday: "short", day: "numeric", month: "short" })} · {windowLabel(shift)}</p></div>
+          <div className="min-w-0 flex-1"><p className="truncate font-medium text-[var(--color-text-primary)]">{shiftRecipientName(shift, recipientById[shift.care_recipient_id ?? ""])}</p><p className="text-sm text-[var(--color-text-secondary)]">{new Date(shift.scheduled_start).toLocaleDateString("es-PR", { weekday: "short", day: "numeric", month: "short" })} · {windowLabel(shift)}</p></div>
           <ChevronRight size={18} className="text-[var(--color-text-muted)]"/>
         </Link>)}
       </Card>

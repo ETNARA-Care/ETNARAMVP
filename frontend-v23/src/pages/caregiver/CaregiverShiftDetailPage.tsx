@@ -17,7 +17,7 @@ import {
   type CarePlanTaskPriority,
 } from "@/api/carePlans";
 import {
-  getVisitVerification, listCareRecipients, listMyShifts, recipientName, respondToAssignment,
+  getVisitVerification, listCareRecipients, listMyShifts, shiftRecipientName, respondToAssignment,
   type CareRecipient, type Shift, type ShiftStatus, type VisitVerification,
 } from "@/api/shifts";
 import { getShiftServiceLocation, type ShiftServiceLocation } from "@/api/serviceLocations";
@@ -153,7 +153,12 @@ export function CaregiverShiftDetailPage() {
       if (!shiftRow) throw new Error("SHIFT_NOT_ASSIGNED");
       const [carePlanRow, locationRow] = shiftRow.care_recipient_id
         ? await Promise.all([
-          getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token),
+          // El plan es de la asignación vigente: en una visita pasada puede no estar disponible
+          // (null o 403). La visita se abre igual; solo un error de conexión se propaga.
+          getActiveCarePlan(organizationId, shiftRow.care_recipient_id, token).catch((planError) => {
+            if (isConnectivityError(planError)) throw planError;
+            return null;
+          }),
           // Gate 6: la dirección confirmada de ESTE turno. Es ayuda, no bloquea el turno si falla.
           getShiftServiceLocation(organizationId, shiftRow.id, token).catch(() => null),
         ])
@@ -356,7 +361,7 @@ export function CaregiverShiftDetailPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${canFinish ? "text-white/60" : "text-[var(--color-text-muted)]"}`}>{canFinish ? "Turno activo" : "Detalle del turno"}</p>
-            <h1 className="mt-1 truncate font-[var(--font-serif)] text-2xl">{recipientName(recipient)}</h1>
+            <h1 className="mt-1 truncate font-[var(--font-serif)] text-2xl">{shiftRecipientName(shift, recipient)}</h1>
           </div>
           {canFinish
             ? <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">En curso</span>
@@ -442,7 +447,7 @@ export function CaregiverShiftDetailPage() {
           <div className="flex items-center gap-2"><ClipboardList size={20} /><p className="font-medium text-[var(--color-text-primary)]">Plan de cuidado</p></div>
           {carePlan && <Badge tone={carePlan.plan_details.supportLevel === "COMPLEX" || carePlan.plan_details.supportLevel === "HIGH" ? "warning" : "accent"}>{supportLevelLabels[carePlan.plan_details.supportLevel]}</Badge>}
         </div>
-        {!carePlan ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Administración todavía no ha publicado un plan para este residente.</p> : (
+        {!carePlan ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">{status === "completed" ? "El plan de cuidado solo se muestra mientras la visita está asignada." : "Administración todavía no ha publicado un plan para este residente."}</p> : (
           <div className="flex flex-col gap-3">
             {carePlan.plan_details.precautions.length > 0 && (
               <div className="rounded-[var(--radius-sm)] bg-[var(--color-warning-100)] p-3">
@@ -495,7 +500,7 @@ export function CaregiverShiftDetailPage() {
         </div>
       )}
 
-      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {recipientName(recipient)}</Button>
+      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {shiftRecipientName(shift, recipient)}</Button>
 
       <Card>
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>
