@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CheckCircle2, KeyRound } from "lucide-react";
+import { CheckCircle2, KeyRound, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { acceptAccessInvitation, activateAccessInvitation, inspectAccessInvitation, type InvitationInspection } from "@/api/accessInvitations";
 import { useAuth } from "@/auth/AuthProvider";
@@ -18,6 +18,15 @@ export function ActivateInvitationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(token ? null : "El enlace de invitación no es válido.");
+  const [switching, setSwitching] = useState(false);
+  // Another account may already be signed in on this device (an administrator's phone, a shared tablet).
+  const signedInAs = auth.status === "authenticated" ? (auth.user?.email ?? auth.user?.phone ?? "otra cuenta") : null;
+
+  /** Closes the other session on this device only; the invitation is untouched and the page stays open. */
+  const switchToAnotherAccount = async () => {
+    setSwitching(true);
+    try { await auth.logout(); setError(null); setPassword(""); } finally { setSwitching(false); }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -63,8 +72,10 @@ export function ActivateInvitationPage() {
     } catch (caught) {
       const apiError = caught as ApiError;
       setError(apiError.code === "INVITATION_IDENTITY_MISMATCH"
-        ? "La cuenta utilizada no corresponde al correo invitado."
-        : "No pudimos completar la activación. Verifica los datos o solicita un enlace nuevo.");
+        ? "La cuenta utilizada no corresponde al correo invitado. Usa la cuenta de ese correo."
+        : apiError.code === "INVITATION_EXPIRED" || apiError.code === "INVITATION_NOT_AVAILABLE"
+          ? "Esta invitación venció, fue utilizada o fue revocada. Pide a la agencia que te la reenvíe."
+          : "No pudimos completar la activación. Verifica los datos o solicita un enlace nuevo.");
     } finally {
       setSubmitting(false);
     }
@@ -86,7 +97,11 @@ export function ActivateInvitationPage() {
         {done ? (
           <>
             <p className="text-center text-[var(--text-small)] text-[var(--color-text-secondary)]">Tu invitación fue aceptada correctamente.</p>
-            <Button fullWidth onClick={() => navigate(invitation?.account_exists ? "/" : "/login", { replace: true })}>{invitation?.account_exists ? "Entrar a ETNARA" : "Iniciar sesión"}</Button>
+            <Button fullWidth onClick={async () => {
+              // A brand-new account signs in with its own password: close any other session first.
+              if (!invitation?.account_exists && auth.status === "authenticated") await auth.logout();
+              navigate(invitation?.account_exists ? "/" : "/login", { replace: true });
+            }}>{invitation?.account_exists ? "Entrar a ETNARA" : "Iniciar sesión"}</Button>
           </>
         ) : invitation ? (
           <form className="flex flex-col gap-4" onSubmit={submit}>
@@ -94,6 +109,12 @@ export function ActivateInvitationPage() {
               Correo invitado: <strong>{invitation.email_masked}</strong><br />
               Vence: {new Date(invitation.expires_at).toLocaleString("es-PR")}
             </div>
+            {invitation.account_exists && signedInAs && (
+              <div data-ui="invitation-signed-in-as" className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+                <p>Tienes una sesión abierta como <strong className="break-all text-[var(--color-text-primary)]">{signedInAs}</strong>. Si la invitación es para otra cuenta, usa esa cuenta.</p>
+                <Button type="button" variant="secondary" size="sm" icon={<LogOut size={16} />} loading={switching} onClick={() => void switchToAnotherAccount()}>Usar otra cuenta</Button>
+              </div>
+            )}
             {invitation.account_exists && auth.status !== "authenticated" && <Input label="Correo electrónico" type="email" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} required />}
             {(!invitation.account_exists || auth.status !== "authenticated") && <Input label={invitation.account_exists ? "Contraseña actual" : "Crea una contraseña"} type="password" autoComplete={invitation.account_exists ? "current-password" : "new-password"} hint={!invitation.account_exists ? "Usa al menos 12 caracteres." : undefined} minLength={invitation.account_exists ? undefined : 12} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} required />}
             {!invitation.account_exists && <Input label="Confirma la contraseña" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required />}
