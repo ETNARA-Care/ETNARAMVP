@@ -35,7 +35,7 @@ test("PDF: authenticated download, never remembered or cached, temporary in-memo
   assert.match(client, /async function getBinary\(path:string,token:string\)/); // shared with Facturación F2.3
   assert.match(api, /apiClient\.getBinary\(/);
   assert.match(client, /cache:"no-store"/);
-  const blobFn = client.slice(client.indexOf("async function getBinary"), client.indexOf("export const apiClient"));
+  const blobFn = client.slice(client.indexOf("async function getBinary"), client.indexOf("\n", client.indexOf("async function getBinary")));
   assert.ok(blobFn.length > 0 && !/lastResponses|rememberedListener/.test(blobFn)); // never kept in the offline memory
   assert.match(pages, /URL\.createObjectURL/);
   assert.match(pages, /setTimeout\(\(\) => URL\.revokeObjectURL\(url\), 60_000\)/);
