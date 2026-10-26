@@ -4,8 +4,9 @@ import { ChevronRight, FileText } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { shiftReportsApi, type ShiftReportListItem } from "@/api/shiftReports";
-import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
-import { STATUS_LABEL, reportDate, reportTime } from "@/features/shiftReports/reportFormat";
+import { Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
+import { StatusChip } from "@/features/shiftReports/StatusChip";
+import { STATUS_LABEL, reportShortDate, reportTime } from "@/features/shiftReports/reportFormat";
 import { ShiftReportReviewersCard } from "@/features/shiftReports/ShiftReportReviewersCard";
 
 /** Informe de Turno F1+F2: the agency's list. «Por aprobar» = drafts, sent by the caregiver and returned; sent ones first. */
@@ -54,18 +55,21 @@ export function AgencyShiftReportsPage() {
           <ul className="flex flex-col gap-2" data-testid="shift-report-list">
             {reports.map((r) => {
               const st = STATUS_LABEL[r.status] ?? STATUS_LABEL.DRAFT;
+              const expired = r.caregiverWindowExpired && (r.status === "DRAFT" || r.status === "RETURNED");
               return (
                 <li key={r.id}>
-                  <Link to={`/agency/shifts/${r.shiftId}`} className="block">
-                    <Card className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-[var(--color-text-primary)]">{r.recipientName ?? "Residente"}</p>
-                        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] first-letter:uppercase">
-                          {r.scheduledStart ? `${reportDate(r.scheduledStart)} · ${reportTime(r.scheduledStart)}` : ""}
-                        </p>
-                        <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{r.caregiverName ?? "Cuidadora"} · {r.totals?.careEvents ?? 0} registro{r.totals?.careEvents === 1 ? "" : "s"}</p>
+                  <Link to={`/agency/shifts/${r.shiftId}`} className="block" data-testid="agency-report-card">
+                    <Card className="flex flex-col gap-1.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="min-w-0 break-words font-medium text-[var(--color-text-primary)]">{r.recipientName ?? "Residente"}</p>
+                        <ChevronRight size={18} aria-hidden className="mt-0.5 shrink-0 text-[var(--color-text-muted)]" />
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">{r.caregiverWindowExpired && (r.status === "DRAFT" || r.status === "RETURNED") ? <Badge tone="neutral">Plazo vencido</Badge> : <Badge tone={st.tone}>{r.status === "SUBMITTED" ? "Enviado por la cuidadora" : st.text}</Badge>}<ChevronRight size={18} aria-hidden className="text-[var(--color-text-muted)]" /></div>
+                      {r.scheduledStart && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] first-letter:uppercase">{reportShortDate(r.scheduledStart)} · {reportTime(r.scheduledStart)}</p>}
+                      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{r.caregiverName ?? "Cuidadora"} · {r.totals?.careEvents ?? 0} registro{r.totals?.careEvents === 1 ? "" : "s"}</p>
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {expired ? <StatusChip tone="neutral" testId="agency-report-status">Plazo vencido</StatusChip>
+                          : <StatusChip tone={st.tone} testId="agency-report-status">{r.status === "SUBMITTED" ? "Enviado por la cuidadora" : st.text}</StatusChip>}
+                      </div>
                     </Card>
                   </Link>
                 </li>

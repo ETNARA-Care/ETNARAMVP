@@ -7,7 +7,7 @@ import type { ApiError } from "@/api/client";
 import { shiftReportsApi, type MyShiftReport } from "@/api/shiftReports";
 import { BottomSheet, Button, Card, ErrorState, Skeleton, Textarea, useToast } from "@/components/ui";
 import { ShiftReportView } from "@/features/shiftReports/ShiftReportView";
-import { reportDate, reportTime } from "@/features/shiftReports/reportFormat";
+import { reportShortDate, reportTime } from "@/features/shiftReports/reportFormat";
 import { caregiverStatus } from "@/features/shiftReports/caregiverStatus";
 
 const HISTORY: Record<string, string> = {
@@ -75,13 +75,13 @@ export function CaregiverShiftReportPage() {
     <div className="flex flex-col gap-4 pb-6">
       <Link to="/caregiver/shift-reports" className="w-fit text-sm font-medium text-[var(--color-text-secondary)]">← Mis informes</Link>
       <section className="rounded-[var(--radius-lg)] bg-[var(--color-navy-900)] p-5 text-white shadow-sm">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Informe de turno</p>
-          <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--color-navy-900)]" data-testid="report-status">{st.text}</span>
+          <span className="max-w-full rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--color-navy-900)]" data-testid="report-status">{st.text}</span>
         </div>
         <h1 className="mt-1 font-[var(--font-display)] text-2xl">{report.content.recipient.name}</h1>
-        <p className="mt-1 text-sm text-white/80 first-letter:uppercase">{reportDate(report.content.shift.scheduledStart)}</p>
-        {report.canEdit && report.reviewDeadlineAt && <p className="mt-3 rounded-[var(--radius-md)] bg-white/10 px-3 py-2 text-sm">Revísalo y envíalo antes de las <strong>{reportTime(report.reviewDeadlineAt)}</strong> del {reportDate(report.reviewDeadlineAt)}.</p>}
+        <p className="mt-1 text-sm text-white/80 first-letter:uppercase">{reportShortDate(report.content.shift.scheduledStart)}</p>
+        {report.canEdit && report.reviewDeadlineAt && <p className="mt-3 rounded-[var(--radius-md)] bg-white/10 px-3 py-2 text-sm">Revísalo y envíalo antes de: <strong className="whitespace-nowrap">{reportShortDate(report.reviewDeadlineAt)}, {reportTime(report.reviewDeadlineAt)}</strong></p>}
       </section>
 
       {report.status === "RETURNED" && returned?.note && (

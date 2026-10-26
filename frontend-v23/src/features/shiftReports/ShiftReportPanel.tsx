@@ -5,7 +5,7 @@ import type { ApiError } from "@/api/client";
 import { FAMILY_SECTION_DEFAULTS, shiftReportsApi, type FamilySectionKey, type FamilySections, type ShiftReport } from "@/api/shiftReports";
 import { Badge, Button, Card, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
 import { ShiftReportView } from "./ShiftReportView";
-import { STATUS_LABEL, reportTime } from "./reportFormat";
+import { STATUS_LABEL, reportShortDate, reportTime } from "./reportFormat";
 
 /** Agency view of a shift's report(s) (Informe de Turno F1+F2): read, refresh a draft, return to the caregiver, approve. */
 const FAMILY_LABEL: Record<FamilySectionKey, string> = {
@@ -99,8 +99,8 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
                 {report.caregiverWindowExpired && (report.status === "DRAFT" || report.status === "RETURNED") && <Badge tone="neutral" data-testid="shift-report-expired">Plazo de la cuidadora vencido</Badge>}
               </span>
             </div>
-            {report.status === "SUBMITTED" && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">La cuidadora lo revisó y lo envió{report.submittedAt ? ` a las ${reportTime(report.submittedAt)}` : ""}.</p>}
-            {(report.status === "DRAFT" || report.status === "RETURNED") && !report.caregiverWindowExpired && report.reviewDeadlineAt && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">La cuidadora puede revisarlo hasta las {reportTime(report.reviewDeadlineAt)}.</p>}
+            {report.status === "SUBMITTED" && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">{report.submittedAt ? `La cuidadora lo revisó y lo envió: ${reportShortDate(report.submittedAt)}, ${reportTime(report.submittedAt)}` : "La cuidadora lo revisó y lo envió."}</p>}
+            {(report.status === "DRAFT" || report.status === "RETURNED") && !report.caregiverWindowExpired && report.reviewDeadlineAt && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">La cuidadora puede revisarlo hasta: <span className="whitespace-nowrap">{reportShortDate(report.reviewDeadlineAt)}, {reportTime(report.reviewDeadlineAt)}</span></p>}
             <ShiftReportView content={report.content} />
             {report.caregiverNote && (
               <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--text-small)]" data-testid="shift-report-caregiver-note">
