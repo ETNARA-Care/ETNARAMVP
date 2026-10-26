@@ -131,7 +131,7 @@ export const billingIssueApi = {
   taxValidation: (org: string, body: { validated: boolean; note: string }, token: string) =>
     apiClient.post<{ ok: true }>(`${base(org)}/settings/tax-validation`, body, token),
   uploadLogo: (org: string, file: Blob, token: string) =>
-    apiClient.postBinary<{ sha256: string; bytes: number }>(`${base(org)}/settings/logo`, file, file.type, token),
+    apiClient.postBinary<{ logo?: { sha256: string; bytes: number; width?: number; height?: number } }>(`${base(org)}/settings/logo`, file, file.type || "application/octet-stream", token),
   logo: (org: string, token: string) => apiClient.getBinary(`${base(org)}/settings/logo`, token),
   issue: (org: string, id: string, body: { expectedVersion: number }, token: string) =>
     apiClient.post<{ issued: { number: string; totalCents: number } }>(`${base(org)}/invoices/${encodeURIComponent(id)}/issue`, body, token),

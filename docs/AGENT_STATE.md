@@ -2,6 +2,11 @@
 
 ## Current Status
 
+## 2026-10-26 — Facturación: carga de logo hasta 5 MB (feat/billing-logo-5mb; requiere backend #225)
+- Nuevo componente reutilizable `src/components/LogoUploader.tsx`: acepta PNG, JPG y WebP; en el teléfono solo comprueba tipo (o extensión si iPhone no da tipo) y 5 MB, con el tamaño en el aviso; estado «Optimizando y guardando…»; la vista previa es siempre la copia del servidor (con sesión), nunca una copia local.
+- «Datos de facturación» lo usa; aviso de éxito con el tamaño final (p. ej. 800 × 400 px, 63 KB). Textos es/en para LOGO_EMPTY, LOGO_TOO_SMALL, LOGO_BUSY y los nuevos límites. Sin cambios en Finanzas, Informes de Turno ni Gate 6.
+- Pruebas: `tests/billing-logo-5mb.test.mjs` (3) y F2.3 actualizado; npm test 289/289; build OK; E2E iPhone 13 local: logo 11/11 y regresión F2.3 23/23.
+
 ## 2026-10-25 — Facturación Premium F2.3 (portal): emitir, PDF, anular, datos de facturación (claude/facturacion-f2-3)
 - Borrador → «Emitir factura» (solo con billing.issue; desactivado mientras la lista «Antes de emitir» no esté vacía) → confirmación con total y aviso de que no se puede editar ni borrar → número consecutivo (FAC-000001…).
 - Emitida/anulada: número, quién y cuándo, retención, sin acciones de edición; «Descargar PDF» y «Descargar copia ANULADA» leídos con la sesión (blob, sin enlaces públicos ni firmados, `cache: no-store`). «Anular factura» (billing.void) exige motivo; los turnos quedan libres.

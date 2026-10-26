@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, CheckCircle2, ImageUp, Lock, ShieldAlert } from "lucide-react";
+import { Building2, CheckCircle2, Lock, ShieldAlert } from "lucide-react";
 import { getToken } from "@/auth/token";
 import { billingIssueApi, type BillingSettingsInput, type BillingSettingsResponse } from "@/api/billing";
 import { Badge, Button, Card, Checkbox, Input, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
+import { LogoUploader, fileSizeLabel } from "@/components/LogoUploader";
 import { dateTime, errorText, langOf, tx } from "./billingFormat";
 
-const LOGO_MAX_BYTES = 300 * 1024;
 type Form = Required<Pick<BillingSettingsInput, "legalName" | "tradeName" | "address" | "phone" | "email" | "merchantRegistration" | "paymentTerms" | "footerNote">>;
 const FIELDS: (keyof Form)[] = ["legalName", "tradeName", "address", "phone", "email", "merchantRegistration", "paymentTerms", "footerNote"];
 const LONG: (keyof Form)[] = ["address", "paymentTerms", "footerNote"];
@@ -33,7 +33,6 @@ export function BillingSettingsSection({ organizationId, canManage }: { organiza
   const [taxDialog, setTaxDialog] = useState<null | boolean>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoRev, setLogoRev] = useState(0);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const token = getToken(); if (!token) return;
@@ -85,12 +84,12 @@ export function BillingSettingsSection({ organizationId, canManage }: { organiza
 
   async function uploadLogo(file: File) {
     const token = getToken(); if (!token) return;
-    if (!["image/png", "image/jpeg"].includes(file.type)) { toast.show(t("errors.LOGO_TYPE_NOT_ALLOWED"), "danger"); return; }
-    if (file.size > LOGO_MAX_BYTES) { toast.show(t("errors.LOGO_TOO_LARGE"), "danger"); return; }
-    setSaving(true);
-    try { await billingIssueApi.uploadLogo(organizationId, file, token); toast.show(t("settings.logoSaved"), "success"); await load(); setLogoRev((r) => r + 1); }
-    catch (e) { toast.show(errorText(t, e), "danger"); }
-    finally { setSaving(false); if (fileRef.current) fileRef.current.value = ""; }
+    try {
+      const r = await billingIssueApi.uploadLogo(organizationId, file, token);
+      const info = r.logo;
+      toast.show(info?.width ? t("settings.logoSavedDetail", { width: info.width, height: info.height, size: fileSizeLabel(info.bytes, lang === "en" ? "en-US" : "es-PR") }) : t("settings.logoSaved"), "success");
+      await load(); setLogoRev((r) => r + 1);
+    } catch (e) { toast.show(errorText(t, e), "danger"); }
   }
 
   const s = data.settings;
@@ -153,17 +152,12 @@ export function BillingSettingsSection({ organizationId, canManage }: { organiza
         <Checkbox label={t("settings.showCaregiver")} checked={showCaregiver} disabled={!canManage} onChange={(e) => setShowCaregiver(e.target.checked)} data-field="showCaregiverName" />
         <p className="-mt-2 pl-7 text-xs text-[var(--color-text-muted)]">{t("settings.showCaregiverHint")}</p>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-3" data-settings-logo>
-          <div className="flex h-16 w-32 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-ivory-50)]">
-            {logoUrl ? <img src={logoUrl} alt={t("settings.logoAlt")} className="max-h-full max-w-full object-contain" /> : <span className="px-2 text-center text-xs text-[var(--color-text-muted)]">{t("settings.noLogo")}</span>}
-          </div>
-          {canManage && (
-            <div className="min-w-0">
-              <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="sr-only" id="billing-logo-input" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadLogo(f); }} />
-              <Button size="sm" variant="secondary" icon={<ImageUp size={15} />} disabled={saving} onClick={() => fileRef.current?.click()}>{s.hasLogo ? t("settings.logoReplace") : t("settings.logoUpload")}</Button>
-              <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("settings.logoHint")}</p>
-            </div>
-          )}
+        <div data-settings-logo>
+          <LogoUploader id="billing-logo-input" previewUrl={logoUrl} hasLogo={s.hasLogo} canEdit={canManage} disabled={saving}
+            locale={lang === "en" ? "en-US" : "es-PR"} onUpload={uploadLogo} onRejected={(m) => toast.show(m, "danger")}
+            texts={{ alt: t("settings.logoAlt"), empty: t("settings.noLogo"), upload: t("settings.logoUpload"), replace: t("settings.logoReplace"),
+              hint: t("settings.logoHint"), uploading: t("settings.logoUploading"), wrongType: t("errors.LOGO_TYPE_NOT_ALLOWED"),
+              tooLarge: (size) => t("settings.logoTooLargeSize", { size }) }} />
         </div>
 
         {canManage && <Button className="self-start" loading={saving} disabled={saving || !valid} onClick={() => void save()} data-settings-save>{t("draft.save")}</Button>}
