@@ -554,10 +554,7 @@ Audit:
 - notifications
 
 ### FETN-009 — End-to-end role validation
-Test:
-- maria@demo.etnara.care
-- familia@demo.etnara.care
-- admin@demo.etnara.care
+Test with the synthetic demo accounts (caregiver, family, agency admin); credentials are never written in the repository.
 
 Validate same care recipient across all roles.
 
