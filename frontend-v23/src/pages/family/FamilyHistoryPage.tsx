@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, ChevronRight, Clock3, FileText, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { pickRecipient, useFamilyRecipient } from "@/features/family/familyRecipient";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyRecipient, type FamilyTimelineItem } from "@/api/familyTimeline";
@@ -156,6 +158,15 @@ export function FamilyHistoryPage() {
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">Turnos de {name}</h1>
         <p className="mt-1 text-sm text-[#667085]">Consulta quién brindará el cuidado y el estado de cada turno.</p>
       </section>
+
+      {hasOrgFeature(activeOrganization?.features, "SHIFT_REPORTS") && (
+        <Link to="/family/shift-reports" className="block" data-testid="family-reports-link">
+          <div className="flex min-h-11 items-center justify-between gap-3 rounded-[22px] border border-[#102b57]/10 bg-white p-4">
+            <span className="flex items-center gap-2 font-medium text-[#102b57]"><FileText size={20} aria-hidden /> Informes de turno aprobados</span>
+            <ChevronRight size={18} aria-hidden className="text-[#667085]" />
+          </div>
+        </Link>
+      )}
 
       <section className="rounded-[22px] bg-[#102b57] p-5 text-white shadow-sm">
         <div className="flex items-center justify-between">

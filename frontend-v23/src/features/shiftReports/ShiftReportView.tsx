@@ -6,10 +6,10 @@ import { otherDay, reportDayKey, reportShortDate, reportTime } from "./reportFor
 /**
  * Read-only body of a shift report (Informe de Turno). Every line comes from a
  * real record; an empty section says so. Free text is shown exactly as written.
- * Shared by the agency view (F1) and, later, the caregiver (F2) and family (F3).
+ * Shared by the agency view (F1) and the caregiver (F2); the family view (F3) reuses Section and Row.
  */
 
-function Section({ title, empty, children, count }: { title: string; empty: string; count: number; children: ReactNode }) {
+export function Section({ title, empty, children, count }: { title: string; empty: string; count: number; children: ReactNode }) {
   return (
     <section className="border-t border-[var(--color-border)] pt-3" aria-label={title}>
       <div className="flex items-baseline justify-between gap-2">
@@ -21,7 +21,7 @@ function Section({ title, empty, children, count }: { title: string; empty: stri
   );
 }
 /** One record. `refDay` (the shift's scheduled day): a time on another day also shows its date. */
-function Row({ at, children, note, refDay }: { at: string; children: ReactNode; note?: string | null; refDay?: string | null }) {
+export function Row({ at, children, note, refDay }: { at: string; children: ReactNode; note?: string | null; refDay?: string | null }) {
   const day = otherDay(at, refDay);
   return (
     <li className="flex gap-3 text-[var(--text-small)]">
