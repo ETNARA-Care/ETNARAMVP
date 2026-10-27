@@ -24,6 +24,8 @@ type TabId = (typeof TABS)[number]["id"];
  * App.tsx). Supervisors, caregivers, relatives and ETNARA central never see it.
  */
 export function AgencyFinancePage() {
+  // Re-render every tab when the language changes: dates follow the app language (F1.1 visual).
+  useTranslation();
   const { roles, activeOrganization } = useAuth();
   const { t: tBilling } = useTranslation("billing");
   const [tab, setTab] = useState<TabId>("services");
