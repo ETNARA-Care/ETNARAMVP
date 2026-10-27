@@ -34,3 +34,22 @@ test("B4: another agency's or a missing resident/shift shows «No encontrado», 
     assert.match(read(page), /setError\(!\(status === 403 \|\| status === 404\)\);/, page);
   }
 });
+
+test("B4: pending assignment shows only the zone and a note; accepting unlocks the rest", () => {
+  const detail = read("src/pages/caregiver/CaregiverShiftDetailPage.tsx");
+  assert.match(detail, /Zona: \{shift\.service_municipality\}/);
+  assert.match(detail, /Al aceptar verás la dirección, el plan de cuidado y las instrucciones del turno\./);
+  assert.match(read("src/api/shifts.ts"), /service_municipality\?: string \| null;/);
+});
+
+test("B4: «Cambiar horario» for admin and supervisor before the start; after it, admin-only correction with a reason", () => {
+  const comp = read("src/features/shifts/ShiftScheduleChange.tsx");
+  const page = read("src/pages/agency/AgencyShiftDetailPage.tsx");
+  assert.match(page, /\(roles\.includes\("ORGANIZATION_ADMIN"\) \|\| roles\.includes\("SUPERVISOR"\)\) && \(/);
+  assert.match(page, /isAdmin=\{roles\.includes\("ORGANIZATION_ADMIN"\)\}/);
+  assert.match(comp, /const canEdit = !started \|\| isAdmin;/);
+  assert.match(comp, /Confirmar cambio/);
+  assert.match(comp, /correctShiftSchedule\(organizationId, shift\.id, \{ scheduledStart: startIso, scheduledEnd: endIso, reason: reason\.trim\(\) \}, token\)/);
+  assert.match(comp, /disabled=\{!validTimes \|\| \(started && !reasonOk\)\}/);
+  assert.match(comp, /new Date\(shift\.scheduled_start\)\.getTime\(\) <= now/);
+});

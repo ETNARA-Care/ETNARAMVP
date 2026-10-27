@@ -403,6 +403,9 @@ export function CaregiverShiftDetailPage() {
             <Badge tone="warning">Respuesta pendiente</Badge>
             <p className="font-medium text-[var(--color-text-primary)] mt-2">¿Puedes cubrir este turno?</p>
             <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Confirma tu disponibilidad antes de comenzar.</p>
+            {shift.service_municipality && <p className="text-[var(--text-small)] text-[var(--color-text-primary)]">Zona: {shift.service_municipality}</p>}
+            {/* Backend #234 (134): mientras está pendiente solo ve fecha, hora, zona y un nombre corto. */}
+            <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Al aceptar verás la dirección, el plan de cuidado y las instrucciones del turno.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Button variant="danger" icon={<X size={18} />} disabled={saving} onClick={() => setRejectionOpen(true)}>Rechazar</Button>

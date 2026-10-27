@@ -19,6 +19,7 @@ import {
 } from "@/api/shifts";
 import { Badge, Button, Card, EmptyState, ErrorState, Modal, PageHeader, Skeleton, StatusBadge, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
+import { ShiftScheduleChange } from "@/features/shifts/ShiftScheduleChange";
 import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
 import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
 import { ShiftFinancePanel } from "@/features/finance/ShiftFinancePanel";
@@ -148,6 +149,11 @@ export function AgencyShiftDetailPage() {
           </div>
         </div>
       </Card>
+
+      {organizationId && (roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR")) && (
+        <ShiftScheduleChange organizationId={organizationId} shift={shift} isAdmin={roles.includes("ORGANIZATION_ADMIN")}
+          onChanged={(updated) => { setShift(updated); void load(); }} />
+      )}
 
       {organizationId && shiftId && <ShiftVisitPanel organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
         cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
