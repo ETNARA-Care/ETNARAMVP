@@ -57,6 +57,8 @@ function notificationSummary(type: string): string {
   if (type === "FAMILY_CAREGIVER_ARRIVED") return "Llegada registrada";
   // Migration 113: cancellations and reassignments are announced (never an address or a name).
   if (type === "SHIFT_CANCELLED") return "La agencia canceló uno de tus turnos";
+  // Backend #235 (migration 133): never the new times or a name in the notice itself.
+  if (type === "SHIFT_RESCHEDULED") return "La agencia cambió el horario de uno de tus turnos";
   if (type === "SHIFT_UNASSIGNED") return "Ya no tienes asignado un turno";
   if (type === "FAMILY_VISIT_CANCELLED") return "La agencia canceló una visita";
   if (type === "FAMILY_CAREGIVER_CHANGED") return "Cambió la cuidadora de una visita";

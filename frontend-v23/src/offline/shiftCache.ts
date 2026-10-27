@@ -7,8 +7,8 @@ import { MAX_AGE_MS, secureDelete, secureGet, secureSet } from "./secureStore";
  * Turnos próximos guardados CIFRADOS en el teléfono (Phase 12.5, aprobado por
  * Rafa 2026-10-23) para que la app abra sin señal desde cero.
  *
- * Mínimo necesario: solo los turnos propios de la cuidadora que no han
- * terminado y empiezan en las próximas 36 horas, con su residente (nombre,
+ * Mínimo necesario: solo los turnos propios y ACEPTADOS de la cuidadora que no
+ * han terminado y empiezan en las próximas 36 horas, con su residente (nombre,
  * dirección, plan de cuidado) y lo registrado en esa visita. Un turno que
  * termina sale del caché en el siguiente guardado o al abrir la app. Solo
  * para sesiones de cuidador/a que se quedan en el teléfono; se borra al
@@ -30,10 +30,17 @@ const RECIPIENTS = /^\/organizations\/[^/]+\/care-recipients$/;
 // resident's address above (encrypted, upcoming own shifts only, 7 days max).
 // Gate 7: the journey state too, so «Voy en camino» still shows without signal.
 const SHIFT_PART = /^\/organizations\/[^/]+\/shifts\/([^/]+)\/(visit-verification|care-events|service-location|journey)$/;
-const RECIPIENT_PART = /^\/organizations\/[^/]+\/care-recipients\/([^/]+)\/(care-plan|location)$/;
+// La ruta antigua de dirección por persona (/location) es solo de la administración
+// desde Backend #234: la cuidadora usa la dirección del turno (SHIFT_PART).
+const RECIPIENT_PART = /^\/organizations\/[^/]+\/care-recipients\/([^/]+)\/(care-plan)$/;
 
-/** Turnos que valen la pena tener sin señal: propios, no terminados y cercanos. */
+/**
+ * Turnos que valen la pena tener sin señal: propios, ACEPTADOS, no terminados y
+ * cercanos. Una asignación pendiente no guarda nada en el teléfono (la dirección
+ * solo se entrega con el turno aceptado, Backend #234).
+ */
 export function isUpcoming(shift: Shift, now = Date.now()): boolean {
+  if (shift.assignment_response_status !== "accepted") return false;
   if (shift.status === "cancelled" || shift.status === "completed") return false;
   if (shift.status === "in_progress") return true;
   return new Date(shift.scheduled_end).getTime() > now && new Date(shift.scheduled_start).getTime() < now + AHEAD_MS;
@@ -51,7 +58,10 @@ export function minimizeReads(entries: Array<[string, unknown]>, now = Date.now(
     for (const shift of shifts) {
       shiftIds.add(shift.id);
       if (shift.care_recipient_id) recipientIds.add(shift.care_recipient_id);
-      lastEnd = Math.max(lastEnd, new Date(shift.scheduled_end).getTime());
+      // Al terminar el turno vence la copia. Solo una visita en curso conserva un
+      // margen (12 h) para poder terminarla sin señal después de la hora de fin.
+      const end = new Date(shift.scheduled_end).getTime();
+      lastEnd = Math.max(lastEnd, shift.status === "in_progress" ? end + 12 * 3600 * 1000 : end);
     }
     if (shifts.length > 0) kept.push([path, { ...(value as object), shifts }]);
   }
@@ -68,8 +78,8 @@ export function minimizeReads(entries: Array<[string, unknown]>, now = Date.now(
       if (recipientPart && recipientIds.has(recipientPart[1])) kept.push([path, value]);
     }
   }
-  // Hasta 12 h después del último turno, nunca más de 7 días.
-  return { entries: kept, expiresAt: Math.min(lastEnd + 12 * 3600 * 1000, now + MAX_AGE_MS) };
+  // Hasta el fin del último turno (visita en curso: +12 h), nunca más de 7 días.
+  return { entries: kept, expiresAt: Math.min(lastEnd, now + MAX_AGE_MS) };
 }
 
 let timer: ReturnType<typeof setTimeout> | null = null;

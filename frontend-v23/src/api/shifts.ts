@@ -16,6 +16,8 @@ export interface Shift {
   assignment_response_status?: "pending" | "accepted";
   /** Name only, for the caregiver's own visits (also past ones). */
   care_recipient_display_name?: string | null;
+  /** Municipio del servicio (nunca la dirección), solo en sus propios turnos (Backend #234). */
+  service_municipality?: string | null;
 }
 
 export interface CareRecipient { id:string; organization_id:string; first_name:string; last_name:string; preferred_name:string|null; date_of_birth:string|null; allergies:string[]|null; preferences:unknown; routines:unknown; status:string; room_id:string|null; created_at:string; updated_at:string; archived_at:string|null; }
@@ -67,3 +69,8 @@ export async function saveShiftPrivateInstructions(organizationId:string,shiftId
 /** Name of the person a shift is for: full record when visible, else the name /me/shifts carries. */
 export function shiftRecipientName(shift:{care_recipient_display_name?:string|null}|null|undefined,recipient:CareRecipient|undefined):string{return recipient?recipientName(recipient):(shift?.care_recipient_display_name||recipientName(undefined));}
 export function recipientName(recipient:CareRecipient|undefined):string{return recipient?.preferred_name||`${recipient?.first_name||"Persona"} ${recipient?.last_name||"atendida"}`.trim();}
+
+/** Excepción tras el inicio del turno (Backend #235, migración 135): solo administración, con motivo. */
+export interface ShiftScheduleCorrection { id:string; previous_start:string; previous_end:string; new_start:string; new_end:string; reason:string; corrected_by_user_id:string|null; corrected_at:string; }
+export async function correctShiftSchedule(organizationId:string,shiftId:string,input:{scheduledStart:string;scheduledEnd:string;reason:string},token:string):Promise<{correctionId:string;shift:Shift}>{return apiClient.post<{correctionId:string;shift:Shift}>(`/organizations/${organizationId}/shifts/${shiftId}/schedule-correction`,input,token);}
+export async function listShiftScheduleCorrections(organizationId:string,shiftId:string,token:string):Promise<ShiftScheduleCorrection[]>{const r=await apiClient.get<{corrections:ShiftScheduleCorrection[]}>(`/organizations/${organizationId}/shifts/${shiftId}/schedule-corrections`,token);return r.corrections;}

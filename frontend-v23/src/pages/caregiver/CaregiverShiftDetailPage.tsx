@@ -8,6 +8,8 @@ import type { ApiError } from "@/api/client";
 import { listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
 import { isConnectivityError, queuedJourneyState, queuedVisitState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { createIncident } from "@/api/incidents";
+import { openRecipientConversation } from "@/api/messaging";
+import { useStartableRecipients } from "@/features/messaging/useMessagingRecipients";
 import {
   getActiveCarePlan,
   supportLevelLabels,
@@ -98,6 +100,26 @@ export function CaregiverShiftDetailPage() {
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
   // «En camino» y «Llegué»: solo agencias piloto (backend 108). Sin ellos, el turno sigue con Comenzar / Finalizar.
+  const [openingConversation, setOpeningConversation] = useState(false);
+  // Solo si el backend dice que hoy puede escribir sobre esta persona (turno aceptado,
+  // hasta 24 h después de terminar): así una visita vieja no ofrece un botón que falla.
+  const startable = useStartableRecipients();
+  // Abre (o crea) la conversación de esta persona: solo con el turno aceptado y
+  // hasta 24 h después de terminar (lo decide el backend, #234).
+  async function openConversation(recipientId: string) {
+    const token = getToken();
+    if (!token || !activeOrganization) return;
+    setOpeningConversation(true);
+    try {
+      const conversation = await openRecipientConversation(activeOrganization.id, recipientId, token);
+      navigate(`/caregiver/messages?thread=${conversation.id}`);
+    } catch (requestError) {
+      const status = (requestError as ApiError)?.status;
+      show(status === 403 || status === 404 ? "Ya no tienes acceso a la conversación de esta persona." : actionError(requestError), "danger");
+    } finally {
+      setOpeningConversation(false);
+    }
+  }
   const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
@@ -381,6 +403,9 @@ export function CaregiverShiftDetailPage() {
             <Badge tone="warning">Respuesta pendiente</Badge>
             <p className="font-medium text-[var(--color-text-primary)] mt-2">¿Puedes cubrir este turno?</p>
             <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Confirma tu disponibilidad antes de comenzar.</p>
+            {shift.service_municipality && <p className="text-[var(--text-small)] text-[var(--color-text-primary)]">Zona: {shift.service_municipality}</p>}
+            {/* Backend #234 (134): mientras está pendiente solo ve fecha, hora, zona y un nombre corto. */}
+            <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Al aceptar verás la dirección, el plan de cuidado y las instrucciones del turno.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Button variant="danger" icon={<X size={18} />} disabled={saving} onClick={() => setRejectionOpen(true)}>Rechazar</Button>
@@ -500,7 +525,9 @@ export function CaregiverShiftDetailPage() {
         </div>
       )}
 
-      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {shiftRecipientName(shift, recipient)}</Button>
+      {assignmentAccepted && shift.care_recipient_id && startable.some((person) => person.id === shift.care_recipient_id) && (
+        <Button variant="secondary" icon={<MessageCircle size={18} />} loading={openingConversation} onClick={() => void openConversation(shift.care_recipient_id!)}>Enviar mensaje sobre {shiftRecipientName(shift, recipient)}</Button>
+      )}
 
       <Card>
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>

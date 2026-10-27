@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
 import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
-import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
+import { useMessagingRecipients, useStartableRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
@@ -56,6 +56,7 @@ function credentialState(credential: CredentialSummary): { tone: "success" | "wa
 
 export function CaregiverMessagesPage() {
   const recipients = useMessagingRecipients();
+  const startable = useStartableRecipients();
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-navy-900)] p-5 text-white">
@@ -63,7 +64,7 @@ export function CaregiverMessagesPage() {
         <h1 className="mt-1 font-[var(--font-serif)] text-2xl">Mensajes</h1>
         <p className="mt-2 text-sm text-white/70">Coordina con tu equipo desde las conversaciones disponibles para tu cuenta.</p>
       </div>
-      <RealMessagingPanel recipients={recipients} />
+      <RealMessagingPanel recipients={recipients} startRecipients={startable} canStart />
     </div>
   );
 }

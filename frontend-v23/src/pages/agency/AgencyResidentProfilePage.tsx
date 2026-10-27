@@ -1,3 +1,4 @@
+import type { ApiError } from "@/api/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, ArrowLeft, CalendarRange, ClipboardList, HeartPulse, Plus, Trash2, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -121,9 +122,12 @@ export function AgencyResidentProfilePage() {
       setResident(recipientRow);
       setIncidents(incidentRows.filter((incident) => incident.care_recipient_id === residentId));
       setCarePlan(carePlanRow);
-    } catch {
+    } catch (requestError) {
       setResident(null);
-      setError(true);
+      // 403/404: the person does not exist or belongs to another agency -> «No encontrado»,
+      // never «Error del servidor» (auditoría B4).
+      const status = (requestError as ApiError | undefined)?.status;
+      setError(!(status === 403 || status === 404));
     }
   }, [organizationId, residentId]);
 
