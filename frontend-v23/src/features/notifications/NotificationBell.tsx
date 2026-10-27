@@ -38,7 +38,7 @@ export function NotificationBell() {
     // Informe de Turno F2 (128): the caregiver opens her own report.
     if ((type === "SHIFT_REPORT_READY" || type === "SHIFT_REPORT_RETURNED") && entityId) { navigate(`/caregiver/shift-reports/${entityId}`); return; }
     // Migration 113: cancellation / reassignment. A removed caregiver no longer has the shift: open her list.
-    if (type === "SHIFT_CANCELLED" && shiftId) { navigate(`/caregiver/shifts/${shiftId}`); return; }
+    if ((type === "SHIFT_CANCELLED" || type === "SHIFT_RESCHEDULED") && shiftId) { navigate(`/caregiver/shifts/${shiftId}`); return; }
     if (type === "SHIFT_UNASSIGNED") { navigate("/caregiver/shifts"); return; }
     if (type === "FAMILY_VISIT_CANCELLED" || type === "FAMILY_CAREGIVER_CHANGED") { navigate("/family"); return; }
     // Gate 7: journey notices.

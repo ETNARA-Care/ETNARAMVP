@@ -73,9 +73,11 @@ export function AgencyShiftDetailPage() {
       setRecipient(recipientRows.find((row) => row.id === shiftRow.care_recipient_id) ?? null);
       setWorkers(workerRows);
       setRefreshedAt(Date.now());
-    } catch {
+    } catch (requestError) {
       setShift(null);
-      setError(true);
+      // 403/404: another agency's or a non-existent shift -> «No encontrado» (auditoría B4).
+      const status = (requestError as ApiError | undefined)?.status;
+      setError(!(status === 403 || status === 404));
     }
   }, [organizationId, shiftId]);
 

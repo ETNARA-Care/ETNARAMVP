@@ -51,6 +51,20 @@ export async function sendMessage(
 }
 
 /**
+ * Residentes sobre los que quien llama puede iniciar una conversación
+ * (Backend #234): toda la agencia para la administración, su familiar para la
+ * familia y, para la cuidadora, solo las personas de sus turnos aceptados hasta
+ * 24 h después de terminar.
+ */
+export async function listStartableRecipients(organizationId: string, token: string): Promise<Array<{ id: string; name: string }>> {
+  const result = await apiClient.get<{ recipients: Array<{ id: string; firstName: string; lastName: string; preferredName: string | null }> }>(
+    `/organizations/${organizationId}/conversations/startable-recipients`,
+    token,
+  );
+  return result.recipients.map((r) => ({ id: r.id, name: r.preferredName || `${r.firstName} ${r.lastName}`.trim() }));
+}
+
+/**
  * Abre la conversación de un residente (familia + equipo) o la crea si aún no
  * existe. El backend valida que quien la pide tenga acceso a ese residente.
  */

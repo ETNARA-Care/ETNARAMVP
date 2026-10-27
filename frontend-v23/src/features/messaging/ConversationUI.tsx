@@ -44,7 +44,7 @@ function lastMessageTime(value: string): string {
  * `recipients` nombra cada conversación por su residente; `canStart` muestra
  * "Nuevo mensaje" para abrir (o crear) la conversación de un residente.
  */
-export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean }) {
+export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false, startRecipients }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean; /** Solo estas personas en «Nuevo mensaje» (por defecto, `recipients`). */ startRecipients?: MessagingRecipient[] }) {
   const { activeOrganization, user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, ConversationMessage[]>>({});
@@ -56,7 +56,8 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
   const [starting, setStarting] = useState(false);
   const [startRecipient, setStartRecipient] = useState("");
   const [opening, setOpening] = useState(false);
-  const nameById = Object.fromEntries(recipients.map((recipient) => [recipient.id, recipient.name]));
+  const startOptions = startRecipients ?? recipients;
+  const nameById = Object.fromEntries([...startOptions, ...recipients].map((recipient) => [recipient.id, recipient.name]));
   const titleOf = (conversation: Conversation) => (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversationTitle;
 
   async function startConversation() {
@@ -135,14 +136,14 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
     return <ErrorState kind={error} onRetry={() => void load()} />;
   }
 
-  const startButton = canStart && recipients.length > 0 && (
-    <Button variant="secondary" icon={<PenSquare size={17} />} className="self-start" onClick={() => { setStartRecipient(recipients[0]?.id ?? ""); setStarting(true); }}>Nuevo mensaje</Button>
+  const startButton = canStart && startOptions.length > 0 && (
+    <Button variant="secondary" icon={<PenSquare size={17} />} className="self-start" onClick={() => { setStartRecipient(startOptions[0]?.id ?? ""); setStarting(true); }}>Nuevo mensaje</Button>
   );
   const startModal = (
     <Modal open={starting} onClose={() => !opening && setStarting(false)} title="Nuevo mensaje" footer={<><Button variant="secondary" disabled={opening} onClick={() => setStarting(false)}>Cancelar</Button><Button loading={opening} disabled={!startRecipient} onClick={() => void startConversation()}>Abrir conversación</Button></>}>
       <div className="flex flex-col gap-3">
         <Select label="¿Sobre qué residente?" value={startRecipient} onChange={(event) => setStartRecipient(event.target.value)}>
-          {recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipient.name}</option>)}
+          {startOptions.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipient.name}</option>)}
         </Select>
         <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">La conversación incluye a la familia del residente y al equipo con acceso a su cuidado.</p>
       </div>

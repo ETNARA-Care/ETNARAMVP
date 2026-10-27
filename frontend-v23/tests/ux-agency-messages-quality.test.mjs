@@ -23,9 +23,9 @@ test("the agency can start a conversation about a resident through the backend",
   assert.match(agency, /<RealMessagingPanel recipients=\{recipients\} canStart \/>/);
 });
 
-test("caregiver and family name conversations without a start button", () => {
+test("family names conversations without a start button; the caregiver starts only about authorized people (B4)", () => {
   const caregiver = read("src/pages/caregiver/CaregiverSupportPages.tsx");
-  assert.match(caregiver, /<RealMessagingPanel recipients=\{recipients\} \/>/);
+  assert.match(caregiver, /<RealMessagingPanel recipients=\{recipients\} startRecipients=\{startable\} canStart \/>/);
   const family = read("src/pages/family/FamilyMessagesPage.tsx");
   assert.match(family, /useFamilyRecipient\(\)/);
   assert.doesNotMatch(family, /canStart/);

@@ -22,7 +22,11 @@ test("only upcoming own shifts (36 h) are saved, encrypted, and they expire", ()
   assert.match(cache, /const AHEAD_MS = 36 \* 3600 \* 1000;/);
   assert.match(cache, /if \(shift\.status === "cancelled" \|\| shift\.status === "completed"\) return false;/);
   assert.match(cache, /\.filter\(\(r\) => recipientIds\.has\(r\.id\)\)/);
-  assert.match(cache, /Math\.min\(lastEnd \+ 12 \* 3600 \* 1000, now \+ MAX_AGE_MS\)/);
+  assert.match(cache, /Math\.min\(lastEnd, now \+ MAX_AGE_MS\)/);
+  // B4: pending assignments never cache; the copy ends with the shift (open visit: +12 h)
+  assert.match(cache, /if \(shift\.assignment_response_status !== "accepted"\) return false;/);
+  assert.match(cache, /shift\.status === "in_progress" \? end \+ 12 \* 3600 \* 1000 : end/);
+  assert.match(cache, /\(care-plan\)\$\/;/);
   assert.match(cache, /from "\.\/secureStore"/);
   assert.doesNotMatch(cache, /localStorage|sessionStorage|caches\./);
 });
