@@ -62,8 +62,7 @@ test("settings: only billing.manage edits; prefix rule matches the backend and l
   assert.match(s, /disabled=\{!canManage \|\| data\.series\.locked\}/);
   assert.match(s, /years >= 6 && years <= 30/);
   assert.match(s, /if \(!data\.series\.locked && prefix !== data\.series\.prefix\) body\.prefix = prefix/);
-  assert.match(s, /\["image\/png", "image\/jpeg"\]\.includes\(file\.type\)/);
-  assert.match(s, /LOGO_MAX_BYTES = 300 \* 1024/);
+  assert.match(s, /<LogoUploader id="billing-logo-input"[^>]*canEdit=\{canManage\}/);
   assert.match(read("src/features/billing/BillingTab.tsx"), /<BillingSettingsSection organizationId=\{organizationId\} canManage=\{capabilities\.includes\("manage"\) && module\.enabled\}/);
 });
 

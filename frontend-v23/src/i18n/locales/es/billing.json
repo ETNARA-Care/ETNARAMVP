@@ -100,13 +100,16 @@
     "BILLING_DOCUMENT_INTEGRITY": "El PDF guardado no coincide con su huella. No se descargó; avisa a soporte.",
     "DOCUMENT_NOT_FOUND": "No se encontró el PDF.",
     "INVOICE_NOT_FOUND": "No se encontró la factura.",
-    "LOGO_TOO_LARGE": "El logo pesa más de 300 KB.",
-    "LOGO_TYPE_NOT_ALLOWED": "El logo debe ser PNG o JPEG.",
-    "LOGO_UNREADABLE": "No se pudo leer la imagen del logo.",
+    "LOGO_TOO_LARGE": "El logo pesa más de 5 MB. Elige una imagen más ligera.",
+    "LOGO_TYPE_NOT_ALLOWED": "El logo debe ser PNG, JPG o WebP.",
+    "LOGO_UNREADABLE": "No se pudo leer la imagen. Prueba con otro archivo PNG, JPG o WebP.",
     "LOGO_NOT_FOUND": "La agencia no tiene logo.",
     "REASON_REQUIRED": "Escribe el motivo o la nota.",
     "INVOICE_TRANSITION_INVALID": "Ese cambio de estado no está permitido.",
-    "BILLING_INVALID_DATA": "Revisa los datos."
+    "BILLING_INVALID_DATA": "Revisa los datos.",
+    "LOGO_EMPTY": "El archivo está vacío.",
+    "LOGO_TOO_SMALL": "La imagen es demasiado pequeña: usa al menos 16 × 16 px.",
+    "LOGO_BUSY": "Estamos procesando otros logos. Inténtalo en unos segundos."
   },
   "central": {
     "title": "Gestor de permisos de facturación",
@@ -371,8 +374,11 @@
     "noLogo": "Sin logo",
     "logoUpload": "Subir logo",
     "logoReplace": "Cambiar logo",
-    "logoHint": "PNG o JPEG, hasta 300 KB.",
+    "logoHint": "PNG, JPG o WebP, hasta 5 MB. Lo optimizamos automáticamente y conservamos la transparencia.",
     "logoSaved": "Logo guardado.",
-    "saved": "Datos guardados."
+    "saved": "Datos guardados.",
+    "logoUploading": "Optimizando y guardando…",
+    "logoTooLargeSize": "Ese archivo pesa {{size}}. El máximo es 5 MB.",
+    "logoSavedDetail": "Logo guardado y optimizado ({{width}} × {{height}} px, {{size}})."
   }
 }
