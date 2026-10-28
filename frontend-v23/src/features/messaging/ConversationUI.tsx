@@ -64,7 +64,9 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
   const isDirect = (conversation: Conversation) => conversation.thread_type === "caregiver_agency";
   const titleOf = (conversation: Conversation) => isDirect(conversation)
     ? directNames[conversation.id] ?? (directTitle === "agency" ? "Agencia" : "Mensaje directo")
-    : (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversationTitle;
+    // Nombre de la lista de residentes; si no está (p. ej. cuidadora dentro de las 24 h
+    // tras su visita), el nombre corto que da el backend; si no, el título genérico.
+    : (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversation.care_recipient_name || conversationTitle;
 
   async function startConversation() {
     const token = getToken();

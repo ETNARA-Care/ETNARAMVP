@@ -28,6 +28,7 @@ import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
 import { OfflineReadyCard } from "@/features/caregiver/OfflineReady";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
+import { listStartableRecipients, openRecipientConversation } from "@/api/messaging";
 
 const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }> = [
   { code: "MEAL", label: "Comida", icon: <Utensils size={22} /> },
@@ -101,6 +102,9 @@ export function CaregiverShiftDetailPage() {
   const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
+  // «Enviar mensaje sobre X» solo si el backend permite escribir sobre esa persona.
+  const [canMessage, setCanMessage] = useState(false);
+  const [openingConversation, setOpeningConversation] = useState(false);
   const [shift, setShift] = useState<Shift | null>(null);
   const [recipient, setRecipient] = useState<CareRecipient | undefined>();
   const [verification, setVerification] = useState<VisitVerification | null>(null);
@@ -138,6 +142,22 @@ export function CaregiverShiftDetailPage() {
   // Llegada o salida guardada en el teléfono que aún no llega al servidor.
   const queuedVisit = shiftId ? queuedVisitState(queue.items, shiftId) : null;
 
+  /** Abre la conversación de ESTA persona (o la crea) y va directo a ella. */
+  async function messageAboutRecipient(recipientId: string) {
+    const token = getToken();
+    if (!organizationId || !token) return;
+    setOpeningConversation(true);
+    try {
+      const conversation = await openRecipientConversation(organizationId, recipientId, token);
+      navigate(`/caregiver/messages?thread=${conversation.id}`);
+    } catch {
+      setCanMessage(false);
+      show("Ya no puedes escribir sobre esta persona.", "danger");
+    } finally {
+      setOpeningConversation(false);
+    }
+  }
+
   const load = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !shiftId || !token) return;
@@ -170,6 +190,12 @@ export function CaregiverShiftDetailPage() {
       setCarePlan(carePlanRow);
       setLocation(locationRow);
       setError(false);
+      setCanMessage(false);
+      if (shiftRow.care_recipient_id) {
+        listStartableRecipients(organizationId, token)
+          .then((rows) => setCanMessage(rows.some((row) => row.id === shiftRow.care_recipient_id)))
+          .catch(() => setCanMessage(false));
+      }
     } catch (loadError) {
       setError(isConnectivityError(loadError) ? "offline" : true);
     }
@@ -500,7 +526,7 @@ export function CaregiverShiftDetailPage() {
         </div>
       )}
 
-      <Button variant="secondary" icon={<MessageCircle size={18} />} onClick={() => navigate("/caregiver/messages")}>Enviar mensaje sobre {shiftRecipientName(shift, recipient)}</Button>
+      {canMessage && shift.care_recipient_id && <Button variant="secondary" icon={<MessageCircle size={18} />} loading={openingConversation} onClick={() => void messageAboutRecipient(shift.care_recipient_id!)}>Enviar mensaje sobre {shiftRecipientName(shift, recipient)}</Button>}
 
       <Card>
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>
