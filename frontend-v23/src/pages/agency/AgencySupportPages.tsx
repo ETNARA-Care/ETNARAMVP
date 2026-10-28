@@ -256,8 +256,11 @@ export function AgencyMessagesPage() {
 }
 
 export function AgencyCompliancePage() {
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, roles } = useAuth();
   const organizationId = activeOrganization?.id;
+  // La política de requisitos es configuración de la agencia: solo la administración la cambia
+  // (el backend también lo exige). La supervisora la consulta y gestiona las credenciales de cada cuidador.
+  const canEditPolicy = roles.includes("ORGANIZATION_ADMIN");
   const [rows, setRows] = useState<ComplianceWorker[] | null>(null);
   const [configuration, setConfiguration] = useState<ComplianceConfiguration | null>(null);
   const [audit, setAudit] = useState<ComplianceAuditEntry[]>([]);
@@ -451,7 +454,7 @@ export function AgencyCompliancePage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2"><SlidersHorizontal size={20} className="text-[var(--color-text-muted)]" /><h2 className="font-display text-[var(--text-h3)]">Requisitos por tipo de cuidador</h2></div>
-            <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">Define qué credenciales hacen apto a cada rol. Los cambios quedan auditados.</p>
+            <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">{canEditPolicy ? "Define qué credenciales hacen apto a cada rol. Los cambios quedan auditados." : "Credenciales que hacen apto a cada rol. Solo la administración de la agencia puede cambiarlas."}</p>
           </div>
         </div>
         {configuration && configuration.workerRoles.length > 0 ? (
@@ -461,7 +464,7 @@ export function AgencyCompliancePage() {
               return (
                 <div key={role} className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
                   <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{plural(policy?.requirements.length ?? 0,"requisito","requisitos")} · {policy?.source === "organization" ? "Política de tu organización" : "Política base de ETNARA"}</p></div>
-                  <Button variant="secondary" onClick={() => openPolicy(role)}>Configurar</Button>
+                  {canEditPolicy && <Button variant="secondary" onClick={() => openPolicy(role)}>Configurar</Button>}
                 </div>
               );
             })}
