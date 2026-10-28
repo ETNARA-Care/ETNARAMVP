@@ -6,6 +6,8 @@ export interface Conversation {
   care_recipient_id: string | null;
   thread_type: string;
   created_at: string;
+  /** Nombre corto del residente, solo si quien pregunta puede escribirle (backend). */
+  care_recipient_name?: string | null;
 }
 
 export interface ConversationMessage {
@@ -48,6 +50,19 @@ export async function sendMessage(
     token,
   );
   return result.message;
+}
+
+/**
+ * Personas sobre las que quien llama puede iniciar (o reabrir) una conversación.
+ * Para una cuidadora: solo dentro de su ventana (asignación aceptada, hasta 24 h
+ * después de terminar). El backend aplica la misma regla al abrir y al escribir.
+ */
+export async function listStartableRecipients(organizationId: string, token: string): Promise<{ id: string }[]> {
+  const result = await apiClient.get<{ recipients: { id: string }[] }>(
+    `/organizations/${organizationId}/conversations/startable-recipients`,
+    token,
+  );
+  return result.recipients;
 }
 
 /**
