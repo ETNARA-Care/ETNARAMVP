@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, BriefcaseBusiness, Eye, FileText, Plus, ShieldCheck, Upload } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, Eye, FileText, MessageSquare, Plus, ShieldCheck, Upload } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -25,6 +25,8 @@ import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
 import { formatCredentialDate } from "./workerCredentialUtils";
 import { AccessInvitationPanel } from "./AccessInvitationPanel";
 import { StaffRoleCard } from "@/features/agency/StaffRoleCard";
+import { openCaregiverConversation } from "@/api/messaging";
+import type { ApiError } from "@/api/client";
 
 export function AgencyWorkerProfilePage() {
   const { membershipId } = useParams();
@@ -55,6 +57,30 @@ export function AgencyWorkerProfilePage() {
     status: "active" as "active" | "expired",
   });
   const toast = useToast();
+  const [openingConversation, setOpeningConversation] = useState(false);
+
+  /** Mensaje directo (sin residente): abre la conversación existente o la crea. */
+  async function messageCaregiver() {
+    const token = getToken();
+    if (!organizationId || !membershipId || !token) return;
+    setOpeningConversation(true);
+    try {
+      const { conversationId } = await openCaregiverConversation(organizationId, membershipId, token);
+      navigate(`/agency/messages?thread=${conversationId}`);
+    } catch (requestError) {
+      const code = (requestError as ApiError)?.code;
+      toast.show(
+        code === "CAREGIVER_NO_ACCOUNT"
+          ? "Esta persona aún no ha activado su cuenta. Envíale una invitación de acceso para poder escribirle."
+          : code === "CAREGIVER_THREAD_SELF"
+            ? "No puedes abrir una conversación contigo misma."
+            : "No pudimos abrir la conversación.",
+        "danger",
+      );
+    } finally {
+      setOpeningConversation(false);
+    }
+  }
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -311,7 +337,7 @@ export function AgencyWorkerProfilePage() {
       <PageHeader
         title={worker.display_name || "Cuidador sin nombre"}
         description="Información laboral y credenciales verificadas."
-        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : "No apto para trabajar"}</Badge><Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
+        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : "No apto para trabajar"}</Badge>{worker.status === "active" && roles.includes("ORGANIZATION_ADMIN") && <Button variant="secondary" icon={<MessageSquare size={17} />} loading={openingConversation} onClick={() => void messageCaregiver()}>Enviar mensaje</Button>}<Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
       />
 
       <Card>

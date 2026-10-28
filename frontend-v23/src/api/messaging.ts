@@ -62,3 +62,32 @@ export async function openRecipientConversation(organizationId: string, recipien
   );
   return result.conversation;
 }
+
+/** Conversación directa agencia ↔ cuidadora (sin residente). Backend #238 / migración 136. */
+export interface CaregiverConversation {
+  conversationId: string;
+  organizationWorkerMembershipId: string;
+  caregiverName: string;
+  organizationName: string;
+}
+
+/**
+ * Abre (o devuelve) la conversación directa con una cuidadora. Solo la
+ * administradora de la agencia; el backend nunca duplica la conversación.
+ */
+export function openCaregiverConversation(
+  organizationId: string,
+  workerMembershipId: string,
+  token: string,
+): Promise<{ conversationId: string; created: boolean }> {
+  return apiClient.post(`/organizations/${organizationId}/workers/${workerMembershipId}/conversation`, undefined, token);
+}
+
+/** Conversaciones directas visibles para quien pregunta, con el nombre que se muestra. */
+export async function listCaregiverConversations(organizationId: string, token: string): Promise<CaregiverConversation[]> {
+  const result = await apiClient.get<{ conversations: CaregiverConversation[] }>(
+    `/organizations/${organizationId}/caregiver-conversations`,
+    token,
+  );
+  return result.conversations;
+}
