@@ -63,7 +63,7 @@ export function CaregiverMessagesPage() {
         <h1 className="mt-1 font-[var(--font-serif)] text-2xl">Mensajes</h1>
         <p className="mt-2 text-sm text-white/70">Coordina con tu equipo desde las conversaciones disponibles para tu cuenta.</p>
       </div>
-      <RealMessagingPanel recipients={recipients} />
+      <RealMessagingPanel recipients={recipients} directTitle="agency" />
     </div>
   );
 }

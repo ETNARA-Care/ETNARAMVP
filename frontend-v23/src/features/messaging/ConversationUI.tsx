@@ -5,6 +5,7 @@ import { Avatar, Badge, Button, Card, EmptyState, ErrorState, IconButton, Modal,
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
+  listCaregiverConversations,
   listConversations,
   listMessages,
   openRecipientConversation,
@@ -43,8 +44,10 @@ function lastMessageTime(value: string): string {
  * Mensajería real compartida por Familiar, Cuidador y Agencia.
  * `recipients` nombra cada conversación por su residente; `canStart` muestra
  * "Nuevo mensaje" para abrir (o crear) la conversación de un residente.
+ * `directTitle` nombra las conversaciones directas agencia ↔ cuidadora: por la
+ * cuidadora en la agencia y por la agencia en el portal de la cuidadora.
  */
-export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean }) {
+export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false, directTitle }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean; directTitle?: "caregiver" | "agency" }) {
   const { activeOrganization, user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, ConversationMessage[]>>({});
@@ -56,8 +59,12 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
   const [starting, setStarting] = useState(false);
   const [startRecipient, setStartRecipient] = useState("");
   const [opening, setOpening] = useState(false);
+  const [directNames, setDirectNames] = useState<Record<string, string>>({});
   const nameById = Object.fromEntries(recipients.map((recipient) => [recipient.id, recipient.name]));
-  const titleOf = (conversation: Conversation) => (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversationTitle;
+  const isDirect = (conversation: Conversation) => conversation.thread_type === "caregiver_agency";
+  const titleOf = (conversation: Conversation) => isDirect(conversation)
+    ? directNames[conversation.id] ?? (directTitle === "agency" ? "Agencia" : "Mensaje directo")
+    : (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversationTitle;
 
   async function startConversation() {
     const token = getToken();
@@ -90,6 +97,11 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
           return [conversation.id, ordered(result.messages)] as const;
         }),
       );
+      if (directTitle && list.some(isDirect)) {
+        // Solo nombres para el título; si falla, se muestra el título genérico.
+        const direct = await listCaregiverConversations(organizationId, token).catch(() => []);
+        setDirectNames(Object.fromEntries(direct.map((item) => [item.conversationId, directTitle === "agency" ? item.organizationName : item.caregiverName])));
+      }
       setConversations(list);
       setMessagesByConversation(Object.fromEntries(loaded));
       setOpenId((current) => {
@@ -100,7 +112,7 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
       setError(errorKind(requestError));
       setConversations([]);
     }
-  }, [activeOrganization?.id, requestedThreadId]);
+  }, [activeOrganization?.id, requestedThreadId, directTitle]);
 
   useEffect(() => {
     void load();
@@ -197,6 +209,7 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
                   <p className="min-w-0 flex-1 text-[var(--text-small)] text-[var(--color-text-secondary)] truncate">
                     {last ? last.body : "Sin mensajes todavía"}
                   </p>
+                  {isDirect(conversation) && <Badge tone="neutral">Directo</Badge>}
                   {unread && <Badge tone="accent">Nuevo</Badge>}
                 </div>
               </div>

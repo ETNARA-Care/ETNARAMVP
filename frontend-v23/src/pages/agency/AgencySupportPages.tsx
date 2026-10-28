@@ -249,8 +249,8 @@ export function AgencyMessagesPage() {
   const recipients = useMessagingRecipients();
   return (
     <div>
-      <PageHeader title="Mensajes" description="Conversaciones con la familia y el equipo de cada residente." />
-      <RealMessagingPanel recipients={recipients} canStart />
+      <PageHeader title="Mensajes" description="Conversaciones con la familia y el equipo de cada residente, y mensajes directos con tus cuidadoras." />
+      <RealMessagingPanel recipients={recipients} canStart directTitle="caregiver" />
     </div>
   );
 }

@@ -20,12 +20,12 @@ test("the agency can start a conversation about a resident through the backend",
   assert.match(panel, /openRecipientConversation\(organizationId, startRecipient, token\)/);
   assert.match(panel, /Nuevo mensaje/);
   const agency = read("src/pages/agency/AgencySupportPages.tsx");
-  assert.match(agency, /<RealMessagingPanel recipients=\{recipients\} canStart \/>/);
+  assert.match(agency, /<RealMessagingPanel recipients=\{recipients\} canStart directTitle="caregiver" \/>/);
 });
 
 test("caregiver and family name conversations without a start button", () => {
   const caregiver = read("src/pages/caregiver/CaregiverSupportPages.tsx");
-  assert.match(caregiver, /<RealMessagingPanel recipients=\{recipients\} \/>/);
+  assert.match(caregiver, /<RealMessagingPanel recipients=\{recipients\} directTitle="agency" \/>/);
   const family = read("src/pages/family/FamilyMessagesPage.tsx");
   assert.match(family, /useFamilyRecipient\(\)/);
   assert.doesNotMatch(family, /canStart/);
