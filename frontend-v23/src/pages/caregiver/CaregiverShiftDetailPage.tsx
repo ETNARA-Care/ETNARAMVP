@@ -28,6 +28,7 @@ import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
 import { OfflineReadyCard } from "@/features/caregiver/OfflineReady";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
+import { isOverdueUnstarted, startOpensAt } from "@/features/caregiver/shiftTiming";
 import { listStartableRecipients, openRecipientConversation } from "@/api/messaging";
 
 const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }> = [
@@ -52,6 +53,7 @@ function actionError(error: unknown): string {
   const apiError = error as ApiError;
   if (apiError.status === 0) return "No hay conexión con el servidor.";
   if (apiError.code === "ALREADY_CHECKED_IN") return "Este turno ya fue iniciado.";
+  if (apiError.code === "CHECK_IN_OUTSIDE_WINDOW") return "Este turno ya terminó. No se puede comenzar; avísale a la agencia.";
   if (apiError.code === "ASSIGNMENT_NOT_ACCEPTED") return "Debes aceptar el turno antes de comenzarlo.";
   if (apiError.code === "ASSIGNMENT_ALREADY_RESPONDED") return "Esta asignación ya fue respondida.";
   // Capa 1: solo ella recibe este aviso; no dice de qué agencia ni qué turno.
@@ -103,6 +105,8 @@ export function CaregiverShiftDetailPage() {
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   const { show } = useToast();
   // «Enviar mensaje sobre X» solo si el backend permite escribir sobre esa persona.
+  // Hora de referencia de la pantalla (se renueva al volver a abrir el turno).
+  const [openedAt] = useState(() => Date.now());
   const [canMessage, setCanMessage] = useState(false);
   const [openingConversation, setOpeningConversation] = useState(false);
   const [shift, setShift] = useState<Shift | null>(null);
@@ -365,7 +369,11 @@ export function CaregiverShiftDetailPage() {
   const assignmentAccepted = shift.assignment_response_status === "accepted";
   const assignmentPending = shift.assignment_response_status === "pending";
   const visitStatus = queuedVisit === "checked_out" ? "completed" : queuedVisit === "checked_in" ? "in_progress" : verification.status;
-  const canStart = assignmentAccepted && visitStatus === "not_started" && shift.status !== "cancelled" && shift.status !== "completed";
+  // Vencido sin iniciar (B5): sin «En camino», «Llegué» ni «Comenzar»; el backend también lo rechaza.
+  const overdue = visitStatus === "not_started" && isOverdueUnstarted(shift, openedAt);
+  const canStart = assignmentAccepted && visitStatus === "not_started" && shift.status !== "cancelled" && shift.status !== "completed" && !overdue;
+  const startOpens = startOpensAt(shift);
+  const tooEarly = canStart && openedAt < startOpens.getTime();
   const canFinish = visitStatus === "in_progress";
   // Solo si la cola se guarda en el teléfono se puede finalizar con pendientes:
   // la salida se envía después de ellos, en orden.
@@ -391,7 +399,7 @@ export function CaregiverShiftDetailPage() {
           </div>
           {canFinish
             ? <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">En curso</span>
-            : <StatusBadge status={status} />}
+            : overdue ? <Badge tone="neutral">Sin registro</Badge> : <StatusBadge status={status} />}
         </div>
         <p className={`mt-4 font-medium ${canFinish ? "text-white" : "text-[var(--color-text-primary)]"}`}>{new Date(shift.scheduled_start).toLocaleDateString("es-PR", { weekday: "long", day: "numeric", month: "long" })}</p>
         <p className={`text-sm ${canFinish ? "text-white/70" : "text-[var(--color-text-secondary)]"}`}>
@@ -425,7 +433,14 @@ export function CaregiverShiftDetailPage() {
           }} />
       )}
 
-      {status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location={location} />}
+      {overdue && (
+        <Card className="flex flex-col gap-1" data-testid="overdue-notice">
+          <p className="font-medium text-[var(--color-text-primary)]">Este turno terminó sin registro de inicio</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Ya no se puede comenzar ni registrar la llegada. La agencia lo revisará. Si hiciste la visita, avísale para que la registre.</p>
+        </Card>
+      )}
+
+      {status !== "completed" && status !== "cancelled" && !overdue && <ServiceDirectionsCard location={location} />}
 
       {enCamino && canStart && organizationId && shiftId && (
         <div id="arrival-card" tabIndex={-1} className="outline-none" data-testid="arrival-card-anchor">
@@ -437,8 +452,10 @@ export function CaregiverShiftDetailPage() {
 
       {canStart && (
         <div className="flex flex-col gap-2">
-          <Button size="lg" fullWidth icon={<LogIn size={20} />} disabled={saving} onClick={() => (offerArrival ? setArrivalPromptOpen(true) : void startShift())} data-testid="start-shift">{saving ? "Iniciando turno..." : "Comenzar turno"}</Button>
-          <p className="text-center text-[var(--text-caption)] text-[var(--color-text-muted)]">{offerArrival ? "Si ya llegaste, toca primero «Llegué». Al comenzar podrás anotar los cuidados." : "Al comenzar podrás anotar los cuidados."}</p>
+          <Button size="lg" fullWidth icon={<LogIn size={20} />} disabled={saving || tooEarly} onClick={() => (offerArrival ? setArrivalPromptOpen(true) : void startShift())} data-testid="start-shift">{saving ? "Iniciando turno..." : "Comenzar turno"}</Button>
+          <p className="text-center text-[var(--text-caption)] text-[var(--color-text-muted)]">{tooEarly
+            ? `Podrás comenzar desde el ${startOpens.toLocaleDateString("es-PR", { weekday: "long", day: "numeric", month: "long" })} a las ${startOpens.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}`
+            : offerArrival ? "Si ya llegaste, toca primero «Llegué». Al comenzar podrás anotar los cuidados." : "Al comenzar podrás anotar los cuidados."}</p>
         </div>
       )}
 
@@ -473,7 +490,7 @@ export function CaregiverShiftDetailPage() {
           <div className="flex items-center gap-2"><ClipboardList size={20} /><p className="font-medium text-[var(--color-text-primary)]">Plan de cuidado</p></div>
           {carePlan && <Badge tone={carePlan.plan_details.supportLevel === "COMPLEX" || carePlan.plan_details.supportLevel === "HIGH" ? "warning" : "accent"}>{supportLevelLabels[carePlan.plan_details.supportLevel]}</Badge>}
         </div>
-        {!carePlan ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">{status === "completed" ? "El plan de cuidado solo se muestra mientras la visita está asignada." : "Administración todavía no ha publicado un plan para este residente."}</p> : (
+        {!carePlan ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">{status === "completed" || overdue ? "El plan de cuidado solo se muestra mientras la visita está asignada." : "Administración todavía no ha publicado un plan para este residente."}</p> : (
           <div className="flex flex-col gap-3">
             {carePlan.plan_details.precautions.length > 0 && (
               <div className="rounded-[var(--radius-sm)] bg-[var(--color-warning-100)] p-3">

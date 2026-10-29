@@ -8,6 +8,7 @@ import { listCareRecipients, listMyShifts, shiftRecipientName, type CareRecipien
 import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
 import { prefetchUpcomingShifts } from "@/features/caregiver/prefetchShifts";
 import { isConnectivityError } from "@/features/caregiver/careEventQueue";
+import { isOverdueUnstarted } from "@/features/caregiver/shiftTiming";
 import { listMyCoverageOffers, respondCoverageOffer, type MyCoverageOffer } from "@/api/coverageOffers";
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, StatusBadge, useToast } from "@/components/ui";
 
@@ -60,7 +61,9 @@ export function CaregiverShiftsPage() {
 
   const recipientById = useMemo(() => Object.fromEntries(recipients.map((item) => [item.id, item])), [recipients]);
   const ordered = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
-  const open = ordered.filter((shift) => shift.status !== "completed" && shift.status !== "cancelled");
+  // Vencidos sin iniciar: aparte, sin contarlos como activos (no se cancelan ni se cambian).
+  const overdue = ordered.filter((shift) => isOverdueUnstarted(shift)).reverse();
+  const open = ordered.filter((shift) => shift.status !== "completed" && shift.status !== "cancelled" && !isOverdueUnstarted(shift));
   const completed = ordered.filter((shift) => shift.status === "completed");
 
   async function answerOffer(offer: MyCoverageOffer, decision: "interested" | "declined") {
@@ -92,7 +95,7 @@ export function CaregiverShiftsPage() {
           <OfflineReadyMark shiftId={shift.id} compact />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {shift.assignment_response_status === "pending" ? <Badge tone="warning">Responder</Badge> : <StatusBadge status={shift.status}/>}
+          {isOverdueUnstarted(shift) ? <Badge tone="neutral">Sin registro</Badge> : shift.assignment_response_status === "pending" ? <Badge tone="warning">Responder</Badge> : <StatusBadge status={shift.status}/>}
           <ChevronRight size={18} className="text-[var(--color-text-muted)]"/>
         </div>
       </Card>
@@ -140,6 +143,12 @@ export function CaregiverShiftsPage() {
       <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold text-[var(--color-navy-900)]">Asignados</h2>{open.length > 0 && <span className="text-xs text-[var(--color-text-muted)]">{open.length} activo{open.length === 1 ? "" : "s"}</span>}</div>
       <div className="flex flex-col gap-3">{open.length > 0 ? open.map(shiftCard) : <EmptyState title="No tienes turnos asignados" description="Cuando Administración te asigne uno, aparecerá aquí."/>}</div>
     </section>
+
+    {overdue.length > 0 && <section data-testid="overdue-shifts">
+      <h2 className="font-semibold text-[var(--color-navy-900)]">Sin registro</h2>
+      <p className="mb-3 mt-1 text-sm text-[var(--color-text-secondary)]">Su horario terminó sin que se registrara el inicio. Ya no se pueden comenzar; la agencia los revisará. Si hiciste la visita, avísale a la agencia.</p>
+      <div className="flex flex-col gap-3">{overdue.map(shiftCard)}</div>
+    </section>}
 
     {completed.length > 0 && <section>
       <h2 className="mb-3 font-semibold text-[var(--color-navy-900)]">Completados</h2>

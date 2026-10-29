@@ -26,7 +26,7 @@ test("B: without «Llegué» (EN_CAMINO on) the start offers it first; it never 
   assert.match(detail, /data-testid="start-without-arrival" onClick=\{\(\) => \{ setArrivalPromptOpen\(false\); void startShift\(\); \}\}/);
   assert.match(detail, /data-testid="go-to-arrival" onClick=\{goToArrival\}/);
   // The start button itself is not disabled by the arrival.
-  assert.match(detail, /disabled=\{saving\} onClick=\{\(\) => \(offerArrival/);
+  assert.match(detail, /disabled=\{saving \|\| tooEarly\} onClick=\{\(\) => \(offerArrival/);
 });
 
 test("arrival and start stay independent records (no arrival written by the start)", () => {
