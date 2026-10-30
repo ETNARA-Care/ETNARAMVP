@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getEstablishmentWorkspace, updateManagedPerson, type EstablishmentWorkspace } from "@/api/establishments";
 import { Button, Card, ErrorState, Input, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
+import { workerUpdateErrorMessage } from "@/api/roster";
 
 type WorkerStatus = "active" | "inactive";
 
@@ -60,8 +61,8 @@ export function EstablishmentWorkerProfilePage() {
       setEditing(false);
       await load();
       toast.show("Personal actualizado.", "success");
-    } catch {
-      toast.show("No pudimos actualizar el personal.", "danger");
+    } catch (error) {
+      toast.show(workerUpdateErrorMessage(error, "No pudimos actualizar el personal."), "danger");
     } finally { setSaving(false); }
   };
 
@@ -72,7 +73,7 @@ export function EstablishmentWorkerProfilePage() {
     {editing ? <div ref={editRef}>
       <Card className="flex flex-col gap-3">
         <div className="flex items-center gap-2"><BriefcaseBusiness size={20}/><b>Editar personal</b></div>
-        <Input label="Nombre" value={form.displayName} onChange={(e) => setForm(v => ({...v, displayName:e.target.value}))}/>
+        <Input label="Nombre" value={form.displayName} onChange={(e) => setForm(v => ({...v, displayName:e.target.value}))} disabled={form.status !== "active"} hint={form.status !== "active" ? "Con la membresía inactiva no se puede cambiar el nombre. Elige «Activo» para cambiarlo." : undefined}/>
         <Input label="Rol" value={form.internalRole} onChange={(e) => setForm(v => ({...v, internalRole:e.target.value}))}/>
         <Select label="Estado" value={form.status} onChange={(e) => setForm(v => ({...v,status:e.target.value as WorkerStatus}))}><option value="active">Activo</option><option value="inactive">Inactivo</option></Select>
         <div className="flex flex-col gap-2 sm:flex-row"><Button onClick={() => void save()} disabled={saving}>{saving ? "Guardando…" : "Guardar cambios"}</Button><Button variant="secondary" onClick={() => setEditing(false)}>Cancelar</Button></div>

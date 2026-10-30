@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listWorkers, type WorkerMembership } from "@/api/shifts";
-import { updateWorker } from "@/api/roster";
+import { updateWorker, workerUpdateErrorMessage } from "@/api/roster";
 import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import {
   createWorkerCredential,
@@ -300,8 +300,8 @@ export function AgencyWorkerProfilePage() {
       setWorker((current) => current ? { ...current, ...updated } : current);
       setEditing(false);
       toast.show("Información del personal actualizada.", "success");
-    } catch {
-      toast.show("No pudimos actualizar la información.", "danger");
+    } catch (error) {
+      toast.show(workerUpdateErrorMessage(error, "No pudimos actualizar la información."), "danger");
     } finally {
       setSaving(false);
     }
@@ -416,7 +416,7 @@ export function AgencyWorkerProfilePage() {
         footer={<><Button variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveWorker()} loading={saving} disabled={!form.displayName.trim() || !form.internalRole.trim()}>Guardar cambios</Button></>}
       >
         <div className="flex flex-col gap-3">
-          <Input label="Nombre completo" value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} required />
+          <Input label="Nombre completo" value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} required disabled={worker.status !== "active"} hint={worker.status !== "active" ? "Con la membresía inactiva no se puede cambiar el nombre. Reactívala primero." : undefined} />
           <Select label="Clasificación laboral" value={form.internalRole} onChange={(event) => setForm((current) => ({ ...current, internalRole: event.target.value }))} required>
             <option value="CNA">CNA</option><option value="HHA">HHA</option><option value="RN">RN</option><option value="LPN">LPN</option><option value="SUPERVISOR">Supervisor/a</option><option value="OTRO">Otro</option>
           </Select>
