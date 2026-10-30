@@ -28,7 +28,7 @@ test("directions prefer coordinates and build Apple Maps, Google Maps and Waze l
 test("the caregiver shift shows Cómo llegar until the visit ends, without blocking the shift", () => {
   const page = read("src/pages/caregiver/CaregiverShiftDetailPage.tsx");
   assert.match(page, /getShiftServiceLocation\(organizationId, shiftRow\.id, token\)\.catch\(\(\) => null\)/);
-  assert.match(page, /status !== "completed" && status !== "cancelled" && <ServiceDirectionsCard location=\{location\} \/>/);
+  assert.match(page, /status !== "completed" && status !== "cancelled" && !overdue && <ServiceDirectionsCard location=\{location\} \/>/);
   const card = read("src/features/serviceLocation/ServiceDirectionsCard.tsx");
   for (const label of ["Cómo llegar", "Apple Maps", "Google Maps", "Waze", "Copiar"]) assert.ok(card.includes(label), label);
   assert.match(card, /rel="noopener noreferrer"/);
