@@ -170,5 +170,26 @@
     "unavailable": "Photos aren't available right now.",
     "withCode": "It couldn't be completed. Code: {{code}}",
     "generic": "It couldn't be completed."
+  },
+  "family": {
+    "todayTitle": "Today's photos",
+    "todayEyebrow": "Shared photos",
+    "noneToday": "No photos shared today yet. When the agency shares a photo of an activity, it will appear here.",
+    "noneShift": "No photos were shared from this shift.",
+    "shiftPhotos": "Shift photos",
+    "count_one": "{{count}} photo",
+    "count_other": "{{count}} photos",
+    "open": "View photo of {{title}}, {{time}}",
+    "imageAlt": "Photo of {{title}}",
+    "unavailable": "Photo unavailable",
+    "viewer": "Photo viewer",
+    "close": "Close",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "position": "{{current}} of {{total}}",
+    "by": "Recorded by {{name}}",
+    "zoomHint": "Double-tap or pinch to zoom.",
+    "gone": "This photo is no longer available.",
+    "loading": "Loading photo…"
   }
 }

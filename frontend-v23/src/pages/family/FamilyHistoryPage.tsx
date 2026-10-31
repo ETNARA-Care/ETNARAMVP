@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CalendarDays, CheckCircle2, ChevronRight, Clock3, FileText, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { familyPhotos } from "@/features/activityPhotos/familyPhotos";
+import { FamilyPhotoGrid } from "@/features/activityPhotos/FamilyPhotos";
+import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoViewer";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
@@ -30,13 +34,16 @@ function eventsForShift(shift: FamilyShiftSummary, timeline: FamilyTimelineItem[
     .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
 }
 
-function HistoryDayRow({ shift, timeline, onOpen }: {
+function HistoryDayRow({ shift, timeline, onOpen, photosOn }: {
   shift: FamilyShiftSummary;
   timeline: FamilyTimelineItem[];
   onOpen: (id: string) => void;
+  photosOn: boolean;
 }) {
+  const { t } = useTranslation("photos");
   const events = eventsForShift(shift, timeline);
   const summary = events.at(-1);
+  const photoCount = photosOn ? familyPhotos(events).length : 0;
   return (
     <button type="button" onClick={() => onOpen(shift.id)} className="text-left w-full">
       <Card className="flex flex-col gap-1 hover:bg-[var(--color-ivory-100)] transition-colors">
@@ -50,16 +57,22 @@ function HistoryDayRow({ shift, timeline, onOpen }: {
         <p className="text-[var(--text-body)] text-[var(--color-text-primary)] mt-1">
           {summary ? `“${summary.title}: ${summary.summary}”` : "Turno completado sin actualizaciones familiares."}
         </p>
+        {photoCount > 0 && <p className="text-[var(--text-caption)] font-medium text-[#486d48]" data-testid="history-photo-count">{t("family.count", { count: photoCount })}</p>}
       </Card>
     </button>
   );
 }
 
-function HistoryDayDetail({ shift, timeline, onBack }: {
+function HistoryDayDetail({ shift, timeline, onBack, organizationId, photosOn }: {
   shift: FamilyShiftSummary;
   timeline: FamilyTimelineItem[];
   onBack: () => void;
+  organizationId: string | undefined;
+  photosOn: boolean;
 }) {
+  const { t } = useTranslation("photos");
+  const photos = useMemo(() => (photosOn ? familyPhotos(eventsForShift(shift, timeline)) : []), [photosOn, shift, timeline]);
+  const photoViewer = useFamilyPhotoViewer(organizationId, photos);
   const entries = eventsForShift(shift, timeline).map((item) => ({
     id: item.id,
     time: new Date(item.occurredAt).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" }),
@@ -79,6 +92,15 @@ function HistoryDayDetail({ shift, timeline, onBack }: {
           </p>
         </div>
       </div>
+      {photosOn && organizationId && (
+        <section className="flex flex-col gap-2" data-testid="history-shift-photos">
+          <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)]">{t("family.shiftPhotos")}</p>
+          {photos.length
+            ? <FamilyPhotoGrid organizationId={organizationId} photos={photos} onOpen={photoViewer.open} />
+            : <p className="text-[var(--text-small)] text-[var(--color-text-muted)]" data-testid="family-photos-empty">{t("family.noneShift")}</p>}
+          {photoViewer.viewer}
+        </section>
+      )}
       {entries.length > 0 ? (
         <Timeline entries={entries} />
       ) : (
@@ -91,6 +113,7 @@ function HistoryDayDetail({ shift, timeline, onBack }: {
 export function FamilyHistoryPage() {
   const { activeOrganization } = useAuth();
   const { selectedKey } = useFamilyRecipient();
+  const photosOn = hasOrgFeature(activeOrganization?.features, "ACTIVITY_PHOTOS");
   const [recipient, setRecipient] = useState<FamilyRecipient | null>(null);
   const [shifts, setShifts] = useState<FamilyShiftSummary[] | null>(null);
   const [timeline, setTimeline] = useState<FamilyTimelineItem[]>([]);
@@ -124,7 +147,14 @@ export function FamilyHistoryPage() {
     }
   }, [activeOrganization, selectedKey]);
 
-  useEffect(() => { void load(); }, [load]);
+  // Se actualiza sola: una foto retirada o un consentimiento revocado desaparecen sin recargar a mano.
+  useEffect(() => {
+    void Promise.resolve().then(load);
+    const interval = window.setInterval(() => void load(), 30_000);
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
+  }, [load]);
 
   const sortedShifts = useMemo(
     () => (shifts ?? []).slice().sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()),
@@ -138,7 +168,7 @@ export function FamilyHistoryPage() {
 
   if (shifts === null) return <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-40" /><Skeleton className="h-28" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
-  if (openShift) return <HistoryDayDetail shift={openShift} timeline={timeline} onBack={() => setOpenShiftId(null)} />;
+  if (openShift) return <HistoryDayDetail shift={openShift} timeline={timeline} onBack={() => setOpenShiftId(null)} organizationId={recipient?.organizationId} photosOn={photosOn} />;
 
   const now = Date.now();
   const upcoming = sortedShifts.filter((shift) => shift.status !== "cancelled" && !shift.checkedOutAt && new Date(shift.scheduledEnd).getTime() >= now);
@@ -205,7 +235,7 @@ export function FamilyHistoryPage() {
           <EmptyState icon={<CheckCircle2 size={28} />} title="No hay turnos completados todavía." description="Cuando finalice un turno, aparecerá aquí con las actualizaciones autorizadas." />
         ) : (
           <div className="flex flex-col gap-2">
-            {completedShifts.map((shift) => <HistoryDayRow key={shift.id} shift={shift} timeline={timeline} onOpen={setOpenShiftId} />)}
+            {completedShifts.map((shift) => <HistoryDayRow key={shift.id} shift={shift} timeline={timeline} onOpen={setOpenShiftId} photosOn={photosOn} />)}
           </div>
         )}
       </section>

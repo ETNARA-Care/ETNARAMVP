@@ -170,5 +170,26 @@
     "unavailable": "Las fotos no están disponibles ahora.",
     "withCode": "No se pudo completar. Código: {{code}}",
     "generic": "No se pudo completar."
+  },
+  "family": {
+    "todayTitle": "Fotos de hoy",
+    "todayEyebrow": "Fotos compartidas",
+    "noneToday": "Todavía no hay fotos compartidas hoy. Cuando la agencia comparta una foto de una actividad, aparecerá aquí.",
+    "noneShift": "No hay fotos compartidas de este turno.",
+    "shiftPhotos": "Fotos del turno",
+    "count_one": "{{count}} foto",
+    "count_other": "{{count}} fotos",
+    "open": "Ver foto de {{title}}, {{time}}",
+    "imageAlt": "Foto de {{title}}",
+    "unavailable": "Foto no disponible",
+    "viewer": "Visor de fotos",
+    "close": "Cerrar",
+    "previous": "Foto anterior",
+    "next": "Foto siguiente",
+    "position": "{{current}} de {{total}}",
+    "by": "Registró {{name}}",
+    "zoomHint": "Toca dos veces o pellizca para ampliar.",
+    "gone": "Esta foto ya no está disponible.",
+    "loading": "Cargando foto…"
   }
 }

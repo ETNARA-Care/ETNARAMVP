@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader, EmptyState, ErrorState, Card, Avatar, Badge, Button, Skeleton } from "@/components/ui";
 import { CheckCircle2, MessageCircle, Clock3, LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { hasOrgFeature } from "@/auth/orgFeatures";
+import { familyPhotos } from "@/features/activityPhotos/familyPhotos";
+import { FamilyPhotoThumb } from "@/features/activityPhotos/FamilyPhotos";
+import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoViewer";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyTimelineItem } from "@/api/familyTimeline";
@@ -22,7 +26,9 @@ export function FamilyActivityPage() {
   const { activeOrganization } = useAuth();
   const { selectedKey } = useFamilyRecipient();
   const [items, setItems] = useState<FamilyTimelineItem[] | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | undefined>();
   const [error, setError] = useState(false);
+  const photosOn = hasOrgFeature(activeOrganization?.features, "ACTIVITY_PHOTOS");
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -33,15 +39,27 @@ export function FamilyActivityPage() {
       const recipient = pickRecipient(recipients, activeOrganization?.id, selectedKey);
       if (!recipient) { setItems([]); return; }
       setItems(await getFamilyTimeline(recipient.organizationId, recipient.recipientId, token));
+      setOrganizationId(recipient.organizationId);
     } catch { setError(true); setItems([]); }
   }, [activeOrganization, selectedKey]);
 
-  useEffect(() => { void load(); }, [load]);
+  // Se actualiza sola (como «Hoy»): una foto retirada o un consentimiento revocado desaparecen sin recargar a mano.
+  useEffect(() => {
+    void Promise.resolve().then(load);
+    const interval = window.setInterval(() => void load(), 30_000);
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
+  }, [load]);
+
+  const todayItems = useMemo(() => (items ?? []).filter((item) => isToday(item.occurredAt)), [items]);
+  const photos = useMemo(() => (photosOn ? familyPhotos(todayItems) : []), [photosOn, todayItems]);
+  const photoViewer = useFamilyPhotoViewer(organizationId, photos);
 
   if (items === null) return <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-32" /><Skeleton className="h-32" /></div>;
   if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
 
-  const today = items.filter((item) => isToday(item.occurredAt));
+  const today = todayItems;
 
   return (
     <div className="space-y-5">
@@ -80,12 +98,16 @@ export function FamilyActivityPage() {
                 </div>
                 <p className="mt-1 text-sm leading-6 text-[#667085]">{item.summary}</p>
                 {item.caregiver.displayName ? <p className="mt-2 text-xs font-medium text-[#66845f]">{item.caregiver.displayName}</p> : null}
+                {organizationId && photos.some((photo) => photo.itemId === item.id) && (
+                  <FamilyPhotoThumb organizationId={organizationId} photo={photos.find((photo) => photo.itemId === item.id)!} onOpen={photoViewer.open} className="mt-3 w-full max-w-[16rem]" />
+                )}
               </div>
             </article>
           ))}
         </section>
       )}
 
+      {photoViewer.viewer}
       <p className="px-1 text-xs leading-5 text-[#98a2b3]">Solo se muestran actualizaciones autorizadas para familiares. La información interna del personal permanece protegida.</p>
     </div>
   );
