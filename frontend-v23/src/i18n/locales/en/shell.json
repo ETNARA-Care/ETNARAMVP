@@ -9,7 +9,11 @@
     "switchOrganization": "Switch organization",
     "logout": "Sign out",
     "confirmLogout": "Yes, sign out",
-    "language": "Language"
+    "language": "Language",
+    "confirmLogoutKeep": "Sign out and keep them",
+    "discardAndLogout": "Discard them and sign out",
+    "confirmDiscard": "Yes, discard them for good",
+    "discardWarning": "They will be erased from this phone and will not reach the agency."
   },
   "roles": {
     "admin": "Administration",
@@ -64,8 +68,8 @@
     "theAgency": "the agency",
     "manageEstablishment": "Manage {{name}}",
     "establishmentAccess": "Establishment administrator access",
-    "logoutWarning_one": "You have 1 record not yet sent. If you sign out it will be lost.",
-    "logoutWarning_other": "You have {{count}} records not yet sent. If you sign out they will be lost."
+    "logoutWarning_one": "You have 1 record not yet sent. It stays saved and encrypted on this phone for your account and is sent when you sign in again.",
+    "logoutWarning_other": "You have {{count}} records not yet sent. They stay saved and encrypted on this phone for your account and are sent when you sign in again."
   },
   "family": {
     "nameFallback": "Family",

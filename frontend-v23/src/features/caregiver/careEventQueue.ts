@@ -5,10 +5,10 @@ import type { CareEventTypeCode, CreateCareEventInput } from "@/api/careEvents";
 /**
  * Cola de registros sin señal: cuidados, llegada y salida.
  *
- * Phase 12.4 (aprobado por Rafa 2026-10-22): para una sesión de cuidador/a
- * que se queda conectada, la cola se guarda CIFRADA en el teléfono
- * (offline/secureStore) y se borra sola al enviarse, a los 7 días o al cerrar
- * sesión. Para cualquier otra sesión sigue solo en memoria (como en 12.0).
+ * Phase 12.4 (aprobado por Rafa 2026-10-22) y C3 (auditoría 31-oct-2026): la
+ * cola se guarda CIFRADA en el teléfono, en la bóveda de la cuenta que la creó
+ * (offline/pendingVault), y se borra al enviarse, al descartarla ella o a los
+ * 7 días. Terminar la sesión (401, vencida, revocada) ya no la borra.
  *
  * Cada registro lleva un clientEventId generado aquí y la hora real
  * (occurredAt). El backend devuelve el registro ya guardado si llega dos
@@ -55,6 +55,12 @@ export interface CareEventQueueState {
   arrive: (organizationId: string, shiftId: string) => Promise<SubmitResult>;
   retryNow: () => void;
   discard: (clientEventId: string) => void;
+  /** La sesión terminó (401) con registros guardados: se conservan hasta que ella vuelva a entrar. */
+  sessionEnded: boolean;
+  /** Descarta todos los registros de esta cuenta (confirmado por ella): se borran con su llave. */
+  discardAll: () => Promise<void>;
+  /** Cierra la sesión local conservando los registros y lleva a la entrada. */
+  signInAgain: () => void;
 }
 
 export const CareEventQueueContext = createContext<CareEventQueueState>({
@@ -68,6 +74,9 @@ export const CareEventQueueContext = createContext<CareEventQueueState>({
   arrive: async () => "sent",
   retryNow: () => {},
   discard: () => {},
+  sessionEnded: false,
+  discardAll: async () => {},
+  signInAgain: () => {},
 });
 
 export function useCareEventQueue(): CareEventQueueState {

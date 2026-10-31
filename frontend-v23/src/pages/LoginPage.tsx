@@ -7,6 +7,7 @@ import { resolveExperienceRoute } from "@/auth/roles";
 import { loginErrorMessage } from "@/auth/errorMessages";
 import type { ApiError } from "@/api/client";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
+import { pendingOnDevice } from "@/offline/pendingVault";
 
 export function LoginPage() {
   const { status, login, organizations, activeOrganization, roles, isPlatformAdmin } = useAuth();
@@ -18,6 +19,13 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   // The error is kept as its cause, not as text, so it follows a language change.
   const [loginError, setLoginError] = useState<ApiError | null>(null);
+  // C3: registros sin enviar guardados en este teléfono (solo el total: ni de quién ni qué son).
+  const [pendingTotal, setPendingTotal] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    pendingOnDevice().then((r) => { if (!cancelled) setPendingTotal(r.total); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
 
   // Si el bootstrap ya resolvió una sesión válida (ej. refresh con token
   // vigente) o el login recién terminó, navega a la experiencia correcta
@@ -57,6 +65,11 @@ export function LoginPage() {
             {t("login.tagline")}
           </p>
         </div>
+        {pendingTotal > 0 && (
+          <p role="status" data-testid="login-pending-records" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            {t("login.pendingRecords", { count: pendingTotal })}
+          </p>
+        )}
         <form className="flex flex-col gap-4" onSubmit={onSubmit}>
           <Input
             label={t("login.identifier")}

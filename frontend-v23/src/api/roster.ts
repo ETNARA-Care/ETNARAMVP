@@ -88,9 +88,21 @@ export async function updateWorker(
 
 /** Shown when saving a staff member fails; covers the backend's rule for inactive memberships (30-oct-2026). */
 export const INACTIVE_RENAME_MESSAGE = "Esta persona tiene la membresía inactiva. Reactívala para cambiar su nombre.";
+/** C2 (31-oct-2026): rol, estado y nombre de una cuidadora los cambia la administración de la agencia. */
+export const ESTABLISHMENT_STAFF_CHANGE_MESSAGE = "El rol, el estado y el nombre del personal los cambia la administración o la supervisión de la agencia.";
+
+/** C1/C2: mensajes de asignación en un establecimiento. */
+export function establishmentAssignmentErrorMessage(error: unknown): string {
+  const code = (error as { code?: string } | null)?.code;
+  if (code === "RESIDENT_TRANSFER_FORBIDDEN") return "Solo la administración o la supervisión de la agencia puede traer residentes de otro establecimiento o del servicio a domicilio.";
+  if (code === "ESTABLISHMENT_STAFF_ASSIGNMENT_FORBIDDEN") return "Solo la administración o la supervisión de la agencia puede asignar personal existente a un establecimiento.";
+  return "No pudimos completar la asignación.";
+}
+
 export function workerUpdateErrorMessage(error: unknown, fallback: string): string {
   const code = (error as { code?: string } | null)?.code;
   if (code === "WORKER_MEMBERSHIP_INACTIVE") return INACTIVE_RENAME_MESSAGE;
   if (code === "WORKER_PROFILE_NOT_SAVED") return "No se guardó el nombre. Vuelve a intentarlo; si continúa, avisa a soporte.";
+  if (code === "ESTABLISHMENT_STAFF_CHANGE_FORBIDDEN") return ESTABLISHMENT_STAFF_CHANGE_MESSAGE;
   return fallback;
 }

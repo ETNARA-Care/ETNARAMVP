@@ -20,18 +20,20 @@ test("the device store is AES-GCM with a non-extractable key and a 7-day limit",
   assert.match(store, /if \(sealed\.expiresAt <= Date\.now\(\)\) \{\s+await secureDelete\(name\);/);
 });
 
-test("only a caregiver-only session is kept, and logging out erases the phone", () => {
+test("only a caregiver-only session is kept; ending it erases the session, not unsent records (C3)", () => {
   assert.match(token, /if \(options\?\.keepSignedIn && options\.expiresAt\)/);
-  assert.match(token, /forgetRememberedResponses\(\);\s+void secureClearAll\(\);/);
+  assert.match(token, /forgetRememberedResponses\(\);\s+for \(const name of SESSION_SECURE_ITEMS\) void secureDelete\(name\);/);
   assert.match(auth, /setToken\(token, \{ keepSignedIn, expiresAt \}\)/);
   assert.match(auth, /await restoreToken\(\);/);
   assert.match(auth, /apiErr\.status !== 401 && isKeptSession\(\)/);
 });
 
 test("the queue is saved per user and dropped after 7 days", () => {
-  assert.match(provider, /stored && stored\.userId === userId/);
-  assert.match(provider, /new Date\(item\.createdAt\)\.getTime\(\) > cutoff/);
-  assert.match(provider, /if \(items\.length === 0\) void secureDelete\(SECURE_QUEUE\);/);
+  const vault = read("src/offline/pendingVault.ts");
+  assert.match(vault, /if \(!stored \|\| stored\.userId !== userId\) return \[\];/);
+  assert.match(vault, /new Date\(item\.createdAt\)\.getTime\(\) > cutoff/);
+  assert.match(vault, /if \(kept\.length === 0\) \{\s+await secureDelete\(vaultName\(userId\)\);/);
+  assert.match(provider, /void savePending\(queue\.owner, queue\.items\);/);
 });
 
 test("check-in and check-out go through the queue with their own id and real time", () => {

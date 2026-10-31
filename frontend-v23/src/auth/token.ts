@@ -1,4 +1,4 @@
-import { secureClearAll, secureGet, secureSet } from "@/offline/secureStore";
+import { secureDelete, secureGet, secureSet } from "@/offline/secureStore";
 import { forgetRememberedResponses } from "@/api/client";
 
 /**
@@ -50,10 +50,20 @@ export async function restoreToken(): Promise<void> {
   sessionStorage.setItem(KEPT_KEY, "1");
 }
 
-/** Cierra la sesión local y borra todo lo guardado en el teléfono. */
+/**
+ * Lo que pertenece a la SESIÓN en el teléfono: la sesión guardada, la copia de /me y los turnos
+ * cercanos y el bloqueo con Face ID. Se borra al terminar la sesión (cerrar sesión, 401, vencida o revocada).
+ */
+export const SESSION_SECURE_ITEMS = [SECURE_SESSION, "identity", "reads", "lock"] as const;
+
+/**
+ * Cierra la sesión local y borra lo de la sesión guardado en el teléfono.
+ * C3 (auditoría 31-oct-2026): NO borra los registros sin enviar. Siguen cifrados con la llave
+ * de su cuenta (offline/pendingVault) y solo esa cuenta puede enviarlos o descartarlos.
+ */
 export function clearToken(): void {
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(KEPT_KEY);
   forgetRememberedResponses();
-  void secureClearAll();
+  for (const name of SESSION_SECURE_ITEMS) void secureDelete(name);
 }
