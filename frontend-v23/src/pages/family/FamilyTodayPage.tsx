@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { familyPhotos } from "@/features/activityPhotos/familyPhotos";
 import { FamilyPhotoGrid } from "@/features/activityPhotos/FamilyPhotos";
 import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoViewer";
+import { useFamilyRefresh } from "@/features/activityPhotos/useFamilyRefresh";
 import { ChevronRight, Clock3, MessageCircle, ShieldCheck } from "lucide-react";
 import { Avatar, ErrorState, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
@@ -75,11 +76,8 @@ export function FamilyTodayPage() {
     } catch { setError(true); setShifts([]); setTimeline([]); }
   }, [activeOrganization, selectedKey]);
 
-  useEffect(() => {
-    void load(); const interval = window.setInterval(() => void load(), 30_000);
-    const onFocus = () => void load(); window.addEventListener("focus", onFocus);
-    return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
-  }, [load]);
+  // Cada 30 s (10 s con el visor abierto), nada con la app oculta y en seguida al volver.
+  useFamilyRefresh(load);
 
   const shift = useMemo(() => shifts?.find(x => isToday(x.scheduledStart) && !x.checkedOutAt && x.status !== "cancelled")
     ?? shifts?.find(x => isToday(x.scheduledStart)), [shifts]);

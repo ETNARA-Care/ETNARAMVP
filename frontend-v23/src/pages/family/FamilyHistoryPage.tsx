@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ArrowLeft, CalendarDays, CheckCircle2, ChevronRight, Clock3, FileText, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { familyPhotos } from "@/features/activityPhotos/familyPhotos";
 import { FamilyPhotoGrid } from "@/features/activityPhotos/FamilyPhotos";
 import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoViewer";
+import { useFamilyRefresh } from "@/features/activityPhotos/useFamilyRefresh";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
@@ -147,14 +148,8 @@ export function FamilyHistoryPage() {
     }
   }, [activeOrganization, selectedKey]);
 
-  // Se actualiza sola: una foto retirada o un consentimiento revocado desaparecen sin recargar a mano.
-  useEffect(() => {
-    void Promise.resolve().then(load);
-    const interval = window.setInterval(() => void load(), 30_000);
-    const onFocus = () => void load();
-    window.addEventListener("focus", onFocus);
-    return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
-  }, [load]);
+  // Se actualiza sola: cada 30 s (10 s con el visor abierto), nada con la app oculta y en seguida al volver.
+  useFamilyRefresh(load);
 
   const sortedShifts = useMemo(
     () => (shifts ?? []).slice().sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()),

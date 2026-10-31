@@ -346,7 +346,11 @@ test("Phase 6 synchronizes truthful shift state across Admin and Family", async 
   assert.match(supervision, /assignments\.find\(\(assignment\) => assignment\.response_status === "pending"\)/);
   assert.match(supervision, /setInterval\(\(\) => void reload\(\), 30_000\)/);
   assert.match(shiftDetail, /setInterval\(\(\) => void load\(\), 30_000\)/);
-  assert.match(familyToday, /setInterval\(\(\) => void load\(\), 30_000\)/);
+  // Fotos E3 (31-oct-2026): «Hoy» sigue actualizándose cada 30 s, ahora con el hook común
+  // (10 s solo con el visor de fotos abierto, nada con la app oculta, en seguida al volver).
+  const familyRefresh = await readFile(new URL("../src/features/activityPhotos/familyRefresh.ts", import.meta.url), "utf8");
+  assert.match(familyToday, /useFamilyRefresh\(load\);/);
+  assert.match(familyRefresh, /export const PAGE_REFRESH_MS = 30_000;/);
   assert.doesNotMatch(familyToday, /shifts\.find\(\(item\) => item\.status !== "cancelled"\)/);
   assert.match(notifications, /SHIFT_STARTED/);
   assert.match(notifications, /SHIFT_COMPLETED/);

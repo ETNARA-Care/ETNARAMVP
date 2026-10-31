@@ -2,6 +2,16 @@
 
 ## Current Status
 
+## 2026-10-31 — Fotos E3: revocación en ≤ 10 s con el visor abierto (rama local claude/activity-photos-e3-refresh-10s, sobre #259)
+- **Solo local:** sin push ni cambios en los PR #257–#259. Backend sin cambios; el servidor sigue negando la imagen en la primera petición.
+- **Hook común `useFamilyRefresh`** para «Hoy», «Actividad» e «Historial»:
+  - cada 30 s sin visor (como antes);
+  - cada 10 s solo mientras el visor está abierto;
+  - nada con la app oculta;
+  - una sola actualización inmediata al volver (`visibilitychange` o `focus`).
+- **Qué se pide:** solo la línea de tiempo, nunca la imagen otra vez.
+- **Pruebas:** node 351/351; E2E de la ventana 7/7 en iPhone y Android (cierre en 10,4 s en 3/3 retiros; 2/min sin visor; 6/min con visor; 0 con la app oculta); regresión E1 24/24, E2 20/20 y E3 16/16 en ambos.
+
 ## 2026-10-31 — Fotos de actividades E3: Portal Familiar (rama local claude/activity-photos-e3-family, sobre E1 y E2)
 - **Solo local:** sin push, PR, fusión ni despliegue. Backend sin cambios. `ACTIVITY_PHOTOS` apagado; sin él las tres pantallas no cambian.
 - **Pantallas:** «Hoy» → sección «Fotos de hoy» (cuadrícula o estado vacío claro); «Actividad» → la foto dentro de su registro; «Historial» → «N fotos» en el turno y «Fotos del turno» en el detalle.

@@ -6,6 +6,7 @@ import { hasOrgFeature } from "@/auth/orgFeatures";
 import { familyPhotos } from "@/features/activityPhotos/familyPhotos";
 import { FamilyPhotoThumb } from "@/features/activityPhotos/FamilyPhotos";
 import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoViewer";
+import { useFamilyRefresh } from "@/features/activityPhotos/useFamilyRefresh";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyTimelineItem } from "@/api/familyTimeline";
@@ -43,14 +44,8 @@ export function FamilyActivityPage() {
     } catch { setError(true); setItems([]); }
   }, [activeOrganization, selectedKey]);
 
-  // Se actualiza sola (como «Hoy»): una foto retirada o un consentimiento revocado desaparecen sin recargar a mano.
-  useEffect(() => {
-    void Promise.resolve().then(load);
-    const interval = window.setInterval(() => void load(), 30_000);
-    const onFocus = () => void load();
-    window.addEventListener("focus", onFocus);
-    return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
-  }, [load]);
+  // Se actualiza sola: cada 30 s (10 s con el visor abierto), nada con la app oculta y en seguida al volver.
+  useFamilyRefresh(load);
 
   const todayItems = useMemo(() => (items ?? []).filter((item) => isToday(item.occurredAt)), [items]);
   const photos = useMemo(() => (photosOn ? familyPhotos(todayItems) : []), [photosOn, todayItems]);
