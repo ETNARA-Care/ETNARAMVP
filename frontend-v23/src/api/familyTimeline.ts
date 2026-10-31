@@ -15,6 +15,12 @@ export interface FamilyTimelineItem {
   title: string;
   summary: string;
   caregiver: { displayName: string | null; role: string | null };
+  /**
+   * Fotos de actividades (115/116): `reference` solo llega si la foto está compartida
+   * para esta familia ahora mismo (aprobada, consentimientos vigentes, can_view_photos,
+   * interruptor encendido). Sin `reference`, no hay nada que mostrar.
+   */
+  photo?: { visible: boolean; reference?: string };
 }
 
 export async function listMyCareRecipients(token: string): Promise<FamilyRecipient[]> {

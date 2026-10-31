@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { hasOrgFeature } from "@/auth/orgFeatures";
+import { familyPhotos } from "@/features/activityPhotos/familyPhotos";
+import { FamilyPhotoGrid } from "@/features/activityPhotos/FamilyPhotos";
+import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoViewer";
 import { ChevronRight, Clock3, MessageCircle, ShieldCheck } from "lucide-react";
 import { Avatar, ErrorState, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
@@ -51,6 +56,9 @@ export function FamilyTodayPage() {
   const [shifts, setShifts] = useState<FamilyShiftSummary[] | null>(null);
   const [timeline, setTimeline] = useState<FamilyTimelineItem[]>([]);
   const [error, setError] = useState(false);
+  // Fotos de actividades (E3): solo con ACTIVITY_PHOTOS; el backend decide cuáles (aprobadas y con consentimiento).
+  const photosOn = hasOrgFeature(activeOrganization?.features, "ACTIVITY_PHOTOS");
+  const { t: tp } = useTranslation("photos");
 
   const load = useCallback(async () => {
     const token = getToken(); if (!token) return;
@@ -76,6 +84,8 @@ export function FamilyTodayPage() {
   const shift = useMemo(() => shifts?.find(x => isToday(x.scheduledStart) && !x.checkedOutAt && x.status !== "cancelled")
     ?? shifts?.find(x => isToday(x.scheduledStart)), [shifts]);
   const entries = timeline.filter(x => isToday(x.occurredAt));
+  const todayPhotos = useMemo(() => (photosOn ? familyPhotos(timeline.filter(x => isToday(x.occurredAt))) : []), [photosOn, timeline]);
+  const photoViewer = useFamilyPhotoViewer(recipient?.organizationId, todayPhotos);
   const lastEntry = entries[0];
   const summary = buildDailySummary(entries);
   const caredFor = recipientName(recipient);
@@ -150,6 +160,19 @@ export function FamilyTodayPage() {
           ))}
         </div> : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]">Todavía no hay actualizaciones hoy.</div>}
       </section>
+
+      {photosOn && recipient && (
+        <section className="rounded-[22px] border border-[#102b57]/10 bg-white p-4 shadow-[0_8px_28px_rgba(16,43,87,.05)]" data-testid="family-today-photos">
+          <div className="mb-3">
+            <p className="text-xs font-semibold uppercase tracking-[.14em] text-[#66845f]">{tp("family.todayEyebrow")}</p>
+            <h2 className="mt-1 font-display text-xl text-[#102b57]">{tp("family.todayTitle")}</h2>
+          </div>
+          {todayPhotos.length
+            ? <FamilyPhotoGrid organizationId={recipient.organizationId} photos={todayPhotos} onOpen={photoViewer.open} />
+            : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]" data-testid="family-photos-empty">{tp("family.noneToday")}</div>}
+        </section>
+      )}
+      {photoViewer.viewer}
 
       <button onClick={() => navigate("/family/history")} className="flex w-full items-center justify-between rounded-[20px] border border-[#102b57]/10 bg-[#f1eee6] px-4 py-3 text-left">
         <div><p className="font-medium text-[#173154]">Próximos turnos</p><p className="text-sm text-[#667085]">Consulta el calendario de cuidado.</p></div>

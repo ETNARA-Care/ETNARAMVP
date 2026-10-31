@@ -2,6 +2,14 @@
 
 ## Current Status
 
+## 2026-10-31 — Fotos de actividades E3: Portal Familiar (rama local claude/activity-photos-e3-family, sobre E1 y E2)
+- **Solo local:** sin push, PR, fusión ni despliegue. Backend sin cambios. `ACTIVITY_PHOTOS` apagado; sin él las tres pantallas no cambian.
+- **Pantallas:** «Hoy» → sección «Fotos de hoy» (cuadrícula o estado vacío claro); «Actividad» → la foto dentro de su registro; «Historial» → «N fotos» en el turno y «Fotos del turno» en el detalle.
+- **Qué ve la familia:** solo las referencias que el backend envía en cada respuesta (aprobada, consentimientos vigentes, `can_view_photos`, interruptor). Nada se guarda en el teléfono.
+- **Visor a pantalla completa:** áreas seguras de iPhone, cerrar de 44 px, anterior/siguiente, deslizar, doble toque y pellizco (1–4×), Escape. Pide la imagen de nuevo al abrirla. Sin botón de descarga; no se promete impedir capturas.
+- **Revocación:** «Hoy», «Actividad» e «Historial» se actualizan cada 30 s y al volver a la app. Si la foto abierta deja de estar compartida, el visor se cierra con aviso. Una miniatura cuya imagen da 404 desaparece.
+- **Pruebas:** node 345/345, tsc, lint 109 avisos (2 menos que main), build. E2E E3 16/16 en iPhone 390×844 y Android 412×915; regresión E1 24/24 y E2 20/20 en ambos.
+
 ## 2026-10-31 — Fotos de actividades E1 + E2: cuidador y agencia (ramas locales claude/activity-photos-e1-caregiver y claude/activity-photos-e2-agency)
 - **Solo local:** sin push, PR, fusión ni despliegue. Backend sin cambios (115/116 ya en producción). `ACTIVITY_PHOTOS` sigue apagado; sin él nada cambia.
 - **E1 cuidador:** «Foto (opcional)» en el registro: «Tomar foto» (cámara trasera) o galería → JPEG ≤ 2048 px sin EXIF en el teléfono → subida tras guardar. Sin consentimiento: botones desactivados. Sin conexión: aviso de que la foto necesita internet; el registro va a la cola cifrada y la foto no se guarda en el teléfono (E6). Fallo pasajero: «Reintentar foto» solo en memoria. Cola: `submitWithEventId` (formato cifrado sin cambios).
