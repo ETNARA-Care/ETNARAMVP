@@ -61,3 +61,91 @@ export async function getActivityPhoto(organizationId: string, careEventId: stri
 export function getActivityPhotoImage(organizationId: string, photoId: string, token: string): Promise<Blob> {
   return apiClient.getBinary(`/organizations/${organizationId}/activity-photos/${photoId}/image`, token);
 }
+
+// ------------------------------------------------------------------ agencia (E2)
+// Solo administración y supervisión (el backend responde 403 a los demás y 404 con el interruptor apagado).
+
+export interface AgencyPhoto {
+  id: string;
+  careEventId: string;
+  careRecipientId: string;
+  careRecipientName: string;
+  status: ActivityPhotoStatus;
+  uploadedAt: string;
+  reviewedAt: string | null;
+  reviewReason: string | null;
+  activity: { type: string; occurredAt: string; note: string | null };
+  caregiverName: string | null;
+}
+
+export type PhotoDecision = "APPROVE" | "REJECT" | "WITHDRAW";
+
+export interface PhotoHistoryEntry {
+  action: "UPLOADED" | "APPROVED" | "REJECTED" | "WITHDRAWN";
+  from: ActivityPhotoStatus | null;
+  to: ActivityPhotoStatus;
+  reason: string | null;
+  at: string;
+  actor: string | null;
+}
+
+export type PhotoConsentType = "PHOTO_CAPTURE" | "PHOTO_SHARE_FAMILY";
+export type PhotoConsentSigner = "PATIENT" | "LEGAL_REPRESENTATIVE";
+
+export interface PhotoConsent {
+  id: string;
+  type: PhotoConsentType;
+  version: number;
+  signerRole: PhotoConsentSigner;
+  grantedAt: string;
+  grantedBy: string | null;
+  active: boolean;
+  revokedAt: string | null;
+  revokedBy: string | null;
+  revocationReason: string | null;
+}
+
+/** Bandeja de la agencia, la más reciente primero (máx. 100 por página en el backend). */
+export async function listAgencyPhotos(organizationId: string, token: string, filter: { status?: ActivityPhotoStatus; careRecipientId?: string; limit?: number } = {}): Promise<AgencyPhoto[]> {
+  const params = new URLSearchParams();
+  if (filter.status) params.set("status", filter.status);
+  if (filter.careRecipientId) params.set("careRecipientId", filter.careRecipientId);
+  if (filter.limit) params.set("limit", String(filter.limit));
+  const query = params.toString();
+  const result = await apiClient.get<{ photos: AgencyPhoto[] }>(`/organizations/${organizationId}/activity-photos${query ? `?${query}` : ""}`, token);
+  return result.photos;
+}
+
+export async function getAgencyPhotoHistory(organizationId: string, photoId: string, token: string): Promise<PhotoHistoryEntry[]> {
+  const result = await apiClient.get<{ history: PhotoHistoryEntry[] }>(`/organizations/${organizationId}/activity-photos/${photoId}/history`, token);
+  return result.history;
+}
+
+/** Decisión con concurrencia optimista: expectedStatus es el estado que la persona estaba viendo (409 PHOTO_STATUS_CHANGED si cambió). */
+export async function reviewAgencyPhoto(organizationId: string, photoId: string, decision: PhotoDecision, expectedStatus: ActivityPhotoStatus, token: string, reason?: string): Promise<{ id: string; status: ActivityPhotoStatus }> {
+  const result = await apiClient.post<{ photo: { id: string; status: ActivityPhotoStatus } }>(
+    `/organizations/${organizationId}/activity-photos/${photoId}/review`, { decision, expectedStatus, ...(reason?.trim() ? { reason: reason.trim() } : {}) }, token);
+  return result.photo;
+}
+
+export async function listPhotoConsents(organizationId: string, careRecipientId: string, token: string): Promise<PhotoConsent[]> {
+  const result = await apiClient.get<{ consents: PhotoConsent[] }>(`/organizations/${organizationId}/care-recipients/${careRecipientId}/photo-consents`, token);
+  return result.consents;
+}
+
+/** Registra un consentimiento con su formulario firmado (PDF o foto). Nunca edita uno anterior. */
+export async function recordPhotoConsent(organizationId: string, careRecipientId: string, type: PhotoConsentType, signerRole: PhotoConsentSigner, form: Blob, contentType: string, token: string): Promise<{ id: string; type: PhotoConsentType; active: boolean }> {
+  const params = new URLSearchParams({ type, signerRole });
+  const result = await apiClient.postBinary<{ consent: { id: string; type: PhotoConsentType; active: boolean } }>(
+    `/organizations/${organizationId}/care-recipients/${careRecipientId}/photo-consents?${params.toString()}`, form, contentType, token);
+  return result.consent;
+}
+
+export async function revokePhotoConsent(organizationId: string, consentId: string, reason: string, token: string): Promise<void> {
+  await apiClient.post(`/organizations/${organizationId}/photo-consents/${consentId}/revoke`, { reason: reason.trim() }, token);
+}
+
+/** El formulario firmado como Blob privado (PDF o imagen). */
+export function getPhotoConsentForm(organizationId: string, consentId: string, token: string): Promise<Blob> {
+  return apiClient.getBinary(`/organizations/${organizationId}/photo-consents/${consentId}/form`, token);
+}

@@ -11,8 +11,9 @@ const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   FINANZAS: { title: "Finanzas", detail: "Servicios y tarifas de la agencia. ETNARA central solo enciende o apaga: no ve importes ni datos financieros." },
   FACTURACION: { title: "Facturación Premium", detail: "Facturas de la agencia a sus clientes. Requiere Finanzas. ETNARA central solo enciende, apaga y designa al gestor de permisos: no ve facturas, tarifas ni importes." },
   SHIFT_REPORTS: { title: "Informe de turno", detail: "Informe de cada visita con sus registros reales, revisado y aprobado por la agencia. ETNARA central solo enciende o apaga: no ve el contenido de los informes." },
+  ACTIVITY_PHOTOS: { title: "Fotos de actividades", detail: "Fotos de las cuidadoras, revisadas por la agencia antes de que las vea la familia, con consentimiento. ETNARA central solo enciende o apaga: no ve las fotos ni los consentimientos." },
 };
-const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS", "FACTURACION", "SHIFT_REPORTS"];
+const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS", "FACTURACION", "SHIFT_REPORTS", "ACTIVITY_PHOTOS"];
 
 /**
  * ETNARA central: turn the SmartMatch pilot on or off for one agency.
@@ -46,7 +47,7 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
   }
 
   // Only switches this screen knows how to describe: a code added by a newer backend
-  // (e.g. ACTIVITY_PHOTOS) is skipped instead of breaking the whole card.
+  // is skipped instead of breaking the whole card.
   const features = data ? data.features.filter((f) => f.code in LABELS).sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
   const history = data ? data.history.filter((h) => h.code in LABELS) : [];
   const activeCount = features.filter((f) => f.enabled).length;

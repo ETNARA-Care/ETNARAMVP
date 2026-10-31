@@ -2,6 +2,14 @@
 
 ## Current Status
 
+## 2026-10-31 — Fotos de actividades E1 + E2: cuidador y agencia (ramas locales claude/activity-photos-e1-caregiver y claude/activity-photos-e2-agency)
+- **Solo local:** sin push, PR, fusión ni despliegue. Backend sin cambios (115/116 ya en producción). `ACTIVITY_PHOTOS` sigue apagado; sin él nada cambia.
+- **E1 cuidador:** «Foto (opcional)» en el registro: «Tomar foto» (cámara trasera) o galería → JPEG ≤ 2048 px sin EXIF en el teléfono → subida tras guardar. Sin consentimiento: botones desactivados. Sin conexión: aviso de que la foto necesita internet; el registro va a la cola cifrada y la foto no se guarda en el teléfono (E6). Fallo pasajero: «Reintentar foto» solo en memoria. Cola: `submitWithEventId` (formato cifrado sin cambios).
+- **E2 agencia** (solo ORGANIZATION_ADMIN y SUPERVISOR, decisión D5-B): `/agency/photos` (FeatureRoute ACTIVITY_PHOTOS, enlace en Cuidado) con pestañas Por revisar · Compartidas · No compartidas · Retiradas; compartir (confirmación), no compartir y retirar (motivo ≥ 3), volver a compartir; concurrencia optimista (`expectedStatus`, 409 → recarga); historial de solo inserción; aviso y botón desactivado si falta el consentimiento de compartir. Perfil del residente: «Consentimiento de fotografía» (registrar con formulario PDF/foto, ver formulario como Blob privado, revocar con motivo, versiones anteriores). Central: nombre legible del interruptor.
+- **Textos:** namespace `photos` (es-PR / en-US) y `shell:agency.items.photos`.
+- **Pruebas:** node 337/337, tsc, lint (sin avisos nuevos), build. E2E local (backend como app_runtime, S3 local, datos e imágenes sintéticas): E1 24/24 y E2 20/20 en iPhone 390×844 y Android 412×915.
+- **Siguiente:** E3 Portal Familiar (pendiente de autorización de Rafa).
+
 ## 2026-10-25 — Facturación Premium F2.3 (portal): emitir, PDF, anular, datos de facturación (claude/facturacion-f2-3)
 - Borrador → «Emitir factura» (solo con billing.issue; desactivado mientras la lista «Antes de emitir» no esté vacía) → confirmación con total y aviso de que no se puede editar ni borrar → número consecutivo (FAC-000001…).
 - Emitida/anulada: número, quién y cuándo, retención, sin acciones de edición; «Descargar PDF» y «Descargar copia ANULADA» leídos con la sesión (blob, sin enlaces públicos ni firmados, `cache: no-store`). «Anular factura» (billing.void) exige motivo; los turnos quedan libres.

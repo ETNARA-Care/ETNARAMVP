@@ -1,15 +1,16 @@
 import { Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark } from "lucide-react";
+import { Camera, HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
+import { canReviewPhotos } from "@/features/activityPhotos/permissions";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
 import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "messages" | "agents" | "settings" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -25,6 +26,7 @@ const CARE: NavKey[] = [
  { to: "/agency/residents", icon: Users, k: "residents" },
  { to: "/agency/quality", icon: ClipboardCheck, k: "quality" },
  { to: "/agency/incidents", icon: AlertTriangle, k: "incidents" },
+ { to: "/agency/photos", icon: Camera, k: "photos" },
  { to: "/agency/messages", icon: MessageCircle, k: "messages" },
 ];
 const ADMINISTRATION: NavKey[] = [
@@ -53,10 +55,13 @@ export function AgencyLayout() {
  const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
  // Finanzas (119): solo administradores y solo con FINANZAS activado por ETNARA central.
  const finance = hasOrgFeature(activeOrganization?.features, "FINANZAS");
+ // Fotos de actividades (E2): solo con ACTIVITY_PHOTOS y solo administración y supervisión (D5-B).
+ const photos = hasOrgFeature(activeOrganization?.features, "ACTIVITY_PHOTOS") && canReviewPhotos(roles);
  const groups: AdminNavGroup[] = GROUPS.map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
    (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch" && item.to !== "/agency/finance"))
    && (smartMatch || item.to !== "/agency/smartmatch")
-   && (finance || item.to !== "/agency/finance")).map(toNav) }));
+   && (finance || item.to !== "/agency/finance")
+   && (photos || item.to !== "/agency/photos")).map(toNav) }));
  const organizationName = activeOrganization?.name ?? t("agency.organizationFallback");
  // Acceso a Plataforma ETNARA: solo administradores de plataforma, separado del administrador de la organización.
  const platformLink = isPlatformAdmin || roles.includes("WORKER")
