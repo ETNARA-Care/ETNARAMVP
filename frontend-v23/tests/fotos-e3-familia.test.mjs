@@ -81,11 +81,11 @@ test("E3.6 con ACTIVITY_PHOTOS apagado las tres pantallas no cambian", () => {
   assert.match(code("src/pages/family/FamilyHistoryPage.tsx"), /\{photosOn && organizationId && \(/);
 });
 
-test("E3.7 «Actividad» e «Historial» se actualizan solos (30 s y al volver a la app), como «Hoy»", () => {
+test("E3.7 «Hoy», «Actividad» e «Historial» usan la misma actualización (30 s, 10 s con visor, al volver)", () => {
   for (const f of ["src/pages/family/FamilyTodayPage.tsx", "src/pages/family/FamilySupportPages.tsx", "src/pages/family/FamilyHistoryPage.tsx"]) {
     const src = code(f);
-    assert.match(src, /setInterval\(\(\) => void load\(\), 30_000\)/, f);
-    assert.match(src, /addEventListener\("focus", onFocus\)/, f);
+    assert.match(src, /useFamilyRefresh\(load\);/, f);
+    assert.doesNotMatch(src, /setInterval/, `${f}: sin intervalos propios`);
   }
 });
 

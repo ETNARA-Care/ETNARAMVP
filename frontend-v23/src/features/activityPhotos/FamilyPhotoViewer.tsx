@@ -7,6 +7,7 @@ import { getActivityPhotoImage } from "@/api/activityPhotos";
 import { currentLanguage } from "@/i18n";
 import { formatDate, formatTime } from "@/i18n/format";
 import { clampZoom, neighbour, pinchDistance, type FamilyPhoto } from "./familyPhotos";
+import { markViewerOpen } from "./familyRefresh";
 
 /**
  * Visor a pantalla completa (Portal Familiar, E3). La imagen se pide de nuevo
@@ -56,6 +57,9 @@ export function FamilyPhotoViewer({ organizationId, photos, photoId, onChange, o
     const next = neighbour(photos, photoId, step);
     if (next) { setZoom(1); onChange(next); }
   }, [photos, photoId, onChange]);
+
+  // Mientras el visor está abierto, la pantalla comprueba cada 10 s si la foto sigue compartida.
+  useEffect(() => markViewerOpen(), []);
 
   // Teclado, foco y página quieta detrás del visor.
   useEffect(() => {
