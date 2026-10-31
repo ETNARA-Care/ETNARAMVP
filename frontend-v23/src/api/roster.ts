@@ -85,3 +85,12 @@ export async function updateWorker(
   );
   return result.membership;
 }
+
+/** Shown when saving a staff member fails; covers the backend's rule for inactive memberships (30-oct-2026). */
+export const INACTIVE_RENAME_MESSAGE = "Esta persona tiene la membresía inactiva. Reactívala para cambiar su nombre.";
+export function workerUpdateErrorMessage(error: unknown, fallback: string): string {
+  const code = (error as { code?: string } | null)?.code;
+  if (code === "WORKER_MEMBERSHIP_INACTIVE") return INACTIVE_RENAME_MESSAGE;
+  if (code === "WORKER_PROFILE_NOT_SAVED") return "No se guardó el nombre. Vuelve a intentarlo; si continúa, avisa a soporte.";
+  return fallback;
+}
