@@ -14,7 +14,7 @@ import { secureDelete, secureGet, secureSet } from "./secureStore";
  *   bloqueo de pantalla: los datos ya están cifrados en el teléfono y el
  *   servidor sigue exigiendo la sesión en cada envío.
  * - Se pide al abrir la app y al volver después de 5 minutos sin usarla.
- * - Al cerrar sesión se borra con todo lo demás (secureClearAll).
+ * - Al terminar la sesión se borra con lo demás de la sesión (token.ts, SESSION_SECURE_ITEMS).
  *
  * Solo para sesiones de cuidador/a que se quedan en el teléfono.
  */

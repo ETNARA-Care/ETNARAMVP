@@ -13,16 +13,20 @@ import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
 
-/** Menú de la cuenta: avisa antes de cerrar sesión si hay registros sin enviar (se perderían). */
+/**
+ * Menú de la cuenta: si hay registros sin enviar, avisa antes de cerrar sesión. Por defecto
+ * se conservan cifrados para esta cuenta (C3); descartarlos pide una segunda confirmación.
+ */
 function CaregiverAccountMenu({ userLabel }: { userLabel: string }) {
   const { logout, organizations } = useAuth();
-  const { items } = useCareEventQueue();
-  const pending = items.filter((item) => item.status !== "failed").length;
+  const { items, discardAll } = useCareEventQueue();
+  const pending = items.length;
   const { t } = useTranslation("shell");
   return (
     <AccountMenu userLabel={userLabel} roleLabel={t("roles.caregiver")} settingsTo="/caregiver/profile" onLogout={logout}
       canSwitchOrganization={organizations.length > 1} showDetailsFrom="never"
-      logoutWarning={pending > 0 ? t("caregiver.logoutWarning", { count: pending }) : null} />
+      logoutWarning={pending > 0 ? t("caregiver.logoutWarning", { count: pending }) : null}
+      onDiscardAndLogout={pending > 0 ? async () => { await discardAll(); await logout(); } : undefined} />
   );
 }
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, ShieldCheck, UserRound, Users } from "lucide-react";
 import { Badge, Button, Card, EmptyState, ErrorState, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
+import { establishmentAssignmentErrorMessage } from "@/api/roster";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listWorkers, type WorkerMembership } from "@/api/shifts";
@@ -59,7 +60,7 @@ export function AgencyEstablishmentPage() {
       if (assignment === "admin") await assignEstablishmentAdmin(organizationId, establishmentId, selected, token);
       setAssignment(null); setSelected(""); await load();
       toast.show("Asignación guardada correctamente.", "success");
-    } catch { toast.show("No pudimos completar la asignación.", "danger"); }
+    } catch (assignError) { toast.show(establishmentAssignmentErrorMessage(assignError), "danger"); }
     finally { setSaving(false); }
   }
 

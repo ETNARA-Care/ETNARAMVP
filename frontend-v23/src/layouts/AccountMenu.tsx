@@ -26,21 +26,24 @@ function useDismiss(open: boolean, close: () => void) {
 /**
  * Menú de la cuenta desde el encabezado (avatar), igual en los tres portales:
  * Configuración y Cerrar sesión (y Cambiar organización si hay varias).
- * `logoutWarning`: si hay algo que se perdería (p. ej. registros sin enviar),
- * se pide confirmación antes de cerrar la sesión.
+ * `logoutWarning`: si hay algo pendiente (p. ej. registros sin enviar), se pide
+ * confirmación antes de cerrar la sesión. Con `onDiscardAndLogout` (C3) se ofrece
+ * además descartarlo, con una segunda confirmación; por defecto se conserva.
  */
-export function AccountMenu({ userLabel, roleLabel, settingsTo, onLogout, canSwitchOrganization = false, logoutWarning, showDetailsFrom = "xl" }: {
+export function AccountMenu({ userLabel, roleLabel, settingsTo, onLogout, canSwitchOrganization = false, logoutWarning, onDiscardAndLogout, showDetailsFrom = "xl" }: {
   userLabel: string;
   roleLabel: string;
   settingsTo: string;
   onLogout: () => Promise<void>;
   canSwitchOrganization?: boolean;
   logoutWarning?: string | null;
+  onDiscardAndLogout?: () => Promise<void>;
   showDetailsFrom?: "xl" | "never";
 }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const close = () => { setOpen(false); setConfirming(false); };
+  const [discarding, setDiscarding] = useState(false);
+  const close = () => { setOpen(false); setConfirming(false); setDiscarding(false); };
   const ref = useDismiss(open, close);
   const navigate = useNavigate();
   const { t } = useTranslation("shell");
@@ -50,6 +53,13 @@ export function AccountMenu({ userLabel, roleLabel, settingsTo, onLogout, canSwi
     if (logoutWarning && !confirming) { setConfirming(true); return; }
     close();
     void onLogout();
+  }
+
+  function discardAndLogout() {
+    if (!onDiscardAndLogout) return;
+    if (!discarding) { setDiscarding(true); return; }
+    close();
+    void onDiscardAndLogout();
   }
 
   return (
@@ -86,8 +96,16 @@ export function AccountMenu({ userLabel, roleLabel, settingsTo, onLogout, canSwi
             </p>
           )}
           <button role="menuitem" type="button" onClick={logout} className={`${item} text-[var(--color-danger-700)] hover:bg-[var(--color-danger-100)]`}>
-            <LogOut size={16} aria-hidden />{confirming ? t("account.confirmLogout") : t("account.logout")}
+            <LogOut size={16} aria-hidden />{confirming ? (onDiscardAndLogout ? t("account.confirmLogoutKeep") : t("account.confirmLogout")) : t("account.logout")}
           </button>
+          {confirming && logoutWarning && onDiscardAndLogout && (
+            <>
+              {discarding && <p role="alert" className="mx-1 my-1 rounded-[10px] bg-[var(--color-danger-100)] p-2.5 text-xs text-[var(--color-danger-700)]">{t("account.discardWarning")}</p>}
+              <button role="menuitem" type="button" data-testid="discard-and-logout" onClick={discardAndLogout} className={`${item} text-[var(--color-text-secondary)] hover:bg-[var(--color-ivory-100)]`}>
+                <TriangleAlert size={16} aria-hidden />{discarding ? t("account.confirmDiscard") : t("account.discardAndLogout")}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

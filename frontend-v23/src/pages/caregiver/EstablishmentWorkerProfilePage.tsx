@@ -5,13 +5,15 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getEstablishmentWorkspace, updateManagedPerson, type EstablishmentWorkspace } from "@/api/establishments";
 import { Button, Card, ErrorState, Input, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
-import { workerUpdateErrorMessage } from "@/api/roster";
+import { ESTABLISHMENT_STAFF_CHANGE_MESSAGE, workerUpdateErrorMessage } from "@/api/roster";
 
 type WorkerStatus = "active" | "inactive";
 
 export function EstablishmentWorkerProfilePage() {
   const { establishmentId = "", membershipId = "" } = useParams();
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, roles } = useAuth();
+  // C2 (31-oct-2026): solo la administración o la supervisión de la agencia cambia rol, estado o nombre.
+  const canChangeStaff = roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR");
   const navigate = useNavigate();
   const toast = useToast();
   const editRef = useRef<HTMLDivElement | null>(null);
@@ -70,7 +72,7 @@ export function EstablishmentWorkerProfilePage() {
     <button onClick={() => navigate(`/caregiver/admin/establishments/${establishmentId}`)} className="flex items-center gap-2"><ArrowLeft size={17}/>Volver a De La Vega Home</button>
     <PageHeader title={worker.display_name || "Personal"} description="Expediente del personal del establecimiento" />
 
-    {editing ? <div ref={editRef}>
+    {editing && canChangeStaff ? <div ref={editRef}>
       <Card className="flex flex-col gap-3">
         <div className="flex items-center gap-2"><BriefcaseBusiness size={20}/><b>Editar personal</b></div>
         <Input label="Nombre" value={form.displayName} onChange={(e) => setForm(v => ({...v, displayName:e.target.value}))} disabled={form.status !== "active"} hint={form.status !== "active" ? "Con la membresía inactiva no se puede cambiar el nombre. Elige «Activo» para cambiarlo." : undefined}/>
@@ -81,7 +83,9 @@ export function EstablishmentWorkerProfilePage() {
     </div> : <Card className="flex flex-col gap-3">
       <div className="flex items-center gap-2"><BriefcaseBusiness size={20}/><b>Información laboral</b></div>
       <p>Rol: {worker.role || "Personal"}</p><p>Estado: {worker.status === "active" ? "Activo" : worker.status}</p>
-      <Button onClick={openEdit}>Editar personal</Button>
+      {canChangeStaff
+        ? <Button onClick={openEdit}>Editar personal</Button>
+        : <p data-testid="staff-change-agency-only" className="text-sm text-[var(--color-text-muted)]">{ESTABLISHMENT_STAFF_CHANGE_MESSAGE}</p>}
     </Card>}
 
     <Card className="flex flex-col gap-2">

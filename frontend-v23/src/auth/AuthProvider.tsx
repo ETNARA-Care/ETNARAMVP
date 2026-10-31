@@ -30,6 +30,11 @@ interface AuthContextValue {
   offline: boolean;
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  /**
+   * C3: la sesión terminó en el servidor (401, vencida o revocada). Cierra la sesión local SIN
+   * llamar al servidor y SIN borrar los registros sin enviar (siguen en la bóveda de la cuenta).
+   */
+  endSession: () => void;
   refreshSession: () => Promise<void>;
   setActiveOrganization: (organizationId: string) => Promise<void>;
 }
@@ -205,6 +210,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("unauthenticated");
   }, []);
 
+  const endSession = useCallback(() => {
+    clearToken();
+    setUser(null);
+    setOrganizations([]);
+    setActiveOrganizationState(null);
+    setIsPlatformAdmin(false);
+    setActiveWorkerProfile(null);
+    setError(null);
+    setOffline(false);
+    setStatus("unauthenticated");
+  }, []);
+
   const refreshSession = useCallback(async () => {
     setStatus("loading");
     await bootstrap();
@@ -226,9 +243,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error, offline,
-      login, logout, refreshSession, setActiveOrganization: setActiveOrganizationById,
+      login, logout, endSession, refreshSession, setActiveOrganization: setActiveOrganizationById,
     }),
-    [status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error, offline, login, logout, refreshSession, setActiveOrganizationById]
+    [status, user, organizations, activeOrganization, roles, isPlatformAdmin, activeWorkerProfile, error, offline, login, logout, endSession, refreshSession, setActiveOrganizationById]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

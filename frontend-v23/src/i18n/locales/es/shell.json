@@ -9,7 +9,11 @@
     "switchOrganization": "Cambiar organización",
     "logout": "Cerrar sesión",
     "confirmLogout": "Sí, cerrar sesión",
-    "language": "Idioma"
+    "language": "Idioma",
+    "confirmLogoutKeep": "Cerrar sesión y guardarlos",
+    "discardAndLogout": "Descartarlos y cerrar sesión",
+    "confirmDiscard": "Sí, descartarlos para siempre",
+    "discardWarning": "Se borrarán de este teléfono y no llegarán a la agencia."
   },
   "roles": {
     "admin": "Administración",
@@ -64,8 +68,8 @@
     "theAgency": "la agencia",
     "manageEstablishment": "Administrar {{name}}",
     "establishmentAccess": "Acceso de administrador del establecimiento",
-    "logoutWarning_one": "Tienes 1 registro sin enviar. Si cierras la sesión se perderá.",
-    "logoutWarning_other": "Tienes {{count}} registros sin enviar. Si cierras la sesión se perderán."
+    "logoutWarning_one": "Tienes 1 registro sin enviar. Queda guardado y cifrado en este teléfono para tu cuenta y se envía cuando vuelvas a entrar.",
+    "logoutWarning_other": "Tienes {{count}} registros sin enviar. Quedan guardados y cifrados en este teléfono para tu cuenta y se envían cuando vuelvas a entrar."
   },
   "family": {
     "nameFallback": "Familia",

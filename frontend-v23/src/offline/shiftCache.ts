@@ -12,7 +12,7 @@ import { MAX_AGE_MS, secureDelete, secureGet, secureSet } from "./secureStore";
  * dirección, plan de cuidado) y lo registrado en esa visita. Un turno que
  * termina sale del caché en el siguiente guardado o al abrir la app. Solo
  * para sesiones de cuidador/a que se quedan en el teléfono; se borra al
- * cerrar sesión (secureClearAll) y vence a los 7 días como máximo.
+ * terminar la sesión (token.ts, SESSION_SECURE_ITEMS) y vence a los 7 días como máximo.
  */
 const SECURE_READS = "reads";
 const AHEAD_MS = 36 * 3600 * 1000;
