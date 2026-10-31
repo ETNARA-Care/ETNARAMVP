@@ -1,0 +1,55 @@
+{
+  "picker": {
+    "section": "Activity photo",
+    "title": "Photo",
+    "optional": "(optional)",
+    "checking": "Checking whether photos can be added…",
+    "takePhoto": "Take photo",
+    "chooseGallery": "Choose from library",
+    "blocked": "Photos can't be added for this person. You can save the record without a photo.",
+    "offline": "No connection. Photos need internet: they are not stored on the phone. You can save the record without a photo.",
+    "preparing": "Preparing photo…",
+    "tooLarge": "The photo is too large. Try another one.",
+    "notImage": "That file isn't a photo. Try another one.",
+    "previewAlt": "Photo preview",
+    "ready": "Photo ready",
+    "noPreview": "This phone can't show the preview. It will be converted when sent.",
+    "remove": "Remove photo",
+    "privacy": "Location and camera data are removed. The agency will review it before sharing it with the family.",
+    "needsInternet": "The photo is sent when you save, with internet. It is not stored on the phone."
+  },
+  "status": {
+    "pending": "In review",
+    "approved": "Shared with the family",
+    "rejected": "Not shared",
+    "withdrawn": "Withdrawn"
+  },
+  "caregiver": {
+    "savedWithPhoto": "Activity saved with photo. The agency will review it before sharing it with the family.",
+    "queuedPhotoDropped": "No signal: the activity was saved and will be sent automatically. The photo was not saved because it needs internet.",
+    "photoFailed": "The activity was saved, but the photo wasn't. {{reason}}",
+    "retryTitle": "Photo not sent",
+    "retryBody": "The activity “{{title}}” was saved. The photo is only on this screen: it is lost if you leave.",
+    "retry": "Retry photo",
+    "retryDiscard": "Discard",
+    "retryNotAllowed": "The photo can no longer be added to this activity.",
+    "photoSent": "Photo sent. The agency will review it.",
+    "shiftPhotos": "Photos from this shift",
+    "withPhoto": "with photo",
+    "photoOf": "Photo of {{title}}",
+    "unavailable": "Photo unavailable",
+    "loading": "Loading photo"
+  },
+  "errors": {
+    "offline": "No connection. The photo was not sent.",
+    "consentRequired": "This person has no current photo consent. The activity was saved without a photo.",
+    "alreadyAttached": "This activity already has a photo.",
+    "tooLarge": "The photo is too large.",
+    "busy": "The server is busy. Try again in a few seconds.",
+    "unavailable": "Photos aren't available right now.",
+    "badImage": "That image couldn't be used. Try another photo.",
+    "notAllowed": "Photos aren't available for this record.",
+    "withCode": "The photo couldn't be sent. Code: {{code}}",
+    "generic": "The photo couldn't be sent."
+  }
+}

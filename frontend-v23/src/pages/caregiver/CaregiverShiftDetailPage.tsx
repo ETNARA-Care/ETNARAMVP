@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Activity, Bath, Check, ClipboardList, Eye, Footprints, GlassWater, LogIn, LogOut, MessageCircle, Smile, TriangleAlert, Utensils, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
@@ -30,6 +31,13 @@ import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, 
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
 import { isOverdueUnstarted, startOpensAt } from "@/features/caregiver/shiftTiming";
 import { listStartableRecipients, openRecipientConversation } from "@/api/messaging";
+import {
+  getActivityPhoto, getActivityPhotoEligibility, getShiftPhotoEligibility, uploadActivityPhoto, type ActivityPhotoRef,
+} from "@/api/activityPhotos";
+import { isRetryablePhotoError, photoErrorKey } from "@/features/activityPhotos/photoErrors";
+import { PhotoPicker, type PhotoEligibility } from "@/features/activityPhotos/PhotoPicker";
+import { ActivityPhotoThumb } from "@/features/activityPhotos/ActivityPhotoThumb";
+import type { PreparedPhoto } from "@/features/activityPhotos/preparePhoto";
 
 const ACTIONS: Array<{ code: CareEventTypeCode; label: string; icon: ReactNode }> = [
   { code: "MEAL", label: "Comida", icon: <Utensils size={22} /> },
@@ -104,6 +112,9 @@ export function CaregiverShiftDetailPage() {
   // «En camino» y «Llegué»: solo agencias piloto (backend 108). Sin ellos, el turno sigue con Comenzar / Finalizar.
   const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
+  // Fotos de actividades (E1): solo agencias con ACTIVITY_PHOTOS; si está apagado, nada cambia.
+  const photosOn = hasOrgFeature(activeOrganization?.features, "ACTIVITY_PHOTOS");
+  const { t: tp } = useTranslation("photos");
   const { show } = useToast();
   // «Enviar mensaje sobre X» solo si el backend permite escribir sobre esa persona.
   // Hora de referencia de la pantalla (se renueva al volver a abrir el turno).
@@ -139,6 +150,13 @@ export function CaregiverShiftDetailPage() {
   /** «Comenzar turno» without «Llegué»: offer it first, never require it (Gate 6). */
   const [arrivalPromptOpen, setArrivalPromptOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [photoEligibility, setPhotoEligibility] = useState<PhotoEligibility>("loading");
+  /** Foto elegida para el registro abierto: solo en memoria. */
+  const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
+  /** Fotos que ella subió a las actividades de este turno (id de actividad → foto). */
+  const [eventPhotos, setEventPhotos] = useState<Record<string, ActivityPhotoRef>>({});
+  /** Actividad guardada cuya foto no subió por un fallo pasajero: solo en memoria, se pierde al salir. */
+  const [photoRetry, setPhotoRetry] = useState<{ eventId: string; title: string; photo: PreparedPhoto } | null>(null);
   const organizationId = activeOrganization?.id;
   const queue = useCareEventQueue();
   const queuedHere = useMemo(() => queue.items.filter((item) => item.shiftId === shiftId), [queue.items, shiftId]);
@@ -192,6 +210,12 @@ export function CaregiverShiftDetailPage() {
       setVerification(summary);
       setRecipient(recipientRows.find((item) => item.id === shiftRow.care_recipient_id));
       setCareEvents(eventRows);
+      if (photosOn) {
+        // Sus fotos de los registros de este turno (404 = ninguna). Nunca bloquea la pantalla.
+        void Promise.all(eventRows.map((event) =>
+          getActivityPhoto(organizationId, event.id, token).then((ref) => [event.id, ref] as const).catch(() => [event.id, null] as const)))
+          .then((refs) => setEventPhotos(Object.fromEntries(refs.filter(([, ref]) => ref).map(([id, ref]) => [id, ref as ActivityPhotoRef]))));
+      }
       setCarePlan(carePlanRow);
       setLocation(locationRow);
       setError(false);
@@ -204,7 +228,32 @@ export function CaregiverShiftDetailPage() {
     } catch (loadError) {
       setError(isConnectivityError(loadError) ? "offline" : true);
     }
-  }, [organizationId, shiftId]);
+  }, [organizationId, shiftId, photosOn]);
+
+  // Solo «¿puede añadir una foto aquí?», preguntado cada vez que se abre el registro.
+  // Sin internet no se ofrece: la foto no se guarda en el teléfono (E6).
+  useEffect(() => {
+    if (!photosOn || !activeAction || !organizationId || !shiftId) return;
+    let cancelled = false;
+    const ask = () => {
+      const token = getToken();
+      if (!token) return;
+      if (navigator.onLine === false) { setPhotoEligibility("offline"); return; }
+      setPhotoEligibility("loading");
+      getShiftPhotoEligibility(organizationId, shiftId, token)
+        .then((allowed) => { if (!cancelled) setPhotoEligibility(allowed ? "allowed" : "blocked"); })
+        .catch((eligibilityError) => { if (!cancelled) setPhotoEligibility(isConnectivityError(eligibilityError) ? "offline" : "blocked"); });
+    };
+    void Promise.resolve().then(ask);
+    const goneOffline = () => setPhotoEligibility("offline");
+    window.addEventListener("online", ask);
+    window.addEventListener("offline", goneOffline);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", ask);
+      window.removeEventListener("offline", goneOffline);
+    };
+  }, [photosOn, activeAction, organizationId, shiftId]);
 
   // También se recarga cuando un registro pendiente llega al servidor.
   const deliveredVersion = queue.deliveredVersion;
@@ -220,7 +269,7 @@ export function CaregiverShiftDetailPage() {
     ...(verification?.arrivals ?? []).map((arrival) => ({
       id: `arrival-${arrival.occurredAt}`, at: arrival.occurredAt, title: `Llegué · ${PROXIMITY_TEXT[arrival.proximity]}`,
     })),
-    ...careEvents.map((event) => ({ id: event.id, at: event.occurred_at, title: careEventSummary(event) })),
+    ...careEvents.map((event) => ({ id: event.id, at: event.occurred_at, title: careEventSummary(event) + (eventPhotos[event.id] ? ` · ${tp("caregiver.withPhoto")}` : "") })),
     ...queuedHere.map((item) => ({
       id: item.clientEventId,
       at: item.input.occurredAt ?? new Date().toISOString(),
@@ -230,7 +279,7 @@ export function CaregiverShiftDetailPage() {
     id: event.id,
     time: new Date(event.at).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" }),
     title: event.title,
-  })), [careEvents, verification, queuedHere]);
+  })), [careEvents, verification, queuedHere, eventPhotos, tp]);
 
   async function startShift() {
     const token = getToken();
@@ -300,17 +349,69 @@ export function CaregiverShiftDetailPage() {
     ? Boolean(activeAction)
     : activeAction === "NOTE" ? Boolean(note.trim()) : Boolean(activityLabel.trim());
 
+  /** Sube la foto de una actividad ya guardada. El servidor lo comprueba todo otra vez (el consentimiento puede haber cambiado). */
+  async function sendPhoto(eventId: string, title: string, prepared: PreparedPhoto): Promise<boolean> {
+    const token = getToken();
+    if (!organizationId || !token) return false;
+    try {
+      const ref = await uploadActivityPhoto(organizationId, eventId, prepared.blob, prepared.contentType, token);
+      setEventPhotos((current) => ({ ...current, [eventId]: ref }));
+      setPhotoRetry(null);
+      return true;
+    } catch (photoError) {
+      const { key, code } = photoErrorKey(photoError);
+      setPhotoRetry(isRetryablePhotoError(photoError) ? { eventId, title, photo: prepared } : null);
+      show(tp("caregiver.photoFailed", { reason: tp(key, { code }) }), "warning");
+      return false;
+    }
+  }
+
+  async function retryPhoto() {
+    if (!photoRetry || !organizationId) return;
+    const token = getToken();
+    if (!token) return;
+    setSaving(true);
+    try {
+      // Primero pregunta: la actividad puede ser antigua, tener ya foto o haber cambiado el consentimiento.
+      const allowed = await getActivityPhotoEligibility(organizationId, photoRetry.eventId, token);
+      if (!allowed) { setPhotoRetry(null); show(tp("caregiver.retryNotAllowed"), "warning"); return; }
+      if (await sendPhoto(photoRetry.eventId, photoRetry.title, photoRetry.photo)) show(tp("caregiver.photoSent"), "success");
+    } catch (retryError) {
+      const { key, code } = photoErrorKey(retryError);
+      show(tp(key, { code }), "warning");
+    } finally { setSaving(false); }
+  }
+
   async function saveCareEvent() {
     const token = getToken();
     if (!organizationId || !shiftId || !token || !activeAction || !shift?.care_recipient_id || !careReady) return;
     setSaving(true);
     try {
-      const outcome = await queue.submit({
+      const args = {
         organizationId,
         shiftId,
         label: ACTION_LABEL[activeAction],
         input: { typeCode: activeAction, careRecipientId: shift.care_recipient_id, ...carePayload() },
-      });
+      };
+      // Si la señal se fue después de elegirla, se intenta igual: sin señal el registro va a la cola y la foto se descarta con aviso.
+      const attached = photosOn ? photo : null;
+      if (attached) {
+        const { outcome, eventId } = await queue.submitWithEventId(args);
+        if (outcome === "queued") {
+          // El registro espera señal en la cola cifrada; la foto no se guarda en el teléfono (E6).
+          show(tp("caregiver.queuedPhotoDropped"), "warning");
+        } else if (eventId) {
+          if (await sendPhoto(eventId, ACTION_TITLE[activeAction], attached)) show(tp("caregiver.savedWithPhoto"), "success");
+        }
+        setActiveAction(null);
+        setPhoto(null);
+        setNote("");
+        setActivityLabel("");
+        setActivityDuration("");
+        if (outcome === "sent") await load();
+        return;
+      }
+      const outcome = await queue.submit(args);
       if (outcome === "queued") show("Sin señal. Se guardó y se enviará solo cuando vuelva la señal.", "warning");
       else show(ACTION_TITLE[activeAction] + " completado.", "success");
       setActiveAction(null);
@@ -546,6 +647,30 @@ export function CaregiverShiftDetailPage() {
 
       {canMessage && shift.care_recipient_id && <Button variant="secondary" icon={<MessageCircle size={18} />} loading={openingConversation} onClick={() => void messageAboutRecipient(shift.care_recipient_id!)}>Enviar mensaje sobre {shiftRecipientName(shift, recipient)}</Button>}
 
+      {photosOn && photoRetry && (
+        <Card>
+          <div className="flex flex-col gap-3" data-testid="activity-photo-retry">
+            <p className="text-[var(--text-small)] font-medium text-[var(--color-text-primary)]">{tp("caregiver.retryTitle")}</p>
+            <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">{tp("caregiver.retryBody", { title: photoRetry.title })}</p>
+            <div className="flex gap-2">
+              <Button variant="secondary" fullWidth disabled={saving} onClick={() => setPhotoRetry(null)}>{tp("caregiver.retryDiscard")}</Button>
+              <Button fullWidth loading={saving} onClick={() => void retryPhoto()}>{tp("caregiver.retry")}</Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {photosOn && organizationId && careEvents.some((event) => eventPhotos[event.id]) && (
+        <Card>
+          <p className="mb-3 text-[var(--text-small)] font-medium text-[var(--color-text-secondary)]">{tp("caregiver.shiftPhotos")}</p>
+          <div className="grid grid-cols-2 gap-2.5" data-testid="shift-photos">
+            {careEvents.filter((event) => eventPhotos[event.id]).map((event) => (
+              <ActivityPhotoThumb key={event.id} organizationId={organizationId} photo={eventPhotos[event.id]} title={careEventSummary(event)} />
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card>
         <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)] mb-3">Actividad del turno</p>
         {timelineEntries.length > 0 ? <Timeline entries={timelineEntries} /> : <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Aún no hay actividad en este turno.</p>}
@@ -582,9 +707,9 @@ export function CaregiverShiftDetailPage() {
 
       <BottomSheet
         open={!!activeAction}
-        onClose={() => !saving && setActiveAction(null)}
+        onClose={() => { if (!saving) { setActiveAction(null); setPhoto(null); } }}
         title={activeAction ? ACTION_TITLE[activeAction] : ""}
-        footer={<><Button variant="secondary" fullWidth disabled={saving} onClick={() => setActiveAction(null)}>Cancelar</Button><Button fullWidth disabled={saving || !careReady} onClick={() => void saveCareEvent()}>{saving ? "Guardando..." : "Guardar"}</Button></>}
+        footer={<><Button variant="secondary" fullWidth disabled={saving} onClick={() => { setActiveAction(null); setPhoto(null); }}>Cancelar</Button><Button fullWidth disabled={saving || !careReady} onClick={() => void saveCareEvent()}>{saving ? "Guardando..." : "Guardar"}</Button></>}
       >
         <div className="flex flex-col gap-3">
           {activeAction === "MEAL" && <><Select label="Tipo de comida" value={mealType} onChange={(event) => setMealType(event.target.value)}><option>Desayuno</option><option>Almuerzo</option><option>Cena</option><option>Snack</option></Select><Select label="Cantidad consumida" value={mealAmount} onChange={(event) => setMealAmount(event.target.value)}><option>Poco</option><option>Mitad</option><option>Casi todo</option><option>Todo</option></Select></>}
@@ -594,6 +719,7 @@ export function CaregiverShiftDetailPage() {
           {activeAction === "ACTIVITY" && <><Input label="Descripción de la actividad" value={activityLabel} onChange={(event) => setActivityLabel(event.target.value)} placeholder="Ej. Música o caminata" required /><Input label="Duración en minutos (opcional)" type="number" min={1} value={activityDuration} onChange={(event) => setActivityDuration(event.target.value)} /></>}
           {activeAction === "MOOD" && <Select label="Estado observado" value={mood} onChange={(event) => setMood(event.target.value)}><option>Contento</option><option>Tranquilo</option><option>Triste</option><option>Ansioso</option><option>Confundido</option><option>Irritable</option><option>Somnoliento</option></Select>}
           <Textarea label={activeAction === "NOTE" ? "Observación" : "Nota adicional (opcional)"} value={note} onChange={(event) => setNote(event.target.value)} required={activeAction === "NOTE"} placeholder="Detalles..." />
+          {photosOn && <PhotoPicker eligibility={photoEligibility} value={photo} onChange={setPhoto} disabled={saving} />}
         </div>
       </BottomSheet>
 

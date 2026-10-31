@@ -1,0 +1,55 @@
+{
+  "picker": {
+    "section": "Foto de la actividad",
+    "title": "Foto",
+    "optional": "(opcional)",
+    "checking": "Comprobando si se pueden añadir fotos…",
+    "takePhoto": "Tomar foto",
+    "chooseGallery": "Elegir de la galería",
+    "blocked": "No se pueden añadir fotos para esta persona. Puedes guardar el registro sin foto.",
+    "offline": "Sin conexión. Las fotos necesitan internet: no se guardan en el teléfono. Puedes guardar el registro sin foto.",
+    "preparing": "Preparando foto…",
+    "tooLarge": "La foto es demasiado grande. Prueba con otra.",
+    "notImage": "Ese archivo no es una foto. Prueba con otra.",
+    "previewAlt": "Vista previa de la foto",
+    "ready": "Foto lista",
+    "noPreview": "Este teléfono no puede mostrar la vista previa. Se convertirá al enviarla.",
+    "remove": "Quitar foto",
+    "privacy": "Se quitan la ubicación y los datos de la cámara. La agencia la revisará antes de compartirla con la familia.",
+    "needsInternet": "La foto se envía en cuanto guardes, con internet. No se guarda en el teléfono."
+  },
+  "status": {
+    "pending": "En revisión",
+    "approved": "Compartida con la familia",
+    "rejected": "No compartida",
+    "withdrawn": "Retirada"
+  },
+  "caregiver": {
+    "savedWithPhoto": "Actividad guardada con foto. La agencia la revisará antes de compartirla con la familia.",
+    "queuedPhotoDropped": "Sin señal: la actividad se guardó y se enviará sola. La foto no se guardó porque necesita internet.",
+    "photoFailed": "La actividad se guardó, pero la foto no. {{reason}}",
+    "retryTitle": "Foto sin enviar",
+    "retryBody": "La actividad «{{title}}» se guardó. La foto solo está en esta pantalla: se pierde si sales.",
+    "retry": "Reintentar foto",
+    "retryDiscard": "Descartar",
+    "retryNotAllowed": "Ya no se puede añadir la foto a esta actividad.",
+    "photoSent": "Foto enviada. La agencia la revisará.",
+    "shiftPhotos": "Fotos de este turno",
+    "withPhoto": "con foto",
+    "photoOf": "Foto de {{title}}",
+    "unavailable": "Foto no disponible",
+    "loading": "Cargando foto"
+  },
+  "errors": {
+    "offline": "No hay conexión. La foto no se envió.",
+    "consentRequired": "Esta persona no tiene consentimiento de fotografía vigente. La actividad se guardó sin foto.",
+    "alreadyAttached": "Esta actividad ya tiene una foto.",
+    "tooLarge": "La foto es demasiado grande.",
+    "busy": "El servidor está ocupado. Reintenta en unos segundos.",
+    "unavailable": "Las fotos no están disponibles ahora.",
+    "badImage": "No se pudo usar esa imagen. Prueba con otra foto.",
+    "notAllowed": "Las fotos no están disponibles para este registro.",
+    "withCode": "No se pudo enviar la foto. Código: {{code}}",
+    "generic": "No se pudo enviar la foto."
+  }
+}
