@@ -28,7 +28,8 @@ function isSessionEnded(error: unknown): boolean {
   return (error as ApiError)?.status === 401;
 }
 
-async function deliver(item: QueuedCareEvent, token: string): Promise<void> {
+/** Para registros de cuidado devuelve el id guardado en el servidor (fotos de actividades). */
+async function deliver(item: QueuedCareEvent, token: string): Promise<string | void> {
   if (item.kind === "check_in") return sendCheckIn(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
   if (item.kind === "check_out") return sendCheckOut(item.organizationId, item.shiftId, token, item.input as VisitEventInput);
   // Gate 7: same id and real time on every retry -> the server stores it once.
@@ -37,7 +38,7 @@ async function deliver(item: QueuedCareEvent, token: string): Promise<void> {
   if (item.kind === "en_route") { await declareEnRoute(item.organizationId, item.shiftId, token, item.input as VisitEventInput).catch(done); return; }
   // Without signal no location is read: the arrival is stored for the agency's review.
   if (item.kind === "arrival") { await recordArrival(item.organizationId, item.shiftId, null, token, item.input as VisitEventInput).catch(done); return; }
-  await createCareEvent(item.organizationId, item.shiftId, item.input as CreateCareEventInput, token);
+  return (await createCareEvent(item.organizationId, item.shiftId, item.input as CreateCareEventInput, token)).id;
 }
 
 function newEntry(kind: QueuedKind, organizationId: string, shiftId: string, label: string, input: Record<string, unknown> = {}): QueuedCareEvent {
@@ -181,14 +182,14 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
   }, [pendingCount, flush, persisted, queue.ready, sessionEnded]);
 
   /** Envía ya si hay señal y nada delante; si no, encola (respeta el orden). */
-  const enqueue = useCallback(async (entry: QueuedCareEvent): Promise<"sent" | "queued"> => {
+  const enqueueDetailed = useCallback(async (entry: QueuedCareEvent): Promise<{ outcome: "sent" | "queued"; eventId?: string }> => {
     const owner = userRef.current;
     if (!owner) throw new Error("NO_SESSION");
     const token = getToken();
     if (token && !sessionEnded && navigator.onLine !== false && queueRef.current.items.every((item) => item.status === "failed")) {
       try {
-        await deliver(entry, token);
-        return "sent";
+        const id = await deliver(entry, token);
+        return { outcome: "sent", ...(typeof id === "string" ? { eventId: id } : {}) };
       } catch (error) {
         if (isSessionEnded(error)) setSessionEnded(true);
         else if (!isConnectivityError(error)) throw error;
@@ -197,14 +198,24 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
     // Llegada/salida que espera señal: el servidor la marca "sin conexión".
     if (entry.kind !== "care_event") entry.input = { ...entry.input, recordedOffline: true };
     setQueue((current) => current.owner !== owner ? current : { ...current, items: [...current.items, entry] });
-    return "queued";
+    return { outcome: "queued" };
   }, [sessionEnded]);
+
+  const enqueue = useCallback(async (entry: QueuedCareEvent): Promise<"sent" | "queued"> => (await enqueueDetailed(entry)).outcome, [enqueueDetailed]);
 
   const submit = useCallback<CareEventQueueState["submit"]>(({ organizationId, shiftId, label, input }) => {
     const entry = newEntry("care_event", organizationId, shiftId, label, input as unknown as Record<string, unknown>);
     entry.typeCode = input.typeCode;
     return enqueue(entry);
   }, [enqueue]);
+
+  // Fotos de actividades (E1): igual que submit, y además el id cuando llegó al servidor en el momento.
+  // El formato guardado de la cola no cambia; la foto nunca entra en la cola.
+  const submitWithEventId = useCallback<CareEventQueueState["submitWithEventId"]>(({ organizationId, shiftId, label, input }) => {
+    const entry = newEntry("care_event", organizationId, shiftId, label, input as unknown as Record<string, unknown>);
+    entry.typeCode = input.typeCode;
+    return enqueueDetailed(entry);
+  }, [enqueueDetailed]);
 
   const checkIn = useCallback<CareEventQueueState["checkIn"]>((organizationId, shiftId) =>
     enqueue(newEntry("check_in", organizationId, shiftId, "Inicio del turno")), [enqueue]);
@@ -229,6 +240,7 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
     persisted,
     sessionEnded,
     submit,
+    submitWithEventId,
     checkIn,
     checkOut,
     enRoute,
@@ -237,7 +249,7 @@ export function CareEventQueueProvider({ children }: { children: ReactNode }) {
     discard: (clientEventId: string) => { if (userId) update(userId, clientEventId, null); },
     discardAll,
     signInAgain: () => endSession(),
-  }), [mine, deliveredVersion, persisted, sessionEnded, submit, checkIn, checkOut, enRoute, arrive, flush, update, userId, discardAll, endSession]);
+  }), [mine, deliveredVersion, persisted, sessionEnded, submit, submitWithEventId, checkIn, checkOut, enRoute, arrive, flush, update, userId, discardAll, endSession]);
 
   return <CareEventQueueContext.Provider value={value}>{children}</CareEventQueueContext.Provider>;
 }

@@ -4,10 +4,12 @@ import esCommon from "./locales/es/common.json";
 import esAuth from "./locales/es/auth.json";
 import esShell from "./locales/es/shell.json";
 import esBilling from "./locales/es/billing.json";
+import esPhotos from "./locales/es/photos.json";
 import enCommon from "./locales/en/common.json";
 import enAuth from "./locales/en/auth.json";
 import enShell from "./locales/en/shell.json";
 import enBilling from "./locales/en/billing.json";
+import enPhotos from "./locales/en/photos.json";
 import { DEFAULT_LANGUAGE, LANGUAGES, LOCALE_TAG, initialLanguage, readSavedLanguage, saveLanguage, type Language } from "./language";
 
 /**
@@ -18,10 +20,10 @@ import { DEFAULT_LANGUAGE, LANGUAGES, LOCALE_TAG, initialLanguage, readSavedLang
  * anything users write stay exactly as they are.
  */
 export const resources = {
-  es: { common: esCommon, auth: esAuth, shell: esShell, billing: esBilling },
-  en: { common: enCommon, auth: enAuth, shell: enShell, billing: enBilling },
+  es: { common: esCommon, auth: esAuth, shell: esShell, billing: esBilling, photos: esPhotos },
+  en: { common: enCommon, auth: enAuth, shell: enShell, billing: enBilling, photos: enPhotos },
 } as const;
-export const NAMESPACES = ["common", "auth", "shell", "billing"] as const;
+export const NAMESPACES = ["common", "auth", "shell", "billing", "photos"] as const;
 
 function applyDocumentLanguage(language: Language) {
   if (typeof document !== "undefined") document.documentElement.lang = LOCALE_TAG[language];
