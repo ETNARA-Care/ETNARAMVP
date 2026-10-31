@@ -55,6 +55,7 @@ function actionError(error: unknown): string {
   if (apiError.code === "ALREADY_CHECKED_IN") return "Este turno ya fue iniciado.";
   if (apiError.code === "CHECK_IN_OUTSIDE_WINDOW") return "Este turno ya terminó. No se puede comenzar; avísale a la agencia.";
   if (apiError.code === "ASSIGNMENT_NOT_ACCEPTED") return "Debes aceptar el turno antes de comenzarlo.";
+  if (apiError.code === "NO_APPLICABLE_REQUIREMENT_SET") return "Tu agencia todavía no configuró los requisitos de tu puesto. Avísale para que pueda habilitar el turno.";
   if (apiError.code === "ASSIGNMENT_ALREADY_RESPONDED") return "Esta asignación ya fue respondida.";
   // Capa 1: solo ella recibe este aviso; no dice de qué agencia ni qué turno.
   if (apiError.code === "MY_SCHEDULE_CONFLICT") return "Ya tienes otro turno confirmado en ese horario.";

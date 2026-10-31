@@ -48,6 +48,7 @@ function requestMessage(error: unknown): string {
   if (apiError.status === 0) return "No hay conexión con el servidor.";
   if (apiError.code === "SCHEDULE_CONFLICT") return "La cuidadora ya tiene otro turno en ese horario.";
   if (apiError.code?.startsWith("WORKER_NOT_ELIGIBLE")) return "La cuidadora no cumple los requisitos para ser asignada.";
+  if (apiError.code === "NO_APPLICABLE_REQUIREMENT_SET") return "La agencia todavía no configuró los requisitos para el puesto de esta cuidadora. Configúralos en Cumplimiento → Políticas.";
   if (apiError.code === "ASSIGNMENT_ALREADY_EXISTS") return "La cuidadora ya está asignada a este turno.";
   return "No pudimos guardar el turno. Intenta nuevamente.";
 }
