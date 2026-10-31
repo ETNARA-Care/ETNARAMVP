@@ -95,6 +95,7 @@ export function failureMessage(error: unknown): string {
   if (apiError?.code === "NO_ACTIVE_VISIT" || apiError?.status === 404) return "El turno ya terminó y no se pudo enviar.";
   if (apiError?.code === "OCCURRED_AT_OUT_OF_RANGE") return "La hora del registro quedó fuera del turno.";
   if (apiError?.code === "CHECK_IN_OUTSIDE_WINDOW") return "El turno ya había terminado; no se pudo registrar el inicio.";
+  if (apiError?.code === "NO_APPLICABLE_REQUIREMENT_SET") return "Tu agencia todavía no configuró los requisitos de tu puesto; no se pudo registrar el inicio.";
   if (apiError?.code === "CLIENT_EVENT_ID_CONFLICT") return "El registro no coincide con uno ya guardado.";
   return "No se pudo enviar.";
 }
