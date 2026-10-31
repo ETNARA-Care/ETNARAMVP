@@ -22,6 +22,9 @@ import { useAgencySupervision } from "@/features/agency/useAgencySupervision";
 import { updateCareRecipient } from "@/api/roster";
 import { ServiceLocationSection } from "@/features/serviceLocation/ServiceLocationSection";
 import { AccessInvitationPanel } from "./AccessInvitationPanel";
+import { hasOrgFeature } from "@/auth/orgFeatures";
+import { PhotoConsentCard } from "@/features/activityPhotos/PhotoConsentCard";
+import { canReviewPhotos } from "@/features/activityPhotos/permissions";
 
 const careLabels: Record<string, string> = {
   MEAL: "Comida",
@@ -92,7 +95,8 @@ function priorityLabel(priority: CarePlanTaskPriority): string {
 export function AgencyResidentProfilePage() {
   const { residentId } = useParams();
   const navigate = useNavigate();
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, roles } = useAuth();
+  const photoConsents = hasOrgFeature(activeOrganization?.features, "ACTIVITY_PHOTOS") && canReviewPhotos(roles);
   const organizationId = activeOrganization?.id;
   const supervision = useAgencySupervision();
   const [resident, setResident] = useState<CareRecipient | null | undefined>(undefined);
@@ -290,6 +294,9 @@ export function AgencyResidentProfilePage() {
       </div>
 
       {organizationId && residentId && <ServiceLocationSection organizationId={organizationId} recipientId={residentId} />}
+
+      {/* Fotos de actividades (E2): consentimientos, solo con ACTIVITY_PHOTOS y solo administración y supervisión. */}
+      {organizationId && residentId && photoConsents && <PhotoConsentCard organizationId={organizationId} careRecipientId={residentId} />}
 
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
