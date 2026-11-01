@@ -1,6 +1,6 @@
 import { shellEs } from "./_shellCatalog.mjs";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -20,26 +20,20 @@ test("platform review is protected by independent server authority", () => {
 });
 
 test("platform no longer exposes employee credential inspection APIs", () => {
-  const api = read("src/api/platformCredentials.ts");
+  // ETNARA Verified voluntario (1-nov-2026): el cliente de documentos de Central ya no existe.
+  assert.equal(existsSync(new URL("../src/api/platformCredentials.ts", import.meta.url)), false);
   const page = read("src/pages/platform/PlatformCredentialVerificationPage.tsx");
-  assert.doesNotMatch(api, /\/platform\/credentials\/verification-queue/);
-  assert.doesNotMatch(api, /\/platform\/credentials\/[^\s]*verifications/);
-  assert.doesNotMatch(api, /openPlatformCredentialDocument/);
   assert.doesNotMatch(page, /listPlatformCredentialQueue/);
   assert.doesNotMatch(page, /verifyPlatformCredential/);
   assert.doesNotMatch(page, /openPlatformCredentialDocument/);
   assert.doesNotMatch(page, /worker_name|credential_type_name|Credenciales del personal/);
 });
 
-test("platform review is limited to establishment compliance documents", () => {
-  const api = read("src/api/platformCredentials.ts");
+test("ETNARA Central has no establishment-document review queue (voluntary ETNARA Verified)", () => {
   const page = read("src/pages/platform/PlatformCredentialVerificationPage.tsx");
-  assert.match(api, /\/platform\/establishment-documents\/verification-queue/);
-  assert.match(api, /\/platform\/establishment-documents\/\$\{id\}\/download/);
-  assert.match(api, /\/platform\/establishment-documents\/\$\{id\}\/review/);
-  assert.match(page, /listPlatformEstablishmentDocuments/);
-  assert.match(page, /reviewPlatformEstablishmentDocument/);
-  assert.match(page, /status === "rejected" && !notes\.trim\(\)/);
+  assert.doesNotMatch(page, /establishment-documents|apiClient|getToken|review|Revisar|Aprobar|Rechazar|Cola de revisión/);
+  assert.match(page, /ETNARA no tiene acceso permanente a los documentos de las agencias/);
   assert.match(page, /Los expedientes de empleados y residentes permanecen privados/);
+  assert.match(page, /no es una certificación gubernamental/);
   assert.doesNotMatch(page, /mock|DemoStore|setTimeout\(/i);
 });
