@@ -3,12 +3,10 @@ import { ArrowRight, Building2, FileCheck2, RefreshCw, ShieldCheck } from "lucid
 import { Link } from "react-router-dom";
 import { getToken } from "@/auth/token";
 import { listPlatformOrganizations, type PlatformOrganization } from "@/api/platformOrganizations";
-import { listPlatformEstablishmentDocuments } from "@/api/platformCredentials";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 
 export function PlatformOverviewPage() {
   const [organizations, setOrganizations] = useState<PlatformOrganization[] | null>(null);
-  const [pendingDocuments, setPendingDocuments] = useState<number | null>(null);
   const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
@@ -16,14 +14,9 @@ export function PlatformOverviewPage() {
     if (!token) { setError(true); return; }
     setError(false);
     setOrganizations(null);
-    setPendingDocuments(null);
     try {
-      const [orgs, documents] = await Promise.all([
-        listPlatformOrganizations(token),
-        listPlatformEstablishmentDocuments(token),
-      ]);
-      setOrganizations(orgs);
-      setPendingDocuments(documents.filter((item) => item.review_status === "pending").length);
+      // ETNARA Verified voluntario: Central ya no tiene una cola de documentos de las agencias.
+      setOrganizations(await listPlatformOrganizations(token));
     } catch {
       setError(true);
     }
@@ -54,7 +47,6 @@ export function PlatformOverviewPage() {
       <section className="grid min-w-0 grid-cols-1 gap-3 min-[390px]:grid-cols-2 lg:grid-cols-3">
         <Metric label="Organizaciones" value={organizations?.length ?? null} icon={<Building2 size={18} />} />
         <Metric label="Activas" value={activeOrganizations} icon={<ShieldCheck size={18} />} />
-        <Metric label="Documentos de establecimiento pendientes" value={pendingDocuments} icon={<FileCheck2 size={18} />} />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_.75fr]">
@@ -72,12 +64,10 @@ export function PlatformOverviewPage() {
 
         <Card className="p-0">
           <div className="border-b border-[var(--color-border)] px-5 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">Operación ETNARA</p><h2 className="font-display text-[var(--text-h2)]">Requiere atención</h2></div>
-          {pendingDocuments === null ? <div className="p-5"><Skeleton className="h-32" /></div> : pendingDocuments === 0 ? <div className="p-5"><EmptyState icon={<ShieldCheck size={30} />} title="Sin documentos pendientes" description="No hay documentos de establecimientos esperando revisión." /></div> : (
-            <div className="space-y-3 p-5">
-              <Attention label="Documentos de establecimientos" count={pendingDocuments} />
-              <Link to="/platform/credentials" className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-navy-950)] px-4 text-sm font-semibold text-white">Abrir verificación <ArrowRight size={16} /></Link>
-            </div>
-          )}
+          <div className="space-y-3 p-5">
+            <EmptyState icon={<ShieldCheck size={30} />} title="Sin verificaciones autorizadas" description="ETNARA no tiene acceso permanente a los documentos de las agencias. ETNARA Verified es voluntario: solo se verifican documentos que una agencia autorice." />
+            <Link to="/platform/credentials" className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-navy-950)]"><FileCheck2 size={16} />Cómo funciona ETNARA Verified <ArrowRight size={16} /></Link>
+          </div>
         </Card>
       </div>
     </div>
@@ -86,7 +76,4 @@ export function PlatformOverviewPage() {
 
 function Metric({ label, value, icon }: { label: string; value: number | null; icon: React.ReactNode }) {
   return <Card className="min-h-[112px] p-4 md:p-5"><div className="flex items-center justify-between gap-2 text-[var(--color-text-secondary)]"><span className="text-xs font-semibold uppercase tracking-[0.08em]">{label}</span>{icon}</div>{value === null ? <Skeleton className="mt-4 h-8 w-16" /> : <p className="mt-3 font-display text-3xl text-[var(--color-navy-950)]">{value}</p>}</Card>;
-}
-function Attention({ label, count }: { label: string; count: number }) {
-  return <div className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg)] p-4"><span className="text-sm font-medium">{label}</span><span className="rounded-full bg-[var(--color-warning-bg)] px-2.5 py-1 text-xs font-bold">{count}</span></div>;
 }
