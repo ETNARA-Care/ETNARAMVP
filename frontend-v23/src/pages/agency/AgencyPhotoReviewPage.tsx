@@ -88,6 +88,8 @@ export function AgencyPhotoReviewPage() {
   const day = useCallback((value: string) => formatDate(value, language, { day: "numeric", month: "short", year: "numeric" }), [language]);
 
   function chooseTab(next: Tab) {
+    // Tocar la pestaña activa no vacía la lista: sin cambio de pestaña no habría una nueva carga.
+    if (next === tab) return;
     setTab(next);
     setLimit(PAGE);
     setPhotos(null);

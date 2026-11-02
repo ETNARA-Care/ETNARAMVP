@@ -98,3 +98,8 @@ test("V5 cuidadora: envío directo, aviso de si se compartió, «Quitar foto» y
   // No hay pantalla de «mis fotos»: las fotos solo aparecen dentro del registro de la visita.
   assert.doesNotMatch(read("src/App.tsx"), /caregiver\/photos/);
 });
+
+test("V4.4 tocar la pestaña activa no deja la lista cargando para siempre", () => {
+  const page = code("src/pages/agency/AgencyPhotoReviewPage.tsx");
+  assert.match(page, /function chooseTab\(next: Tab\) \{\s*\n\s*if \(next === tab\) return;/);
+});
