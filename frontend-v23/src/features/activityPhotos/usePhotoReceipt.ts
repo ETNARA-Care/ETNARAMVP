@@ -39,4 +39,3 @@ export function usePhotoReceipt(organizationId: string | undefined, careRecipien
 
   return { receipt, state, decide, accepted: state === "accepted" };
 }
-
