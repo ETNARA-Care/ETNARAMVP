@@ -2,6 +2,18 @@
 
 ## Current Status
 
+## 2026-11-02 — Fotos v2: V3 familia, V4 agencia y V5 cuidadora (rama local claude/activity-photos-v2-frontend, sobre main)
+- **Solo local:** sin push, PR, fusión ni despliegue. `ACTIVITY_PHOTOS` apagado; sin él nada cambia. Requiere el backend v2 (141, 142 y 143; PR #248, #249 y la rama local de retención legal).
+- **Sin aprobación manual:** la foto se comparte al enviarse si hay consentimiento de compartir y el familiar autorizó recibir fotos. La agencia retira, vuelve a mostrar, elimina y retiene; todo queda en el historial.
+- **V3 familia:** tarjeta «Fotos de actividades» en «Hoy». Empieza en «No» (sin fotos y sin pedir imágenes); aceptar, rechazar y cambiar de opinión. No retroactiva. Se guarda la versión del texto (`autorizacion-familia-v1`). «Disponible hasta» en la miniatura y en el visor.
+- **V4 agencia:** `/agency/photos` es el historial administrativo. Pestañas Compartidas · Solo agencia · Retiradas · Eliminadas.
+  - Acciones: retirar (motivo ≥ 3); volver a mostrar (solo si ya se compartió); eliminar (motivo, oculto con retención); retención ordinaria (colocar/renovar/levantar, motivo ≥ 10, revisión ≤ 90 días, 3 acciones).
+  - Retención legal: solo ORGANIZATION_ADMIN; base y referencia; aviso si la revisión está vencida.
+  - Lápida sin imagen para eliminadas y vencidas.
+  - Perfil del residente: «Familiares que reciben fotos» (solo lectura; la agencia no acepta por ellos).
+- **V5 cuidadora:** aviso de si la foto se compartió o quedó solo para la agencia; «Quitar foto» con confirmación (se elimina para todos); nota de la ventana de la visita. Sin galería propia.
+- **Pruebas:** node 358/358, tsc, lint (sin avisos nuevos en fotos), build. E2E local V3–V5 en iPhone 390×844 y Android 412×915 (ver informe del proyecto).
+
 ## 2026-10-31 — Fotos E3: revocación en ≤ 10 s con el visor abierto (rama local claude/activity-photos-e3-refresh-10s, sobre #259)
 - **Solo local:** sin push ni cambios en los PR #257–#259. Backend sin cambios; el servidor sigue negando la imagen en la primera petición.
 - **Hook común `useFamilyRefresh`** para «Hoy», «Actividad» e «Historial»:

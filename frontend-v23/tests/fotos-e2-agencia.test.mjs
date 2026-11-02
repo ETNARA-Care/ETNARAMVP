@@ -59,26 +59,25 @@ test("E2.3 la bandeja solo existe con ACTIVITY_PHOTOS y solo aparece en el menú
   assert.match(page, /if \(!organizationId \|\| !token \|\| !allowed\) return;/, "sin permiso no pide nada al backend");
 });
 
-test("E2.4 decisiones: motivo obligatorio (3+) para no compartir y retirar; se envía el estado visto (concurrencia)", () => {
+test("E2.4 (v2) decisiones: motivo obligatorio (3+) para retirar y eliminar; 10+ para retenciones; se envía el estado visto (concurrencia)", () => {
   const page = code("src/pages/agency/AgencyPhotoReviewPage.tsx");
-  assert.match(page, /const needsReason = pending\?\.decision === "REJECT" \|\| pending\?\.decision === "WITHDRAW";/);
-  assert.match(page, /const reasonOk = !needsReason \|\| reason\.trim\(\)\.length >= 3;/);
-  assert.match(page, /disabled=\{!reasonOk\}/);
-  assert.match(page, /reviewAgencyPhoto\(organizationId, pending\.photo\.id, pending\.decision, pending\.photo\.status, token/);
-  assert.match(page, /agencyErrors\.statusChanged"[\s\S]{0,160}await load\(\)/, "si otra persona ya la revisó, se recarga");
-  // Cambiar de pestaña rápido: una respuesta vieja no pisa la lista nueva.
+  assert.match(page, /const minReason = pending && \(isHold\(pending\.action\) \|\| isLegal\(pending\.action\)\) \? 10 : 3;/);
+  assert.match(page, /const reasonOk = pending\?\.action === "showAgain" \|\| reason\.trim\(\)\.length >= minReason;/);
+  assert.match(page, /disabled=\{!reasonOk \|\| !dateOk\}/);
+  assert.match(page, /reviewAgencyPhoto\(organizationId, photo\.id, "WITHDRAW", photo\.status, token, reason\)/);
+  assert.match(page, /agencyErrors\.statusChanged"[\s\S]{0,240}await load\(\)/, "si otra persona ya la cambió, se recarga");
   assert.match(page, /if \(mine !== requestId\.current\) return;\s*\n\s*setPhotos\(rows\);/);
   const api = code("src/api/activityPhotos.ts");
   assert.match(api, /\{ decision, expectedStatus, \.\.\.\(reason\?\.trim\(\) \? \{ reason: reason\.trim\(\) \} : \{\}\) \}/);
 });
 
-test("E2.5 acciones según el estado: pendiente → compartir/no compartir; compartida → retirar; no compartida/retirada → volver a compartir", () => {
+test("E2.5 (v2) sin aprobación manual: compartida → retirar; retirada que ya se compartió → volver a mostrar; nunca «compartir» una pendiente", () => {
   const page = code("src/pages/agency/AgencyPhotoReviewPage.tsx");
-  assert.match(page, /photo\.status === "pending" && <>[\s\S]*?"APPROVE"[\s\S]*?"REJECT"/);
-  assert.match(page, /photo\.status === "approved" && <Button[^>]*"WITHDRAW"|photo\.status === "approved" && <Button[\s\S]{0,140}"WITHDRAW"/);
-  assert.match(page, /\(photo\.status === "rejected" \|\| photo\.status === "withdrawn"\) && \([\s\S]{0,200}"APPROVE"/);
-  // Sin consentimiento para compartir: el botón se desactiva y se explica (el backend también lo exige).
-  assert.match(page, /disabled=\{shareBlocked\} onClick=\{\(\) => startDecision\(photo, "APPROVE"\)\}/);
+  assert.doesNotMatch(page, /"REJECT"/, "v2 no tiene «no compartir»");
+  assert.doesNotMatch(page, /photo\.status === "pending" && <Button/, "una pendiente (solo agencia) no se aprueba a mano");
+  assert.match(page, /photo\.status === "approved" && !photo\.expired && <Button[^>]*photo-withdraw/);
+  assert.match(page, /\(photo\.status === "withdrawn" \|\| photo\.status === "rejected"\) && photo\.sharedAt && !photo\.expired/);
+  assert.match(page, /const TABS: Tab\[\] = \["approved", "pending", "withdrawn", "deleted"\];/);
 });
 
 test("E2.6 consentimientos: solo se registran (con formulario) y se revocan con motivo; nunca se editan ni borran", () => {

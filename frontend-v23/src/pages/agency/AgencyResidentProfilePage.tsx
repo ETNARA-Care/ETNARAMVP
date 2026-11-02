@@ -24,6 +24,7 @@ import { ServiceLocationSection } from "@/features/serviceLocation/ServiceLocati
 import { AccessInvitationPanel } from "./AccessInvitationPanel";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { PhotoConsentCard } from "@/features/activityPhotos/PhotoConsentCard";
+import { PhotoRecipientsCard } from "@/features/activityPhotos/PhotoRecipientsCard";
 import { canReviewPhotos } from "@/features/activityPhotos/permissions";
 
 const careLabels: Record<string, string> = {
@@ -297,6 +298,7 @@ export function AgencyResidentProfilePage() {
 
       {/* Fotos de actividades (E2): consentimientos, solo con ACTIVITY_PHOTOS y solo administración y supervisión. */}
       {organizationId && residentId && photoConsents && <PhotoConsentCard organizationId={organizationId} careRecipientId={residentId} />}
+      {organizationId && residentId && photoConsents && <PhotoRecipientsCard organizationId={organizationId} careRecipientId={residentId} />}
 
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">

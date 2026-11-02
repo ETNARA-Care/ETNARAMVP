@@ -8,11 +8,23 @@ import { apiClient, type ApiError } from "./client";
  *   con URL de objeto; ninguna URL del bucket ni clave de almacenamiento llega a la app.
  * - Nada se guarda en el teléfono: ni la foto ni su vista previa (las fotos sin conexión son E6).
  */
-export type ActivityPhotoStatus = "pending" | "approved" | "rejected" | "withdrawn";
+/**
+ * v2 (backend 141–143): sin aprobación manual.
+ * - approved = compartida al enviarse (consentimiento de compartir vigente) con los familiares que la autorizaron;
+ * - pending = solo para la agencia (no había consentimiento de compartir al enviarla);
+ * - withdrawn / rejected = retirada por la agencia; deleted = eliminada (queda una lápida sin imagen).
+ */
+export type ActivityPhotoStatus = "pending" | "approved" | "rejected" | "withdrawn" | "deleted";
 
 export interface ActivityPhotoRef {
   id: string;
   status: ActivityPhotoStatus;
+  /** Al enviarla: ¿se compartió con la familia autorizada? Nunca dice quién ni cuántos. */
+  sharedWithFamily?: boolean;
+  /** Fin del plazo de conservación (provisional). */
+  availableUntil?: string;
+  /** La cuidadora puede quitarla (solo durante su visita). */
+  canRemove?: boolean;
 }
 
 const notFound = (error: unknown) => (error as ApiError)?.status === 404;
@@ -57,6 +69,13 @@ export async function getActivityPhoto(organizationId: string, careEventId: stri
   }
 }
 
+/** Quitar/eliminar una foto. La cuidadora solo durante su visita (sin motivo); la agencia con motivo. Es definitivo. */
+export async function deleteActivityPhoto(organizationId: string, photoId: string, token: string, reason?: string): Promise<{ kind: string; purged: boolean }> {
+  const result = await apiClient.post<{ photo: { kind: string; purged: boolean } }>(
+    `/organizations/${organizationId}/activity-photos/${photoId}/delete`, reason?.trim() ? { reason: reason.trim() } : {}, token);
+  return result.photo;
+}
+
 /** La imagen como Blob privado (cabecera Authorization, cache: no-store). */
 export function getActivityPhotoImage(organizationId: string, photoId: string, token: string): Promise<Blob> {
   return apiClient.getBinary(`/organizations/${organizationId}/activity-photos/${photoId}/image`, token);
@@ -72,16 +91,26 @@ export interface AgencyPhoto {
   careRecipientName: string;
   status: ActivityPhotoStatus;
   uploadedAt: string;
+  sharedAt: string | null;
   reviewedAt: string | null;
   reviewReason: string | null;
   activity: { type: string; occurredAt: string; note: string | null };
   caregiverName: string | null;
+  availableUntil: string;
+  expired: boolean;
+  /** La agencia puede ver la imagen (no eliminada; no vencida o bajo retención). */
+  viewable: boolean;
+  deletion: { at: string; kind: "MANUAL" | "CAREGIVER_UNDO" | "RETENTION" | "RECONCILED"; reason: string | null; purgeVerified: boolean } | null;
+  hold: { active: boolean; reason: string; reviewAt: string; by: string | null; actionsUsed: number; actionsMax: number } | null;
+  legalHold: { basis: string; reference: string | null; placedAt: string; reviewAt: string; reviewOverdue: boolean; by: string | null } | null;
 }
 
-export type PhotoDecision = "APPROVE" | "REJECT" | "WITHDRAW";
+/** v2: sin aprobación manual. WITHDRAW = retirar (motivo); APPROVE = volver a mostrar una foto retirada. */
+export type PhotoDecision = "APPROVE" | "WITHDRAW";
 
 export interface PhotoHistoryEntry {
-  action: "UPLOADED" | "APPROVED" | "REJECTED" | "WITHDRAWN";
+  action: "UPLOADED" | "APPROVED" | "REJECTED" | "WITHDRAWN" | "SHARED" | "RESHOWN" | "DELETED" | "PURGED"
+    | "HOLD_PLACED" | "HOLD_RENEWED" | "HOLD_RELEASED" | "HOLD_EXPIRED" | "LEGAL_HOLD_PLACED" | "LEGAL_HOLD_REVIEWED" | "LEGAL_HOLD_RELEASED";
   from: ActivityPhotoStatus | null;
   to: ActivityPhotoStatus;
   reason: string | null;
@@ -148,4 +177,57 @@ export async function revokePhotoConsent(organizationId: string, consentId: stri
 /** El formulario firmado como Blob privado (PDF o imagen). */
 export function getPhotoConsentForm(organizationId: string, consentId: string, token: string): Promise<Blob> {
   return apiClient.getBinary(`/organizations/${organizationId}/photo-consents/${consentId}/form`, token);
+}
+
+// ------------------------------------------------------------------ v2: retenciones (agencia)
+/** Retención excepcional: administración o supervisión; motivo (10+), revisión ≤ 90 días, máx. 3 acciones y 270 días. */
+export async function holdAgencyPhoto(organizationId: string, photoId: string, token: string,
+  input: { action: "PLACE" | "RENEW"; reason: string; reviewAt: string } | { action: "RELEASE"; reason: string }): Promise<void> {
+  await apiClient.post(`/organizations/${organizationId}/activity-photos/${photoId}/hold`, input, token);
+}
+
+/** Retención legal (obligación vigente): solo administración; sin límite; nunca caduca; bloquea toda eliminación. */
+export async function legalHoldAgencyPhoto(organizationId: string, photoId: string, token: string,
+  input: { action: "PLACE" | "REVIEW"; basis: string; reference?: string; reviewAt: string } | { action: "RELEASE"; basis: string }): Promise<void> {
+  await apiClient.post(`/organizations/${organizationId}/activity-photos/${photoId}/legal-hold`, input, token);
+}
+
+export interface PhotoRecipient {
+  relationshipId: string;
+  email: string;
+  relationshipType: string;
+  receipt: "not_answered" | "accepted" | "declined";
+  decidedAt: string | null;
+  allowedByAgency: boolean;
+  receives: boolean;
+}
+
+/** Agencia: qué familiares de este residente reciben fotos (cada uno lo decide). */
+export async function listPhotoRecipients(organizationId: string, careRecipientId: string, token: string): Promise<PhotoRecipient[]> {
+  const result = await apiClient.get<{ recipients: PhotoRecipient[] }>(`/organizations/${organizationId}/care-recipients/${careRecipientId}/photo-recipients`, token);
+  return result.recipients;
+}
+
+// ------------------------------------------------------------------ v2: autorización del familiar (la suya)
+export type PhotoReceiptDecision = "not_answered" | "accepted" | "declined";
+export interface PhotoReceipt { decision: PhotoReceiptDecision; decidedAt: string | null; textVersion: string | null }
+
+/** Versión del texto de autorización que se muestra (queda registrada con la decisión). */
+export const PHOTO_RECEIPT_TEXT_VERSION = "autorizacion-familia-v1";
+
+export async function getPhotoReceipt(organizationId: string, careRecipientId: string, token: string): Promise<PhotoReceipt | null> {
+  try {
+    const result = await apiClient.get<{ receipt: PhotoReceipt }>(`/organizations/${organizationId}/care-recipients/${careRecipientId}/photo-receipt`, token);
+    return result.receipt;
+  } catch (error) {
+    if (notFound(error)) return null;
+    throw error;
+  }
+}
+
+/** Solo afecta a las fotos enviadas DESPUÉS de este momento (nunca a las anteriores). */
+export async function setPhotoReceipt(organizationId: string, careRecipientId: string, decision: "accepted" | "declined", token: string): Promise<PhotoReceipt> {
+  const result = await apiClient.put<{ receipt: PhotoReceipt }>(`/organizations/${organizationId}/care-recipients/${careRecipientId}/photo-receipt`,
+    { decision, textVersion: PHOTO_RECEIPT_TEXT_VERSION }, token);
+  return result.receipt;
 }

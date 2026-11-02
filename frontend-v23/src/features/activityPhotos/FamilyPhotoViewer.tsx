@@ -152,6 +152,7 @@ export function FamilyPhotoViewer({ organizationId, photos, photoId, onChange, o
           <p className="font-medium">{photo.title}</p>
           {photo.summary && <p className="text-sm text-white/80">{photo.summary}</p>}
           <p className="text-xs text-white/60">{when}{photo.caregiverName ? ` · ${t("family.by", { name: photo.caregiverName })}` : ""}</p>
+          {photo.availableUntil && <p className="text-xs text-white/60" data-testid="family-viewer-available-until">{t("family.availableUntil", { date: formatDate(photo.availableUntil, currentLanguage(), { day: "numeric", month: "long" }) })}</p>}
           <p className="text-xs text-white/40">{t("family.zoomHint")}</p>
         </div>
       )}

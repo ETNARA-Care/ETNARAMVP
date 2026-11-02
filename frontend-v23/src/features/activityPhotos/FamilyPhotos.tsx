@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getToken } from "@/auth/token";
 import { getActivityPhotoImage } from "@/api/activityPhotos";
 import { currentLanguage } from "@/i18n";
-import { formatTime } from "@/i18n/format";
+import { formatDate, formatTime } from "@/i18n/format";
 import { PrivateImage } from "./PrivateImage";
 import type { FamilyPhoto } from "./familyPhotos";
 
@@ -27,6 +27,8 @@ export function FamilyPhotoThumb({ organizationId, photo, onOpen, className = ""
       className={`block overflow-hidden rounded-2xl border border-[#102b57]/10 bg-[#f8f5ee] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#486d48] ${className}`}>
       <PrivateImage load={load} alt={t("family.imageAlt", { title: photo.title })} unavailableLabel={t("family.unavailable")}
         className="aspect-[4/3] w-full" onUnavailable={() => setHidden(true)} />
+      {photo.availableUntil && <span className="block px-2 py-1 text-left text-[11px] text-[#667085]" data-testid="family-photo-available-until">
+        {t("family.availableUntil", { date: formatDate(photo.availableUntil, currentLanguage(), { day: "numeric", month: "short" }) })}</span>}
     </button>
   );
 }
