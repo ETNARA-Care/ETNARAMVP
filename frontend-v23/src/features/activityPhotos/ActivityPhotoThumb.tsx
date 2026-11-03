@@ -72,7 +72,9 @@ export function ActivityPhotoThumb({ organizationId, photo, title, onRemoved, on
       <figcaption className="flex flex-col gap-1.5 p-2">
         <span className="truncate text-[var(--text-caption)] font-medium text-[var(--color-text-primary)]">{title}</span>
         <span data-testid="activity-photo-state" data-shared={shared ? "true" : "false"}><Badge tone={shared ? "success" : "neutral"}>{t(shared ? "status.approved" : "status.pending")}</Badge></span>
-        {photo.canRemove !== false && onRemoved && (
+        {/* D1: si la agencia la conserva no se ofrece quitarla (el backend también lo impide); nunca el motivo. */}
+        {photo.keptByAgency && <span className="text-[var(--text-caption)] text-[var(--color-text-secondary)]" data-testid="activity-photo-kept">{t("caregiver.kept")}</span>}
+        {photo.canRemove !== false && !photo.keptByAgency && onRemoved && (
           confirming ? (
             <div className="flex flex-col gap-1.5" data-testid="activity-photo-remove-confirm">
               <span className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">{t("caregiver.removeConfirm")}</span>

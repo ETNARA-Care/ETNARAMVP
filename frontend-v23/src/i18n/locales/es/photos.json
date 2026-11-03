@@ -50,7 +50,8 @@
     "removeYes": "Sí, quitar",
     "removeNo": "Cancelar",
     "removed": "Foto quitada.",
-    "removeFailed": "No se pudo quitar la foto. {{reason}}"
+    "removeFailed": "No se pudo quitar la foto. {{reason}}",
+    "kept": "La agencia conserva esta foto; no se puede quitar."
   },
   "errors": {
     "offline": "No hay conexión. La foto no se envió.",
@@ -62,7 +63,8 @@
     "badImage": "No se pudo usar esa imagen. Prueba con otra foto.",
     "notAllowed": "Las fotos no están disponibles para este registro.",
     "withCode": "No se pudo enviar la foto. Código: {{code}}",
-    "generic": "No se pudo enviar la foto."
+    "generic": "No se pudo enviar la foto.",
+    "kept": "La agencia conserva esta foto; no se puede quitar."
   },
   "activityType": {
     "MEAL": "Comida",
@@ -157,7 +159,12 @@
     "legalReview": "Confirmar revisión",
     "legalRelease": "Levantar retención legal",
     "legalSaved": "Retención legal guardada.",
-    "save": "Guardar"
+    "save": "Guardar",
+    "legalOverdueTitle": "Retenciones legales con la revisión vencida",
+    "legalOverdueBody": "Estas fotografías siguen retenidas por una obligación legal y su fecha de revisión ya pasó. Confirma que la obligación sigue vigente («Confirmar revisión») o levanta la retención con motivo («Levantar retención legal»). Nunca se eliminan solas.",
+    "legalOverdueBodySupervisor": "Estas fotografías siguen retenidas por una obligación legal y su fecha de revisión ya pasó. Solo la administración puede revisarlas o levantarlas.",
+    "legalOverdueBack": "Ver todas las fotos",
+    "legalOverdueEmpty": "No hay retenciones legales con la revisión vencida."
   },
   "historyAction": {
     "UPLOADED": "Subida",

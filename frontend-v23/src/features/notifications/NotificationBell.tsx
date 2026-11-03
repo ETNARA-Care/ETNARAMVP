@@ -96,6 +96,11 @@ export function NotificationBell() {
       navigate(`/agency/workers/${workerMembershipId}`);
       return;
     }
+    // 144 (D2): revisiones de retención legal vencidas → solo esas fotos, en la pantalla administrativa.
+    if (type === "PHOTO_LEGAL_HOLD_REVIEW_OVERDUE" && portal === "agency") {
+      navigate("/agency/photos?legal=overdue");
+      return;
+    }
     if (entityType === "operational_alert" && portal === "agency") {
       navigate("/agency/operations");
       return;

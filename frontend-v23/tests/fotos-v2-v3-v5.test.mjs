@@ -101,5 +101,34 @@ test("V5 cuidadora: envío directo, aviso de si se compartió, «Quitar foto» y
 
 test("V4.4 tocar la pestaña activa no deja la lista cargando para siempre", () => {
   const page = code("src/pages/agency/AgencyPhotoReviewPage.tsx");
-  assert.match(page, /function chooseTab\(next: Tab\) \{\s*\n\s*if \(next === tab\) return;/);
+  assert.match(page, /function chooseTab\(next: Tab\) \{\s*\n\s*if \(next === tab && !legalOverdue\) return;/);
+});
+
+test("D1 cuidadora: si la agencia conserva la foto no se ofrece «Quitar foto», se explica sin dar el motivo, y el rechazo del backend tiene mensaje propio", async () => {
+  const thumb = code("src/features/activityPhotos/ActivityPhotoThumb.tsx");
+  assert.match(thumb, /\{photo\.keptByAgency && <span[^>]*data-testid="activity-photo-kept"/);
+  assert.match(thumb, /\{photo\.canRemove !== false && !photo\.keptByAgency && onRemoved && \(/);
+  assert.match(thumb, /activity-photo-remove-confirm/, "la confirmación sigue antes de quitar");
+  const { photoErrorKey } = await import("../src/features/activityPhotos/photoErrors.ts");
+  for (const c of ["PHOTO_ON_HOLD", "PHOTO_ON_LEGAL_HOLD"]) assert.equal(photoErrorKey({ status: 409, code: c }).key, "errors.kept");
+  for (const lang of [es, en]) {
+    assert.ok(lang.caregiver.kept && lang.errors.kept);
+    assert.doesNotMatch(lang.caregiver.kept + lang.errors.kept, /legal|judicial|motivo|reason/i, "nunca el motivo ni el tipo de retención");
+  }
+});
+
+test("D2 la notificación diaria abre solo las retenciones legales vencidas de la agencia", () => {
+  const bell = code("src/features/notifications/NotificationBell.tsx");
+  assert.match(bell, /type === "PHOTO_LEGAL_HOLD_REVIEW_OVERDUE" && portal === "agency"\) \{\s*navigate\("\/agency\/photos\?legal=overdue"\);/);
+  const page = code("src/pages/agency/AgencyPhotoReviewPage.tsx");
+  assert.match(page, /const legalOverdue = searchParams\.get\("legal"\) === "overdue";/);
+  assert.match(page, /listAgencyPhotos\(organizationId, token, \{ legalReview: "overdue", limit \}\)/);
+  assert.match(page, /data-testid="legal-overdue-view"/);
+  assert.match(page, /legalAllowed \? "review\.legalOverdueBody" : "review\.legalOverdueBodySupervisor"/);
+  const api = code("src/api/activityPhotos.ts");
+  assert.match(api, /if \(filter\.legalReview\) params\.set\("legalReview", filter\.legalReview\);/);
+  for (const lang of [es, en]) for (const k of ["legalOverdueTitle", "legalOverdueBody", "legalOverdueBodySupervisor", "legalOverdueBack", "legalOverdueEmpty"]) assert.ok(lang.review[k], k);
+  const notifications = code("src/api/notifications.ts");
+  assert.match(notifications, /itemCount\?: number \| null;/);
+  assert.match(notifications, /type === "PHOTO_LEGAL_HOLD_REVIEW_OVERDUE"\) return "/);
 });

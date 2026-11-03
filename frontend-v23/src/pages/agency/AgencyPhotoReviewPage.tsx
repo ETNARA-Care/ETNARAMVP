@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { Camera, History, Lock, Scale, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -49,6 +50,9 @@ export function AgencyPhotoReviewPage() {
   const legalAllowed = canManageLegalHolds(roles);
   const language = currentLanguage();
   const [tab, setTab] = useState<Tab>("approved");
+  // D2: la notificación diaria abre /agency/photos?legal=overdue → solo las retenciones legales con la revisión vencida.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const legalOverdue = searchParams.get("legal") === "overdue";
   const [limit, setLimit] = useState(PAGE);
   const [photos, setPhotos] = useState<AgencyPhoto[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -69,7 +73,9 @@ export function AgencyPhotoReviewPage() {
     const mine = ++requestId.current;
     try {
       const statuses: ActivityPhotoStatus[] = tab === "withdrawn" ? ["withdrawn", "rejected"] : [tab];
-      const lists = await Promise.all(statuses.map((status) => listAgencyPhotos(organizationId, token, { status, limit })));
+      const lists = legalOverdue
+        ? [await listAgencyPhotos(organizationId, token, { legalReview: "overdue", limit })]
+        : await Promise.all(statuses.map((status) => listAgencyPhotos(organizationId, token, { status, limit })));
       const rows = lists.flat().sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt)).slice(0, limit);
       if (mine !== requestId.current) return;
       setPhotos(rows);
@@ -77,7 +83,7 @@ export function AgencyPhotoReviewPage() {
     } catch {
       if (mine === requestId.current) setFailed(true);
     }
-  }, [organizationId, tab, limit, allowed]);
+  }, [organizationId, tab, limit, allowed, legalOverdue]);
 
   useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
@@ -89,7 +95,8 @@ export function AgencyPhotoReviewPage() {
 
   function chooseTab(next: Tab) {
     // Tocar la pestaña activa no vacía la lista: sin cambio de pestaña no habría una nueva carga.
-    if (next === tab) return;
+    if (next === tab && !legalOverdue) return;
+    if (legalOverdue) setSearchParams({}, { replace: true });
     setTab(next);
     setLimit(PAGE);
     setPhotos(null);
@@ -152,11 +159,20 @@ export function AgencyPhotoReviewPage() {
     <div className="flex flex-col gap-[var(--spacing-md)]" data-testid="agency-photo-review">
       <PageHeader title={t("review.title")} description={t("review.description")} />
 
+      {legalOverdue && (
+        <Card className="flex flex-col gap-2 border-[var(--color-warning-700)]/30 bg-[var(--color-warning-100)]" data-testid="legal-overdue-view">
+          <p className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><Scale size={18} aria-hidden />{t("review.legalOverdueTitle")}</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{t(legalAllowed ? "review.legalOverdueBody" : "review.legalOverdueBodySupervisor")}</p>
+          <Button size="sm" variant="secondary" className="self-start" data-testid="legal-overdue-back"
+            onClick={() => { setSearchParams({}, { replace: true }); setPhotos(null); setLimit(PAGE); }}>{t("review.legalOverdueBack")}</Button>
+        </Card>
+      )}
+
       <div role="tablist" aria-label={t("review.title")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         {tabs.map((item) => (
-          <button key={item.id} type="button" role="tab" aria-selected={tab === item.id} data-testid={`photo-tab-${item.id}`}
+          <button key={item.id} type="button" role="tab" aria-selected={!legalOverdue && tab === item.id} data-testid={`photo-tab-${item.id}`}
             onClick={() => chooseTab(item.id)}
-            className={`min-h-11 shrink-0 rounded-full border px-4 text-[var(--text-small)] font-medium transition-colors ${tab === item.id
+            className={`min-h-11 shrink-0 rounded-full border px-4 text-[var(--text-small)] font-medium transition-colors ${!legalOverdue && tab === item.id
               ? "border-[var(--color-navy-900)] bg-[var(--color-navy-900)] text-white"
               : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"}`}>
             {item.label}
@@ -166,7 +182,7 @@ export function AgencyPhotoReviewPage() {
 
       {failed && <Card><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{t("review.loadFailed")}</p><Button size="sm" variant="secondary" className="mt-2" onClick={() => void load()}>{t("review.retry")}</Button></Card>}
       {!failed && photos === null && <div className="flex flex-col gap-3"><Skeleton className="h-72" /><Skeleton className="h-72" /></div>}
-      {!failed && photos?.length === 0 && <EmptyState icon={<Camera size={28} />} title={t("review.emptyOther")} />}
+      {!failed && photos?.length === 0 && <EmptyState icon={<Camera size={28} />} title={t(legalOverdue ? "review.legalOverdueEmpty" : "review.emptyOther")} />}
 
       {!failed && photos && photos.length > 0 && (
         <>

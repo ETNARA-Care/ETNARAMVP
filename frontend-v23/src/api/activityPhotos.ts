@@ -25,6 +25,8 @@ export interface ActivityPhotoRef {
   availableUntil?: string;
   /** La cuidadora puede quitarla (solo durante su visita). */
   canRemove?: boolean;
+  /** D1: la agencia la conserva (retención vigente u obligación legal): no se puede quitar. Nunca el motivo. */
+  keptByAgency?: boolean;
 }
 
 const notFound = (error: unknown) => (error as ApiError)?.status === 404;
@@ -135,9 +137,12 @@ export interface PhotoConsent {
 }
 
 /** Bandeja de la agencia, la más reciente primero (máx. 100 por página en el backend). */
-export async function listAgencyPhotos(organizationId: string, token: string, filter: { status?: ActivityPhotoStatus; careRecipientId?: string; limit?: number } = {}): Promise<AgencyPhoto[]> {
+export async function listAgencyPhotos(organizationId: string, token: string,
+  filter: { status?: ActivityPhotoStatus; careRecipientId?: string; legalReview?: "overdue"; limit?: number } = {}): Promise<AgencyPhoto[]> {
   const params = new URLSearchParams();
   if (filter.status) params.set("status", filter.status);
+  // 144 (D2): retenciones legales con la revisión vencida, en cualquier estado.
+  if (filter.legalReview) params.set("legalReview", filter.legalReview);
   if (filter.careRecipientId) params.set("careRecipientId", filter.careRecipientId);
   if (filter.limit) params.set("limit", String(filter.limit));
   const query = params.toString();

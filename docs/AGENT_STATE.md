@@ -2,6 +2,13 @@
 
 ## Current Status
 
+## 2026-11-02 — Fotos v2: D1 y D2 en el portal (rama local claude/activity-photos-v2-frontend, sobre #261, sin publicar)
+- **D1:** la miniatura de la cuidadora muestra «La agencia conserva esta foto; no se puede quitar» y oculta «Quitar foto» si `keptByAgency`. El 409 `PHOTO_ON_HOLD` o `PHOTO_ON_LEGAL_HOLD` tiene mensaje propio y nunca muestra el motivo.
+- **D2:**
+  - La campana de la administración muestra «N fotografías con retención legal tienen la revisión vencida» y abre `/agency/photos?legal=overdue`.
+  - Esa vista muestra solo esas fotos, con explicación (un texto aparte para supervisión, que no puede revisarlas) y el botón «Ver todas las fotos».
+- Pruebas: node 361/361, tsc, lint sin avisos nuevos, build. E2E D1/D2 9/9 en iPhone y Android; regresión V3–V5 26/26.
+
 ## 2026-11-02 — Fotos v2: V3 familia, V4 agencia y V5 cuidadora (rama local claude/activity-photos-v2-frontend, sobre main)
 - **Solo local:** sin push, PR, fusión ni despliegue. `ACTIVITY_PHOTOS` apagado; sin él nada cambia. Requiere el backend v2 (141, 142 y 143; PR #248, #249 y la rama local de retención legal).
 - **Sin aprobación manual:** la foto se comparte al enviarse si hay consentimiento de compartir y el familiar autorizó recibir fotos. La agencia retira, vuelve a mostrar, elimina y retiene; todo queda en el historial.
