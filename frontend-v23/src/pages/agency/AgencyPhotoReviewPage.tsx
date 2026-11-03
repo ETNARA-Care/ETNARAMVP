@@ -220,7 +220,7 @@ export function AgencyPhotoReviewPage() {
                     </div>
                   ) : photo.viewable ? (
                     <PrivateImage
-                      load={() => { const token = getToken(); return token && organizationId ? getActivityPhotoImage(organizationId, photo.id, token) : Promise.reject(new Error("NO_SESSION")); }}
+                      load={() => { const token = getToken(); return token && organizationId ? getActivityPhotoImage(organizationId, photo.id, token, { legalReview: legalMode }) : Promise.reject(new Error("NO_SESSION")); }}
                       alt={t("review.imageAlt", { activity: activityLabel(photo.activity.type), name: photo.careRecipientName })}
                       unavailableLabel={t("review.imageUnavailable")}
                       className="aspect-[4/3] w-full"

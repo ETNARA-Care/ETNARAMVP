@@ -19,9 +19,9 @@ test("M1: PHOTO_KEPT_BY_AGENCY (y los códigos anteriores) → «La agencia cons
   assert.doesNotMatch(es.errors.kept + en.errors.kept, /legal/i);
 });
 
-test("§5 modo: se pregunta al backend solo con el módulo apagado y siendo administración; encendido no hay petición", () => {
+test("§5 modo: la administración y la supervisión siempre preguntan al backend (los interruptores de la sesión pueden estar desactualizados); otros roles, nunca", () => {
   const hook = code("src/features/activityPhotos/usePhotoMode.ts");
-  assert.match(hook, /on \? \(canReviewPhotos\(roles\) \? "full" : "off"\) : canManageLegalHolds\(roles\) \? null : "off"/);
+  assert.match(hook, /const local: AgencyPhotoMode \| null = canReviewPhotos\(roles\) && \(on \|\| canManageLegalHolds\(roles\)\) \? null : "off";/);
   assert.match(hook, /getAgencyPhotoMode\(organizationId, token\)/);
   assert.match(code("src/api/activityPhotos.ts"), /\/activity-photos\/mode`/);
   const layout = code("src/layouts/AgencyLayout.tsx");
@@ -38,6 +38,8 @@ test("§5 página en modo legal: sin pestañas ni acciones ordinarias; solo revi
   assert.match(page, /!deleted && legalMode && legalAllowed && legal && \([\s\S]{0,400}photo-legal-review[\s\S]{0,300}photo-legal-release/);
   assert.match(page, /!deleted && !legalMode && \(/, "retirar, retener, eliminar y nueva retención legal solo con el módulo encendido");
   assert.match(page, /photo\.viewable && legalMode && !revealed\.has\(photo\.id\)[\s\S]{0,600}legal-view-image/);
+  assert.match(page, /getActivityPhotoImage\(organizationId, photo\.id, token, \{ legalReview: legalMode \}\)/, "el propósito solo viaja en modo legal");
+  assert.match(code("src/api/activityPhotos.ts"), /\?purpose=legal-review/);
   for (const k of ["legalModeTitle", "legalModeBody", "legalModeAll", "legalModeEmpty", "legalViewNote", "legalViewImage", "legalBasisHidden"]) {
     assert.ok(es.review[k] && en.review[k], k);
   }

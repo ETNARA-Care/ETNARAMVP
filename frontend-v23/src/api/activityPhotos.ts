@@ -79,8 +79,12 @@ export async function deleteActivityPhoto(organizationId: string, photoId: strin
 }
 
 /** La imagen como Blob privado (cabecera Authorization, cache: no-store). */
-export function getActivityPhotoImage(organizationId: string, photoId: string, token: string): Promise<Blob> {
-  return apiClient.getBinary(`/organizations/${organizationId}/activity-photos/${photoId}/image`, token);
+/**
+ * `legalReview`: 145 (§5) con el módulo apagado, el backend solo entrega una imagen retenida si la
+ * petición declara este propósito (solo lo envía «Ver imagen» del modo de revisión legal).
+ */
+export function getActivityPhotoImage(organizationId: string, photoId: string, token: string, opts: { legalReview?: boolean } = {}): Promise<Blob> {
+  return apiClient.getBinary(`/organizations/${organizationId}/activity-photos/${photoId}/image${opts.legalReview ? "?purpose=legal-review" : ""}`, token);
 }
 
 // ------------------------------------------------------------------ agencia (E2)
