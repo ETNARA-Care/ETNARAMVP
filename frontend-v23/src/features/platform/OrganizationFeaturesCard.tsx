@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlaskConical, History } from "lucide-react";
 import { getToken } from "@/auth/token";
-import { getOrganizationFeatures, setOrganizationFeature, type OrganizationFeatures, type PilotFeatureCode } from "@/api/platformOrganizations";
+import { checkActivityPhotosLegalHolds, getOrganizationFeatures, setOrganizationFeature, type OrganizationFeatures, type PilotFeatureCode } from "@/api/platformOrganizations";
 import { Button, Input, Skeleton, useToast } from "@/components/ui";
 import { BillingManagerPanel } from "./BillingManagerPanel";
 
@@ -27,6 +27,15 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
   const [editing, setEditing] = useState<{ code: PilotFeatureCode; enabled: boolean } | null>(null);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+  // 145 (§5): solo se pregunta al abrir el apagado de Fotos (auditado en el backend).
+  const [legalHolds, setLegalHolds] = useState<{ org: string; value: boolean } | null>(null);
+  useEffect(() => {
+    if (!editing || editing.code !== "ACTIVITY_PHOTOS" || editing.enabled) return;
+    const token = getToken(); if (!token) return;
+    let alive = true;
+    checkActivityPhotosLegalHolds(organizationId, token).then((value) => { if (alive) setLegalHolds({ org: organizationId, value }); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [editing, organizationId]);
 
   const load = useCallback(async () => {
     const token = getToken(); if (!token) return;
@@ -103,7 +112,7 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
                       {editing.enabled ? "Activar" : "Desactivar"} {label.title} para esta agencia
                     </p>
                     {/* 145 (§5): solo un sí/no; nunca cuántas ni cuáles. Apagar nunca se bloquea (emergencias). */}
-                    {editing.code === "ACTIVITY_PHOTOS" && !editing.enabled && data?.activityPhotosLegalHolds && (
+                    {editing.code === "ACTIVITY_PHOTOS" && !editing.enabled && legalHolds?.org === organizationId && legalHolds.value && (
                       <p className="mt-1 rounded-[var(--radius-md)] bg-[var(--color-warning-100)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[var(--color-warning-700)]" data-ui="photos-legal-holds-warning">
                         Esta agencia tiene fotografías sujetas a una obligación legal de conservación. Al apagar el módulo se conservan, no se eliminan, y la administración de la agencia podrá seguir revisándolas o levantándolas.
                       </p>

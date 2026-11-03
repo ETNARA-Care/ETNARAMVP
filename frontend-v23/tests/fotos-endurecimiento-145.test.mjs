@@ -61,9 +61,10 @@ test("§4: campana — Central abre Organizaciones; la supervisión solo lo lee;
 
 test("§5 Central: advertencia (sí/no) al apagar fotos con retenciones legales; apagar nunca se bloquea", () => {
   const card = code("src/features/platform/OrganizationFeaturesCard.tsx");
-  assert.match(card, /editing\.code === "ACTIVITY_PHOTOS" && !editing\.enabled && data\?\.activityPhotosLegalHolds && \(/);
+  assert.match(card, /editing\.code === "ACTIVITY_PHOTOS" && !editing\.enabled && legalHolds\?\.org === organizationId && legalHolds\.value && \(/);
+  assert.match(card, /if \(!editing \|\| editing\.code !== "ACTIVITY_PHOTOS" \|\| editing\.enabled\) return;[\s\S]{0,200}checkActivityPhotosLegalHolds\(organizationId, token\)/, "solo se pregunta al ir a apagar");
   assert.match(card, /photos-legal-holds-warning/);
   assert.match(card, /se conservan, no se eliminan/);
   assert.doesNotMatch(card, /blocked = f\.code === "ACTIVITY_PHOTOS"/, "el interruptor de fotos no se deshabilita");
-  assert.match(code("src/api/platformOrganizations.ts"), /activityPhotosLegalHolds\?: boolean;/);
+  assert.match(code("src/api/platformOrganizations.ts"), /\/features\/ACTIVITY_PHOTOS\/legal-hold-check`/);
 });
