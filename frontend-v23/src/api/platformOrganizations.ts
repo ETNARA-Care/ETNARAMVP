@@ -175,12 +175,14 @@ export type PilotFeatureCode = "SMARTMATCH" | "EN_CAMINO" | "FINANZAS" | "FACTUR
 export interface OrganizationFeatures {
   features: { code: PilotFeatureCode; enabled: boolean; updatedAt: string | null }[];
   history: { code: PilotFeatureCode; enabled: boolean; reason: string; occurredAt: string; actorEmail: string | null }[];
+  /** 145 (§5): si la agencia tiene ALGUNA foto con retención legal (sí/no; nunca cuántas ni cuáles). */
+  activityPhotosLegalHolds?: boolean;
 }
 export function getOrganizationFeatures(organizationId: string, token: string) {
   return apiClient.get<OrganizationFeatures>(`/platform/organizations/${encodeURIComponent(organizationId)}/features`, token);
 }
 export function setOrganizationFeature(organizationId: string, code: PilotFeatureCode, enabled: boolean, reason: string, token: string) {
-  return apiClient.put<{ feature: { code: PilotFeatureCode; enabled: boolean; changed: boolean } }>(
+  return apiClient.put<{ feature: { code: PilotFeatureCode; enabled: boolean; changed: boolean; legalHoldsKept?: boolean } }>(
     `/platform/organizations/${encodeURIComponent(organizationId)}/features/${code}`, { enabled, reason }, token);
 }
 

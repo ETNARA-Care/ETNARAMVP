@@ -164,7 +164,14 @@
     "legalOverdueBody": "Estas fotografías siguen retenidas por una obligación legal y su fecha de revisión ya pasó. Confirma que la obligación sigue vigente («Confirmar revisión») o levanta la retención con motivo («Levantar retención legal»). Nunca se eliminan solas.",
     "legalOverdueBodySupervisor": "Estas fotografías siguen retenidas por una obligación legal y su fecha de revisión ya pasó. Solo la administración puede revisarlas o levantarlas.",
     "legalOverdueBack": "Ver todas las fotos",
-    "legalOverdueEmpty": "No hay retenciones legales con la revisión vencida."
+    "legalOverdueEmpty": "No hay retenciones legales con la revisión vencida.",
+    "legalModeTitle": "Solo revisión de retenciones legales",
+    "legalModeBody": "Fotos de actividades está apagado para tu agencia. Aquí solo ves las fotografías con retención legal: puedes confirmar la revisión o levantar la retención con motivo. No se pueden tomar, compartir ni retener fotos nuevas. Ver una imagen queda registrado.",
+    "legalModeAll": "Ver todas las retenciones legales",
+    "legalModeEmpty": "No hay fotografías con retención legal.",
+    "legalViewNote": "La imagen no se muestra hasta que la pidas. Hazlo solo si la necesitas para la revisión: queda registrado.",
+    "legalViewImage": "Ver imagen",
+    "legalBasisHidden": "La base y la referencia solo las ve la administración."
   },
   "historyAction": {
     "UPLOADED": "Subida",

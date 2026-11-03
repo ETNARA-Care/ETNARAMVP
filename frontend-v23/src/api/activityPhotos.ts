@@ -104,7 +104,8 @@ export interface AgencyPhoto {
   viewable: boolean;
   deletion: { at: string; kind: "MANUAL" | "CAREGIVER_UNDO" | "RETENTION" | "RECONCILED"; reason: string | null; purgeVerified: boolean } | null;
   hold: { active: boolean; reason: string; reviewAt: string; by: string | null; actionsUsed: number; actionsMax: number } | null;
-  legalHold: { basis: string; reference: string | null; placedAt: string; reviewAt: string; reviewOverdue: boolean; by: string | null } | null;
+  /** 145 (§6): basis, reference and author only reach the administration (absent for supervision). */
+  legalHold: { basis?: string | null; reference?: string | null; placedAt: string; reviewAt: string; reviewOverdue: boolean; by?: string | null } | null;
 }
 
 /** v2: sin aprobación manual. WITHDRAW = retirar (motivo); APPROVE = volver a mostrar una foto retirada. */
@@ -138,7 +139,7 @@ export interface PhotoConsent {
 
 /** Bandeja de la agencia, la más reciente primero (máx. 100 por página en el backend). */
 export async function listAgencyPhotos(organizationId: string, token: string,
-  filter: { status?: ActivityPhotoStatus; careRecipientId?: string; legalReview?: "overdue"; limit?: number } = {}): Promise<AgencyPhoto[]> {
+  filter: { status?: ActivityPhotoStatus; careRecipientId?: string; legalReview?: "overdue" | "active"; limit?: number } = {}): Promise<AgencyPhoto[]> {
   const params = new URLSearchParams();
   if (filter.status) params.set("status", filter.status);
   // 144 (D2): retenciones legales con la revisión vencida, en cualquier estado.
@@ -148,6 +149,17 @@ export async function listAgencyPhotos(organizationId: string, token: string,
   const query = params.toString();
   const result = await apiClient.get<{ photos: AgencyPhoto[] }>(`/organizations/${organizationId}/activity-photos${query ? `?${query}` : ""}`, token);
   return result.photos;
+}
+
+/**
+ * 145 (§5): qué pantalla de fotos corresponde aquí. "full" (módulo encendido, administración o
+ * supervisión), "legal-review" (módulo apagado, administración, hay retenciones legales: solo
+ * revisarlas o levantarlas) u "off". El backend decide; el portal solo lo muestra.
+ */
+export type AgencyPhotoMode = "full" | "legal-review" | "off";
+export async function getAgencyPhotoMode(organizationId: string, token: string): Promise<AgencyPhotoMode> {
+  const r = await apiClient.get<{ mode: AgencyPhotoMode }>(`/organizations/${encodeURIComponent(organizationId)}/activity-photos/mode`, token);
+  return r.mode === "full" || r.mode === "legal-review" ? r.mode : "off";
 }
 
 export async function getAgencyPhotoHistory(organizationId: string, photoId: string, token: string): Promise<PhotoHistoryEntry[]> {

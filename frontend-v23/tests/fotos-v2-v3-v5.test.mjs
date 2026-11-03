@@ -56,7 +56,7 @@ test("V4.1 historial administrativo: retirar, volver a mostrar, eliminar y reten
   // Con retención (ordinaria o legal) no se ofrece eliminar; el backend también lo impide.
   assert.match(page, /\{!held && !legal && <Button[^>]*photo-delete/);
   // La imagen solo se pide si sigue visible; si no, una lápida sin imagen.
-  assert.match(page, /\{photo\.viewable \? \(\s*<PrivateImage/);
+  assert.match(page, /\) : photo\.viewable \? \(\s*<PrivateImage/, "145: en modo legal la imagen se pide aparte");
   assert.match(page, /agency-photo-tombstone/);
   // Fecha de revisión: entre mañana y 90 días.
   assert.match(page, /at > now && at <= now \+ 90 \* 86_400_000/);
@@ -122,7 +122,7 @@ test("D2 la notificación diaria abre solo las retenciones legales vencidas de l
   assert.match(bell, /type === "PHOTO_LEGAL_HOLD_REVIEW_OVERDUE" && portal === "agency"\) \{\s*navigate\("\/agency\/photos\?legal=overdue"\);/);
   const page = code("src/pages/agency/AgencyPhotoReviewPage.tsx");
   assert.match(page, /const legalOverdue = searchParams\.get\("legal"\) === "overdue";/);
-  assert.match(page, /listAgencyPhotos\(organizationId, token, \{ legalReview: "overdue", limit \}\)/);
+  assert.match(page, /listAgencyPhotos\(organizationId, token, \{ legalReview: legalOverdue \? "overdue" : "active", limit \}\)/);
   assert.match(page, /data-testid="legal-overdue-view"/);
   assert.match(page, /legalAllowed \? "review\.legalOverdueBody" : "review\.legalOverdueBodySupervisor"/);
   const api = code("src/api/activityPhotos.ts");

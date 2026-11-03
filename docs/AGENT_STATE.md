@@ -2,6 +2,19 @@
 
 ## Current Status
 
+## 2026-11-03 — Fotos v2: endurecimiento (backend 145) en el portal (rama local claude/activity-photos-v2-frontend-hardening, sobre #261 `ec104a7`, sin publicar)
+- **M1:** `PHOTO_KEPT_BY_AGENCY` → «La agencia conserva esta foto».
+- **§5:** `usePhotoMode()`:
+  - Con el módulo encendido no hace ninguna petición.
+  - Con el módulo apagado, solo para la administración, pregunta `GET …/activity-photos/mode`.
+  - Si el modo es `legal-review`, «Fotos» sigue en el menú y la página muestra solo las retenciones legales: sin pestañas ni acciones ordinarias, solo «Confirmar revisión» y «Levantar».
+  - La imagen no se pide hasta pulsar «Ver imagen», y esa vista queda auditada en el backend.
+  - La ruta `/agency/photos` ya no usa FeatureRoute: decide la página y, sin permiso, redirige a `/agency`.
+- **§6:** la supervisión ve «La base y la referencia solo las ve la administración».
+- **§4:** la campana entiende `AGENCY_NO_ACTIVE_ADMIN` (solo lectura) y `PLATFORM_AGENCY_NO_ACTIVE_ADMIN` (abre Organizaciones). ETNARA central tiene campana en su cabecera.
+- **Central:** al apagar Fotos en una agencia con retenciones legales aparece una advertencia sin cifras; nunca se bloquea.
+- Pruebas: `tests/fotos-endurecimiento-145.test.mjs`; E2E local `e2e-145.mjs` (iPhone y Android).
+
 ## 2026-11-02 — Fotos v2: D1 y D2 en el portal (rama local claude/activity-photos-v2-frontend, sobre #261, sin publicar)
 - **D1:** la miniatura de la cuidadora muestra «La agencia conserva esta foto; no se puede quitar» y oculta «Quitar foto» si `keptByAgency`. El 409 `PHOTO_ON_HOLD` o `PHOTO_ON_LEGAL_HOLD` tiene mensaje propio y nunca muestra el motivo.
 - **D2:**

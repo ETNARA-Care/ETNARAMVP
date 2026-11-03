@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom";
+import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { useTranslation } from "react-i18next";
 import { Camera, HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
-import { canReviewPhotos } from "@/features/activityPhotos/permissions";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
 import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
@@ -56,7 +56,9 @@ export function AgencyLayout() {
  // Finanzas (119): solo administradores y solo con FINANZAS activado por ETNARA central.
  const finance = hasOrgFeature(activeOrganization?.features, "FINANZAS");
  // Fotos de actividades (E2): solo con ACTIVITY_PHOTOS y solo administración y supervisión (D5-B).
- const photos = hasOrgFeature(activeOrganization?.features, "ACTIVITY_PHOTOS") && canReviewPhotos(roles);
+ // 145 (§5): con el módulo apagado, la administración conserva la entrada si hay retenciones legales que revisar.
+ const photoMode = usePhotoMode();
+ const photos = photoMode === "full" || photoMode === "legal-review";
  const groups: AdminNavGroup[] = GROUPS.map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
    (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch" && item.to !== "/agency/finance"))
    && (smartMatch || item.to !== "/agency/smartmatch")

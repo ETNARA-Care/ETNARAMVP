@@ -15,7 +15,8 @@ export function photoErrorKey(error: unknown): { key: PhotoErrorKey; code?: stri
   if (e?.code === "PHOTO_CONSENT_REQUIRED") return { key: "errors.consentRequired" };
   if (e?.code === "PHOTO_ALREADY_ATTACHED") return { key: "errors.alreadyAttached" };
   // D1: «Quitar foto» sobre una foto que la agencia conserva (retención vigente u obligación legal).
-  if (e?.code === "PHOTO_ON_HOLD" || e?.code === "PHOTO_ON_LEGAL_HOLD") return { key: "errors.kept" };
+  // 145 (M1): el backend responde PHOTO_KEPT_BY_AGENCY a la cuidadora para cualquier retención (nunca cuál).
+  if (e?.code === "PHOTO_KEPT_BY_AGENCY" || e?.code === "PHOTO_ON_HOLD" || e?.code === "PHOTO_ON_LEGAL_HOLD") return { key: "errors.kept" };
   if (e?.status === 413) return { key: "errors.tooLarge" };
   if (e?.code === "PHOTO_BUSY") return { key: "errors.busy" };
   if (e?.code === "PHOTO_STORAGE_NOT_CONFIGURED") return { key: "errors.unavailable" };

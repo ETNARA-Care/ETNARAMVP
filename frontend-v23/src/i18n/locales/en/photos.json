@@ -164,7 +164,14 @@
     "legalOverdueBody": "These photos are still held under a legal obligation and their review date has passed. Confirm the obligation is still in force («Confirm review») or release the hold with a reason («Release legal hold»). They are never deleted on their own.",
     "legalOverdueBodySupervisor": "These photos are still held under a legal obligation and their review date has passed. Only the administration can review or release them.",
     "legalOverdueBack": "See all photos",
-    "legalOverdueEmpty": "No legal holds with an overdue review."
+    "legalOverdueEmpty": "No legal holds with an overdue review.",
+    "legalModeTitle": "Legal hold review only",
+    "legalModeBody": "Activity photos is turned off for your agency. You only see photos under a legal hold here: you can confirm the review or release the hold with a reason. New photos cannot be taken, shared or held. Viewing an image is recorded.",
+    "legalModeAll": "See all legal holds",
+    "legalModeEmpty": "There are no photos under a legal hold.",
+    "legalViewNote": "The image is not shown until you ask for it. Do so only if you need it for the review: it is recorded.",
+    "legalViewImage": "View image",
+    "legalBasisHidden": "Only the administration sees the basis and the reference."
   },
   "historyAction": {
     "UPLOADED": "Uploaded",

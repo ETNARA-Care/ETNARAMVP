@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
-import { Camera, History, Lock, Scale, ShieldAlert } from "lucide-react";
+import { Navigate, useSearchParams } from "react-router-dom";
+import { Camera, Eye, History, Lock, Scale, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import {
   deleteActivityPhoto, getActivityPhotoImage, holdAgencyPhoto, legalHoldAgencyPhoto, listAgencyPhotos, reviewAgencyPhoto,
   type ActivityPhotoStatus, type AgencyPhoto,
 } from "@/api/activityPhotos";
-import { Badge, BottomSheet, Button, Card, EmptyState, ErrorState, Input, PageHeader, Skeleton, Textarea, useToast } from "@/components/ui";
+import { Badge, BottomSheet, Button, Card, EmptyState, Input, PageHeader, Skeleton, Textarea, useToast } from "@/components/ui";
 import { PrivateImage } from "@/features/activityPhotos/PrivateImage";
 import { PhotoHistory } from "@/features/activityPhotos/PhotoHistory";
 import { agencyPhotoErrorKey } from "@/features/activityPhotos/photoErrors";
-import { canManageLegalHolds, canReviewPhotos } from "@/features/activityPhotos/permissions";
+import { canManageLegalHolds } from "@/features/activityPhotos/permissions";
+import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { currentLanguage } from "@/i18n";
 import { formatDate, formatTime } from "@/i18n/format";
 
@@ -35,7 +36,10 @@ const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
 /**
  * Fotos de actividades v2 (V4): historial administrativo de la agencia. Solo
- * administración y supervisión, con ACTIVITY_PHOTOS encendido (FeatureRoute).
+ * administración y supervisión, con ACTIVITY_PHOTOS encendido.
+ * 145 (§5): con el módulo apagado, la administración entra en un modo de solo revisión legal
+ * (solo fotos con retención legal; confirmar la revisión o levantarla; ver una imagen solo si
+ * lo pide expresamente, y queda registrado). La supervisión no ve base ni referencia (§6).
  * Sin aprobación manual: las fotos se comparten al enviarse si hay consentimiento
  * y el familiar lo autorizó. Aquí se retiran, se vuelven a mostrar, se eliminan
  * y se retienen; todo queda en el historial. La retención legal es solo de la
@@ -46,8 +50,12 @@ export function AgencyPhotoReviewPage() {
   const { activeOrganization, roles } = useAuth();
   const { show } = useToast();
   const organizationId = activeOrganization?.id;
-  const allowed = canReviewPhotos(roles);
+  const mode = usePhotoMode();
+  const allowed = mode === "full" || mode === "legal-review";
+  const legalMode = mode === "legal-review";
   const legalAllowed = canManageLegalHolds(roles);
+  // Modo legal: la imagen solo se pide cuando la administración lo decide (cada vista queda auditada).
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const language = currentLanguage();
   const [tab, setTab] = useState<Tab>("approved");
   // D2: la notificación diaria abre /agency/photos?legal=overdue → solo las retenciones legales con la revisión vencida.
@@ -73,8 +81,8 @@ export function AgencyPhotoReviewPage() {
     const mine = ++requestId.current;
     try {
       const statuses: ActivityPhotoStatus[] = tab === "withdrawn" ? ["withdrawn", "rejected"] : [tab];
-      const lists = legalOverdue
-        ? [await listAgencyPhotos(organizationId, token, { legalReview: "overdue", limit })]
+      const lists = legalOverdue || legalMode
+        ? [await listAgencyPhotos(organizationId, token, { legalReview: legalOverdue ? "overdue" : "active", limit })]
         : await Promise.all(statuses.map((status) => listAgencyPhotos(organizationId, token, { status, limit })));
       const rows = lists.flat().sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt)).slice(0, limit);
       if (mine !== requestId.current) return;
@@ -83,7 +91,7 @@ export function AgencyPhotoReviewPage() {
     } catch {
       if (mine === requestId.current) setFailed(true);
     }
-  }, [organizationId, tab, limit, allowed, legalOverdue]);
+  }, [organizationId, tab, limit, allowed, legalOverdue, legalMode]);
 
   useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
@@ -153,22 +161,30 @@ export function AgencyPhotoReviewPage() {
   const sheetTitle = (a: Action) => t(a === "withdraw" ? "review.withdrawTitle" : a === "showAgain" ? "review.showAgainTitle" : a === "delete" ? "review.deleteTitle"
     : isLegal(a) ? "review.legalTitle" : "review.holdTitle");
 
-  if (!allowed) return <ErrorState kind="permission" />;
+  if (mode === "loading") return <div className="flex flex-col gap-3"><Skeleton className="h-24" /><Skeleton className="h-72" /></div>;
+  if (!allowed) return <Navigate to="/agency" replace />;
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]" data-testid="agency-photo-review">
       <PageHeader title={t("review.title")} description={t("review.description")} />
+
+      {legalMode && (
+        <Card className="flex flex-col gap-2 border-[var(--color-navy-900)]/20 bg-[var(--color-ivory-100)]" data-testid="legal-review-mode">
+          <p className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><Scale size={18} aria-hidden />{t("review.legalModeTitle")}</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{t("review.legalModeBody")}</p>
+        </Card>
+      )}
 
       {legalOverdue && (
         <Card className="flex flex-col gap-2 border-[var(--color-warning-700)]/30 bg-[var(--color-warning-100)]" data-testid="legal-overdue-view">
           <p className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><Scale size={18} aria-hidden />{t("review.legalOverdueTitle")}</p>
           <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{t(legalAllowed ? "review.legalOverdueBody" : "review.legalOverdueBodySupervisor")}</p>
           <Button size="sm" variant="secondary" className="self-start" data-testid="legal-overdue-back"
-            onClick={() => { setSearchParams({}, { replace: true }); setPhotos(null); setLimit(PAGE); }}>{t("review.legalOverdueBack")}</Button>
+            onClick={() => { setSearchParams({}, { replace: true }); setPhotos(null); setLimit(PAGE); }}>{t(legalMode ? "review.legalModeAll" : "review.legalOverdueBack")}</Button>
         </Card>
       )}
 
-      <div role="tablist" aria-label={t("review.title")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+      {!legalMode && <div role="tablist" aria-label={t("review.title")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         {tabs.map((item) => (
           <button key={item.id} type="button" role="tab" aria-selected={!legalOverdue && tab === item.id} data-testid={`photo-tab-${item.id}`}
             onClick={() => chooseTab(item.id)}
@@ -178,11 +194,11 @@ export function AgencyPhotoReviewPage() {
             {item.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {failed && <Card><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{t("review.loadFailed")}</p><Button size="sm" variant="secondary" className="mt-2" onClick={() => void load()}>{t("review.retry")}</Button></Card>}
       {!failed && photos === null && <div className="flex flex-col gap-3"><Skeleton className="h-72" /><Skeleton className="h-72" /></div>}
-      {!failed && photos?.length === 0 && <EmptyState icon={<Camera size={28} />} title={t(legalOverdue ? "review.legalOverdueEmpty" : "review.emptyOther")} />}
+      {!failed && photos?.length === 0 && <EmptyState icon={<Camera size={28} />} title={t(legalOverdue ? "review.legalOverdueEmpty" : legalMode ? "review.legalModeEmpty" : "review.emptyOther")} />}
 
       {!failed && photos && photos.length > 0 && (
         <>
@@ -195,7 +211,14 @@ export function AgencyPhotoReviewPage() {
               const legal = photo.legalHold;
               return (
                 <Card key={photo.id} className="flex flex-col gap-3 !p-0 overflow-hidden" data-testid="agency-photo-card" data-photo-id={photo.id} data-status={photo.status}>
-                  {photo.viewable ? (
+                  {photo.viewable && legalMode && !revealed.has(photo.id) ? (
+                    <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 bg-[var(--color-ivory-100)] px-4 text-center" data-testid="legal-image-hidden">
+                      <Lock size={20} aria-hidden className="text-[var(--color-text-muted)]" />
+                      <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">{t("review.legalViewNote")}</p>
+                      <Button size="sm" variant="secondary" icon={<Eye size={14} />} data-testid="legal-view-image"
+                        onClick={() => setRevealed((current) => new Set(current).add(photo.id))}>{t("review.legalViewImage")}</Button>
+                    </div>
+                  ) : photo.viewable ? (
                     <PrivateImage
                       load={() => { const token = getToken(); return token && organizationId ? getActivityPhotoImage(organizationId, photo.id, token) : Promise.reject(new Error("NO_SESSION")); }}
                       alt={t("review.imageAlt", { activity: activityLabel(photo.activity.type), name: photo.careRecipientName })}
@@ -234,12 +257,19 @@ export function AgencyPhotoReviewPage() {
                     {legal && (
                       <p className={`flex items-start gap-2 rounded-[var(--radius-md)] px-3 py-2 text-[var(--text-caption)] ${legal.reviewOverdue ? "bg-[var(--color-warning-100)] text-[var(--color-warning-700)]" : "bg-[var(--color-ivory-100)] text-[var(--color-text-secondary)]"}`} data-testid="photo-legal-hold">
                         <Scale size={16} aria-hidden className="mt-0.5 shrink-0" />
-                        <span>{t("review.legalActive", { date: day(legal.reviewAt) })}{legal.reference ? ` · ${legal.reference}` : ""}<br />{legal.basis}
+                        <span>{t("review.legalActive", { date: day(legal.reviewAt) })}{legal.reference ? ` · ${legal.reference}` : ""}
+                          {legal.basis ? <><br />{legal.basis}</> : <><br /><span data-testid="photo-legal-basis-hidden">{t("review.legalBasisHidden")}</span></>}
                           {legal.reviewOverdue && <><br /><strong>{t("review.legalOverdue")}</strong></>}</span>
                       </p>
                     )}
                   </div>
-                  {!deleted && (
+                  {!deleted && legalMode && legalAllowed && legal && (
+                    <div className="flex flex-wrap gap-2 px-4">
+                      <Button size="sm" variant="secondary" data-testid="photo-legal-review" onClick={() => start(photo, "legalReview")}>{t("review.legalReview")}</Button>
+                      <Button size="sm" variant="secondary" data-testid="photo-legal-release" onClick={() => start(photo, "legalRelease")}>{t("review.legalRelease")}</Button>
+                    </div>
+                  )}
+                  {!deleted && !legalMode && (
                     <div className="flex flex-wrap gap-2 px-4">
                       {photo.status === "approved" && !photo.expired && <Button size="sm" variant="danger" data-testid="photo-withdraw" onClick={() => start(photo, "withdraw")}>{t("review.withdraw")}</Button>}
                       {(photo.status === "withdrawn" || photo.status === "rejected") && photo.sharedAt && !photo.expired && (

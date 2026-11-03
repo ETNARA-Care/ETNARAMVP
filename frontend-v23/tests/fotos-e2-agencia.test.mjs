@@ -49,13 +49,14 @@ test("E2.2 cada error de revisión y de consentimiento tiene mensaje en español
 });
 
 test("E2.3 la bandeja solo existe con ACTIVITY_PHOTOS y solo aparece en el menú de administración y supervisión", () => {
-  assert.match(read("src/App.tsx"), /<Route path="photos" element=\{<FeatureRoute feature="ACTIVITY_PHOTOS" fallback="\/agency"><AgencyPhotoReviewPage\/><\/FeatureRoute>\}\/>/);
+  // 145 (§5): la página decide con usePhotoMode (encendido + administración/supervisión, o modo de revisión legal).
+  assert.match(read("src/App.tsx"), /<Route path="photos" element=\{<AgencyPhotoReviewPage\/>\}\/>/);
   const layout = code("src/layouts/AgencyLayout.tsx");
-  assert.match(layout, /const photos = hasOrgFeature\(activeOrganization\?\.features, "ACTIVITY_PHOTOS"\) && canReviewPhotos\(roles\);/);
+  assert.match(layout, /const photos = photoMode === "full" \|\| photoMode === "legal-review";/);
   assert.match(layout, /\(photos \|\| item\.to !== "\/agency\/photos"\)/);
   const page = code("src/pages/agency/AgencyPhotoReviewPage.tsx");
-  assert.match(page, /const allowed = canReviewPhotos\(roles\);/);
-  assert.match(page, /if \(!allowed\) return <ErrorState kind="permission" \/>;/);
+  assert.match(page, /const allowed = mode === "full" \|\| mode === "legal-review";/);
+  assert.match(page, /if \(!allowed\) return <Navigate to="\/agency" replace \/>;/);
   assert.match(page, /if \(!organizationId \|\| !token \|\| !allowed\) return;/, "sin permiso no pide nada al backend");
 });
 
