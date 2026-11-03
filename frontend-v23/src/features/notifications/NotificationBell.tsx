@@ -6,8 +6,8 @@ import { IconButton, Badge } from "@/components/ui";
 import { useNotifications } from "./useNotifications";
 import { notificationTime } from "./notificationTime";
 
-/** Campana conectada a la bandeja real del usuario autenticado. */
-export function NotificationBell() {
+/** Campana conectada a la bandeja real del usuario autenticado. `onDark`: cabecera oscura (ETNARA central). */
+export function NotificationBell({ onDark = false }: { onDark?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,7 +21,12 @@ export function NotificationBell() {
     const { type, relatedEntityType: entityType, relatedEntityId: entityId, shiftId, careRecipientId, workerMembershipId } = notification;
     const portal = location.pathname.startsWith("/family")
       ? "family"
-      : location.pathname.startsWith("/caregiver") ? "caregiver" : "agency";
+      : location.pathname.startsWith("/caregiver") ? "caregiver" : location.pathname.startsWith("/platform") ? "platform" : "agency";
+
+    // 145 (§4): agencia sin administración activa. Central abre Organizaciones; la supervisión solo lo lee
+    // (no puede restablecerla: lo hace ETNARA). Nunca menciona fotos ni retenciones.
+    if (type === "PLATFORM_AGENCY_NO_ACTIVE_ADMIN") { navigate("/platform/organizations"); return; }
+    if (type === "AGENCY_NO_ACTIVE_ADMIN") return;
 
     // SmartMatch: open the exact application (agency review) or the caregiver's own list.
     if (entityType === "smartmatch_application" && entityId) {
@@ -96,6 +101,11 @@ export function NotificationBell() {
       navigate(`/agency/workers/${workerMembershipId}`);
       return;
     }
+    // 144 (D2): revisiones de retención legal vencidas → solo esas fotos, en la pantalla administrativa.
+    if (type === "PHOTO_LEGAL_HOLD_REVIEW_OVERDUE" && portal === "agency") {
+      navigate("/agency/photos?legal=overdue");
+      return;
+    }
     if (entityType === "operational_alert" && portal === "agency") {
       navigate("/agency/operations");
       return;
@@ -119,6 +129,7 @@ export function NotificationBell() {
           icon={<Bell size={20} />}
           label={unread > 0 ? t("notifications.bellUnread", { count: unread }) : t("notifications.bell")}
           onClick={toggle}
+          {...(onDark ? { className: "text-white hover:bg-white/10" } : {})}
         />
         {unread > 0 && (
           <span

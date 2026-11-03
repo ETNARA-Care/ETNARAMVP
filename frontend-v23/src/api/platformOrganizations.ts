@@ -176,11 +176,19 @@ export interface OrganizationFeatures {
   features: { code: PilotFeatureCode; enabled: boolean; updatedAt: string | null }[];
   history: { code: PilotFeatureCode; enabled: boolean; reason: string; occurredAt: string; actorEmail: string | null }[];
 }
+/**
+ * 145 (§5): solo al ir a apagar Fotos: ¿tiene la agencia ALGUNA foto con retención legal? (sí/no; nunca
+ * cuántas ni cuáles). Cada consulta queda auditada en el backend.
+ */
+export async function checkActivityPhotosLegalHolds(organizationId: string, token: string): Promise<boolean> {
+  const r = await apiClient.post<{ legalHolds: boolean }>(`/platform/organizations/${encodeURIComponent(organizationId)}/features/ACTIVITY_PHOTOS/legal-hold-check`, {}, token);
+  return r.legalHolds === true;
+}
 export function getOrganizationFeatures(organizationId: string, token: string) {
   return apiClient.get<OrganizationFeatures>(`/platform/organizations/${encodeURIComponent(organizationId)}/features`, token);
 }
 export function setOrganizationFeature(organizationId: string, code: PilotFeatureCode, enabled: boolean, reason: string, token: string) {
-  return apiClient.put<{ feature: { code: PilotFeatureCode; enabled: boolean; changed: boolean } }>(
+  return apiClient.put<{ feature: { code: PilotFeatureCode; enabled: boolean; changed: boolean; legalHoldsKept?: boolean } }>(
     `/platform/organizations/${encodeURIComponent(organizationId)}/features/${code}`, { enabled, reason }, token);
 }
 

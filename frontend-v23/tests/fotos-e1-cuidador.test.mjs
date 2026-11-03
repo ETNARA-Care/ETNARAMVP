@@ -88,7 +88,8 @@ test("E1.7 las rutas de fotos nunca se recuerdan para el modo sin señal ni se c
     assert.equal(readable.test(path), false, path);
   }
   assert.match(read("src/api/client.ts"), /async function getBinary[^]*?cache:"no-store"/);
-  assert.match(code("src/api/activityPhotos.ts"), /getBinary\(`\/organizations\/\$\{organizationId\}\/activity-photos\/\$\{photoId\}\/image`/);
+  // 145: optional «?purpose=legal-review» (legal-review mode only); still getBinary (no-store).
+  assert.match(code("src/api/activityPhotos.ts"), /getBinary\(`\/organizations\/\$\{organizationId\}\/activity-photos\/\$\{photoId\}\/image\$\{opts\.legalReview \? "\?purpose=legal-review" : ""\}`/);
 });
 
 test("E1.8 con ACTIVITY_PHOTOS apagado el turno no cambia: el selector y las fotos dependen del interruptor", () => {

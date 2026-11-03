@@ -20,7 +20,8 @@ export interface FamilyTimelineItem {
    * para esta familia ahora mismo (aprobada, consentimientos vigentes, can_view_photos,
    * interruptor encendido). Sin `reference`, no hay nada que mostrar.
    */
-  photo?: { visible: boolean; reference?: string };
+  /** availableUntil (v2): fin del plazo de conservación; después nadie la ve. */
+  photo?: { visible: boolean; reference?: string; availableUntil?: string };
 }
 
 export async function listMyCareRecipients(token: string): Promise<FamilyRecipient[]> {

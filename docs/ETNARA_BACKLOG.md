@@ -2,6 +2,9 @@
 
 ## In Progress
 
+### PHOTO-V2-FE — Fotos v2: V3 familia, V4 agencia, V5 cuidadora
+- Branch claude/activity-photos-v2-frontend → draft PR #261. Needs backend 141–144 (#248, #249, #250 + local 144). Local commits for D1/D2 not yet pushed (needs Rafa's authorization). Not authorized: merge, deploy, turn on ACTIVITY_PHOTOS.
+
 ### BILL-F2.3 — Facturación Premium F2.3 portal (issue, PDF, void, billing details)
 - Branch claude/facturacion-f2-3 (draft PR, on top of F2.2 #241). Needs backend #221. Not authorized: merge, deploy.
 

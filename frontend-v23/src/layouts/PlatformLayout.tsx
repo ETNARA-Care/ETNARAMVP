@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Building2, FileCheck2, LayoutDashboard, LogOut, RadioTower } from "lucide-react";
 import { Avatar, IconButton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 
 // labelKey / shortKey are catalog keys (shell:platform.items.*).
 const NAV = [
@@ -46,6 +47,8 @@ export function PlatformLayout() {
                 <ArrowLeft size={16} /> <span className="hidden sm:inline">{t("platform.organization")}</span>
               </Link>
             )}
+            {/* 145 (§4): avisos de ETNARA central (p. ej., una agencia sin administración activa). */}
+            <NotificationBell onDark />
             <span className="hidden sm:inline-flex"><Avatar name={user?.email ?? "ETNARA"} size={32} /></span>
             <LanguageSwitcher className="scale-90 sm:scale-100" />
             <IconButton icon={<LogOut size={18} />} label={t("account.logout")} className="text-white hover:bg-white/10" onClick={() => void logout()} />

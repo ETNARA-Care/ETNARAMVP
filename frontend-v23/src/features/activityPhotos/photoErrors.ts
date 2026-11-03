@@ -6,7 +6,7 @@ import type { ApiError } from "@/api/client";
  */
 export type PhotoErrorKey =
   | "errors.offline" | "errors.consentRequired" | "errors.alreadyAttached" | "errors.tooLarge" | "errors.busy"
-  | "errors.unavailable" | "errors.badImage" | "errors.notAllowed" | "errors.withCode" | "errors.generic";
+  | "errors.unavailable" | "errors.badImage" | "errors.notAllowed" | "errors.kept" | "errors.withCode" | "errors.generic";
 
 /** Clave del catálogo `photos` para una subida fallida (la actividad ya está guardada). */
 export function photoErrorKey(error: unknown): { key: PhotoErrorKey; code?: string } {
@@ -14,6 +14,9 @@ export function photoErrorKey(error: unknown): { key: PhotoErrorKey; code?: stri
   if (e?.status === 0) return { key: "errors.offline" };
   if (e?.code === "PHOTO_CONSENT_REQUIRED") return { key: "errors.consentRequired" };
   if (e?.code === "PHOTO_ALREADY_ATTACHED") return { key: "errors.alreadyAttached" };
+  // D1: «Quitar foto» sobre una foto que la agencia conserva (retención vigente u obligación legal).
+  // 145 (M1): el backend responde PHOTO_KEPT_BY_AGENCY a la cuidadora para cualquier retención (nunca cuál).
+  if (e?.code === "PHOTO_KEPT_BY_AGENCY" || e?.code === "PHOTO_ON_HOLD" || e?.code === "PHOTO_ON_LEGAL_HOLD") return { key: "errors.kept" };
   if (e?.status === 413) return { key: "errors.tooLarge" };
   if (e?.code === "PHOTO_BUSY") return { key: "errors.busy" };
   if (e?.code === "PHOTO_STORAGE_NOT_CONFIGURED") return { key: "errors.unavailable" };
@@ -33,6 +36,8 @@ export type AgencyPhotoErrorKey =
   | "agencyErrors.offline" | "agencyErrors.statusChanged" | "agencyErrors.reasonRequired" | "agencyErrors.consentRequired"
   | "agencyErrors.invalidTransition" | "agencyErrors.notAllowed" | "agencyErrors.notFound" | "agencyErrors.consentAlreadyActive"
   | "agencyErrors.formRequired" | "agencyErrors.formInvalid" | "agencyErrors.formTooLarge" | "agencyErrors.busy" | "agencyErrors.unavailable"
+  | "agencyErrors.onHold" | "agencyErrors.onLegalHold" | "agencyErrors.holdLimit" | "agencyErrors.holdInvalid" | "agencyErrors.holdExists"
+  | "agencyErrors.expired" | "agencyErrors.notShareable" | "agencyErrors.alreadyDeleted" | "agencyErrors.legalAdminOnly"
   | "agencyErrors.withCode" | "agencyErrors.generic";
 
 /** Errores de la revisión y de los consentimientos (agencia) → clave del catálogo `photos`. */
@@ -49,6 +54,17 @@ export function agencyPhotoErrorKey(error: unknown): { key: AgencyPhotoErrorKey;
     case "PHOTO_CONSENT_FORM_REQUIRED": return { key: "agencyErrors.formRequired" };
     case "PHOTO_BUSY": return { key: "agencyErrors.busy" };
     case "PHOTO_STORAGE_NOT_CONFIGURED": return { key: "agencyErrors.unavailable" };
+    // v2 (141–143)
+    case "PHOTO_ON_HOLD": return { key: "agencyErrors.onHold" };
+    case "PHOTO_ON_LEGAL_HOLD": return { key: "agencyErrors.onLegalHold" };
+    case "PHOTO_HOLD_LIMIT": return { key: "agencyErrors.holdLimit" };
+    case "PHOTO_HOLD_REASON_REQUIRED": case "PHOTO_HOLD_REVIEW_INVALID": case "PHOTO_LEGAL_HOLD_BASIS_REQUIRED": case "PHOTO_LEGAL_HOLD_REVIEW_INVALID": case "INVALID_PAYLOAD":
+      return { key: "agencyErrors.holdInvalid" };
+    case "PHOTO_HOLD_EXISTS": case "PHOTO_HOLD_NOT_ACTIVE": case "PHOTO_LEGAL_HOLD_EXISTS": case "PHOTO_LEGAL_HOLD_NOT_ACTIVE": return { key: "agencyErrors.holdExists" };
+    case "PHOTO_EXPIRED": return { key: "agencyErrors.expired" };
+    case "PHOTO_NOT_SHAREABLE": return { key: "agencyErrors.notShareable" };
+    case "PHOTO_ALREADY_DELETED": case "PHOTO_DELETED_TERMINAL": return { key: "agencyErrors.alreadyDeleted" };
+    case "PHOTO_LEGAL_HOLD_ADMIN_ONLY": return { key: "agencyErrors.legalAdminOnly" };
   }
   if (e?.status === 413) return { key: "agencyErrors.formTooLarge" };
   if (e?.status === 415 || e?.status === 422) return { key: "agencyErrors.formInvalid" };

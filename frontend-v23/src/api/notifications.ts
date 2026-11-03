@@ -11,6 +11,8 @@ export interface NotificationItem {
   workerMembershipId: string | null;
   createdAt: string;
   readAt: string | null;
+  /** 144: solo en PHOTO_LEGAL_HOLD_REVIEW_OVERDUE (cuántas revisiones legales vencidas; nada más). */
+  itemCount?: number | null;
 }
 
 export interface NotificationPage {
@@ -72,6 +74,7 @@ function notificationSummary(type: string): string {
   if (type === "CREDENTIAL_REVIEW_APPROVED") return "Credencial aprobada";
   if (type === "CREDENTIAL_REVIEW_REJECTED") return "Credencial rechazada";
   if (type === "OPERATIONAL_ALERT_ESCALATED") return "Alerta operacional escalada";
+  if (type === "PHOTO_LEGAL_HOLD_REVIEW_OVERDUE") return "Fotografías con retención legal tienen la revisión vencida";
   return "Notificación";
 }
 

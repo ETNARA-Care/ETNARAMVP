@@ -13,6 +13,8 @@ export interface FamilyPhoto {
   summary: string;
   occurredAt: string;
   caregiverName: string | null;
+  /** Hasta cuándo se puede ver (vencimiento provisional); null si el backend no lo envía. */
+  availableUntil: string | null;
 }
 
 export function familyPhotos(items: readonly FamilyTimelineItem[]): FamilyPhoto[] {
@@ -22,7 +24,7 @@ export function familyPhotos(items: readonly FamilyTimelineItem[]): FamilyPhoto[
     const reference = item.photo?.visible ? item.photo.reference : undefined;
     if (!reference || seen.has(reference)) continue;
     seen.add(reference);
-    out.push({ id: reference, itemId: item.id, title: item.title, summary: item.summary, occurredAt: item.occurredAt, caregiverName: item.caregiver?.displayName ?? null });
+    out.push({ id: reference, itemId: item.id, title: item.title, summary: item.summary, occurredAt: item.occurredAt, caregiverName: item.caregiver?.displayName ?? null, availableUntil: item.photo?.availableUntil ?? null });
   }
   return out;
 }

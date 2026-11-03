@@ -350,20 +350,27 @@ export function CaregiverShiftDetailPage() {
     : activeAction === "NOTE" ? Boolean(note.trim()) : Boolean(activityLabel.trim());
 
   /** Sube la foto de una actividad ya guardada. El servidor lo comprueba todo otra vez (el consentimiento puede haber cambiado). */
-  async function sendPhoto(eventId: string, title: string, prepared: PreparedPhoto): Promise<boolean> {
+  // v2: devuelve si se compartió al enviarse (envío directo, sin aprobación de la agencia) o null si falló.
+  async function sendPhoto(eventId: string, title: string, prepared: PreparedPhoto): Promise<{ shared: boolean } | null> {
     const token = getToken();
-    if (!organizationId || !token) return false;
+    if (!organizationId || !token) return null;
     try {
       const ref = await uploadActivityPhoto(organizationId, eventId, prepared.blob, prepared.contentType, token);
-      setEventPhotos((current) => ({ ...current, [eventId]: ref }));
+      setEventPhotos((current) => ({ ...current, [eventId]: { ...ref, canRemove: true } }));
       setPhotoRetry(null);
-      return true;
+      return { shared: ref.sharedWithFamily === true };
     } catch (photoError) {
       const { key, code } = photoErrorKey(photoError);
       setPhotoRetry(isRetryablePhotoError(photoError) ? { eventId, title, photo: prepared } : null);
       show(tp("caregiver.photoFailed", { reason: tp(key, { code }) }), "warning");
-      return false;
+      return null;
     }
+  }
+
+  // v2: quitar su foto durante la visita (se elimina para todos).
+  function photoRemoved(photoId: string) {
+    setEventPhotos((current) => Object.fromEntries(Object.entries(current).filter(([, ref]) => ref.id !== photoId)));
+    show(tp("caregiver.removed"), "success");
   }
 
   async function retryPhoto() {
@@ -375,7 +382,8 @@ export function CaregiverShiftDetailPage() {
       // Primero pregunta: la actividad puede ser antigua, tener ya foto o haber cambiado el consentimiento.
       const allowed = await getActivityPhotoEligibility(organizationId, photoRetry.eventId, token);
       if (!allowed) { setPhotoRetry(null); show(tp("caregiver.retryNotAllowed"), "warning"); return; }
-      if (await sendPhoto(photoRetry.eventId, photoRetry.title, photoRetry.photo)) show(tp("caregiver.photoSent"), "success");
+      const sent = await sendPhoto(photoRetry.eventId, photoRetry.title, photoRetry.photo);
+      if (sent) show(tp(sent.shared ? "caregiver.photoSentShared" : "caregiver.photoSentAgencyOnly"), "success");
     } catch (retryError) {
       const { key, code } = photoErrorKey(retryError);
       show(tp(key, { code }), "warning");
@@ -401,7 +409,8 @@ export function CaregiverShiftDetailPage() {
           // El registro espera señal en la cola cifrada; la foto no se guarda en el teléfono (E6).
           show(tp("caregiver.queuedPhotoDropped"), "warning");
         } else if (eventId) {
-          if (await sendPhoto(eventId, ACTION_TITLE[activeAction], attached)) show(tp("caregiver.savedWithPhoto"), "success");
+          const sent = await sendPhoto(eventId, ACTION_TITLE[activeAction], attached);
+          if (sent) show(tp(sent.shared ? "caregiver.savedShared" : "caregiver.savedAgencyOnly"), "success");
         }
         setActiveAction(null);
         setPhoto(null);
@@ -662,10 +671,12 @@ export function CaregiverShiftDetailPage() {
 
       {photosOn && organizationId && careEvents.some((event) => eventPhotos[event.id]) && (
         <Card>
-          <p className="mb-3 text-[var(--text-small)] font-medium text-[var(--color-text-secondary)]">{tp("caregiver.shiftPhotos")}</p>
+          <p className="mb-1 text-[var(--text-small)] font-medium text-[var(--color-text-secondary)]">{tp("caregiver.shiftPhotos")}</p>
+          <p className="mb-3 text-[var(--text-caption)] text-[var(--color-text-muted)]">{tp("caregiver.windowNote")}</p>
           <div className="grid grid-cols-2 gap-2.5" data-testid="shift-photos">
             {careEvents.filter((event) => eventPhotos[event.id]).map((event) => (
-              <ActivityPhotoThumb key={event.id} organizationId={organizationId} photo={eventPhotos[event.id]} title={careEventSummary(event)} />
+              <ActivityPhotoThumb key={event.id} organizationId={organizationId} photo={eventPhotos[event.id]} title={careEventSummary(event)}
+                onRemoved={photoRemoved} onError={(message) => show(message, "warning")} />
             ))}
           </div>
         </Card>

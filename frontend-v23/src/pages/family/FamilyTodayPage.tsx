@@ -6,6 +6,8 @@ import { familyPhotos } from "@/features/activityPhotos/familyPhotos";
 import { FamilyPhotoGrid } from "@/features/activityPhotos/FamilyPhotos";
 import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoViewer";
 import { useFamilyRefresh } from "@/features/activityPhotos/useFamilyRefresh";
+import { PhotoReceiptCard } from "@/features/activityPhotos/PhotoReceiptCard";
+import { usePhotoReceipt } from "@/features/activityPhotos/usePhotoReceipt";
 import { ChevronRight, Clock3, MessageCircle, ShieldCheck } from "lucide-react";
 import { Avatar, ErrorState, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
@@ -82,7 +84,9 @@ export function FamilyTodayPage() {
   const shift = useMemo(() => shifts?.find(x => isToday(x.scheduledStart) && !x.checkedOutAt && x.status !== "cancelled")
     ?? shifts?.find(x => isToday(x.scheduledStart)), [shifts]);
   const entries = timeline.filter(x => isToday(x.occurredAt));
-  const todayPhotos = useMemo(() => (photosOn ? familyPhotos(timeline.filter(x => isToday(x.occurredAt))) : []), [photosOn, timeline]);
+  // V3: autorización individual del familiar. Sin aceptar no se muestra ni se pide ninguna imagen.
+  const photoReceipt = usePhotoReceipt(recipient?.organizationId, recipient?.recipientId, photosOn);
+  const todayPhotos = useMemo(() => (photosOn && photoReceipt.accepted ? familyPhotos(timeline.filter(x => isToday(x.occurredAt))) : []), [photosOn, photoReceipt.accepted, timeline]);
   const photoViewer = useFamilyPhotoViewer(recipient?.organizationId, todayPhotos);
   const lastEntry = entries[0];
   const summary = buildDailySummary(entries);
@@ -165,9 +169,12 @@ export function FamilyTodayPage() {
             <p className="text-xs font-semibold uppercase tracking-[.14em] text-[#66845f]">{tp("family.todayEyebrow")}</p>
             <h2 className="mt-1 font-display text-xl text-[#102b57]">{tp("family.todayTitle")}</h2>
           </div>
-          {todayPhotos.length
+          {photoReceipt.accepted && (todayPhotos.length
             ? <FamilyPhotoGrid organizationId={recipient.organizationId} photos={todayPhotos} onOpen={photoViewer.open} />
-            : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]" data-testid="family-photos-empty">{tp("family.noneToday")}</div>}
+            : <div className="rounded-2xl bg-[#f8f5ee] p-4 text-sm text-[#667085]" data-testid="family-photos-empty">{tp("family.noneToday")}</div>)}
+          <div className={photoReceipt.accepted ? "mt-3" : ""}>
+            <PhotoReceiptCard name={caredFor} receipt={photoReceipt.receipt} state={photoReceipt.state} decide={photoReceipt.decide} onChanged={() => void load()} />
+          </div>
         </section>
       )}
       {photoViewer.viewer}
