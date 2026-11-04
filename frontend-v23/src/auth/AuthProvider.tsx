@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { disablePushOnThisDevice, syncPushOnSession } from "@/features/push/pushDevice";
 import * as authApi from "@/api/auth";
 import * as orgApi from "@/api/organizationContext";
 import type { ApiError } from "@/api/client";
@@ -149,6 +150,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => stopShiftCache();
   }, [status]);
 
+  // Push (146): si ESTA persona ya había activado avisos en este teléfono, se renueva en
+  // silencio; si los activó otra persona, se cancelan. Nunca pide permisos aquí.
+  const userId = user?.id ?? null;
+  useEffect(() => {
+    if (status !== "authenticated" || offline || !userId) return;
+    const token = getToken();
+    if (token) void syncPushOnSession(token, userId).catch(() => undefined);
+  }, [status, offline, userId]);
+
   // Se abrió sin señal: al volver la señal confirma la sesión con el servidor.
   useEffect(() => {
     if (!offline) return;
@@ -190,6 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     const token = getToken();
+    // Push (146): este teléfono deja de recibir avisos de esta persona (aquí y en el servidor).
+    await disablePushOnThisDevice(token).catch(() => undefined);
     if (token) {
       try {
         await authApi.logout(token);

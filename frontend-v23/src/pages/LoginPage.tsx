@@ -8,6 +8,7 @@ import { loginErrorMessage } from "@/auth/errorMessages";
 import type { ApiError } from "@/api/client";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { pendingOnDevice } from "@/offline/pendingVault";
+import { readPendingOpen } from "@/features/push/pendingOpen";
 
 export function LoginPage() {
   const { status, login, organizations, activeOrganization, roles, isPlatformAdmin } = useAuth();
@@ -32,6 +33,8 @@ export function LoginPage() {
   // en cuanto haya suficiente información para decidir a dónde.
   useEffect(() => {
     if (status !== "authenticated") return;
+    // Push (146): si se tocó un aviso sin sesión, vuelve a /abrir (que elige la agencia del aviso).
+    if (readPendingOpen()) { navigate("/abrir", { replace: true }); return; }
     if (!isPlatformAdmin && organizations.length > 1 && !activeOrganization) {
       navigate("/select-organization", { replace: true });
       return;

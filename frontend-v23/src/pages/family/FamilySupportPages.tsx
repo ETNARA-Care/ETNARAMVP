@@ -15,6 +15,7 @@ import { pickRecipient, useFamilyRecipient } from "@/features/family/familyRecip
 import { FamilyServiceLocationCard } from "@/features/family/FamilyServiceLocationCard";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import type { NotificationItem } from "@/api/notifications";
+import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCard";
 
 function isToday(iso: string): boolean {
   const event = new Date(iso);
@@ -146,6 +147,8 @@ export function FamilyProfilePage() {
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">Perfil y equipo</h1>
         <p className="mt-1 text-sm text-[#667085]">Tu cuenta y la información autorizada del equipo de cuidado.</p>
       </section>
+
+      <NotificationSettingsCard />
 
       <section className="rounded-[22px] bg-[#102b57] p-5 text-white shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#b8c9ad]">Tu cuenta</p>
