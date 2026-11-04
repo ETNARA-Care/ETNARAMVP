@@ -9,6 +9,11 @@
  * - Páginas: primero la red; sin señal, la última copia de index.html.
  * - Archivos /assets/* (con hash en el nombre): del caché, y si no, de la red.
  * - Al publicar una versión nueva cambia BUILD y se borra la copia anterior.
+ *
+ * Push (Backend 146): muestra el aviso con el texto fijo que manda el servidor y, al
+ * tocarlo, abre /abrir?n=<id> en ESTE origen (nunca otro dominio). El servidor decide el
+ * destino con sesión. Formato declarativo de WebKit: en iOS 18.4+ Safari puede mostrarlo
+ * por sí solo; aquí se muestra igual para los demás navegadores.
  */
 const BUILD = "__ETNARA_BUILD__";
 const CACHE = `etnara-app-${BUILD}`;
@@ -21,7 +26,7 @@ async function precache() {
   const html = await response.clone().text();
   await cache.put("/index.html", response);
   // Los archivos que index.html necesita para arrancar.
-  const urls = new Set(["/favicon.svg", "/etnara-mark.svg", "/manifest.webmanifest"]);
+  const urls = new Set(["/favicon.svg", "/etnara-mark.svg", "/manifest.webmanifest", "/icons/icon-192.png"]);
   for (const match of html.matchAll(/(?:src|href)="(\/[^"]+)"/g)) {
     if (match[1].startsWith("/assets/")) urls.add(match[1]);
   }
@@ -80,4 +85,59 @@ self.addEventListener("fetch", (event) => {
       }
     })());
   }
+});
+
+// ---------------------------------------------------------------- notificaciones push
+const DEFAULT_TITLE = "ETNARA Care";
+const DEFAULT_BODY = "Tienes un aviso nuevo en ETNARA";
+
+/** Solo /abrir?n=<uuid> de este mismo origen; cualquier otra cosa abre la app. */
+function safeOpenUrl(raw) {
+  try {
+    const url = new URL(String(raw || ""), self.location.origin);
+    const n = url.searchParams.get("n") || "";
+    if (url.origin === self.location.origin && url.pathname === "/abrir"
+        && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(n)) {
+      return `${self.location.origin}/abrir?n=${n.toLowerCase()}`;
+    }
+  } catch { /* */ }
+  return `${self.location.origin}/`;
+}
+
+function readPush(event) {
+  let data = null;
+  try { data = event.data ? event.data.json() : null; } catch { data = null; }
+  const n = data && typeof data === "object" ? data.notification : null;
+  const text = (v, fallback, max) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : fallback);
+  return {
+    title: text(n && n.title, DEFAULT_TITLE, 40),
+    body: text(n && n.body, DEFAULT_BODY, 120),
+    url: safeOpenUrl(n && n.navigate),
+  };
+}
+
+self.addEventListener("push", (event) => {
+  const p = readPush(event);
+  // Siempre se muestra un aviso visible (iOS revoca la suscripción si no).
+  event.waitUntil(self.registration.showNotification(p.title, {
+    body: p.body,
+    icon: "/icons/icon-192.png",
+    lang: "es-PR",
+    data: { url: p.url },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = safeOpenUrl(event.notification.data && event.notification.data.url);
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of windows) {
+      if (new URL(client.url).origin === self.location.origin && "focus" in client) {
+        await client.focus();
+        if ("navigate" in client) { try { await client.navigate(url); return; } catch { /* abre una nueva */ } }
+      }
+    }
+    await self.clients.openWindow(url);
+  })());
 });

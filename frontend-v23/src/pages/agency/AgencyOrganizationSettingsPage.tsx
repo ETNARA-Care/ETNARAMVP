@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { createEstablishment, listEstablishments, updateEstablishment, type Establishment } from "@/api/establishments";
 import { TeamPanel } from "@/features/agency/TeamPanel";
+import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCard";
 
 export function AgencyOrganizationSettingsPage() {
   const { user, logout, activeOrganization, organizations, roles } = useAuth();
@@ -70,6 +71,7 @@ export function AgencyOrganizationSettingsPage() {
 
   return <div className="flex flex-col gap-[var(--spacing-md)]">
     <PageHeader title="Configuración" description="Administra la organización activa sin mezclar datos de otras agencias." />
+    <NotificationSettingsCard />
     <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
         <span className="rounded-full bg-[var(--color-accent-100)] p-3 text-[var(--color-accent-700)]"><Building2 size={22} /></span>

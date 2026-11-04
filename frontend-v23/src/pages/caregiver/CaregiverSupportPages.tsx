@@ -11,6 +11,7 @@ import { getToken } from "@/auth/token";
 import { listMyCredentials, uploadMyCredentialDocument, type CredentialSummary } from "@/api/credentials";
 import { getMyAvailability, saveMyAvailability, type MyAvailability } from "@/api/availability";
 import { LocationConsentCard } from "@/features/serviceLocation/LocationConsentCard";
+import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCard";
 
 const weekdays = [
   { value: 1, label: "Lunes" }, { value: 2, label: "Martes" }, { value: 3, label: "Miércoles" },
@@ -213,6 +214,7 @@ export function CaregiverProfilePage() {
           {user?.email && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Sesión: {user.email}</p>}
         </div>
       </Card>
+      <NotificationSettingsCard />
       <Card id="my-credentials" className="overflow-hidden p-0 scroll-mt-24">
         <div className="bg-[var(--color-navy-900)] p-5 text-white">
           <div className="flex items-center justify-between gap-3">
