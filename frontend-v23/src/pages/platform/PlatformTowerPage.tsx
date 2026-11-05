@@ -3,7 +3,6 @@ import { getToken } from "@/auth/token";
 import { apiClient } from "@/api/client";
 import { buildTowerFloors } from "@/features/tower/floors";
 import { TowerPremiumFacade } from "@/features/tower/TowerPremiumFacade";
-import { TowerCompliancePanel } from "@/features/tower/TowerCompliancePanel";
 import { TowerCarePanel } from "@/features/tower/TowerCarePanel";
 import { TowerExecutiveSummary } from "@/features/tower/TowerExecutiveSummary";
 import { TowerBusinessDepartments } from "@/features/tower/TowerBusinessDepartments";
@@ -296,7 +295,6 @@ export function PlatformTowerPage() {
       <h2 className="font-display text-2xl">Herramientas por departamento</h2>
       <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Selecciona un área para abrir sus consultas. Las herramientas no ejecutan cambios.</p>
       <div className="mt-4 space-y-3">
-        <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Cumplimiento documental</summary><div className="mt-3"><TowerCompliancePanel /></div></details>
         <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Operaciones de Cuidado</summary><div className="mt-3"><TowerCarePanel /></div></details>
         <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Secretaría y Dirección</summary><div className="mt-3"><TowerExecutiveSummary tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} loading={taskInboxLoading} onRefresh={() => { void loadTaskInbox(); }} /></div></details>
         <details className="rounded-lg border border-[var(--color-border)] p-3"><summary className="cursor-pointer font-semibold">Finanzas, Soporte y Mercadeo</summary><div className="mt-3"><TowerBusinessDepartments tasks={taskInbox} agents={data?.corporateAgents ?? data?.agents ?? []} loaded={taskInboxLoaded} /></div></details>

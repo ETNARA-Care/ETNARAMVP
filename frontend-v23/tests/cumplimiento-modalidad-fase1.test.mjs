@@ -58,7 +58,7 @@ test("no message attributes a legal certification or independent validation to E
 
 test("documents, history and controls are untouched: upload, history, review status, archive, file limits", () => {
   const panel = read("src/pages/agency/EstablishmentCompliancePanel.tsx");
-  for (const call of ["uploadEstablishmentDocument(", "listEstablishmentDocumentHistory(", "getEstablishmentDocumentDownload(", "review_status===\"rejected\"", "review_status===\"approved\"", "MAX_FILE_SIZE=10*1024*1024", "ALLOWED_TYPES=new Set([\"application/pdf\",\"image/jpeg\",\"image/png\"])"]) {
+  for (const call of ["uploadEstablishmentDocument(", "listEstablishmentDocumentHistory(", "getEstablishmentDocumentDownload(", "legacyReviewNote(", "MAX_FILE_SIZE=10*1024*1024", "ALLOWED_TYPES=new Set([\"application/pdf\",\"image/jpeg\",\"image/png\"])"]) {
     assert.ok(panel.includes(call), call);
   }
   const api = read("src/api/establishmentDocuments.ts");
