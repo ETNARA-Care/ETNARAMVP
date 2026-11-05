@@ -20,7 +20,9 @@ test("A: the credential badge shows the agency's real decision; no 'ETNARA Verif
 
 test("B: institutional documents show existence and expiry only; Central's old decisions are labelled history", () => {
   const panel = read("src/pages/agency/EstablishmentCompliancePanel.tsx");
-  assert.match(panel, /let status:"Faltante"\|"Cargado"\|"Vencido"\|"Próximo a vencer"="Faltante"/);
+  // D4 (5-nov-2026) añadió «Vencimiento no informado»: sin fecha ya no cuenta como al día.
+  assert.match(panel, /type Status="Faltante"\|"Cargado"\|"Vencimiento no informado"\|"Vencido"\|"Próximo a vencer"/);
+  assert.match(panel, /let status:Status="Faltante"/);
   assert.doesNotMatch(panel, /"Vigente"|"Pendiente de revisión"|"Rechazado"|Pendiente de validación/);
   assert.match(panel, /Decisión histórica de ETNARA Central \(antes de nov-2026\)/);
   assert.match(panel, /No es una certificación vigente/);
