@@ -5,9 +5,12 @@ import type { Establishment } from "@/api/establishments";
 import { Skeleton } from "@/components/ui";
 import { AdminPanel, AdminPanelHeader, ReadinessRing } from "@/components/admin/AdminUI";
 
-/** ETNARA Compliance: preparación real de expedientes de residentes + alertas de credenciales. */
-export function ReadinessPanel({ rows, places, error, credentialAlerts, className = "" }: {
- rows: ResidentCompliance[] | null; places: Establishment[]; error: boolean; credentialAlerts: number; className?: string;
+/**
+ * Cumplimiento: expedientes de residentes (solo hogares residenciales) + alertas de credenciales.
+ * Según la lista de la organización; ETNARA no certifica el cumplimiento legal.
+ */
+export function ReadinessPanel({ rows, places, error, credentialAlerts, residential = true, className = "" }: {
+ rows: ResidentCompliance[] | null; places: Establishment[]; error: boolean; credentialAlerts: number; residential?: boolean; className?: string;
 }) {
  const navigate = useNavigate();
  const total = rows?.length ?? 0;
@@ -16,6 +19,22 @@ export function ReadinessPanel({ rows, places, error, credentialAlerts, classNam
  const expiring = (rows ?? []).reduce((n, r) => n + r.expiring.length, 0);
  const missing = (rows ?? []).reduce((n, r) => n + r.missing.length, 0);
  const score = total ? Math.round((complete / total) * 100) : null;
+ if (!residential) {
+  // Agencia de cuido domiciliario sin establecimientos: solo las credenciales del personal.
+  return (
+   <AdminPanel tone="navy" className={className}>
+    <AdminPanelHeader inverted title="Cumplimiento" description="Credenciales del personal según las políticas de tu agencia" />
+    <div className="flex flex-col gap-4 px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-5">
+     <div className="flex items-baseline justify-between gap-3 border-y border-white/10 py-3 text-sm">
+      <span className="min-w-0 text-white/85">Credenciales del personal con alerta</span>
+      <span className={`shrink-0 font-display text-2xl tabular-nums ${credentialAlerts > 0 ? "text-[#E6B877]" : "text-[var(--color-sage-300)]"}`}>{credentialAlerts}</span>
+     </div>
+     <p className="text-xs text-white/70">ETNARA te avisa según tus políticas; no certifica el cumplimiento legal.</p>
+     <button type="button" onClick={() => navigate("/agency/compliance")} className="min-h-11 w-full rounded-[10px] bg-white/10 px-4 text-sm font-medium text-white hover:bg-white/15">Abrir Cumplimiento</button>
+    </div>
+   </AdminPanel>
+  );
+ }
  const lines = [
  { label: "Documentos faltantes", value: missing, warn: missing > 0 },
  { label: "Documentos vencidos", value: expired, warn: expired > 0 },
@@ -24,7 +43,7 @@ export function ReadinessPanel({ rows, places, error, credentialAlerts, classNam
  ];
  return (
  <AdminPanel tone="navy" className={className}>
- <AdminPanelHeader inverted title="ETNARA Compliance" description="Preparación de expedientes de residentes" />
+ <AdminPanelHeader inverted title="Cumplimiento" description="Expedientes de residentes según la lista del hogar" />
  <div className="grid grid-cols-[auto_1fr] items-center gap-4 px-4 pb-4 pt-3 sm:flex sm:flex-col sm:gap-5 sm:px-6 sm:pb-6 sm:pt-5">
  {rows === null && !error ? <Skeleton className="h-40 w-40 rounded-full opacity-20" /> : (
  <ReadinessRing value={score} caption={total ? `${complete} de ${total} expedientes completos` : places.length === 0 ? "Sin establecimientos" : "Sin residentes en establecimientos"} size={118} />
@@ -41,7 +60,7 @@ export function ReadinessPanel({ rows, places, error, credentialAlerts, classNam
  </li>
  ))}
  </ul>
- <button type="button" onClick={() => navigate("/agency/compliance")} className="col-span-2 min-h-10 w-full rounded-[10px] sm:min-h-11 bg-white/10 px-4 text-sm font-medium text-white hover:bg-white/15">Abrir Compliance</button>
+ <button type="button" onClick={() => navigate("/agency/compliance")} className="col-span-2 min-h-10 w-full rounded-[10px] sm:min-h-11 bg-white/10 px-4 text-sm font-medium text-white hover:bg-white/15">Abrir Cumplimiento</button>
  </div>
  </AdminPanel>
  );

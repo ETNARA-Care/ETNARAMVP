@@ -4,7 +4,7 @@ import type { ResidentCompliance } from "@/features/agency/useResidentCompliance
 import { AdminPanel, AdminPanelHeader, Meter } from "@/components/admin/AdminUI";
 
 /** ETNARA Care: personas atendidas y estado de sus expedientes por establecimiento. */
-export function ResidentsPanel({ recipients, rows, places, className = "" }: { recipients: number; rows: ResidentCompliance[] | null; places: Establishment[]; className?: string }) {
+export function ResidentsPanel({ recipients, rows, places, residential = true, className = "" }: { recipients: number; rows: ResidentCompliance[] | null; places: Establishment[]; residential?: boolean; className?: string }) {
  const navigate = useNavigate();
  const complete = (r: ResidentCompliance) => r.missing.length === 0 && r.expired.length === 0;
  const byPlace = places.map((p) => {
@@ -16,9 +16,9 @@ export function ResidentsPanel({ recipients, rows, places, className = "" }: { r
  <AdminPanel className={`flex flex-col ${className}`}>
  <AdminPanelHeader title="Residentes" description="ETNARA Care" />
  <div className="px-5 pt-5 sm:px-6">
- <div className="grid grid-cols-2 gap-4">
+ <div className={residential ? "grid grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
  <div><p className="font-display text-4xl leading-none tabular-nums text-[var(--color-text-primary)]">{recipients}</p><p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">personas atendidas</p></div>
- <div className="border-l border-[var(--color-border)] pl-4"><p className={`font-display text-4xl leading-none tabular-nums ${attention ? "text-[var(--color-warning-700)]" : "text-[var(--color-text-primary)]"}`}>{rows === null ? "—" : attention}</p><p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">expedientes por completar</p></div>
+ {residential && <div className="border-l border-[var(--color-border)] pl-4"><p className={`font-display text-4xl leading-none tabular-nums ${attention ? "text-[var(--color-warning-700)]" : "text-[var(--color-text-primary)]"}`}>{rows === null ? "—" : attention}</p><p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">expedientes por completar</p></div>}
  </div>
  {byPlace.length > 0 && (
  <ul className="mt-6 space-y-4">

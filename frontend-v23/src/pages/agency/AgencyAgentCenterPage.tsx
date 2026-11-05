@@ -43,7 +43,7 @@ const AGENTS: Array<{
   {
     key: "compliance",
     name: "Agente de Cumplimiento",
-    pillar: "ETNARA Compliance",
+    pillar: "Cumplimiento",
     description: "Explica bloqueos de elegibilidad y vencimientos del personal sin aprobar documentos.",
     destination: "/agency/compliance",
   },
