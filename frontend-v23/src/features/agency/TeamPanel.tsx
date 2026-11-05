@@ -6,6 +6,7 @@ import {
   inviteTeamMember,
   listTeam,
   revokeTeamInvitation,
+  setCaregiverMessageHandler,
   setStaffRole,
   staffRoleLabel,
   teamActivationLink,
@@ -13,7 +14,7 @@ import {
   type TeamInvitation,
   type TeamMember,
 } from "@/api/team";
-import { Badge, Button, Card, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
+import { Badge, Button, Card, Checkbox, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
 
 const ROLE_HELP: Record<StaffRole, string> = {
   ORGANIZATION_ADMIN: "Todo, incluido equipo, horas, tarifas y facturación.",
@@ -42,6 +43,27 @@ export function TeamPanel({ organizationId }: { organizationId: string }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState<{ email: string; role: StaffRole; link: string; emailed: boolean } | null>(null);
   const [removing, setRemoving] = useState<{ member: TeamMember; role: StaffRole } | null>(null);
+  const [handlerBusy, setHandlerBusy] = useState<string | null>(null);
+  // Estado optimista de la casilla mientras se guarda (vuelve atrás si falla).
+  const [handlerOverride, setHandlerOverride] = useState<Record<string, boolean>>({});
+
+  /** 151: autorizar o revocar a una supervisora para los mensajes internos de las cuidadoras (auditado). */
+  async function toggleCaregiverMessages(member: TeamMember, authorized: boolean) {
+    const token = getToken();
+    if (!token) return;
+    setHandlerBusy(member.membershipId);
+    setHandlerOverride((current) => ({ ...current, [member.membershipId]: authorized }));
+    try {
+      await setCaregiverMessageHandler(organizationId, member.membershipId, authorized, token);
+      toast.show(authorized ? `${member.email} ahora atiende los mensajes de las cuidadoras.` : `${member.email} ya no atiende los mensajes de las cuidadoras.`, "success");
+      await load();
+    } catch {
+      toast.show("No pudimos cambiar esta autorización. Intenta nuevamente.", "danger");
+    } finally {
+      setHandlerOverride((current) => { const next = { ...current }; delete next[member.membershipId]; return next; });
+      setHandlerBusy(null);
+    }
+  }
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -151,6 +173,18 @@ export function TeamPanel({ organizationId }: { organizationId: string }) {
                 {member.workerMembershipId && <Badge tone="neutral">También cuidador/a</Badge>}
                 {member.roles.map((code) => <Badge key={code} tone={code === "ORGANIZATION_ADMIN" ? "accent" : "neutral"}>{staffRoleLabel[code]}</Badge>)}
                 {!member.isYou && member.roles.map((code) => <Button key={`x-${code}`} variant="ghost" size="md" icon={<X size={16} />} onClick={() => setRemoving({ member, role: code })}>Quitar {staffRoleLabel[code].toLowerCase()}</Button>)}
+              </div>
+              <div className="w-full text-[var(--text-small)] text-[var(--color-text-secondary)]">
+                {member.roles.includes("ORGANIZATION_ADMIN")
+                  ? <p>Atiende los mensajes internos de las cuidadoras (todas las administradoras).</p>
+                  : member.roles.includes("SUPERVISOR") && (
+                    <Checkbox
+                      label="Atiende los mensajes internos de las cuidadoras"
+                      checked={handlerOverride[member.membershipId] ?? member.caregiverMessages === true}
+                      disabled={handlerBusy === member.membershipId}
+                      onChange={(event) => void toggleCaregiverMessages(member, event.target.checked)}
+                    />
+                  )}
               </div>
             </div>
           ))}
