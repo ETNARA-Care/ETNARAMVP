@@ -1,7 +1,7 @@
 import { PageHeader, EmptyState, Card, Badge, Button, ErrorState, Input, Modal, Select, Skeleton, useToast } from "@/components/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AlertTriangle, Archive, Bot, Building2, ChevronDown, History, KeyRound, LogOut, MapPin, Pencil, Plus, RefreshCcw, ShieldCheck, SlidersHorizontal, Sparkles, UserCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
@@ -17,7 +17,10 @@ import { isToday, useAgencySupervision, type AdminShift } from "@/features/agenc
 import { credentialState } from "./workerCredentialUtils";
 import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
 import {
+  COMPLIANCE_POLICIES_ANCHOR,
   getWorkerCompliance,
+  requirementsUnconfigured,
+  UNCONFIGURED_REQUIREMENTS_TITLE,
   getComplianceAudit,
   getComplianceConfiguration,
   generateComplianceAgentBriefing,
@@ -273,6 +276,13 @@ export function AgencyCompliancePage() {
   const [agentBusy, setAgentBusy] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
+  const { hash } = useLocation();
+
+  // Desde el perfil de una cuidadora sin requisitos: ir directo a Políticas cuando ya cargó.
+  useEffect(() => {
+    if (hash !== `#${COMPLIANCE_POLICIES_ANCHOR}` || !configuration) return;
+    document.getElementById(COMPLIANCE_POLICIES_ANCHOR)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [hash, configuration]);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -450,7 +460,7 @@ export function AgencyCompliancePage() {
         )}
       </Card>
 
-      <Card>
+      <Card id={COMPLIANCE_POLICIES_ANCHOR}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2"><SlidersHorizontal size={20} className="text-[var(--color-text-muted)]" /><h2 className="font-display text-[var(--text-h3)]">Requisitos por tipo de cuidador</h2></div>
@@ -463,7 +473,7 @@ export function AgencyCompliancePage() {
               const policy = configuration.policies.find((item) => item.workerRole.toLowerCase() === role.toLowerCase());
               return (
                 <div key={role} className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
-                  <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{plural(policy?.requirements.length ?? 0,"requisito","requisitos")} · {policy?.source === "organization" ? "Política de tu organización" : "Política base de ETNARA"}</p></div>
+                  <div><p className="font-medium">{role}</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{!policy ? "Sin requisitos configurados: nadie con este puesto puede trabajar todavía" : `${plural(policy.requirements.length,"requisito","requisitos")} · ${policy.source === "organization" ? "Política de tu organización" : "Política de la plataforma"}`}</p></div>
                   {canEditPolicy && <Button variant="secondary" onClick={() => openPolicy(role)}>Configurar</Button>}
                 </div>
               );
@@ -558,11 +568,13 @@ function complianceTone(row: ComplianceWorker): "success" | "warning" | "neutral
 
 function complianceLabel(row: ComplianceWorker): string {
   if (row.status !== "active") return "Inactivo";
+  if (requirementsUnconfigured(row.compliance)) return "Sin requisitos";
   return complianceTone(row) === "success" ? "Apto" : "No apto";
 }
 
 function complianceSummaryText(row: ComplianceWorker): string {
   if (row.status !== "active") return "Membresía inactiva";
+  if (requirementsUnconfigured(row.compliance)) return `${UNCONFIGURED_REQUIREMENTS_TITLE} (${row.internal_role})`;
   const alerts = row.credentials.filter((credential) => credentialState(credential) !== "active").length;
   const missing = row.compliance.requirements.filter((requirement) => requirement.isMandatory && requirement.status !== "satisfied").length;
   if (missing > 0) return `${missing} requisito${missing === 1 ? "" : "s"} pendiente${missing === 1 ? "" : "s"}`;
@@ -576,7 +588,9 @@ function ComplianceDetails({ row }: { row: ComplianceWorker }) {
   return (
     <div className="border-t border-[var(--color-ivory-300)] px-[var(--spacing-md)] pb-[var(--spacing-md)] pt-4">
       <h3 className="font-medium text-[var(--color-text-primary)] mb-2">Requisitos</h3>
-      {row.compliance.requirements.length === 0 ? (
+      {requirementsUnconfigured(row.compliance) ? (
+        <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">{UNCONFIGURED_REQUIREMENTS_TITLE} ({row.internal_role}). No puede recibir asignaciones ni iniciar turnos hasta que la agencia los configure en Políticas.</p>
+      ) : row.compliance.requirements.length === 0 ? (
         <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">No hay requisitos obligatorios configurados para esta organización.</p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -627,6 +641,7 @@ function requirementStatusLabel(status: ComplianceRequirement["status"]): string
     PLATFORM_VERIFICATION_MISSING: "Verificación pendiente",
     PLATFORM_VERIFICATION_REJECTED: "Verificación rechazada",
     ORGANIZATION_REVIEW_MISSING: "Revisión pendiente",
+    ORGANIZATION_REVIEW_REJECTED: "Documento rechazado",
   };
   return labels[status];
 }
