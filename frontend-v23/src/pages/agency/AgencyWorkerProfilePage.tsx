@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { listWorkers, type WorkerMembership } from "@/api/shifts";
 import { updateWorker, workerUpdateErrorMessage } from "@/api/roster";
-import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
+import { COMPLIANCE_POLICIES_PATH, getWorkerCompliance, requirementsUnconfigured, UNCONFIGURED_REQUIREMENTS_TITLE, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import {
   createWorkerCredential,
   CredentialDocumentUploadError,
@@ -337,7 +337,7 @@ export function AgencyWorkerProfilePage() {
       <PageHeader
         title={worker.display_name || "Cuidador sin nombre"}
         description="Información laboral y credenciales verificadas."
-        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : "No apto para trabajar"}</Badge>{worker.status === "active" && roles.includes("ORGANIZATION_ADMIN") && <Button variant="secondary" icon={<MessageSquare size={17} />} loading={openingConversation} onClick={() => void messageCaregiver()}>Enviar mensaje</Button>}<Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
+        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : worker.status === "active" && requirementsUnconfigured(compliance) ? UNCONFIGURED_REQUIREMENTS_TITLE : "No apto para trabajar"}</Badge>{worker.status === "active" && roles.includes("ORGANIZATION_ADMIN") && <Button variant="secondary" icon={<MessageSquare size={17} />} loading={openingConversation} onClick={() => void messageCaregiver()}>Enviar mensaje</Button>}<Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
       />
 
       <Card>
@@ -362,6 +362,16 @@ export function AgencyWorkerProfilePage() {
           <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">La membresía está inactiva. Esta persona no puede recibir asignaciones ni iniciar turnos.</p>
         ) : compliance?.eligibility === "eligible" ? (
           <p className="text-[var(--text-small)] text-[var(--color-success-700)]">Apta: cumple todos los requisitos obligatorios configurados.</p>
+        ) : requirementsUnconfigured(compliance) ? (
+          <div className="flex flex-col gap-2">
+            <p className="font-medium text-[var(--text-small)] text-[var(--color-warning-700)]">{UNCONFIGURED_REQUIREMENTS_TITLE} ({worker.internal_role}).</p>
+            <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Cada agencia define qué credenciales exige a cada puesto. Hasta que existan, esta persona no puede recibir asignaciones ni iniciar turnos.</p>
+            {roles.includes("ORGANIZATION_ADMIN") ? (
+              <div><Button variant="secondary" onClick={() => navigate(COMPLIANCE_POLICIES_PATH)}>Configurar en Cumplimiento → Políticas</Button></div>
+            ) : (
+              <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">La administración de la agencia los configura en Cumplimiento → Políticas.</p>
+            )}
+          </div>
         ) : (
           <div className="flex flex-col gap-2">
             <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No apta: no puede recibir asignaciones ni iniciar turnos.</p>
@@ -499,6 +509,7 @@ function requirementReason(requirement: ComplianceRequirement): string {
     PLATFORM_VERIFICATION_MISSING: "verificación de plataforma pendiente",
     PLATFORM_VERIFICATION_REJECTED: "verificación de plataforma rechazada",
     ORGANIZATION_REVIEW_MISSING: "aprobación de la agencia pendiente",
+    ORGANIZATION_REVIEW_REJECTED: "documento rechazado por la agencia",
   };
   return labels[requirement.status];
 }

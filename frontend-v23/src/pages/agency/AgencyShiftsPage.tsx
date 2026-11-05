@@ -6,7 +6,7 @@ import { getToken } from "@/auth/token";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { financeApi, type FinanceService } from "@/api/finance";
 import type { ApiError } from "@/api/client";
-import { getWorkerCompliance, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
+import { getWorkerCompliance, requirementsUnconfigured, UNCONFIGURED_REQUIREMENTS_TITLE, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import { generateCoverageAgentBriefing, type CoverageAgentBriefing } from "@/api/coverageAgent";
 import { listShiftCoverageOffers, openCoverageCampaign, type ShiftCoverageOffer } from "@/api/coverageOffers";
 import {
@@ -63,6 +63,7 @@ type AssignableWorker = WorkerMembership & { compliance: ComplianceSummary };
 
 function firstBlockingReason(worker: AssignableWorker): string | null {
   if (worker.compliance.eligibility === "eligible") return null;
+  if (requirementsUnconfigured(worker.compliance)) return `${UNCONFIGURED_REQUIREMENTS_TITLE} (${worker.internal_role})`;
   const requirement = worker.compliance.requirements.find((item) => item.isMandatory && item.status !== "satisfied");
   if (!requirement) return "No cumple los requisitos obligatorios";
   const labels: Record<ComplianceRequirement["status"], string> = {
@@ -74,6 +75,7 @@ function firstBlockingReason(worker: AssignableWorker): string | null {
     PLATFORM_VERIFICATION_MISSING: "Verificación pendiente",
     PLATFORM_VERIFICATION_REJECTED: "Verificación rechazada",
     ORGANIZATION_REVIEW_MISSING: "Aprobación pendiente",
+    ORGANIZATION_REVIEW_REJECTED: "Documento rechazado",
   };
   return `${labels[requirement.status]}: ${requirement.requirement.replaceAll("_", " ")}`;
 }

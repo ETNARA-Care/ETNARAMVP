@@ -8,7 +8,8 @@ export type ComplianceRequirementStatus =
   | "CREDENTIAL_REVOKED"
   | "PLATFORM_VERIFICATION_MISSING"
   | "PLATFORM_VERIFICATION_REJECTED"
-  | "ORGANIZATION_REVIEW_MISSING";
+  | "ORGANIZATION_REVIEW_MISSING"
+  | "ORGANIZATION_REVIEW_REJECTED";
 
 export interface ComplianceRequirement {
   requirement: string;
@@ -18,8 +19,18 @@ export interface ComplianceRequirement {
 }
 
 export interface ComplianceSummary {
-  eligibility: "eligible" | "not_eligible";
+  // "unconfigured": la agencia no tiene requisitos para el puesto de esta persona. Sigue sin
+  // poder trabajar: ETNARA no impone una lista universal (decisión 4-nov-2026).
+  eligibility: "eligible" | "not_eligible" | "unconfigured";
   requirements: ComplianceRequirement[];
+}
+
+export const UNCONFIGURED_REQUIREMENTS_TITLE = "Requisitos sin configurar para este puesto";
+export const COMPLIANCE_POLICIES_ANCHOR = "politicas";
+export const COMPLIANCE_POLICIES_PATH = `/agency/compliance#${COMPLIANCE_POLICIES_ANCHOR}`;
+
+export function requirementsUnconfigured(summary: ComplianceSummary | null | undefined): boolean {
+  return summary?.eligibility === "unconfigured";
 }
 
 export async function getWorkerCompliance(
