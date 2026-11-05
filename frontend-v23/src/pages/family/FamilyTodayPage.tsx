@@ -123,7 +123,7 @@ export function FamilyTodayPage() {
             {shift ? <p className="mt-0.5 text-xs text-white/70">{time(shift.scheduledStart)} – {time(shift.scheduledEnd)}</p>
               : <button type="button" onClick={() => navigate("/family/messages")} className="mt-0.5 text-left text-sm text-white/85 underline underline-offset-2">Escríbele a la agencia</button>}
           </div>
-          {caregiver?.credentials?.length ? <ShieldCheck size={18} className="text-[#b8c9ad]" aria-label="Profesional verificada" /> : null}
+          {caregiver?.credentials?.length ? <ShieldCheck size={18} className="text-[#b8c9ad]" aria-label="Credenciales verificadas por la agencia" /> : null}
         </div>
         {shift?.journey && <FamilyJourneyProgress journey={shift.journey} />}
       </section>

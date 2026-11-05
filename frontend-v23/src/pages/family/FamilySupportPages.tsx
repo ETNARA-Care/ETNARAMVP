@@ -166,7 +166,7 @@ export function FamilyProfilePage() {
         <Card className="rounded-[22px] border-[#102b57]/10 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
           <div className="mb-4 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2"><ShieldCheck size={20} className="text-[#66845f]" /><p className="font-medium text-[#173154]">Cuidador asignado</p></div>
-            {caregiver && caregiver.credentials.length > 0 && <Badge tone="success">Verificado</Badge>}
+            {caregiver && caregiver.credentials.length > 0 && <Badge tone="success">Verificado por la agencia</Badge>}
           </div>
           {caregiver === undefined ? <Skeleton className="h-24" /> : caregiver === null ? (
             <p className="text-sm text-[#667085]">No hay cuidador asignado actualmente.</p>
@@ -174,7 +174,7 @@ export function FamilyProfilePage() {
             <>
               <div className="flex items-center gap-3 rounded-2xl bg-[#f8f5ee] p-3">
                 <Avatar name={caregiver.displayName} size={42} />
-                <div><p className="font-medium text-[#173154]">{caregiver.displayName}</p><p className="text-xs text-[#98a2b3]">{caregiver.credentials.length ? "Credenciales verificadas" : "Cuidador asignado"}</p></div>
+                <div><p className="font-medium text-[#173154]">{caregiver.displayName}</p><p className="text-xs text-[#98a2b3]">{caregiver.credentials.length ? "Credenciales verificadas por la agencia" : "Cuidador asignado"}</p></div>
               </div>
               {caregiver.credentials.length > 0 ? <div className="mt-4 divide-y divide-[#102b57]/10">{caregiver.credentials.map((credential) => (
                 <div key={credential.typeCode} className="flex items-center gap-2 py-3 first:pt-0 last:pb-0">
@@ -182,7 +182,7 @@ export function FamilyProfilePage() {
                   <div className="flex-1"><p className="text-sm text-[#173154]">{credential.typeName}</p>{credential.expiresAt && <p className="text-xs text-[#98a2b3]">Vigente hasta {new Date(`${credential.expiresAt}T00:00:00`).toLocaleDateString("es-PR")}</p>}</div>
                 </div>
               ))}</div> : null}
-              <p className="mt-4 text-xs leading-5 text-[#98a2b3]">Se muestra únicamente el estado verificado; los documentos y datos privados permanecen protegidos.</p>
+              <p className="mt-4 text-xs leading-5 text-[#98a2b3]">Se muestra únicamente el estado que verificó la agencia; los documentos y datos privados permanecen protegidos.</p>
             </>
           )}
         </Card>

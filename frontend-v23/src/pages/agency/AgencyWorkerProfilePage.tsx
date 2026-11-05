@@ -336,7 +336,7 @@ export function AgencyWorkerProfilePage() {
       <Button variant="ghost" icon={<ArrowLeft size={18} />} onClick={() => navigate("/agency/workers")} className="self-start">Volver a cuidadores</Button>
       <PageHeader
         title={worker.display_name || "Cuidador sin nombre"}
-        description="Información laboral y credenciales verificadas."
+        description="Información laboral y credenciales que revisa tu agencia."
         actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : worker.status === "active" && requirementsUnconfigured(compliance) ? UNCONFIGURED_REQUIREMENTS_TITLE : "No apto para trabajar"}</Badge>{worker.status === "active" && roles.includes("ORGANIZATION_ADMIN") && <Button variant="secondary" icon={<MessageSquare size={17} />} loading={openingConversation} onClick={() => void messageCaregiver()}>Enviar mensaje</Button>}<Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
       />
 
