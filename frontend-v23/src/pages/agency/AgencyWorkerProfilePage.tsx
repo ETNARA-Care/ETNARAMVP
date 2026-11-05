@@ -174,8 +174,8 @@ export function AgencyWorkerProfilePage() {
       setCreatingCredential(false);
       await load();
       toast.show("Credencial registrada correctamente.", "success");
-    } catch {
-      toast.show("No pudimos registrar la credencial.", "danger");
+    } catch (error) {
+      toast.show(selfCredentialMessage(error) ?? "No pudimos registrar la credencial.", "danger");
     } finally {
       setSaving(false);
     }
@@ -196,8 +196,8 @@ export function AgencyWorkerProfilePage() {
       setEditingCredential(null);
       await load();
       toast.show("Credencial actualizada correctamente.", "success");
-    } catch {
-      toast.show("No pudimos actualizar la credencial.", "danger");
+    } catch (error) {
+      toast.show(selfCredentialMessage(error) ?? "No pudimos actualizar la credencial.", "danger");
     } finally {
       setSaving(false);
     }
@@ -280,8 +280,8 @@ export function AgencyWorkerProfilePage() {
       setEditingCredential(null);
       await load();
       toast.show(reviewStatus === "approved" ? "Documento aprobado." : "Documento rechazado.", "success");
-    } catch {
-      toast.show("No pudimos registrar la revisión.", "danger");
+    } catch (error) {
+      toast.show(selfCredentialMessage(error) ?? "No pudimos registrar la revisión.", "danger");
     } finally {
       setSaving(false);
     }
@@ -412,7 +412,7 @@ export function AgencyWorkerProfilePage() {
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-1">{credential.expires_at ? `Expira ${formatCredentialDate(credential.expires_at)}` : "Sin fecha de expiración"}</p>
                   {credential.issuing_entity_name && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)] mt-1">Emitida por {credential.issuing_entity_name}</p>}
                 </div>
-                <div className="flex items-center gap-2"><WorkerCredentialBadge credential={credential} />{credential.document_status && <Badge tone={credential.organization_review_status === "approved" ? "success" : credential.organization_review_status === "rejected" ? "danger" : "warning"}>{credential.organization_review_status === "approved" ? "Documento aprobado" : credential.organization_review_status === "rejected" ? "Documento rechazado" : "Documento pendiente"}</Badge>}{worker.status === "active" && credential.status !== "revoked" && <Button variant="secondary" onClick={() => void openCredentialEdit(credential)}>Gestionar</Button>}</div>
+                <div className="flex flex-wrap items-center gap-2"><WorkerCredentialBadge credential={credential} />{worker.status === "active" && credential.status !== "revoked" && <Button variant="secondary" onClick={() => void openCredentialEdit(credential)}>Gestionar</Button>}</div>
               </Card>
             ))}
           </div>
@@ -493,6 +493,14 @@ export function AgencyWorkerProfilePage() {
       </Modal>
     </div>
   );
+}
+
+/** B1/B2: nobody manages or approves her own credentials; another authorised person of the agency does. */
+function selfCredentialMessage(error: unknown): string | null {
+  const code = (error as ApiError | null)?.code;
+  if (code === "CREDENTIAL_SELF_REVIEW_FORBIDDEN") return "No puedes aprobar ni rechazar tus propias credenciales. Lo hace otra persona autorizada de tu agencia; si eres la única administradora, nombra a una supervisora en Ajustes › Equipo.";
+  if (code === "CREDENTIAL_SELF_MANAGEMENT_FORBIDDEN") return "No puedes registrar ni cambiar tus propias credenciales. Lo hace otra persona autorizada de tu agencia; si eres la única administradora, nombra a una supervisora en Ajustes › Equipo.";
+  return null;
 }
 
 function requirementName(code: string): string {

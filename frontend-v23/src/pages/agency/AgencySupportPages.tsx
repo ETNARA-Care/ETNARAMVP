@@ -743,12 +743,12 @@ export function AgencySettingsPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Establecimientos</h2>
-          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Ubicaciones que pertenecen a {activeOrganization?.name}.</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Hogares o centros donde residen o asisten personas, de {activeOrganization?.name}. Las oficinas administrativas no se registran aquí.</p>
         </div>
         <Button icon={<Plus size={18} />} onClick={openCreate}>Añadir</Button>
       </div>
       {establishments === null ? <Skeleton className="h-28" /> : error ? <ErrorState kind="server" onRetry={() => void load()} /> : establishments.length === 0 ? (
-        <EmptyState icon={<Building2 size={28} />} title="No hay establecimientos" description="Añade la primera ubicación de esta organización." action={{ label: "Añadir establecimiento", onClick: openCreate }} />
+        <EmptyState icon={<Building2 size={28} />} title="No hay establecimientos" description="Añade el primer hogar o centro de esta organización. Una agencia de cuido domiciliario sin hogar ni centro propio no necesita establecimientos." action={{ label: "Añadir establecimiento", onClick: openCreate }} />
       ) : (
         <div className="flex flex-col gap-3">
           {establishments.map((establishment) => (
@@ -778,7 +778,7 @@ export function AgencySettingsPage() {
         <div className="flex flex-col gap-3">
           <Input label="Nombre" value={form.name} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
           <Input label="Dirección (opcional)" value={form.address} maxLength={500} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} />
-          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Este establecimiento quedará asociado exclusivamente a la organización activa.</p>
+          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Un establecimiento es un hogar o centro donde residen o asisten personas. No registres aquí oficinas administrativas: las listas de documentos de establecimiento son las de un hogar residencial. Este establecimiento quedará asociado exclusivamente a la organización activa.</p>
         </div>
       </Modal>
       <Card className="flex items-center justify-between">

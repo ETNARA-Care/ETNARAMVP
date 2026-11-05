@@ -25,15 +25,6 @@ export interface PlatformOrganizationOverview {
   counts: { active_workers: number; residents: number };
 }
 
-export interface PlatformOrganizationCredentialSummary {
-  total_active_workers: number;
-  workers_with_credentials: number;
-  credentials_total: number;
-  credentials_pending: number;
-  credentials_verified: number;
-  credentials_rejected: number;
-}
-
 export interface PlatformEstablishment {
   id: string;
   organization_id: string;
@@ -99,16 +90,6 @@ export async function getPlatformOrganizationEstablishment(organizationId: strin
   return result.establishment;
 }
 
-export async function getPlatformOrganizationCredentialSummary(
-  organizationId: string,
-  token: string,
-): Promise<PlatformOrganizationCredentialSummary> {
-  const result = await apiClient.get<{ summary: PlatformOrganizationCredentialSummary }>(
-    `/platform/organizations/${encodeURIComponent(organizationId)}/credentials`,
-    token,
-  );
-  return result.summary;
-}
 
 export async function createPlatformOrganization(input: CreatePlatformOrganizationInput, token: string): Promise<PlatformOrganization> {
   const result = await apiClient.post<{ organization: BackendPlatformOrganization }>(

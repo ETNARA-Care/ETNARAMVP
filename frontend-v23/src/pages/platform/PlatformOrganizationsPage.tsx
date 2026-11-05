@@ -4,7 +4,6 @@ import { getToken } from "@/auth/token";
 import { OrganizationFeaturesCard } from "@/features/platform/OrganizationFeaturesCard";
 import {
   createPlatformOrganization,
-  getPlatformOrganizationCredentialSummary,
   getPlatformOrganizationEstablishment,
   getPlatformOrganizationOverview,
   inviteOrganizationAdmin,
@@ -14,7 +13,6 @@ import {
   type OrganizationLifecycleAction,
   type PlatformEstablishment,
   type PlatformOrganization,
-  type PlatformOrganizationCredentialSummary,
   type PlatformOrganizationOverview,
   type PlatformOrganizationType,
 } from "@/api/platformOrganizations";
@@ -56,7 +54,6 @@ export function PlatformOrganizationsPage() {
 
   const [selectedOrg, setSelectedOrg] = useState<PlatformOrganization | null>(null);
   const [overview, setOverview] = useState<PlatformOrganizationOverview | null>(null);
-  const [credentialSummary, setCredentialSummary] = useState<PlatformOrganizationCredentialSummary | null>(null);
   const [establishment, setEstablishment] = useState<PlatformEstablishment | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
 
@@ -93,16 +90,11 @@ export function PlatformOrganizationsPage() {
     if (!token) return;
     setSelectedOrg(org);
     setOverview(null);
-    setCredentialSummary(null);
     setEstablishment(null);
     setLoadingOverview(true);
     try {
-      const [organizationOverview, credentials] = await Promise.all([
-        getPlatformOrganizationOverview(org.id, token),
-        getPlatformOrganizationCredentialSummary(org.id, token),
-      ]);
-      setOverview(organizationOverview);
-      setCredentialSummary(credentials);
+      // 149: Central no supervisa aprobaciones de credenciales de las agencias (sin resumen de credenciales).
+      setOverview(await getPlatformOrganizationOverview(org.id, token));
     } catch {
       toast.show("No pudimos cargar el resumen operacional.", "danger");
       setSelectedOrg(null);
@@ -290,16 +282,6 @@ export function PlatformOrganizationsPage() {
               ))}
             </div>
             {selectedOrg && <OrganizationFeaturesCard organizationId={selectedOrg.id}/>}
-            {credentialSummary && (
-              <section className="rounded-[1.25rem] border border-[var(--color-border)] bg-white p-4">
-                <h3 className="font-sans text-[length:0.9375rem] font-semibold">Credenciales <span className="font-normal text-[var(--color-text-secondary)]">· resumen agregado</span></h3>
-                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[length:var(--text-small)]">
-                  {[["Total", credentialSummary.credentials_total], ["Pendientes", credentialSummary.credentials_pending], ["Aprobadas", credentialSummary.credentials_verified], ["Rechazadas", credentialSummary.credentials_rejected]].map(([k, v]) => (
-                    <div key={String(k)} className="flex items-baseline justify-between gap-2 border-b border-[var(--color-border)] pb-1.5"><dt className="text-[var(--color-text-secondary)]">{k}</dt><dd className="font-semibold tabular-nums">{v}</dd></div>
-                  ))}
-                </dl>
-              </section>
-            )}
             <section className="rounded-[1.25rem] border border-[var(--color-border)] bg-white p-4">
               <h3 className="mb-1 font-sans text-[length:0.9375rem] font-semibold">Establecimientos</h3>
               {overview.locations.length ? overview.locations.map((location) => (
