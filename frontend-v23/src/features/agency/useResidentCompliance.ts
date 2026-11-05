@@ -3,17 +3,18 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { getEstablishmentWorkspace, listEstablishments, type Establishment } from "@/api/establishments";
 import { listResidentDocuments, type ResidentDocument } from "@/api/residentDocuments";
+import { normalizeDocumentType, RESIDENTIAL_RESIDENT_DOCUMENTS } from "@/features/compliance/documentCatalog";
 
 /* Lógica de expedientes de residentes compartida por el Centro de Cumplimiento y el Resumen.
  Movida sin cambios desde AgencyComplianceCenterPage. */
-export const REQUIRED_RESIDENT_DOCUMENTS = ["Expediente de ingreso", "Evaluación médica", "Evaluación dental", "Consentimiento", "Identificación"] as const;
+export const REQUIRED_RESIDENT_DOCUMENTS = RESIDENTIAL_RESIDENT_DOCUMENTS;
 
 export type ResidentCompliance = {
  establishmentId: string; residentId: string; residentName: string;
  completed: number; missing: string[]; expired: ResidentDocument[]; expiring: ResidentDocument[];
 };
 
-const normalized = (v: string) => v.trim().toLocaleLowerCase("es-PR");
+const normalized = normalizeDocumentType;
 
 export function documentState(documents: ResidentDocument[]) {
  const now = new Date(), soon = new Date(now);

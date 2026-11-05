@@ -1,12 +1,8 @@
 import type { ResidentDocument } from "@/api/residentDocuments";
+import { RESIDENTIAL_RESIDENT_DOCUMENTS } from "@/features/compliance/documentCatalog";
 
-export const residentRequirements = [
-  "Expediente de ingreso",
-  "Evaluación médica",
-  "Evaluación dental",
-  "Consentimiento",
-  "Identificación",
-] as const;
+/** Lista del expediente de un residente de hogar residencial (catálogo único). */
+export const residentRequirements = RESIDENTIAL_RESIDENT_DOCUMENTS;
 
 export type ComplianceState = "complete" | "incomplete" | "expiring" | "expired";
 export interface ResidentCompliance {
@@ -36,7 +32,7 @@ export function calculateResidentCompliance(documents: ResidentDocument[], now =
 }
 
 export const complianceLabels: Record<ComplianceState,string> = {
-  complete: "Expediente completo",
+  complete: "Completo según la lista del hogar",
   incomplete: "Expediente incompleto",
   expiring: "Próximo a vencer",
   expired: "Documento vencido",

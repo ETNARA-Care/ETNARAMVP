@@ -12,7 +12,7 @@ type Row = { id: string; name: string; owner: string; ownerType: "Residente" | "
 const daysUntil = (iso: string) => Math.ceil((new Date(`${iso}T23:59:59`).getTime() - Date.now()) / 86_400_000);
 
 /** Vencimientos reales: documentos de residentes (≤30 días o vencidos) + credenciales del personal con alerta. */
-export function ExpiringDocuments({ rows, credentialAlerts, className = "" }: { rows: ResidentCompliance[] | null; credentialAlerts: OperationalAlert[]; className?: string }) {
+export function ExpiringDocuments({ rows, credentialAlerts, residential = true, className = "" }: { rows: ResidentCompliance[] | null; credentialAlerts: OperationalAlert[]; residential?: boolean; className?: string }) {
  const navigate = useNavigate();
  const items: Row[] = [
  ...(rows ?? []).flatMap((r) => [...r.expired, ...r.expiring].map((d) => {
@@ -25,7 +25,7 @@ export function ExpiringDocuments({ rows, credentialAlerts, className = "" }: { 
  ];
  return (
  <AdminPanel className={className}>
- <AdminPanelHeader title="Documentos próximos a vencer" description="Expedientes de residentes y credenciales del personal." />
+ <AdminPanelHeader title="Documentos próximos a vencer" description={residential ? "Expedientes de residentes y credenciales del personal." : "Credenciales del personal."} />
  {rows === null ? <div className="p-5 sm:p-6"><Skeleton className="h-40" /></div> : items.length === 0 ? (
  <div className="p-5 sm:p-6"><EmptyState title="Nada vence en los próximos 30 días" description="Los documentos vencidos o por vencer aparecerán aquí." /></div>
  ) : (<>

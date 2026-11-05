@@ -39,7 +39,10 @@ test("compliance does not count establishment requirements when there are no est
   assert.match(panel, /if\(places\.length===0\)return null;/);
   const center = read("src/pages/agency/AgencyComplianceCenterPage.tsx");
   assert.match(center, /if\(places\.length===0\)return <Card>/);
-  assert.match(center, /Esta agencia no tiene establecimientos/);
+  // Fase 1 por modalidad (4-nov-2026): la agencia domiciliaria sin establecimientos no ve la tarjeta;
+  // un hogar residencial que aún no registró su establecimiento recibe la invitación a hacerlo.
+  assert.match(center, /if\(places\.length===0&&!showsResidentialCompliance\(modality,0\)\)return null;/);
+  assert.match(center, /Registra tu hogar para llevar sus documentos/);
   const readiness = read("src/pages/agency/overview/ReadinessPanel.tsx");
   assert.match(readiness, /"Sin establecimientos"/);
   assert.doesNotMatch(readiness, /"Sin residentes activos"/);

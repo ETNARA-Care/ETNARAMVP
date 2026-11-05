@@ -5,6 +5,7 @@ import { ErrorState, Skeleton } from "@/components/ui";
 import { isToday, useAgencySupervision } from "@/features/agency/useAgencySupervision";
 import { useOperationsCenter } from "@/features/agency/useOperationsCenter";
 import { useResidentCompliance } from "@/features/agency/useResidentCompliance";
+import { organizationModality, showsResidentialCompliance } from "@/features/compliance/documentCatalog";
 import { Briefing } from "./overview/Briefing";
 import { AttentionQueue } from "./overview/AttentionQueue";
 import { ReadinessPanel } from "./overview/ReadinessPanel";
@@ -47,6 +48,8 @@ export function AgencyOverviewPage() {
  const alerts = operations.data?.alerts ?? [];
  const credentialAlerts = alerts.filter((a) => a.category === "expiring_credential");
  const activeRecipients = supervision.recipients.filter((r) => r.status === "active").length;
+ // Cuido domiciliario sin establecimientos: sin indicadores de hogar residencial.
+ const residential = showsResidentialCompliance(organizationModality(activeOrganization?.type), compliance.places.length);
  return (
  <div className="space-y-4 sm:space-y-6 lg:space-y-8">
  <Briefing organizationName={activeOrganization?.name ?? "tu organización"} center={operations.data} centerLoading={operations.loading} centerError={operations.error}
@@ -59,11 +62,11 @@ export function AgencyOverviewPage() {
  </section>
  <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-12">
  <AttentionQueue center={operations.data} loading={operations.loading} error={operations.error} onRetry={() => void operations.reload()} className="xl:col-span-8" />
- <ReadinessPanel rows={compliance.rows} places={compliance.places} error={compliance.error} credentialAlerts={credentialAlerts.length} className="xl:col-span-4" />
+ <ReadinessPanel rows={compliance.rows} places={compliance.places} error={compliance.error} credentialAlerts={credentialAlerts.length} residential={residential} className="xl:col-span-4" />
  <ShiftBoard shifts={todayShifts} onCreate={() => navigate("/agency/shifts?create=1")} className="xl:col-span-12" />
  <WorkforcePanel workers={supervision.workers} todayShifts={todayShifts} alerts={alerts} className="xl:col-span-4" />
- <ExpiringDocuments rows={compliance.rows} credentialAlerts={credentialAlerts} className="xl:col-span-8" />
- <ResidentsPanel recipients={activeRecipients} rows={compliance.rows} places={compliance.places} className="xl:col-span-4" />
+ <ExpiringDocuments rows={compliance.rows} credentialAlerts={credentialAlerts} residential={residential} className="xl:col-span-8" />
+ <ResidentsPanel recipients={activeRecipients} rows={compliance.rows} places={compliance.places} residential={residential} className="xl:col-span-4" />
  <IncidentsPanel alerts={alerts} className="xl:col-span-4" />
  {roles.includes("ORGANIZATION_ADMIN") && activeOrganization && hasOrgFeature(activeOrganization.features, "SMARTMATCH") && <SmartMatchPanel organizationId={activeOrganization.id} className="xl:col-span-4" />}
  <div className="hidden content-start gap-4 sm:gap-6 xl:col-span-4 xl:grid">

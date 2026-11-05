@@ -216,7 +216,7 @@ export function FamilyHistoryPage() {
                 </div>
                 <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[#f8f5ee] p-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef3e9] text-[#66845f]">{shift.caregiver?.credentials?.length ? <ShieldCheck size={17} /> : <Clock3 size={17} />}</div>
-                  <div className="min-w-0"><p className="truncate text-sm font-medium text-[#173154]">{caregiverName(shift)}</p><p className="text-xs text-[#98a2b3]">{shift.caregiver?.credentials?.length ? "Profesional con credenciales verificadas" : shift.caregiver ? "Cuidador asignado" : "Pendiente de asignación"}</p></div>
+                  <div className="min-w-0"><p className="truncate text-sm font-medium text-[#173154]">{caregiverName(shift)}</p><p className="text-xs text-[#98a2b3]">{shift.caregiver?.credentials?.length ? "Credenciales verificadas por la agencia" : shift.caregiver ? "Cuidador asignado" : "Pendiente de asignación"}</p></div>
                 </div>
               </article>;
             })}
