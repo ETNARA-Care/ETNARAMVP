@@ -10,6 +10,8 @@ export interface TeamMember {
   isYou: boolean;
   /** Si también trabaja turnos como cuidador/a en esta agencia. */
   workerMembershipId: string | null;
+  /** 151: atiende los mensajes internos de las cuidadoras (administradoras siempre; supervisoras autorizadas). */
+  caregiverMessages?: boolean;
 }
 
 export interface TeamInvitation {
@@ -56,4 +58,9 @@ export function setStaffRole(
   token: string,
 ) {
   return apiClient.post<{ membershipId: string; role: StaffRole; enabled: boolean }>(`/organizations/${organizationId}/team/roles`, input, token);
+}
+
+/** 151: una administradora autoriza o revoca a una supervisora para atender los mensajes internos de las cuidadoras. */
+export function setCaregiverMessageHandler(organizationId: string, membershipId: string, authorized: boolean, token: string) {
+  return apiClient.post<{ membershipId: string; authorized: boolean; changed: boolean }>(`/organizations/${organizationId}/team/message-handlers`, { membershipId, authorized }, token);
 }

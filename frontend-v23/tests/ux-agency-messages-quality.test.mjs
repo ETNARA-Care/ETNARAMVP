@@ -4,11 +4,13 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("conversations are named by resident, sorted by latest message and show its time", () => {
+test("conversations are named by resident, residents/families first then latest message, and show its time", () => {
   const panel = read("src/features/messaging/ConversationUI.tsx");
   assert.match(panel, /const titleOf = \(conversation: Conversation\) =>/);
   assert.match(panel, /<Avatar name=\{title\} size=\{44\} \/>/);
-  assert.match(panel, /at\(b\.id, b\.created_at\)\.localeCompare\(at\(a\.id, a\.created_at\)\)/);
+  // D4: conversaciones de residentes y familias primero; dentro de cada grupo, la más reciente.
+  assert.match(panel, /if \(a\.direct !== b\.direct\) return a\.direct \? 1 : -1;\s*return b\.last\.localeCompare\(a\.last\);/);
+  assert.match(panel, /\.sort\(conversationOrder\)/);
   assert.match(panel, /lastMessageTime\(last\.created_at\)/);
   assert.doesNotMatch(panel, /localStorage|sessionStorage/);
 });
@@ -25,7 +27,8 @@ test("the agency can start a conversation about a resident through the backend",
 
 test("caregiver and family name conversations without a start button", () => {
   const caregiver = read("src/pages/caregiver/CaregiverSupportPages.tsx");
-  assert.match(caregiver, /<RealMessagingPanel recipients=\{recipients\} directTitle="agency" \/>/);
+  // 151: sin «Nuevo mensaje» de residentes, pero con «Escribir a mi agencia».
+  assert.match(caregiver, /<RealMessagingPanel recipients=\{recipients\} directTitle="agency" canWriteAgency \/>/);
   const family = read("src/pages/family/FamilyMessagesPage.tsx");
   assert.match(family, /useFamilyRecipient\(\)/);
   assert.doesNotMatch(family, /canStart/);

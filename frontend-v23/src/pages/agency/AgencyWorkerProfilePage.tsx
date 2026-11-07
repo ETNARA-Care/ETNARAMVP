@@ -74,7 +74,9 @@ export function AgencyWorkerProfilePage() {
           ? "Esta persona aún no ha activado su cuenta. Envíale una invitación de acceso para poder escribirle."
           : code === "CAREGIVER_THREAD_SELF"
             ? "No puedes abrir una conversación contigo misma."
-            : "No pudimos abrir la conversación.",
+            : code === "CAREGIVER_THREAD_FORBIDDEN"
+              ? "Para escribir a las cuidadoras, una administradora debe autorizarte en Ajustes › Equipo."
+              : "No pudimos abrir la conversación.",
         "danger",
       );
     } finally {
@@ -337,7 +339,7 @@ export function AgencyWorkerProfilePage() {
       <PageHeader
         title={worker.display_name || "Cuidador sin nombre"}
         description="Información laboral y credenciales que revisa tu agencia."
-        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : worker.status === "active" && requirementsUnconfigured(compliance) ? UNCONFIGURED_REQUIREMENTS_TITLE : "No apto para trabajar"}</Badge>{worker.status === "active" && roles.includes("ORGANIZATION_ADMIN") && <Button variant="secondary" icon={<MessageSquare size={17} />} loading={openingConversation} onClick={() => void messageCaregiver()}>Enviar mensaje</Button>}<Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
+        actions={<div className="flex flex-wrap items-center gap-2"><Badge tone={worker.status === "active" ? "success" : "neutral"}>{worker.status === "active" ? "Membresía activa" : "Membresía inactiva"}</Badge><Badge tone={worker.status === "active" && compliance?.eligibility === "eligible" ? "success" : "warning"}>{worker.status === "active" && compliance?.eligibility === "eligible" ? "Apto para trabajar" : worker.status === "active" && requirementsUnconfigured(compliance) ? UNCONFIGURED_REQUIREMENTS_TITLE : "No apto para trabajar"}</Badge>{worker.status === "active" && (roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR")) && <Button variant="secondary" icon={<MessageSquare size={17} />} loading={openingConversation} onClick={() => void messageCaregiver()}>Enviar mensaje</Button>}<Button variant="secondary" onClick={openEdit}>Editar</Button><Button variant={worker.status === "active" ? "danger" : "primary"} onClick={() => setConfirmingStatus(true)}>{worker.status === "active" ? "Desactivar" : "Reactivar"}</Button></div>}
       />
 
       <Card>
