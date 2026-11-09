@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, LayoutDashboard, LogOut, RadioTower } from "lucide-react";
+import { ArrowLeft, Building2, FileSignature, LayoutDashboard, LogOut, RadioTower } from "lucide-react";
 import { Avatar, IconButton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -11,6 +11,8 @@ const NAV = [
   { to: "/platform", end: true, icon: LayoutDashboard, labelKey: "overview", shortKey: "overview" },
   { to: "/platform/organizations", end: false, icon: Building2, labelKey: "organizations", shortKey: "organizationsShort" },
   { to: "/platform/tower", end: false, icon: RadioTower, labelKey: "tower", shortKey: "towerShort" },
+  // Módulo contractual (Etapa 2): consulta de solo lectura; con el módulo apagado la página lo indica.
+  { to: "/platform/contracts", end: false, icon: FileSignature, labelKey: "contracts", shortKey: "contractsShort" },
 ] as const;
 
 // Tablet / desktop: tabs under the header (unchanged).
