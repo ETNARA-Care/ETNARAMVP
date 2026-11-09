@@ -1,10 +1,10 @@
-import { Outlet } from "react-router-dom";
+import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { useTranslation } from "react-i18next";
 import { Camera, HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
-import { useContractsAvailable } from "@/features/contracts/useContractsAvailable";
+import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
 import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
@@ -63,6 +63,7 @@ export function AgencyLayout() {
  const photoMode = usePhotoMode();
  const photos = photoMode === "full" || photoMode === "legal-review";
  const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"));
+ const location = useLocation();
  const groups: AdminNavGroup[] = GROUPS.map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
    (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch" && item.to !== "/agency/finance"))
    && (smartMatch || item.to !== "/agency/smartmatch")
@@ -88,7 +89,12 @@ export function AgencyLayout() {
  <AdminTopbar organizationName={organizationName} canSwitchOrganization={organizations.length > 1}
  userLabel={user?.email ?? t("agency.adminFallback")} onLogout={logout} />
  <main className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
- <Outlet />
+ {contracts.status?.notice && !location.pathname.startsWith("/agency/contracts") && (
+   <Link to="/agency/contracts" data-testid="contracts-notice-banner" className="mb-4 block rounded-[var(--radius-sm)] border border-[var(--color-warning-700)]/40 bg-[var(--color-warning-100)] px-4 py-3 text-[var(--text-small)] font-medium text-[var(--color-warning-700)]">
+     {t("agency.contractsPendingNotice")}
+   </Link>
+ )}
+ {contractOnlyRedirect(contracts.status, location.pathname) ? <Navigate to="/agency/contracts" replace /> : <Outlet />}
  </main>
  </div>
  <AdminMobileNav tabs={MOBILE_TABS.map(toNav)} groups={groups} platformLink={platformLink} />

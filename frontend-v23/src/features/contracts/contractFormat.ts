@@ -18,3 +18,15 @@ export const validFullName = (v: string) => { const t = v.trim(); return t.lengt
 export const validTitle = (v: string) => { const t = v.trim(); return t.length >= 2 && t.length <= 100; };
 export const validCode = (v: string) => /^[0-9]{6}$/.test(v);
 export const shortHash = (h: string) => `${h.slice(0, 8)}…${h.slice(-8)}`;
+
+/** Condiciones de una Orden de Suscripción en lenguaje claro (153). Solo informativo. */
+export function orderTermsLines(t: { freeMonth?: boolean; freeDays?: number; premiumTrial?: boolean; basicPlanMonthlyUsd?: number; premiumAddOns?: string; chargesRequireExpressAcceptance?: boolean; billingActivated?: boolean }): string[] {
+  const out: string[] = [];
+  if (t.freeMonth) out.push(`Primer mes sin costo${t.freeDays ? ` (${t.freeDays} días)` : ""}.`);
+  if (t.premiumTrial) out.push("Acceso premium temporal durante el período sin costo.");
+  if (typeof t.basicPlanMonthlyUsd === "number") out.push(`Después, plan básico de US$${t.basicPlanMonthlyUsd} al mes.`);
+  if (t.premiumAddOns) out.push(`Funciones premium adicionales: ${t.premiumAddOns}`);
+  if (t.chargesRequireExpressAcceptance) out.push("Ningún cargo ni renovación sin tu aceptación expresa.");
+  if (t.billingActivated === false) out.push("La facturación no está activada.");
+  return out;
+}

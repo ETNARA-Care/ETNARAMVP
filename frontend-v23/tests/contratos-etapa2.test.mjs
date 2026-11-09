@@ -72,7 +72,32 @@ test("versiones: aviso de versión nueva y el historial conserva las aceptacione
 });
 
 test("sin bloqueos: con el módulo apagado (404) no aparece en el menú y la pantalla lo explica", () => {
-  assert.match(read("src/features/contracts/useContractsAvailable.ts"), /catch\(\(\) => \{ if \(!cancelled\) setState\(\{ available: false, pending: 0 \}\)/);
+  assert.match(read("src/features/contracts/useContractsAvailable.ts"), /catch\(\(\) => \{ if \(!cancelled\) setState\(\{ available: false, pending: 0, status: null \}\)/);
   assert.match(list, /Contratos no disponibles/);
   assert.doesNotMatch(app, /ContractGate|RequireContract/);
+});
+
+// ---- 153: contrato SaaS v1.0 (9-nov-2026, local)
+const hook = read("src/features/contracts/useContractsAvailable.ts");
+test("153: textos de las casillas del servidor, representante no designada sin formulario, Orden informativa", () => {
+  assert.match(detail, /label=\{v\.acceptanceCheckboxText \?\?/);
+  assert.match(detail, /data-testid="signer-not-designated"/);
+  assert.match(detail, /Administrar la plataforma no equivale, por sí solo, a tener autoridad legal/);
+  assert.match(detail, /Aceptar esta Orden no activa ningún cobro/);
+  assert.match(api, /CONTRACT_SIGNATORY_NOT_DESIGNATED/);
+  assert.match(api, /CONTRACT_ACCEPTANCE_REQUIRED/);
+  const lines = f.orderTermsLines({ freeMonth: true, freeDays: 30, premiumTrial: true, basicPlanMonthlyUsd: 99, premiumAddOns: "Opcionales.", chargesRequireExpressAcceptance: true, billingActivated: false });
+  assert.equal(lines.length, 6);
+  assert.ok(lines.some((l) => l.includes("US$99")));
+});
+test("153: la redirección a Contratos solo ocurre si el servidor declara «solo contrato» activo", async () => {
+  assert.match(layout, /contractOnlyRedirect\(contracts\.status, location\.pathname\)/);
+  assert.match(hook, /status\.serverEnforcementEnabled && status\.restricted && status\.mode === "contract_only"/);
+  const st = (o) => ({ serverEnforcementEnabled: true, restricted: true, mode: "contract_only", satisfied: false, pendingRequired: 1, notice: true, enforceFrom: null, ...o });
+  const decide = (s, p) => !!s && s.serverEnforcementEnabled && s.restricted && s.mode === "contract_only" && !p.startsWith("/agency/contracts");
+  assert.equal(decide(st({ serverEnforcementEnabled: false, restricted: false }), "/agency"), false);
+  assert.equal(decide(st({ mode: "restrict_new_operations" }), "/agency"), false);
+  assert.equal(decide(st({}), "/agency/contracts/x"), false);
+  assert.equal(decide(st({}), "/agency/shifts"), true);
+  assert.equal(decide(null, "/agency"), false);
 });

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Download, FileText, MailCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, FileText, MailCheck, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { contractErrorMessage, contractsApi, saveBlob, type AgencyContractAcceptance, type AgencyContractVersion, type SignatureCode } from "@/api/contracts";
 import type { ApiError } from "@/api/client";
 import { Badge, Button, Card, Checkbox, EmptyState, ErrorState, Input, PageHeader, Skeleton } from "@/components/ui";
-import { acceptanceLabel, contractDateTime, validCode, validFullName, validTitle } from "@/features/contracts/contractFormat";
+import { acceptanceLabel, contractDateTime, orderTermsLines, validCode, validFullName, validTitle } from "@/features/contracts/contractFormat";
 
 /**
  * Leer, descargar y firmar una versión (Etapa 2).
@@ -34,6 +34,7 @@ export function AgencyContractDetailPage() {
   const [busy, setBusy] = useState<"code" | "sign" | "pdf" | "txt" | "cert" | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [sentAt, setSentAt] = useState(0);
+  const [downloaded, setDownloaded] = useState(false);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -61,7 +62,7 @@ export function AgencyContractDetailPage() {
     const token = getToken();
     if (!organizationId || !token || !v) return;
     setBusy(format);
-    try { saveBlob(await contractsApi.documentFile(organizationId, v.id, token, format), `${v.code}-v${v.version_label}.${format}`); }
+    try { saveBlob(await contractsApi.documentFile(organizationId, v.id, token, format), `${v.code}-v${v.version_label}.${format}`); setDownloaded(true); }
     catch (e) { setError(contractErrorMessage((e as ApiError).code, (e as ApiError).status)); }
     finally { setBusy(null); }
   };
@@ -123,6 +124,16 @@ export function AgencyContractDetailPage() {
         <p className="break-all text-[var(--text-caption)] text-[var(--color-text-muted)]">Huella SHA-256 del texto: <span className="font-mono" data-testid="contract-hash">{v.content_sha256}</span></p>
       </Card>
 
+      {v.kind === "SUBSCRIPTION_ORDER" && v.commercial_terms && (
+        <Card className="flex flex-col gap-2" data-testid="order-terms">
+          <p className="font-medium">Condiciones de tu Orden de Suscripción</p>
+          <ul className="list-disc pl-5 text-[var(--text-small)] text-[var(--color-text-secondary)]">
+            {orderTermsLines(v.commercial_terms).map((line) => <li key={line}>{line}</li>)}
+          </ul>
+          <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Aceptar esta Orden no activa ningún cobro. Cualquier cargo o renovación requiere tu aceptación expresa por separado.</p>
+        </Card>
+      )}
+
       {accepted ? (
         <Card className="flex flex-col gap-3 border-[var(--color-success-700)]/40" data-testid="contract-accepted">
           <p className="flex items-center gap-2 font-medium text-[var(--color-success-700)]"><CheckCircle2 size={20} /> Aceptado electrónicamente</p>
@@ -132,6 +143,12 @@ export function AgencyContractDetailPage() {
         </Card>
       ) : v.status === "retired" ? (
         <Card><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Esta versión fue reemplazada y ya no se puede aceptar. Abre la versión vigente desde Contratos.</p></Card>
+      ) : v.signer && !v.signer.allowed ? (
+        <Card className="flex flex-col gap-2" data-testid="signer-not-designated">
+          <p className="flex items-center gap-2 font-medium"><ShieldAlert size={20} className="text-[var(--color-warning-700)]" /> Tu cuenta no puede firmar este documento</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Administrar la plataforma no equivale, por sí solo, a tener autoridad legal para contratar en nombre de {v.organization_name}. Solo firma la persona que la organización designó ante ETNARA como su representante{v.signer.designation ? "" : " (todavía no hay una designada)"}.</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Puedes leer y descargar el documento. Para designar a la representante, escribe a contacto@etnaracare.com.</p>
+        </Card>
       ) : (
         <Card className="flex flex-col gap-4" data-testid="sign-form">
           <p className="flex items-center gap-2 font-medium"><ShieldCheck size={20} className="text-[var(--color-navy-700)]" /> Aceptar en nombre de {v.organization_name}</p>
@@ -142,9 +159,10 @@ export function AgencyContractDetailPage() {
               hint="Por ejemplo: Presidenta, Directora ejecutiva." data-testid="signer-title" />
           </div>
           <div className="flex flex-col gap-3 rounded-[var(--radius-sm)] bg-[var(--color-ivory-100)] p-3">
-            <Checkbox label="He leído el documento completo y lo acepto en nombre de la organización." checked={readAndAccept} onChange={(e) => setReadAndAccept(e.target.checked)} disabled={!!challenge} data-testid="check-accept" />
+            <Checkbox label={v.acceptanceCheckboxText ?? "He leído el documento completo y lo acepto en nombre de la organización."} checked={readAndAccept} onChange={(e) => setReadAndAccept(e.target.checked)} disabled={!!challenge} data-testid="check-accept" />
             <Checkbox label={v.authorityDeclaration} checked={authority} onChange={(e) => setAuthority(e.target.checked)} disabled={!!challenge} data-testid="check-authority" />
           </div>
+          {!downloaded && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]" data-testid="download-hint">Te recomendamos descargar el documento (PDF o texto) y guardarlo antes de aceptar.</p>}
           {!challenge ? (
             <div>
               <Button icon={<MailCheck size={18} />} disabled={!formValid} loading={busy === "code"} onClick={() => void requestCode()} data-testid="request-code">Enviar código a mi correo</Button>

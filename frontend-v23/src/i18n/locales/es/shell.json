@@ -52,7 +52,8 @@
     "adminFallback": "Administrador",
     "workspace": "Espacio administrativo",
     "homeLink": "ETNARA Care, ir al resumen",
-    "activeOrganization": "Organización activa. Sus datos están separados de cualquier otra organización."
+    "activeOrganization": "Organización activa. Sus datos están separados de cualquier otra organización.",
+    "contractsPendingNotice": "Tu organización tiene contratos pendientes de aceptar. Revísalos en Contratos."
   },
   "caregiver": {
     "portalOf": "Portal del cuidador · {{name}}",
