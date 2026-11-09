@@ -34,7 +34,7 @@ function localInput(date: Date): string {
  * decide sobre las solicitudes. Cualquier administrador de la agencia puede
  * publicar borradores. Aprobar marca la oportunidad como cubierta; el turno
  * real se crea después, en el módulo de Turnos existente
- * («Crear turno con esta cuidadora»), donde se elige a la persona atendida.
+ * («Crear turno con este cuidador»), donde se elige a la persona atendida.
  */
 export function AgencySmartMatchPage() {
   const { activeOrganization, roles, user } = useAuth();
@@ -165,7 +165,7 @@ export function AgencySmartMatchPage() {
         ? `Solicitud aprobada. La oportunidad quedó cubierta${result.closedApplications ? ` y se cerraron ${result.closedApplications} solicitudes pendientes` : ""}.`
         : "Solicitud rechazada.", "success");
       if (decision === "APPROVE" && result.outcome === "APPROVED") {
-        setApprovedFor({ opportunityId: review.opportunity.id, name: review.caregiver.displayName ?? "la cuidadora" });
+        setApprovedFor({ opportunityId: review.opportunity.id, name: review.caregiver.displayName ?? "el cuidador" });
         setQueueFor(null);
       }
       setReview(null);
@@ -187,8 +187,8 @@ export function AgencySmartMatchPage() {
       const result = await cancelOpportunityApi(organizationId, cancelTarget.id, cancelReason, cancelNote, token);
       const n = result.closedApplications ?? 0;
       show(result.previousStatus === "PUBLISHED"
-        ? (n === 0 ? "Oportunidad cancelada. No había solicitudes pendientes." : `Oportunidad cancelada. Cerramos ${n === 1 ? "1 solicitud pendiente" : `${n} solicitudes pendientes`} y avisamos a ${n === 1 ? "la cuidadora" : "cada cuidadora"}.`)
-        : "Oportunidad cancelada. Avisamos a la cuidadora aprobada.", "success");
+        ? (n === 0 ? "Oportunidad cancelada. No había solicitudes pendientes." : `Oportunidad cancelada. Cerramos ${n === 1 ? "1 solicitud pendiente" : `${n} solicitudes pendientes`} y avisamos a ${n === 1 ? "el cuidador" : "cada cuidador"}.`)
+        : "Oportunidad cancelada. Avisamos a el cuidador aprobado.", "success");
       setCancelTarget(null);
     } catch (e) { show(smartMatchErrorMessage(e, "No se pudo cancelar la oportunidad."), "danger"); }
     finally { setBusy(false); await load(); }
@@ -226,7 +226,7 @@ export function AgencySmartMatchPage() {
       </div>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         {opp.status === "DRAFT" && <Button disabled={busy} onClick={() => void publish(opp)}>Publicar</Button>}
-        {opp.status === "FILLED" && !opp.shift_id && <Button icon={<CalendarPlus size={18} />} onClick={() => createShiftFor(opp.id)}>Crear turno con esta cuidadora</Button>}
+        {opp.status === "FILLED" && !opp.shift_id && <Button icon={<CalendarPlus size={18} />} onClick={() => createShiftFor(opp.id)}>Crear turno con este cuidador</Button>}
         {opp.status === "FILLED" && opp.shift_id && <Button variant="secondary" onClick={() => navigate(`/agency/shifts/${opp.shift_id}`)}>Ver turno</Button>}
         {(opp.status === "FILLED" || opp.status === "PUBLISHED") && <Button variant="ghost" onClick={() => { setCancelReason(""); setCancelNote(""); setCancelTarget(opp); }}>Cancelar oportunidad</Button>}
         {opp.status !== "DRAFT" && <Button variant="secondary" onClick={() => void openQueue(opp)}>
@@ -358,7 +358,7 @@ export function AgencySmartMatchPage() {
     <Modal open={approvedFor !== null} onClose={() => setApprovedFor(null)} title="Solicitud aprobada"
       footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button variant="ghost" onClick={() => setApprovedFor(null)}>Más tarde</Button>
-        <Button icon={<CalendarPlus size={18} />} onClick={() => approvedFor && createShiftFor(approvedFor.opportunityId)}>Crear turno con esta cuidadora</Button>
+        <Button icon={<CalendarPlus size={18} />} onClick={() => approvedFor && createShiftFor(approvedFor.opportunityId)}>Crear turno con este cuidador</Button>
       </div>}>
       <div className="space-y-2 text-sm">
         <p>La oportunidad quedó <strong>cubierta</strong> por {approvedFor?.name}.</p>
@@ -382,13 +382,13 @@ export function AgencySmartMatchPage() {
           <option value="">Selecciona un motivo</option>
           {(Object.keys(CANCELLATION_REASONS) as CancellationReason[]).map((r) => <option key={r} value={r}>{CANCELLATION_REASONS[r]}</option>)}
         </Select>
-        <Input label="Nota interna (opcional)" maxLength={300} value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} hint="No se envía a la cuidadora." />
+        <Input label="Nota interna (opcional)" maxLength={300} value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} hint="No se envía al cuidador." />
         {cancelTarget?.status === "PUBLISHED"
           ? <p className="text-sm" role="status">{(counts[cancelTarget.id] ?? 0) === 0
-              ? "No hay solicitudes pendientes. La oportunidad dejará de mostrarse a las cuidadoras."
-              : `Se cerrarán ${(counts[cancelTarget.id] ?? 0) === 1 ? "1 solicitud pendiente" : `${counts[cancelTarget.id]} solicitudes pendientes`}. Cada cuidadora recibirá un aviso con el motivo (sin la nota interna).`}
+              ? "No hay solicitudes pendientes. La oportunidad dejará de mostrarse a los cuidadores."
+              : `Se cerrarán ${(counts[cancelTarget.id] ?? 0) === 1 ? "1 solicitud pendiente" : `${counts[cancelTarget.id]} solicitudes pendientes`}. Cada cuidador recibirá un aviso con el motivo (sin la nota interna).`}
               {" "}El historial se conserva.</p>
-          : <p className="text-xs text-[var(--color-text-muted)]">La cuidadora aprobada recibirá un aviso con el motivo. El historial se conserva.</p>}
+          : <p className="text-xs text-[var(--color-text-muted)]">El cuidador aprobado recibirá un aviso con el motivo. El historial se conserva.</p>}
       </div>}
     </Modal>
 
@@ -398,7 +398,7 @@ export function AgencySmartMatchPage() {
           <p className="font-medium">{OPPORTUNITY_EVENT_LABELS[ev.eventType] ?? ev.eventType}</p>
           <p className="text-xs text-[var(--color-text-muted)]">{formatDateTime(ev.occurredAt)} · {ev.automatic ? "Automático (sistema)" : ev.actorName ?? "Administración"}</p>
           {ev.reason && <p className="mt-1">Motivo: {CANCELLATION_REASONS[ev.reason] ?? ev.reason}</p>}
-          {ev.closedApplications > 0 && <p className="mt-1">{ev.closedApplications === 1 ? "1 solicitud pendiente cerrada" : `${ev.closedApplications} solicitudes pendientes cerradas`} (cuidadoras avisadas)</p>}
+          {ev.closedApplications > 0 && <p className="mt-1">{ev.closedApplications === 1 ? "1 solicitud pendiente cerrada" : `${ev.closedApplications} solicitudes pendientes cerradas`} (cuidadores avisados)</p>}
         </li>)}
       </ol>
     </Modal>

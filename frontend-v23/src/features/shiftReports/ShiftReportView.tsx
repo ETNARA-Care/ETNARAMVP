@@ -46,7 +46,7 @@ export function ShiftReportView({ content }: { content: ShiftReportContent }) {
     <div className="flex flex-col gap-3" data-testid="shift-report-view">
       <div className="grid grid-cols-2 gap-3 text-[var(--text-small)] sm:grid-cols-4">
         <div><p className="text-[var(--color-text-muted)]">Residente</p><p className="font-medium">{content.recipient.name}</p></div>
-        <div><p className="text-[var(--color-text-muted)]">Cuidadora</p><p className="font-medium">{content.caregiver.name ?? "—"}</p></div>
+        <div><p className="text-[var(--color-text-muted)]">Cuidador</p><p className="font-medium">{content.caregiver.name ?? "—"}</p></div>
         <div><p className="text-[var(--color-text-muted)]">Fecha</p><p className="font-medium first-letter:uppercase">{reportShortDate(content.shift.scheduledStart)}</p></div>
         <div><p className="text-[var(--color-text-muted)]">Programado</p><p className="font-medium"><span className="whitespace-nowrap">{reportTime(content.shift.scheduledStart)} –</span> <span className="whitespace-nowrap"><Moment at={content.shift.scheduledEnd} refDay={refDay} /></span></p></div>
       </div>
@@ -76,7 +76,7 @@ export function ShiftReportView({ content }: { content: ShiftReportContent }) {
       <Section title="Ánimo" empty="Sin registros de ánimo." count={s.mood.length}>
         {s.mood.map((m) => <Row key={m.careEventId} refDay={refDay} at={m.at} note={m.note}>{m.mood ?? "Registrado"}</Row>)}
       </Section>
-      <Section title="Observaciones de la cuidadora" empty="Sin observaciones." count={s.notes.length + content.observations.length}>
+      <Section title="Observaciones del cuidador" empty="Sin observaciones." count={s.notes.length + content.observations.length}>
         {s.notes.map((n) => <Row key={n.careEventId} refDay={refDay} at={n.at}><span className="whitespace-pre-line">{n.text}</span></Row>)}
         {content.observations.map((o) => <Row key={o.observationId} refDay={refDay} at={o.at} note={o.description}>Observación · {o.category}{o.status === "reviewed" ? " · revisada" : ""}</Row>)}
       </Section>

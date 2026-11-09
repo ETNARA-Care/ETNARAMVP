@@ -319,7 +319,7 @@ function RateForm({ organizationId, serviceId, unit, preset, today, rates, clien
             <NegativeMarginNotice billCents={billCents} payCents={payCents} per={PER_UNIT[unit]} />
             <p className="text-sm text-[var(--color-text-secondary)]">
               Con esta tarifa pagarás más de lo que cobras, comparado con la tarifa general del otro lado vigente el {formatDate(from)}.
-              No se bloquea: guárdala si es intencionado (por ejemplo, un descuento acordado o una cuidadora especializada).
+              No se bloquea: guárdala si es intencionado (por ejemplo, un descuento acordado o un cuidador especializado).
             </p>
           </div>
         </Modal>

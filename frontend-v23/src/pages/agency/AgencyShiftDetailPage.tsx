@@ -148,7 +148,7 @@ export function AgencyShiftDetailPage() {
       </Card>
 
       {organizationId && shiftId && <ShiftVisitPanel organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
-        cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidadora"} />}
+        cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidador"} />}
 
       {enCamino && organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
 
@@ -162,7 +162,7 @@ export function AgencyShiftDetailPage() {
       <section>
         <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)] mb-3">Respuestas de cuidadores</h2>
         {assignments.length === 0 ? (
-          <EmptyState title="Aún no hay respuestas" description="Asigna una cuidadora desde la lista de turnos." />
+          <EmptyState title="Aún no hay respuestas" description="Asigna un cuidador desde la lista de turnos." />
         ) : (
           <div className="flex flex-col gap-2">
             {assignments.map((assignment) => {

@@ -12,7 +12,7 @@ test("agency: PUBLISHED and FILLED opportunities can be cancelled with a mandato
   assert.match(agency, /\{\(opp\.status === "FILLED" \|\| opp\.status === "PUBLISHED"\) && <Button variant="ghost" onClick=\{\(\) => \{ setCancelReason\(""\); setCancelNote\(""\); setCancelTarget\(opp\); \}\}>Cancelar oportunidad<\/Button>\}/);
   assert.match(agency, /<Select label="Motivo" required/);
   assert.match(agency, /disabled=\{!cancelReason\}/);
-  assert.match(agency, /Cada cuidadora recibirá un aviso con el motivo \(sin la nota interna\)/);
+  assert.match(agency, /Cada cuidador recibirá un aviso con el motivo \(sin la nota interna\)/);
 });
 
 test("agency: auditable opportunity history (who, automatic, reason, closed applications)", () => {
