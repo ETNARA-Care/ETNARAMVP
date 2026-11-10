@@ -86,9 +86,14 @@ test("153: textos de las casillas del servidor, representante no designada sin f
   assert.match(detail, /Aceptar esta Orden no activa ningún cobro/);
   assert.match(api, /CONTRACT_SIGNATORY_NOT_DESIGNATED/);
   assert.match(api, /CONTRACT_ACCEPTANCE_REQUIRED/);
-  const lines = f.orderTermsLines({ freeMonth: true, freeDays: 30, premiumTrial: true, basicPlanMonthlyUsd: 99, premiumAddOns: "Opcionales.", chargesRequireExpressAcceptance: true, billingActivated: false });
-  assert.equal(lines.length, 6);
-  assert.ok(lines.some((l) => l.includes("US$99")));
+  const none = f.orderTermsLines({ planName: "Plan A", features: ["Turnos"], pricing: { proposedMonthlyPriceUsd: null }, chargesRequireExpressAcceptance: true, billingActivated: false });
+  assert.ok(none.includes("Precio mensual: por definir y aceptar."));
+  assert.ok(!none.join(" ").includes("99"));
+  const priced = f.orderTermsLines({ planName: "Plan B", pricing: { proposedMonthlyPriceUsd: 135.5 }, foundingProgram: { proposedBenefits: [] } });
+  assert.ok(priced.some((l) => l.includes("US$135.50 (sujeto a aprobación y a tu aceptación expresa)")));
+  assert.ok(priced.some((l) => l.includes("pendiente de aprobación definitiva")));
+  assert.match(detail, /data-testid="test-document-not-signable"/);
+  assert.match(api, /CONTRACT_TEST_DOCUMENT_NOT_SIGNABLE/);
 });
 test("153: la redirección a Contratos solo ocurre si el servidor declara «solo contrato» activo", async () => {
   assert.match(layout, /contractOnlyRedirect\(contracts\.status, location\.pathname\)/);

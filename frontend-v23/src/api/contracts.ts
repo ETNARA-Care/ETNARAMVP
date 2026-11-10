@@ -25,15 +25,22 @@ export interface AgencyContractVersion {
   /** 153: texto de la primera casilla (lo fija el servidor). */
   acceptanceCheckboxText?: string;
   /** 153: ¿esta persona puede firmar? (representante designada por la agencia ante ETNARA). */
-  signer?: { allowed: boolean; designationRequired: boolean; designation: { fullName: string; title: string } | null; legallyApproved: boolean };
+  signer?: { allowed: boolean; blockedReason?: "TEST_DOCUMENT" | "NOT_DESIGNATED" | null; designationRequired: boolean; designation: { fullName: string; title: string } | null; legallyApproved: boolean };
+  commercial_status?: "not_applicable" | "proposal" | "commercially_approved";
   legal_status?: "pending_legal_approval" | "legally_approved";
   /** 153: condiciones comerciales de una Orden de Suscripción (solo informativas; ningún cobro automático). */
   commercial_terms?: SubscriptionOrderTerms | null;
 }
 
+/** Condiciones individuales de la Orden (153). Siempre propuesta; el servidor fija las salvaguardas. */
 export interface SubscriptionOrderTerms {
-  program?: string; freeMonth?: boolean; freeDays?: number; premiumTrial?: boolean; basicPlanMonthlyUsd?: number;
-  premiumAddOns?: string; chargesRequireExpressAcceptance?: boolean; billingActivated?: boolean;
+  status?: "proposal"; planName?: string; features?: string[]; limits?: string | null;
+  pricing?: { currency: "USD"; proposedMonthlyPriceUsd: number | null; isProposal: true };
+  promotions?: Array<{ description: string; durationDays: number | null }>;
+  addOns?: Array<{ name: string; proposedMonthlyPriceUsd: number | null }>;
+  conditions?: string[];
+  foundingProgram?: { enrolled: true; programStatus: string; proposedBenefits: string[] } | null;
+  chargesRequireExpressAcceptance?: boolean; automaticCharges?: boolean; automaticRenewal?: boolean; billingActivated?: boolean;
 }
 
 /** 153: estado contractual de la agencia. Con las reglas apagadas en el servidor es solo informativo. */
@@ -97,6 +104,9 @@ export function contractErrorMessage(code?: string, status?: number): string {
     case "CONTRACT_SIGNATORY_NOT_DESIGNATED": return "Tu cuenta no figura como representante designada de la organización ante ETNARA. Pide a ETNARA que registre a la persona con autoridad para firmar.";
     case "CONTRACT_ACCEPTANCE_REQUIRED": return "Tu organización tiene contratos pendientes de aceptar. Complétalos en Contratos para continuar con esta acción.";
     case "CONTRACT_LEGAL_APPROVAL_REQUIRED": return "Este documento todavía no está aprobado para firma.";
+    case "CONTRACT_TEST_DOCUMENT_NOT_SIGNABLE": return "Este es un documento de prueba: se puede leer, pero no firmar.";
+    case "CONTRACT_COMMERCIAL_APPROVAL_REQUIRED": return "Esta Orden todavía no está aprobada para firma.";
+    case "CONTRACT_PLACEHOLDER_TEXT_NOT_ALLOWED": case "CONTRACT_DRAFT_MARKED_NOT_SIGNABLE": return "Este documento es un borrador y no se puede firmar.";
     case "CONTRACT_ALREADY_ACCEPTED": return "Tu organización ya aceptó esta versión.";
     case "CONTRACT_FORBIDDEN": case "ORGANIZATION_ACCESS_DENIED": return "Solo una administradora o administrador activo de la organización puede firmar.";
     case "INVALID_PAYLOAD": return "Revisa los datos: nombre y apellido, cargo y las dos casillas.";

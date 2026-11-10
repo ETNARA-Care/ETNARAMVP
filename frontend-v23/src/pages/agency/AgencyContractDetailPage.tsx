@@ -126,7 +126,7 @@ export function AgencyContractDetailPage() {
 
       {v.kind === "SUBSCRIPTION_ORDER" && v.commercial_terms && (
         <Card className="flex flex-col gap-2" data-testid="order-terms">
-          <p className="font-medium">Condiciones de tu Orden de Suscripción</p>
+          <p className="font-medium">Condiciones propuestas para tu Orden de Suscripción</p>
           <ul className="list-disc pl-5 text-[var(--text-small)] text-[var(--color-text-secondary)]">
             {orderTermsLines(v.commercial_terms).map((line) => <li key={line}>{line}</li>)}
           </ul>
@@ -143,6 +143,11 @@ export function AgencyContractDetailPage() {
         </Card>
       ) : v.status === "retired" ? (
         <Card><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Esta versión fue reemplazada y ya no se puede aceptar. Abre la versión vigente desde Contratos.</p></Card>
+      ) : v.signer?.blockedReason === "TEST_DOCUMENT" ? (
+        <Card className="flex flex-col gap-2" data-testid="test-document-not-signable">
+          <p className="flex items-center gap-2 font-medium"><ShieldAlert size={20} className="text-[var(--color-warning-700)]" /> Documento de prueba: no se puede firmar</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Este texto es ficticio y no tiene valor legal. Puedes leerlo y descargarlo, pero no aceptarlo ni firmarlo.</p>
+        </Card>
       ) : v.signer && !v.signer.allowed ? (
         <Card className="flex flex-col gap-2" data-testid="signer-not-designated">
           <p className="flex items-center gap-2 font-medium"><ShieldAlert size={20} className="text-[var(--color-warning-700)]" /> Tu cuenta no puede firmar este documento</p>
