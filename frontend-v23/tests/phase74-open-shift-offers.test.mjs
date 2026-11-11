@@ -20,7 +20,7 @@ test("caregivers respond without seeing resident or clinical information", () =>
 test("Administration sends offers but retains final assignment", () => {
   const page = read("src/pages/agency/AgencyShiftsPage.tsx");
   assert.match(page, /Ofrecer turno/);
-  assert.match(page, /Asignar cuidadora/);
+  assert.match(page, /Asignar cuidador/);
   assert.match(page, /Interesadas:/);
   assert.match(page, /No se compartirá información del residente/);
 });

@@ -1,5 +1,5 @@
 // Fotos v2 — endurecimiento de seguridad (backend 145, 3-nov-2026).
-// M1: la cuidadora recibe un único código para cualquier retención. §5: con el módulo apagado, la
+// M1: el cuidador recibe un único código para cualquier retención. §5: con el módulo apagado, la
 // administración entra en un modo de solo revisión legal. §6: la supervisión no ve base ni referencia.
 // §4: avisos de agencia sin administración (supervisión y ETNARA central). Central: aviso al apagar.
 import assert from "node:assert/strict";
