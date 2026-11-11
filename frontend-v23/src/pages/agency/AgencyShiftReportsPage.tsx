@@ -50,7 +50,7 @@ export function AgencyShiftReportsPage() {
       </div>
       {reports === null ? <div className="flex flex-col gap-2"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
         : reports === "error" ? <ErrorState kind="network" onRetry={() => void load()} />
-        : reports.length === 0 ? <EmptyState icon={<FileText size={28} />} title={filter === "PENDING" ? "No hay informes por aprobar" : "No hay informes"} description="Aparecen cuando una cuidadora finaliza su turno." />
+        : reports.length === 0 ? <EmptyState icon={<FileText size={28} />} title={filter === "PENDING" ? "No hay informes por aprobar" : "No hay informes"} description="Aparecen cuando un cuidador finaliza su turno." />
         : (
           <ul className="flex flex-col gap-2" data-testid="shift-report-list">
             {reports.map((r) => {
@@ -65,10 +65,10 @@ export function AgencyShiftReportsPage() {
                         <ChevronRight size={18} aria-hidden className="mt-0.5 shrink-0 text-[var(--color-text-muted)]" />
                       </div>
                       {r.scheduledStart && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] first-letter:uppercase">{reportShortDate(r.scheduledStart)} · {reportTime(r.scheduledStart)}</p>}
-                      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{r.caregiverName ?? "Cuidadora"} · {r.totals?.careEvents ?? 0} registro{r.totals?.careEvents === 1 ? "" : "s"}</p>
+                      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{r.caregiverName ?? "Cuidador"} · {r.totals?.careEvents ?? 0} registro{r.totals?.careEvents === 1 ? "" : "s"}</p>
                       <div className="flex flex-wrap gap-1.5 pt-0.5">
                         {expired ? <StatusChip tone="neutral" testId="agency-report-status">Plazo vencido</StatusChip>
-                          : <StatusChip tone={st.tone} testId="agency-report-status">{r.status === "SUBMITTED" ? "Enviado por la cuidadora" : st.text}</StatusChip>}
+                          : <StatusChip tone={st.tone} testId="agency-report-status">{r.status === "SUBMITTED" ? "Enviado por el cuidador" : st.text}</StatusChip>}
                       </div>
                     </Card>
                   </Link>

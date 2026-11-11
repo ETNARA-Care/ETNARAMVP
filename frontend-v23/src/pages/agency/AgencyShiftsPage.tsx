@@ -46,10 +46,10 @@ function formatWaveDeadline(value: string): string {
 function requestMessage(error: unknown): string {
   const apiError = error as ApiError;
   if (apiError.status === 0) return "No hay conexión con el servidor.";
-  if (apiError.code === "SCHEDULE_CONFLICT") return "La cuidadora ya tiene otro turno en ese horario.";
-  if (apiError.code?.startsWith("WORKER_NOT_ELIGIBLE")) return "La cuidadora no cumple los requisitos para ser asignada.";
-  if (apiError.code === "NO_APPLICABLE_REQUIREMENT_SET") return "La agencia todavía no configuró los requisitos para el puesto de esta cuidadora. Configúralos en Cumplimiento → Políticas.";
-  if (apiError.code === "ASSIGNMENT_ALREADY_EXISTS") return "La cuidadora ya está asignada a este turno.";
+  if (apiError.code === "SCHEDULE_CONFLICT") return "El cuidador ya tiene otro turno en ese horario.";
+  if (apiError.code?.startsWith("WORKER_NOT_ELIGIBLE")) return "El cuidador no cumple los requisitos para ser asignado.";
+  if (apiError.code === "NO_APPLICABLE_REQUIREMENT_SET") return "La agencia todavía no configuró los requisitos para el puesto de este cuidador. Configúralos en Cumplimiento → Políticas.";
+  if (apiError.code === "ASSIGNMENT_ALREADY_EXISTS") return "El cuidador ya está asignado a este turno.";
   return "No pudimos guardar el turno. Intenta nuevamente.";
 }
 
@@ -179,7 +179,7 @@ export function AgencyShiftsPage() {
     try {
       await createShiftFromOpportunity(organizationId, smartMatchId, { careRecipientId: smartMatchRecipientId, instructions,
         ...(smartMatchLocationId ? { serviceLocationId: smartMatchLocationId } : {}) }, token);
-      show(`Turno creado y enviado a ${smartMatchDraft?.caregiver?.displayName ?? "la cuidadora"} para que lo acepte.`, "success");
+      show(`Turno creado y enviado a ${smartMatchDraft?.caregiver?.displayName ?? "el cuidador"} para que lo acepte.`, "success");
       closeCreate();
     } catch (requestError) {
       show(smartMatchErrorMessage(requestError, "No pudimos crear el turno. Intenta nuevamente."), "danger");
@@ -283,7 +283,7 @@ export function AgencyShiftsPage() {
       }
       await assignShift(organizationId, shift.id, effectiveWorkerId, token);
       setCreating(false);
-      show(`Asignación enviada a ${workerById[effectiveWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
+      show(`Asignación enviada a ${workerById[effectiveWorkerId]?.display_name ?? "el cuidador"}.`, "success");
       await load();
     } catch (requestError) {
       show(requestMessage(requestError), "danger");
@@ -298,7 +298,7 @@ export function AgencyShiftsPage() {
     try {
       await assignShift(organizationId, assigning.id, selectedWorkerId, token);
       setAssigning(null);
-      show(`Asignación enviada a ${workerById[selectedWorkerId]?.display_name ?? "la cuidadora"}.`, "success");
+      show(`Asignación enviada a ${workerById[selectedWorkerId]?.display_name ?? "el cuidador"}.`, "success");
       await load();
     } catch (requestError) { show(requestMessage(requestError), "danger"); }
     finally { setSaving(false); }
@@ -404,14 +404,14 @@ export function AgencyShiftsPage() {
         )}
       </Card>
       {orderedShifts.length === 0 ? (
-        <EmptyState title="No hay turnos activos" description="Crea un turno y asígnalo a una cuidadora." action={{ label: "Crear turno", onClick: openCreate }} />
+        <EmptyState title="No hay turnos activos" description="Crea un turno y asígnalo a un cuidador." action={{ label: "Crear turno", onClick: openCreate }} />
       ) : (
         <div className="flex flex-col gap-2">
           {orderedShifts.map((shift) => {
             const assignment = assignmentByShift[shift.id];
             const assignee = assignment ? workerById[assignment.organization_worker_membership_id] : undefined;
             const shiftOffers = offersByShift[shift.id] ?? [];
-            const interestedNames = shiftOffers.filter((offer) => offer.responseStatus === "interested").map((offer) => offer.displayName ?? "Cuidadora");
+            const interestedNames = shiftOffers.filter((offer) => offer.responseStatus === "interested").map((offer) => offer.displayName ?? "Cuidador");
             const campaign = shiftOffers[0];
             const queuedCount = shiftOffers.filter((offer) => offer.responseStatus === "queued").length;
             const pendingCount = shiftOffers.filter((offer) => offer.responseStatus === "pending").length;
@@ -430,7 +430,7 @@ export function AgencyShiftsPage() {
                 <div>
                   <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
-                  {assignee && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidadora: {assignee.display_name ?? assignee.internal_role}</p>}
+                  {assignee && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidador: {assignee.display_name ?? assignee.internal_role}</p>}
                   {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ola {campaign.currentWave}: {plural(interestedNames.length,"disponible","disponibles")} · {plural(pendingCount,"pendiente","pendientes")} · {queuedCount} en espera</p>}
                   {campaign?.campaignStatus === "open" && campaign.nextWaveAt && interestedNames.length === 0 && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Próxima ola automática a las {formatWaveDeadline(campaign.nextWaveAt)} si nadie está disponible.</p>}
                   {campaign?.campaignStatus === "open" && !campaign.nextWaveAt && interestedNames.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-success-700)]">Escalación detenida: Administración puede realizar la asignación final.</p>}
@@ -441,7 +441,7 @@ export function AgencyShiftsPage() {
                   {/* Una sola etiqueta con la misma regla del Resumen y del Centro operacional. */}
                   {(() => { const state = coverageOf({ ...shift, assignmentResponse: assignment?.response_status === "accepted" || assignment?.response_status === "pending" ? assignment.response_status : null }); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })()}
  {shift.status === "unassigned" && !assignment && canStartCoverage && <Button variant="secondary" size="md" className="whitespace-nowrap" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>{campaign?.campaignStatus === "exhausted" ? "Reintentar cobertura" : "Ofrecer turno"}</Button>}
- {shift.status === "unassigned" && !assignment && <Button size="md" className="whitespace-nowrap" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidadora</Button>}
+ {shift.status === "unassigned" && !assignment && <Button size="md" className="whitespace-nowrap" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidador</Button>}
                 </div>
               </Card>
             );
@@ -459,18 +459,18 @@ export function AgencyShiftsPage() {
           {smartMatchError && <p role="alert" className="text-[var(--text-small)] text-[var(--color-danger-700)]">{smartMatchError}</p>}
           {smartMatchDraft && <>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-[var(--text-small)]" aria-label="Datos de la oportunidad">
-              <div className="col-span-2"><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidadora aprobada</dt><dd className="font-medium text-[var(--color-text-primary)]">{smartMatchDraft.caregiver?.displayName ?? "—"}</dd></div>
+              <div className="col-span-2"><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidador aprobado</dt><dd className="font-medium text-[var(--color-text-primary)]">{smartMatchDraft.caregiver?.displayName ?? "—"}</dd></div>
               <div className="col-span-2"><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Horario</dt><dd className="font-medium text-[var(--color-text-primary)]">{formatSmartMatchWindow(smartMatchDraft.opportunity.starts_at, smartMatchDraft.opportunity.ends_at)}</dd></div>
               <div><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Función</dt><dd className="font-medium text-[var(--color-text-primary)]">{smartMatchDraft.opportunity.role_label}</dd></div>
               <div><dt className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Municipio</dt><dd className="font-medium text-[var(--color-text-primary)]">{smartMatchDraft.opportunity.region_label}</dd></div>
-              <p className="col-span-2 flex items-center gap-1.5 text-[var(--text-caption)] text-[var(--color-text-muted)]"><Lock size={13} aria-hidden /> Horario y cuidadora fijos: son los que la cuidadora aceptó.</p>
+              <p className="col-span-2 flex items-center gap-1.5 text-[var(--text-caption)] text-[var(--color-text-muted)]"><Lock size={13} aria-hidden /> Horario y cuidador fijos: son los que el cuidador aceptó.</p>
             </dl>
             {smartMatchDraft.opportunity.shift_id && <div role="status" className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-[var(--text-small)]">
               Ya se creó un turno para esta oportunidad. <button type="button" className="font-medium underline" onClick={() => navigate(`/agency/shifts/${smartMatchDraft.opportunity.shift_id}`)}>Ver turno</button>
             </div>}
             {!smartMatchDraft.opportunity.shift_id && smartMatchDraft.opportunity.started && <p role="status" className="text-[var(--text-small)] text-[var(--color-warning-700)]">El horario ya comenzó. Crea el turno manualmente con «Crear turno».</p>}
             {!smartMatchDraft.opportunity.shift_id && !smartMatchDraft.opportunity.started && smartMatchDraft.checks && !smartMatchDraft.checks.ready && <p role="status" className="text-[var(--text-small)] text-[var(--color-warning-700)]">
-              La cuidadora ya no cumple los requisitos{smartMatchDraft.checks.unmetRequirementCodes.length ? ` (${smartMatchDraft.checks.unmetRequirementCodes.join(", ")})` : ""}. Revisa Cumplimiento antes de crear el turno.
+              El cuidador ya no cumple los requisitos{smartMatchDraft.checks.unmetRequirementCodes.length ? ` (${smartMatchDraft.checks.unmetRequirementCodes.join(", ")})` : ""}. Revisa Cumplimiento antes de crear el turno.
             </p>}
             {smartMatchDraft.canCreate && <>
               <Select label="Persona atendida" value={smartMatchRecipientId} onChange={(event) => setSmartMatchRecipientId(event.target.value)} required
@@ -481,8 +481,8 @@ export function AgencyShiftsPage() {
               {smartMatchRecipientId && <LocationSelect options={smartMatchLocations} value={smartMatchLocationId} requireChoice
                 onChange={(id) => setLocationChoice((c) => ({ ...c, [smartMatchRecipientId]: id }))} />}
               <Textarea label="Instrucciones operativas (privadas)" rows={4} maxLength={2000} value={instructions} onChange={(event) => setInstructions(event.target.value)}
-                hint="Solo las ven los administradores y supervisores de tu agencia y la cuidadora asignada. No las ven familiares ni ETNARA central." />
-              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Al guardar, el sistema vuelve a verificar credenciales, disponibilidad y cruces de horario, y envía la asignación a la cuidadora.</p>
+                hint="Solo las ven los administradores y supervisores de tu agencia y el cuidador asignado. No las ven familiares ni ETNARA central." />
+              <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Al guardar, el sistema vuelve a verificar credenciales, disponibilidad y cruces de horario, y envía la asignación al cuidador.</p>
             </>}
           </>}
         </div>
@@ -493,7 +493,7 @@ export function AgencyShiftsPage() {
           <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => { setRecipientId(event.target.value); setCoverageCandidates(null); }} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
           <LocationSelect options={genericLocations} value={genericLocationId} onChange={(id) => setLocationChoice((c) => ({ ...c, [effectiveRecipientId]: id }))} />
           {finance && <Select label="Servicio" value={serviceId} onChange={(event) => setServiceId(event.target.value)} hint="Opcional. Define las tarifas de cobro y de pago de este turno."><option value="">Sin servicio (o el del residente)</option>{financeServices.filter((s) => s.active).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</Select>}
-          <Select label="Cuidadora apta" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona una cuidadora</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); const recommendation = coverageCandidates?.find((candidate) => candidate.membershipId === worker.id); const unavailable = recommendation && !recommendation.recommended; return <option key={worker.id} value={worker.id} disabled={reason !== null || unavailable}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : unavailable ? " — Conflicto o requisito pendiente" : " — Apta"}</option>; })}</Select>
+          <Select label="Cuidador apto" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona un cuidador</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); const recommendation = coverageCandidates?.find((candidate) => candidate.membershipId === worker.id); const unavailable = recommendation && !recommendation.recommended; return <option key={worker.id} value={worker.id} disabled={reason !== null || unavailable}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : unavailable ? " — Conflicto o requisito pendiente" : " — Apta"}</option>; })}</Select>
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
           <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => { setTimes((current) => ({ ...current, start: event.target.value })); setCoverageCandidates(null); }} required />
           <Input label="Salida" type="datetime-local" value={times.end} onChange={(event) => { setTimes((current) => ({ ...current, end: event.target.value })); setCoverageCandidates(null); }} required />
@@ -502,7 +502,7 @@ export function AgencyShiftsPage() {
         </div>
       </Modal>
 
-      <Modal open={!!assigning} onClose={() => !saving && setAssigning(null)} title="Asignar cuidadora" footer={<><Button variant="secondary" onClick={() => setAssigning(null)} disabled={saving}>Cancelar</Button><Button onClick={() => void confirmAssignment()} disabled={saving || coverageLoading || !selectedWorkerId || !selectedWorkerAllowed}>{saving ? "Asignando..." : "Confirmar asignación"}</Button></>}>
+      <Modal open={!!assigning} onClose={() => !saving && setAssigning(null)} title="Asignar cuidador" footer={<><Button variant="secondary" onClick={() => setAssigning(null)} disabled={saving}>Cancelar</Button><Button onClick={() => void confirmAssignment()} disabled={saving || coverageLoading || !selectedWorkerId || !selectedWorkerAllowed}>{saving ? "Asignando..." : "Confirmar asignación"}</Button></>}>
         <fieldset className="flex flex-col gap-3">
           <legend className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-1">Cobertura asistida</legend>
           {coverageLoading && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Analizando requisitos, cruces de horario, continuidad y carga próxima…</p>}

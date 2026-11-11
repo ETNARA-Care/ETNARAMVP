@@ -42,7 +42,7 @@ export function TodayJourneysPanel({ organizationId }: { organizationId: string 
                   {i.risks.map((r) => <Badge key={r} tone="warning">{RISK_TEXT[r]}</Badge>)}
                 </span>
                 <span className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
-                  {i.caregiver ?? "Sin cuidadora"}
+                  {i.caregiver ?? "Sin cuidador"}
                   {i.journey.enRouteAt && ` · en camino desde las ${time(i.journey.enRouteAt)}`}
                   {i.journey.delay && ` · retraso informado: unos ${i.journey.delay.minutes} min (${DELAY_REASON_TEXT[i.journey.delay.reason].toLowerCase()})`}
                   {i.journey.arrivedAt && ` · llegó ${time(i.journey.arrivedAt)}${i.journey.arrivalNeedsReview ? " (revisar)" : ""}`}
@@ -51,7 +51,7 @@ export function TodayJourneysPanel({ organizationId }: { organizationId: string 
             </li>
           ))}
         </ul>)}
-      <p className="mt-2 text-[var(--text-caption)] text-[var(--color-text-muted)]">«Aún no registra salida» es preventivo: la cuidadora puede ir en camino sin haberlo marcado.</p>
+      <p className="mt-2 text-[var(--text-caption)] text-[var(--color-text-muted)]">«Aún no registra salida» es preventivo: el cuidador puede ir en camino sin haberlo marcado.</p>
     </Card>
   );
 }

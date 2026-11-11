@@ -15,7 +15,7 @@ import {
 export interface AdminShift extends Shift {
   recipient?: CareRecipient;
   caregiver?: WorkerMembership;
-  /** Respuesta de la cuidadora asignada: solo "accepted" cuenta como cubierto. */
+  /** Respuesta de el cuidador asignado: solo "accepted" cuenta como cubierto. */
   assignmentResponse?: "pending" | "accepted" | null;
 }
 

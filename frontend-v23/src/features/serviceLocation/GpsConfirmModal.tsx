@@ -52,7 +52,7 @@ export function GpsConfirmModal({ open, organizationId, recipientId, location, o
     setBusy(true);
     try {
       await confirmLocationGps(organizationId, recipientId, location.id, point, token);
-      show("Punto exacto confirmado. La cuidadora navegará hasta aquí.", "success");
+      show("Punto exacto confirmado. El cuidador navegará hasta aquí.", "success");
       onConfirmed();
     } catch (e) {
       show((e as ApiError)?.code === "INVALID_PAYLOAD" ? "El punto debe estar en Puerto Rico." : "No se pudo confirmar el punto.", "danger");

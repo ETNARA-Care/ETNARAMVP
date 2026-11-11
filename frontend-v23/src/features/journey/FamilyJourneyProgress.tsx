@@ -13,7 +13,7 @@ export function FamilyJourneyProgress({ journey }: { journey: Journey }) {
   }
   if (journey.state === "UNASSIGNED" || journey.state === "PENDING_ACCEPTANCE") return null;
   const steps: { label: string; at: string | null; done: boolean }[] = [
-    { label: "Cuidadora asignada", at: null, done: true },
+    { label: "Cuidador asignado", at: null, done: true },
     { label: "En camino", at: journey.enRouteAt, done: Boolean(journey.enRouteAt) },
     { label: "Llegada registrada", at: journey.arrivedAt, done: Boolean(journey.arrivedAt) },
     { label: "Servicio iniciado", at: journey.startedAt, done: Boolean(journey.startedAt) },

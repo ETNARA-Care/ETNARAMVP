@@ -13,7 +13,7 @@ const es = JSON.parse(read("src/i18n/locales/es/photos.json"));
 const en = JSON.parse(read("src/i18n/locales/en/photos.json"));
 const get = (o, key) => key.split(".").reduce((v, k) => v?.[k], o);
 
-test("E2.1 solo administración y supervisión revisan fotos (ni cuidadoras, ni familia, ni ETNARA central)", () => {
+test("E2.1 solo administración y supervisión revisan fotos (ni cuidadores, ni familia, ni ETNARA central)", () => {
   assert.equal(canReviewPhotos(["ORGANIZATION_ADMIN"]), true);
   assert.equal(canReviewPhotos(["SUPERVISOR"]), true);
   assert.equal(canReviewPhotos(["WORKER"]), false);
