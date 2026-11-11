@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Landmark, Lock, Pencil } from "lucide-react";
 import { getToken } from "@/auth/token";
 import { financeApi, type BillingClient, type FinanceService, type ShiftFinance } from "@/api/finance";
@@ -20,6 +21,7 @@ const EXCEPTION_TEXT: Record<string, string> = {
  * administrator only, FINANZAS on only. The shift itself is never modified.
  */
 export function ShiftFinancePanel({ organizationId, shiftId }: { organizationId: string; shiftId: string }) {
+  useTranslation(); // dates follow the app language (F1.1 visual)
   const [data, setData] = useState<ShiftFinance | null>(null);
   const [services, setServices] = useState<FinanceService[]>([]);
   const [clients, setClients] = useState<BillingClient[]>([]);
@@ -65,7 +67,7 @@ export function ShiftFinancePanel({ organizationId, shiftId }: { organizationId:
         <div><dt className="text-xs text-[var(--color-text-muted)]">Pagador</dt>
           <dd className="font-medium">{client?.full_name ?? "Sin pagador"}{client && data.effective.clientSource === "recipient_primary" ? <span className="text-xs text-[var(--color-text-muted)]"> · principal del residente</span> : null}</dd></div>
         <div><dt className="text-xs text-[var(--color-text-muted)]">Cuidador/a</dt>
-          <dd className="font-medium">{data.effective.caregiverName ?? "Sin asignar"}</dd></div>
+          <dd className="break-words font-medium">{data.effective.caregiverName ?? "Sin asignar"}</dd></div>
       </dl>
 
       {r && (

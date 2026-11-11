@@ -27,7 +27,13 @@ test("form fields: text colour is set explicitly, not inherited from the contain
 
 test("simulator: grid cells and the date field can shrink on narrow phones", () => {
   assert.match(simulator, /<div className="grid grid-cols-2 gap-3 \[&_label\]:text-white\/80 \[&>\*\]:min-w-0">/);
-  assert.match(simulator, /<Input label="Fecha del servicio" type="date" className="min-w-0 appearance-none" value=\{date\}/);
+  // F1.1 visual (25-oct): the date is a DateField (date in the app language); it keeps the #231 guarantees:
+  // it can shrink (min-w-0), its text colour is explicit (never inherited from the navy card) and it truncates.
+  assert.match(simulator, /<DateField label="Fecha del servicio" tone="dark" value=\{date\} onChange=\{setDate\} \/>/);
+  const field = read("src/features/finance/DateField.tsx");
+  assert.match(field, /flex min-w-0 flex-col gap-1\.5/);
+  assert.match(field, /bg-\[var\(--color-surface\)\] px-3\.5 text-\[var\(--color-text-primary\)\]/);
+  assert.match(field, /min-w-0 truncate tabular-nums/);
 });
 
 test("simulator: business logic untouched (same request to the resolver)", () => {

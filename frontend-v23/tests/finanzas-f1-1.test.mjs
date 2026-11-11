@@ -67,5 +67,17 @@ test("a portal published before backend 121 never offers calls the backend lacks
 test("the #231 simulator fix stays as it was", () => {
   const detail = read("src/features/finance/ServiceDetail.tsx");
   assert.match(detail, /<div className="grid grid-cols-2 gap-3 \[&_label\]:text-white\/80 \[&>\*\]:min-w-0">/);
-  assert.match(detail, /<Input label="Fecha del servicio" type="date" className="min-w-0 appearance-none"/);
+  assert.match(detail, /<DateField label="Fecha del servicio" tone="dark" value=\{date\} onChange=\{setDate\} \/>/);
+});
+
+test("H8: the portal refuses rates above the backend limit ($10,000.00) instead of a generic error", async () => {
+  const src = readFileSync(new URL("../src/features/finance/money.ts", import.meta.url), "utf8");
+  assert.match(src, /export const RATE_MAX_CENTS = 1_000_000;/);
+  assert.match(src, /return cents <= RATE_MAX_CENTS \? cents : null;/);
+  const backendMax = 1_000_000; // finance.service: amountCents / halfDayAmountCents .max(1000000)
+  const parse = (text) => { const m = /^(\d{1,7})(?:\.(\d{1,2}))?$/.exec(text.trim().replace(/^\$/, "").replace(/,/g, "")); if (!m) return null; const c = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0")); return c <= backendMax ? c : null; };
+  assert.equal(parse("10,000.00"), 1_000_000);
+  assert.equal(parse("10000.01"), null);
+  assert.equal(parse("25.5"), 2550);
+  assert.match(readFileSync(new URL("../src/features/finance/ServiceDetail.tsx", import.meta.url), "utf8"), /máximo \$10,000\.00/);
 });
