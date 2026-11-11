@@ -16,6 +16,8 @@ export interface Shift {
   assignment_response_status?: "pending" | "accepted";
   /** Name only, for the caregiver's own visits (also past ones). */
   care_recipient_display_name?: string | null;
+  /** 154: cierre sin servicio vigente (solo administración/supervisión). */
+  closed_without_service?: boolean;
 }
 
 export interface CareRecipient { id:string; organization_id:string; first_name:string; last_name:string; preferred_name:string|null; date_of_birth:string|null; allergies:string[]|null; preferences:unknown; routines:unknown; status:string; room_id:string|null; created_at:string; updated_at:string; archived_at:string|null; }

@@ -10,6 +10,7 @@ import {
   type ShiftClosureHistoryItem,
 } from "@/api/shiftClosures";
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
+import { ClosedWithoutServiceBadge } from "@/features/shifts/ClosedWithoutServiceBadge";
 
 const day = (v: string) => new Date(v).toLocaleString("es-PR", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -37,7 +38,7 @@ export function AgencyClosedPendingsPage() {
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <Button variant="ghost" icon={<ArrowLeft size={18} />} onClick={() => navigate("/agency/operations")} className="self-start">Centro operacional</Button>
-      <PageHeader title="Pendientes cerrados" description="Turnos terminados sin servicio que la agencia cerró, con motivo, nota, responsable y fecha. No se pueden editar ni borrar." />
+      <PageHeader title="Pendientes cerrados" description="Turnos terminados sin servicio que la agencia cerró, con motivo, nota, responsable y fecha. No se pueden editar ni borrar; un cierre hecho por error aparece como «Rectificado»." />
       <Card className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2 text-[var(--text-small)] text-[var(--color-text-secondary)]"><ShieldCheck size={18} aria-hidden /> Los incidentes resueltos están en Incidentes › Resueltos.</p>
         <Button variant="secondary" onClick={() => navigate("/agency/incidents?tab=resolved")}>Ver incidentes resueltos</Button>
@@ -53,12 +54,13 @@ export function AgencyClosedPendingsPage() {
                   <Card className="flex flex-col gap-2 hover:bg-[var(--color-ivory-100)] transition-colors">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium text-[var(--color-text-primary)]">{r.recipientName ?? "Residente"}</p>
-                      <Badge tone="neutral">{CLOSURE_OUTCOME_LABELS[r.outcome]}</Badge>
+                      {r.rectifiedAt ? <Badge tone="neutral">Rectificado</Badge> : <ClosedWithoutServiceBadge />}
                     </div>
                     <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Turno: {day(r.scheduledStart)}</p>
-                    <p className="text-[var(--text-small)] text-[var(--color-text-primary)]">{CLOSURE_REASON_LABELS[r.reasonCode]}</p>
+                    <p className="text-[var(--text-small)] text-[var(--color-text-primary)]">{CLOSURE_OUTCOME_LABELS[r.outcome]} · {CLOSURE_REASON_LABELS[r.reasonCode]}</p>
                     <p className="line-clamp-3 whitespace-pre-wrap break-words text-[var(--text-small)] text-[var(--color-text-secondary)]">{r.note}</p>
                     <p className="break-words text-[var(--text-caption)] text-[var(--color-text-muted)]">Cerrado por {r.closedByEmail ?? "—"} · {day(r.closedAt)}</p>
+                    {r.rectifiedAt && <p className="break-words text-[var(--text-caption)] text-[var(--color-text-secondary)]" data-testid="history-rectified">Rectificado por {r.rectifiedByEmail ?? "—"} · {day(r.rectifiedAt)}: {r.rectificationReason}</p>}
                     {r.contradicted && <p className="flex items-center gap-1.5 text-[var(--text-caption)] text-[var(--color-danger-700)]"><AlertTriangle size={14} aria-hidden /> Llegó después un registro de entrada real: revisar horas.</p>}
                   </Card>
                 </button>

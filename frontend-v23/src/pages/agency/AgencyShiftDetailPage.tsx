@@ -24,6 +24,7 @@ import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
 import { ShiftFinancePanel } from "@/features/finance/ShiftFinancePanel";
 import { ShiftReportPanel } from "@/features/shiftReports/ShiftReportPanel";
 import { ShiftAttentionPanel } from "@/features/shifts/ShiftAttentionPanel";
+import { ClosedWithoutServiceBadge } from "@/features/shifts/ClosedWithoutServiceBadge";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -133,7 +134,7 @@ export function AgencyShiftDetailPage() {
       <PageHeader
         title={recipientName(recipient ?? undefined)}
         description="Detalle operacional del turno y sus respuestas."
-        actions={<StatusBadge status={shift.status} />}
+        actions={shift.closed_without_service ? <ClosedWithoutServiceBadge /> : <StatusBadge status={shift.status} />}
       />
 
       <Card>

@@ -21,6 +21,10 @@ export interface ShiftClosure {
   note: string;
   closedAt: string;
   closedByEmail: string | null;
+  /** Rectificación de un cierre hecho por error: el registro original se conserva. */
+  rectifiedAt: string | null;
+  rectifiedByEmail: string | null;
+  rectificationReason: string | null;
 }
 
 export interface ShiftAttention {
@@ -34,6 +38,9 @@ export interface ShiftAttention {
   allowedReasons: ClosureReason[];
   acceptedCaregivers: { membershipId: string; name: string; checkedIn: boolean }[];
   closure: ShiftClosure | null;
+  rectifiedClosures: ShiftClosure[];
+  /** Solo una administradora rectifica un cierre. */
+  canRectify: boolean;
   closureContradicted: boolean;
 }
 
@@ -59,6 +66,11 @@ export const recordOmittedVisitCorrection = (
 ) => apiClient.post<{ shiftId: string; recordedAt: string; timesheet: { id: string; status: string } | null }>(
   `/organizations/${organizationId}/shifts/${shiftId}/verification/omitted-visit-correction`, input, token);
 
+export async function rectifyShiftClosure(organizationId: string, closureId: string, reason: string, token: string): Promise<ShiftClosure> {
+  const r = await apiClient.post<{ closure: ShiftClosure }>(`/organizations/${organizationId}/shift-closures/${closureId}/rectify`, { reason }, token);
+  return r.closure;
+}
+
 export async function listShiftClosures(organizationId: string, token: string): Promise<ShiftClosureHistoryItem[]> {
   const r = await apiClient.get<{ closures: ShiftClosureHistoryItem[] }>(`/organizations/${organizationId}/shift-closures?limit=100`, token);
   return r.closures;
@@ -80,6 +92,9 @@ export const CLOSURE_OUTCOME_LABELS: Record<ClosureOutcome, string> = {
 /** Minimum note length the server requires («Otro motivo» needs a fuller explanation). */
 export const closureNoteMin = (reason: ClosureReason | null) => (reason === "other" ? 20 : 10);
 export const CORRECTION_REASON_MIN = 20;
+export const RECTIFICATION_REASON_MIN = 20;
+/** Etiqueta visual única para un turno con cierre vigente. */
+export const CLOSED_WITHOUT_SERVICE_LABEL = "Cerrado sin servicio";
 
 export function shiftClosureErrorMessage(code: string | undefined): string {
   switch (code) {
@@ -93,6 +108,9 @@ export function shiftClosureErrorMessage(code: string | undefined): string {
     case "NO_ACCEPTED_ASSIGNMENT": return "Ese cuidador no tenía el turno aceptado.";
     case "ALREADY_CHECKED_IN": return "Ese cuidador ya tiene registro de entrada.";
     case "SHIFT_NOT_CORRECTABLE": return "Este turno ya no admite la corrección.";
+    case "SHIFT_CLOSURE_RECTIFY_FORBIDDEN": return "Solo una administradora de la agencia puede rectificar un cierre.";
+    case "SHIFT_CLOSURE_ALREADY_RECTIFIED": return "Este cierre ya fue rectificado.";
+    case "SHIFT_CLOSURE_RECTIFY_REASON_REQUIRED": return "Explica por qué el cierre fue un error.";
     case "REQUIRES_ORG_MANAGER": return "Solo la administración o supervisión de la agencia puede hacerlo.";
     case "INVALID_PAYLOAD": return "Revisa los datos: falta información o es demasiado corta.";
     default: return "No se pudo guardar. Intenta nuevamente.";
