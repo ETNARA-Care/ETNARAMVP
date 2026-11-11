@@ -284,6 +284,7 @@
     "NO_BILLING_RATE": "No billing rate",
     "PARTIAL_DAY": "Partial day: decide the rule",
     "SHIFT_CANCELLED": "Shift cancelled",
+    "SHIFT_CLOSED_WITHOUT_SERVICE": "Closed without service in the operations center: not billed",
     "NO_TIME": "No billable time",
     "TIMESHEETS_OVERLAP": "Overlapping timesheets: bill it with a justified manual line",
     "APPROVED_EXCEEDS_RECORDED": "More time approved than recorded: bill it with a justified manual line",

@@ -23,6 +23,7 @@ import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
 import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
 import { ShiftFinancePanel } from "@/features/finance/ShiftFinancePanel";
 import { ShiftReportPanel } from "@/features/shiftReports/ShiftReportPanel";
+import { ShiftAttentionPanel } from "@/features/shifts/ShiftAttentionPanel";
 
 const responseLabels: Record<Assignment["response_status"], string> = {
   pending: "Respuesta pendiente",
@@ -46,6 +47,8 @@ export function AgencyShiftDetailPage() {
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
   // Informe de Turno F1 (126): admins and supervisors, only where ETNARA central turned it on.
   const shiftReports = hasOrgFeature(activeOrganization?.features, "SHIFT_REPORTS");
+  // 154: resolving an ended shift without service is a supervision act (the server enforces it).
+  const manager = roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR");
   const { show } = useToast();
   const organizationId = activeOrganization?.id;
   const [shift, setShift] = useState<Shift | null | undefined>(undefined);
@@ -146,6 +149,10 @@ export function AgencyShiftDetailPage() {
           </div>
         </div>
       </Card>
+
+      {manager && organizationId && shiftId && shift.status !== "cancelled" && new Date(shift.scheduled_end).getTime() <= refreshedAt && (
+        <ShiftAttentionPanel key={shift.status} organizationId={organizationId} shiftId={shiftId} onChanged={() => void load()} />
+      )}
 
       {organizationId && shiftId && <ShiftVisitPanel organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
         cancelled={shift.status === "cancelled"} workerName={(id) => workerByMembership[id]?.display_name || "Cuidador"} />}
