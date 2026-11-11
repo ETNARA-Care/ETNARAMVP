@@ -59,10 +59,27 @@ export interface OrganizationAdminInvitationInspection {
   expires_at: string;
 }
 
+/** Etapa 0: what Central sees of an email delivery (fixed codes only, never the provider's message). */
 export interface EmailDelivery {
   status: "sent" | "failed";
-  messageId?: string;
-  error?: string;
+  error?: "EMAIL_NOT_CONFIGURED" | "EMAIL_SEND_FAILED";
+}
+
+/**
+ * Etapa 0: an administrator invitation as ETNARA Central sees it. Never the activation token or link: it
+ * travels only in the email to the invitee.
+ */
+export interface CentralAdminInvitation {
+  id: string;
+  email: string;
+  status: "pending" | "accepted" | "expired" | "revoked";
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  revokedAt: string | null;
+  /** Still pending on the server (an expired-looking one is renewed by resending). */
+  resendable: boolean;
+  revocable: boolean;
 }
 
 function fromBackend(o: BackendPlatformOrganization): PlatformOrganization {
@@ -104,12 +121,40 @@ export async function inviteOrganizationAdmin(
   organizationId: string,
   email: string,
   token: string,
-): Promise<{ invitation: OrganizationAdminInvitation; activationToken: string; emailDelivery: EmailDelivery }> {
-  return apiClient.post(
+): Promise<{ invitation: OrganizationAdminInvitation; emailDelivery: EmailDelivery }> {
+  const result = await apiClient.post<{ invitation: OrganizationAdminInvitation; emailDelivery: EmailDelivery }>(
     `/platform/organizations/${encodeURIComponent(organizationId)}/admin-invitations`,
     { email },
     token,
   );
+  // Only these two fields reach the page, whatever an older backend might add.
+  return { invitation: result.invitation, emailDelivery: { status: result.emailDelivery.status, ...(result.emailDelivery.error ? { error: result.emailDelivery.error } : {}) } };
+}
+
+export async function listCentralAdminInvitations(organizationId: string, token: string): Promise<CentralAdminInvitation[]> {
+  const result = await apiClient.get<{ invitations: CentralAdminInvitation[] }>(
+    `/platform/organizations/${encodeURIComponent(organizationId)}/admin-invitations`,
+    token,
+  );
+  return result.invitations;
+}
+
+/** New link by email (the previous one stops working only if the new email goes out). */
+export function resendCentralAdminInvitation(organizationId: string, invitationId: string, token: string) {
+  return apiClient.post<{ invitation: CentralAdminInvitation; emailDelivery: EmailDelivery }>(
+    `/platform/organizations/${encodeURIComponent(organizationId)}/admin-invitations/${encodeURIComponent(invitationId)}/resend`,
+    undefined,
+    token,
+  );
+}
+
+export async function revokeCentralAdminInvitation(organizationId: string, invitationId: string, token: string): Promise<CentralAdminInvitation> {
+  const result = await apiClient.post<{ invitation: CentralAdminInvitation }>(
+    `/platform/organizations/${encodeURIComponent(organizationId)}/admin-invitations/${encodeURIComponent(invitationId)}/revoke`,
+    undefined,
+    token,
+  );
+  return result.invitation;
 }
 
 export async function inspectOrganizationAdminInvitation(token: string): Promise<OrganizationAdminInvitationInspection> {

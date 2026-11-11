@@ -7,8 +7,12 @@ import {
   getPlatformOrganizationEstablishment,
   getPlatformOrganizationOverview,
   inviteOrganizationAdmin,
+  listCentralAdminInvitations,
   listPlatformOrganizations,
+  resendCentralAdminInvitation,
+  revokeCentralAdminInvitation,
   updatePlatformOrganizationLifecycle,
+  type CentralAdminInvitation,
   type EmailDelivery,
   type OrganizationLifecycleAction,
   type PlatformEstablishment,
@@ -41,6 +45,13 @@ function lifecycleActions(status: string): OrganizationLifecycleAction[] {
   if (st === "suspended") return ["reactivate", "archive"];
   return [];
 }
+const INVITATION_STATUS: Record<CentralAdminInvitation["status"], string> = { pending: "Pendiente", accepted: "Aceptada", expired: "Vencida", revoked: "Revocada" };
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString("es-PR", { day: "numeric", month: "short", year: "numeric" });
+/**
+ * Etapa 0: ETNARA Central nunca ve el enlace de activación. Si el correo falla, se reenvía (enlace nuevo por
+ * correo) o se revoca y se invita a la dirección corregida.
+ */
+const DELIVERY_FAILED_TEXT = "El correo no pudo enviarse. Por seguridad, ETNARA Central no muestra el enlace de activación: revisa la dirección y usa «Reenviar», o revoca la invitación e invita a la dirección correcta.";
 const orgTypeLabel = (type: string) => (type === "agency" ? "Agencia de cuidado" : "Hogar / establecimiento residencial");
 
 export function PlatformOrganizationsPage() {
@@ -60,8 +71,9 @@ export function PlatformOrganizationsPage() {
   const [inviteOrg, setInviteOrg] = useState<PlatformOrganization | null>(null);
   const [email, setEmail] = useState("");
   const [inviting, setInviting] = useState(false);
-  const [activationToken, setActivationToken] = useState<string | null>(null);
   const [emailDelivery, setEmailDelivery] = useState<EmailDelivery | null>(null);
+  const [invitations, setInvitations] = useState<CentralAdminInvitation[] | null>(null);
+  const [invitationBusy, setInvitationBusy] = useState<string | null>(null);
 
   const [lifecycleOrg, setLifecycleOrg] = useState<PlatformOrganization | null>(null);
   const [lifecycleAction, setLifecycleAction] = useState<OrganizationLifecycleAction>("suspend");
@@ -130,11 +142,54 @@ export function PlatformOrganizationsPage() {
     }
   }
 
+  const loadInvitations = useCallback(async (organizationId: string) => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      setInvitations(await listCentralAdminInvitations(organizationId, token));
+    } catch {
+      setInvitations([]);
+      toast.show("No pudimos cargar el estado de las invitaciones.", "danger");
+    }
+  }, [toast]);
+
   function openInvite(org: PlatformOrganization) {
     setInviteOrg(org);
     setEmail("");
-    setActivationToken(null);
     setEmailDelivery(null);
+    setInvitations(null);
+    void loadInvitations(org.id);
+  }
+
+  async function resendInvitation(invitation: CentralAdminInvitation) {
+    const token = getToken();
+    if (!token || !inviteOrg) return;
+    setInvitationBusy(invitation.id);
+    try {
+      const result = await resendCentralAdminInvitation(inviteOrg.id, invitation.id, token);
+      toast.show(result.emailDelivery.status === "sent" ? `Invitación reenviada a ${invitation.email}.` : DELIVERY_FAILED_TEXT, result.emailDelivery.status === "sent" ? "success" : "warning");
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      toast.show(code === "RESEND_LIMIT_REACHED" ? "Demasiados reenvíos en poco tiempo. Inténtalo de nuevo en una hora." : code === "INVITATION_NOT_RESENDABLE" ? "Esta invitación ya no puede reenviarse." : "No pudimos reenviar la invitación.", "danger");
+    } finally {
+      setInvitationBusy(null);
+      await loadInvitations(inviteOrg.id);
+    }
+  }
+
+  async function revokeInvitation(invitation: CentralAdminInvitation) {
+    const token = getToken();
+    if (!token || !inviteOrg) return;
+    setInvitationBusy(invitation.id);
+    try {
+      await revokeCentralAdminInvitation(inviteOrg.id, invitation.id, token);
+      toast.show("Invitación revocada. El enlace enviado ya no funciona.", "success");
+    } catch {
+      toast.show("No pudimos revocar la invitación.", "danger");
+    } finally {
+      setInvitationBusy(null);
+      await loadInvitations(inviteOrg.id);
+    }
   }
 
   async function invite() {
@@ -143,9 +198,9 @@ export function PlatformOrganizationsPage() {
     setInviting(true);
     try {
       const result = await inviteOrganizationAdmin(inviteOrg.id, email.trim(), token);
-      setActivationToken(result.activationToken);
       setEmailDelivery(result.emailDelivery);
       toast.show(result.emailDelivery.status === "sent" ? "Invitación enviada." : "Invitación creada; el correo no pudo enviarse.", result.emailDelivery.status === "sent" ? "success" : "warning");
+      await loadInvitations(inviteOrg.id);
     } catch {
       toast.show("No pudimos crear la invitación.", "danger");
     } finally {
@@ -304,7 +359,27 @@ export function PlatformOrganizationsPage() {
       </Modal>
 
       <Modal sheetOnMobile open={inviteOrg !== null} onClose={() => !inviting && setInviteOrg(null)} eyebrow="Invitar administrador" title={inviteOrg?.name ?? "Invitar administrador"} footer={emailDelivery ? <Button onClick={() => setInviteOrg(null)}>Cerrar</Button> : <><Button variant="secondary" disabled={inviting} onClick={() => setInviteOrg(null)}>Cancelar</Button><Button loading={inviting} onClick={() => void invite()}>Enviar invitación</Button></>}>
-        <div className="space-y-4">{emailDelivery?.status === "sent" ? <p><strong>Invitación enviada a {email}.</strong></p> : emailDelivery?.status === "failed" ? <><p>La invitación fue creada, pero el correo no pudo enviarse.</p><div className="break-all rounded border p-3 font-mono text-sm">{activationToken}</div></> : <Input label="Correo del administrador" type="email" value={email} onChange={(e) => setEmail(e.target.value)}/>}</div>
+        <div className="space-y-4">
+          {emailDelivery?.status === "sent" ? <p><strong>Invitación enviada a {email}.</strong></p> : emailDelivery?.status === "failed" ? <><p><strong>La invitación fue creada, pero el correo no pudo enviarse.</strong></p><p data-ui="invite-delivery-failed" className="text-[length:var(--text-small)] leading-5 text-[var(--color-text-secondary)]">{DELIVERY_FAILED_TEXT}</p></> : <Input label="Correo del administrador" type="email" value={email} onChange={(e) => setEmail(e.target.value)}/>}
+          <section data-ui="central-admin-invitations" className="rounded-[1.25rem] border border-[var(--color-border)] bg-white p-4">
+            <h3 className="mb-1 font-sans text-[length:0.9375rem] font-semibold">Invitaciones enviadas por ETNARA Central</h3>
+            {invitations === null ? <Skeleton className="h-12"/> : invitations.length === 0 ? <p className="text-[length:var(--text-small)] text-[var(--color-text-secondary)]">Aún no hay invitaciones.</p> : invitations.map((inv) => (
+              <div key={inv.id} className="flex flex-col gap-2 border-b border-[var(--color-border)] py-2 last:border-b-0 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                  <p className="truncate text-[length:var(--text-small)] font-medium">{inv.email}</p>
+                  <p className="text-[length:var(--text-caption)] text-[var(--color-text-secondary)]">{INVITATION_STATUS[inv.status]} · {inv.status === "accepted" && inv.acceptedAt ? `aceptada el ${shortDate(inv.acceptedAt)}` : inv.status === "revoked" && inv.revokedAt ? `revocada el ${shortDate(inv.revokedAt)}` : `vence el ${shortDate(inv.expiresAt)}`}</p>
+                </div>
+                {(inv.resendable || inv.revocable) && (
+                  <div className="flex shrink-0 gap-2">
+                    {inv.resendable && <Button variant="secondary" loading={invitationBusy === inv.id} disabled={invitationBusy !== null} onClick={() => void resendInvitation(inv)}>Reenviar</Button>}
+                    {inv.revocable && <Button variant="secondary" disabled={invitationBusy !== null} onClick={() => void revokeInvitation(inv)}>Revocar</Button>}
+                  </div>
+                )}
+              </div>
+            ))}
+            <p className="mt-2 flex items-start gap-2 text-[length:var(--text-caption)] leading-4 text-[var(--color-text-muted)]"><ShieldCheck size={14} className="mt-px shrink-0"/>El enlace de activación solo llega por correo a la persona invitada; ETNARA Central nunca lo ve. Reenviar genera un enlace nuevo y anula el anterior.</p>
+          </section>
+        </div>
       </Modal>
 
       <Modal sheetOnMobile open={lifecycleOrg !== null} onClose={() => !lifecycleSaving && setLifecycleOrg(null)} eyebrow={LIFECYCLE_LABEL[lifecycleAction]} title={lifecycleOrg?.name ?? "Actualizar estado"} footer={<><Button variant="secondary" disabled={lifecycleSaving} onClick={() => setLifecycleOrg(null)}>Cancelar</Button><Button loading={lifecycleSaving} disabled={lifecycleReason.trim().length < 5} onClick={() => void saveLifecycle()}>Confirmar</Button></>}>
