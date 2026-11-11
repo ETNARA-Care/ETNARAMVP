@@ -3,7 +3,7 @@ import type { DemoState } from "./types";
 /**
  * Semilla del escenario obligatorio de aceptación:
  * - Carmen Rivera: turno de hoy 8:00 AM – 4:00 PM, SIN CUBRIR.
- * - María Rivera: cuidadora disponible, sin turno asignado todavía.
+ * - María Rivera: cuidador disponible, sin turno asignado todavía.
  * - Ana Rivera: familiar de Carmen.
  * - Rafael (admin de agencia): sin entidad propia, es la identidad de Agencia.
  *
@@ -115,7 +115,7 @@ export const seedDemoState: DemoState = {
       id: "conv-ana-caregiver",
       kind: "caregiver",
       residentId: "res-carmen",
-      title: "Cuidadora de Carmen",
+      title: "Cuidador de Carmen",
       participantIds: ["fam-ana", "w-maria"],
     },
     {

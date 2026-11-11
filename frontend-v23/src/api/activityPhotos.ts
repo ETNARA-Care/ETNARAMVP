@@ -3,7 +3,7 @@ import { apiClient, type ApiError } from "./client";
 /**
  * Fotos de actividades (backend 115/116, detrás de ACTIVITY_PHOTOS).
  *
- * - La cuidadora solo sabe «¿puedo añadir una foto aquí?»: nunca nada del consentimiento.
+ * - El cuidador solo sabe «¿puedo añadir una foto aquí?»: nunca nada del consentimiento.
  * - Las imágenes llegan como Blob privado (token en la cabecera, sin caché) y se muestran
  *   con URL de objeto; ninguna URL del bucket ni clave de almacenamiento llega a la app.
  * - Nada se guarda en el teléfono: ni la foto ni su vista previa (las fotos sin conexión son E6).
@@ -23,7 +23,7 @@ export interface ActivityPhotoRef {
   sharedWithFamily?: boolean;
   /** Fin del plazo de conservación (provisional). */
   availableUntil?: string;
-  /** La cuidadora puede quitarla (solo durante su visita). */
+  /** El cuidador puede quitarla (solo durante su visita). */
   canRemove?: boolean;
   /** D1: la agencia la conserva (retención vigente u obligación legal): no se puede quitar. Nunca el motivo. */
   keptByAgency?: boolean;
@@ -31,7 +31,7 @@ export interface ActivityPhotoRef {
 
 const notFound = (error: unknown) => (error as ApiError)?.status === 404;
 
-/** Antes de registrar: ¿puede esta cuidadora añadir una foto en este turno? 404 = no. */
+/** Antes de registrar: ¿puede este cuidador añadir una foto en este turno? 404 = no. */
 export async function getShiftPhotoEligibility(organizationId: string, shiftId: string, token: string): Promise<boolean> {
   try {
     const result = await apiClient.get<{ canAttach: boolean }>(`/organizations/${organizationId}/shifts/${shiftId}/photo-eligibility`, token);
@@ -71,7 +71,7 @@ export async function getActivityPhoto(organizationId: string, careEventId: stri
   }
 }
 
-/** Quitar/eliminar una foto. La cuidadora solo durante su visita (sin motivo); la agencia con motivo. Es definitivo. */
+/** Quitar/eliminar una foto. El cuidador solo durante su visita (sin motivo); la agencia con motivo. Es definitivo. */
 export async function deleteActivityPhoto(organizationId: string, photoId: string, token: string, reason?: string): Promise<{ kind: string; purged: boolean }> {
   const result = await apiClient.post<{ photo: { kind: string; purged: boolean } }>(
     `/organizations/${organizationId}/activity-photos/${photoId}/delete`, reason?.trim() ? { reason: reason.trim() } : {}, token);

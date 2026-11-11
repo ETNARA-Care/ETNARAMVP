@@ -44,8 +44,8 @@ function lastMessageTime(value: string): string {
  * Mensajería real compartida por Familiar, Cuidador y Agencia.
  * `recipients` nombra cada conversación por su residente; `canStart` muestra
  * "Nuevo mensaje" para abrir (o crear) la conversación de un residente.
- * `directTitle` nombra las conversaciones directas agencia ↔ cuidadora: por la
- * cuidadora en la agencia y por la agencia en el portal de la cuidadora.
+ * `directTitle` nombra las conversaciones directas agencia ↔ cuidador: por la
+ * cuidador en la agencia y por la agencia en el portal del cuidador.
  */
 export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false, directTitle }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean; directTitle?: "caregiver" | "agency" }) {
   const { activeOrganization, user } = useAuth();
@@ -64,7 +64,7 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
   const isDirect = (conversation: Conversation) => conversation.thread_type === "caregiver_agency";
   const titleOf = (conversation: Conversation) => isDirect(conversation)
     ? directNames[conversation.id] ?? (directTitle === "agency" ? "Agencia" : "Mensaje directo")
-    // Nombre de la lista de residentes; si no está (p. ej. cuidadora dentro de las 24 h
+    // Nombre de la lista de residentes; si no está (p. ej. cuidador dentro de las 24 h
     // tras su visita), el nombre corto que da el backend; si no, el título genérico.
     : (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversation.care_recipient_name || conversationTitle;
 

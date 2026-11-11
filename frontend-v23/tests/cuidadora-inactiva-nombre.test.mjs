@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-// Decisión de Rafa (30-oct-2026): la agencia no cambia el nombre de una cuidadora con la membresía
+// Decisión de Rafa (30-oct-2026): la agencia no cambia el nombre de un cuidador con la membresía
 // inactiva. El backend responde 409 WORKER_MEMBERSHIP_INACTIVE; el portal no ofrece el cambio y,
 // si llega el error, lo explica en lugar de «No pudimos actualizar».
 test("the backend codes for an inactive rename map to an explicit message", () => {

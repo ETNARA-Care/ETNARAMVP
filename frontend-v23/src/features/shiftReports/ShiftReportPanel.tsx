@@ -10,7 +10,7 @@ import { STATUS_LABEL, reportShortDate, reportTime } from "./reportFormat";
 /** Agency view of a shift's report(s) (Informe de Turno F1+F2): read, refresh a draft, return to the caregiver, approve. */
 const FAMILY_LABEL: Record<FamilySectionKey, string> = {
   schedule: "Horarios del turno", meals: "Alimentación", hydration: "Hidratación", activities: "Actividades y acompañamiento",
-  mobility: "Movilidad", observations: "Observaciones de la cuidadora", hygiene: "Higiene", mood: "Ánimo",
+  mobility: "Movilidad", observations: "Observaciones del cuidador", hygiene: "Higiene", mood: "Ánimo",
   incidents: "Incidentes", photos: "Fotos aprobadas",
 };
 const FAMILY_ORDER: FamilySectionKey[] = ["schedule", "meals", "hydration", "activities", "mobility", "observations", "hygiene", "mood", "incidents", "photos"];
@@ -23,8 +23,8 @@ function errorText(error: unknown) {
   if (code === "SHIFT_REPORT_CHANGED") return "El borrador cambió mientras lo revisabas. Revísalo de nuevo antes de aprobar.";
   if (code === "SHIFT_REPORT_ALREADY_APPROVED") return "Este informe ya fue aprobado.";
   if (code === "SHIFT_REPORT_NOT_DRAFT") return "Solo se puede actualizar un borrador.";
-  if (code === "SHIFT_REPORT_WINDOW_CLOSED") return "Pasaron las 24 horas de la cuidadora: ya no se puede devolver. Puedes aprobarlo.";
-  if (code === "SHIFT_REPORT_NOT_SUBMITTED") return "Solo se puede devolver un informe enviado por la cuidadora.";
+  if (code === "SHIFT_REPORT_WINDOW_CLOSED") return "Pasaron las 24 horas del cuidador: ya no se puede devolver. Puedes aprobarlo.";
+  if (code === "SHIFT_REPORT_NOT_SUBMITTED") return "Solo se puede devolver un informe enviado por el cuidador.";
   if (code === "SHIFT_REPORT_SELF_APPROVAL") return "No puedes aprobar el informe de un turno que trabajaste tú. Otra persona autorizada debe aprobarlo.";
   if ((error as ApiError)?.status === 0) return "No hay conexión con el servidor.";
   return "No se pudo completar la acción. Intenta de nuevo.";
@@ -69,7 +69,7 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
   async function sendBack() {
     const token = getToken(); if (!token || !returning || !returnNote.trim()) return;
     setBusy(true);
-    try { await shiftReportsApi.returnToCaregiver(organizationId, returning.id, returnNote.trim(), token); show("Informe devuelto a la cuidadora.", "success"); setReturning(null); }
+    try { await shiftReportsApi.returnToCaregiver(organizationId, returning.id, returnNote.trim(), token); show("Informe devuelto al cuidador.", "success"); setReturning(null); }
     catch (e) { show(errorText(e), "danger"); }
     finally { setBusy(false); await load(); }
   }
@@ -82,7 +82,7 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
     return (
       <Card aria-label="Informe de turno" data-testid="shift-report-empty">
         <p className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><FileText size={20} aria-hidden /> Informe de turno</p>
-        <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">{data.openVisits > 0 ? "Se generará cuando la cuidadora finalice el turno." : "Aún no hay una visita finalizada en este turno."}</p>
+        <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">{data.openVisits > 0 ? "Se generará cuando el cuidador finalice el turno." : "Aún no hay una visita finalizada en este turno."}</p>
       </Card>
     );
   }
@@ -96,15 +96,15 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
               <p className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]"><FileText size={20} aria-hidden /> Informe de turno{report.version > 1 ? ` · versión ${report.version}` : ""}</p>
               <span className="flex flex-wrap gap-1">
                 <Badge tone={status.tone}>{status.text}</Badge>
-                {report.caregiverWindowExpired && (report.status === "DRAFT" || report.status === "RETURNED") && <Badge tone="neutral" data-testid="shift-report-expired">Plazo de la cuidadora vencido</Badge>}
+                {report.caregiverWindowExpired && (report.status === "DRAFT" || report.status === "RETURNED") && <Badge tone="neutral" data-testid="shift-report-expired">Plazo del cuidador vencido</Badge>}
               </span>
             </div>
-            {report.status === "SUBMITTED" && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">{report.submittedAt ? `La cuidadora lo revisó y lo envió: ${reportShortDate(report.submittedAt)}, ${reportTime(report.submittedAt)}` : "La cuidadora lo revisó y lo envió."}</p>}
-            {(report.status === "DRAFT" || report.status === "RETURNED") && !report.caregiverWindowExpired && report.reviewDeadlineAt && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">La cuidadora puede revisarlo hasta: <span className="whitespace-nowrap">{reportShortDate(report.reviewDeadlineAt)}, {reportTime(report.reviewDeadlineAt)}</span></p>}
+            {report.status === "SUBMITTED" && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">{report.submittedAt ? `El cuidador lo revisó y lo envió: ${reportShortDate(report.submittedAt)}, ${reportTime(report.submittedAt)}` : "El cuidador lo revisó y lo envió."}</p>}
+            {(report.status === "DRAFT" || report.status === "RETURNED") && !report.caregiverWindowExpired && report.reviewDeadlineAt && <p className="mb-3 text-[var(--text-small)] text-[var(--color-text-secondary)]">El cuidador puede revisarlo hasta: <span className="whitespace-nowrap">{reportShortDate(report.reviewDeadlineAt)}, {reportTime(report.reviewDeadlineAt)}</span></p>}
             <ShiftReportView content={report.content} />
             {report.caregiverNote && (
               <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--text-small)]" data-testid="shift-report-caregiver-note">
-                <p className="font-medium">Observación final de la cuidadora{report.caregiverNoteAt ? ` · ${reportTime(report.caregiverNoteAt)}` : ""}</p>
+                <p className="font-medium">Observación final del cuidador{report.caregiverNoteAt ? ` · ${reportTime(report.caregiverNoteAt)}` : ""}</p>
                 <p className="mt-1 whitespace-pre-line text-[var(--color-text-secondary)]">{report.caregiverNote}</p>
               </div>
             )}
@@ -127,7 +127,7 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {report.status !== "SUBMITTED" && <Button variant="secondary" icon={<RefreshCw size={18} />} disabled={busy} onClick={() => void refresh(report)}>Actualizar borrador</Button>}
                 {report.status === "SUBMITTED" && !report.caregiverWindowExpired && !report.ownVisit &&
-                  <Button variant="secondary" disabled={busy} data-testid="shift-report-return" onClick={() => { setReturnNote(""); setReturning(report); }}>Devolver a la cuidadora</Button>}
+                  <Button variant="secondary" disabled={busy} data-testid="shift-report-return" onClick={() => { setReturnNote(""); setReturning(report); }}>Devolver al cuidador</Button>}
                 {report.ownVisit
                   ? <p className="flex min-h-11 items-center text-[var(--text-small)] text-[var(--color-text-secondary)]" data-testid="shift-report-own-visit">Trabajaste este turno: otra persona autorizada debe aprobarlo.</p>
                   : <Button disabled={busy} data-testid="shift-report-approve" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Revisar y aprobar</Button>}
@@ -136,13 +136,13 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
           </Card>
         );
       })}
-      <Modal open={returning !== null} onClose={() => !busy && setReturning(null)} title="Devolver a la cuidadora" sheetOnMobile
+      <Modal open={returning !== null} onClose={() => !busy && setReturning(null)} title="Devolver al cuidador" sheetOnMobile
         footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setReturning(null)}>Volver</Button>
           <Button loading={busy} disabled={!returnNote.trim()} data-testid="shift-report-confirm-return" onClick={() => void sendBack()}>Devolver</Button>
         </div>}>
         <div className="flex flex-col gap-3 text-[var(--text-small)]">
-          <p className="text-[var(--color-text-secondary)]">La cuidadora verá tu nota y podrá corregir su observación final dentro de su plazo de 24 horas. Sus registros del turno no cambian.</p>
+          <p className="text-[var(--color-text-secondary)]">El cuidador verá tu nota y podrá corregir su observación final dentro de su plazo de 24 horas. Sus registros del turno no cambian.</p>
           <Textarea label="Qué debe revisar" rows={3} maxLength={1000} value={returnNote} onChange={(e) => setReturnNote(e.target.value)} data-testid="shift-report-return-note" />
         </div>
       </Modal>

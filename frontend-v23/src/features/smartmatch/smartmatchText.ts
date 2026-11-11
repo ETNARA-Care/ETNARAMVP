@@ -48,7 +48,7 @@ export function shiftLinkLabel(opp: { status: OpportunityStatus; shift_id?: stri
   if (!opp.shift_id) return { label: "Cubierta — pendiente de asignación", tone: "warning" };
   if (opp.shift_status === "cancelled") return { label: "Turno cancelado en Turnos", tone: "neutral" };
   if (opp.shift_assignment_status === "accepted") return { label: "Turno creado · aceptado", tone: "success" };
-  if (opp.shift_assignment_status === "rejected") return { label: "Turno creado · rechazado por la cuidadora", tone: "danger" };
+  if (opp.shift_assignment_status === "rejected") return { label: "Turno creado · rechazado por el cuidador", tone: "danger" };
   return { label: "Turno creado · esperando respuesta", tone: "accent" };
 }
 
@@ -106,9 +106,9 @@ export function smartMatchErrorMessage(error: unknown, fallback: string): string
     case "SERVICE_LOCATION_NOT_IN_RECIPIENT": return "La dirección no pertenece a esa persona.";
     case "OPPORTUNITY_NOT_FILLED": return "Primero aprueba una solicitud: la oportunidad todavía no está cubierta.";
     case "OPPORTUNITY_STARTED": return "El horario de esta oportunidad ya comenzó; crea el turno manualmente en Turnos.";
-    case "CAREGIVER_NOT_READY": return "La cuidadora ya no cumple los requisitos (credenciales, membresía o disponibilidad). Revisa Cumplimiento.";
+    case "CAREGIVER_NOT_READY": return "El cuidador ya no cumple los requisitos (credenciales, membresía o disponibilidad). Revisa Cumplimiento.";
     case "RECIPIENT_NOT_IN_AGENCY": return "Selecciona una persona atendida activa de tu agencia.";
-    case "SCHEDULE_CONFLICT": return "La cuidadora ya tiene otro turno en ese horario.";
+    case "SCHEDULE_CONFLICT": return "El cuidador ya tiene otro turno en ese horario.";
     default: return fallback;
   }
 }

@@ -49,7 +49,7 @@ export function ShiftJourneyHistory({ organizationId, shiftId }: { organizationI
             </li>
           ))}
         </ol>)}
-      <p className="mt-3 text-[var(--text-caption)] text-[var(--color-text-muted)]">Solo lo que declara la cuidadora y los registros del turno. No se guarda ningún recorrido.</p>
+      <p className="mt-3 text-[var(--text-caption)] text-[var(--color-text-muted)]">Solo lo que declara el cuidador y los registros del turno. No se guarda ningún recorrido.</p>
     </Card>
   );
 }
