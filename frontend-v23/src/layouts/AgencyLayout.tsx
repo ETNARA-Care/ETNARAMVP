@@ -1,16 +1,17 @@
-import { Outlet } from "react-router-dom";
+import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { useTranslation } from "react-i18next";
-import { Camera, HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark } from "lucide-react";
+import { Camera, HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
+import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
 import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -32,6 +33,8 @@ const CARE: NavKey[] = [
 const ADMINISTRATION: NavKey[] = [
  { to: "/agency/agents", icon: Bot, k: "agents" },
  { to: "/agency/settings", icon: Settings, k: "settings" },
+ // Módulo contractual (Etapa 2): solo administración y solo con el módulo encendido en el servidor.
+ { to: "/agency/contracts", icon: FileSignature, k: "contracts" },
 ];
 const GROUPS: Array<{ k: "operation" | "care" | "administration"; items: NavKey[] }> = [
  { k: "operation", items: OPERATION },
@@ -59,11 +62,17 @@ export function AgencyLayout() {
  // 145 (§5): con el módulo apagado, la administración conserva la entrada si hay retenciones legales que revisar.
  const photoMode = usePhotoMode();
  const photos = photoMode === "full" || photoMode === "legal-review";
+ const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"));
+ const location = useLocation();
  const groups: AdminNavGroup[] = GROUPS.map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
    (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch" && item.to !== "/agency/finance"))
    && (smartMatch || item.to !== "/agency/smartmatch")
    && (finance || item.to !== "/agency/finance")
-   && (photos || item.to !== "/agency/photos")).map(toNav) }));
+   && (photos || item.to !== "/agency/photos")
+   && (contracts.available || item.to !== "/agency/contracts")).map((item) => {
+     const nav = toNav(item);
+     return item.k === "contracts" && contracts.pending > 0 ? { ...nav, label: `${nav.label} (${contracts.pending})` } : nav;
+   }) }));
  const organizationName = activeOrganization?.name ?? t("agency.organizationFallback");
  // Acceso a Plataforma ETNARA: solo administradores de plataforma, separado del administrador de la organización.
  const platformLink = isPlatformAdmin || roles.includes("WORKER")
@@ -80,7 +89,12 @@ export function AgencyLayout() {
  <AdminTopbar organizationName={organizationName} canSwitchOrganization={organizations.length > 1}
  userLabel={user?.email ?? t("agency.adminFallback")} onLogout={logout} />
  <main className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
- <Outlet />
+ {contracts.status?.notice && !location.pathname.startsWith("/agency/contracts") && (
+   <Link to="/agency/contracts" data-testid="contracts-notice-banner" className="mb-4 block rounded-[var(--radius-sm)] border border-[var(--color-warning-700)]/40 bg-[var(--color-warning-100)] px-4 py-3 text-[var(--text-small)] font-medium text-[var(--color-warning-700)]">
+     {t("agency.contractsPendingNotice")}
+   </Link>
+ )}
+ {contractOnlyRedirect(contracts.status, location.pathname) ? <Navigate to="/agency/contracts" replace /> : <Outlet />}
  </main>
  </div>
  <AdminMobileNav tabs={MOBILE_TABS.map(toNav)} groups={groups} platformLink={platformLink} />

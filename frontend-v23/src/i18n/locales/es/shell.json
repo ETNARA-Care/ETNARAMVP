@@ -43,7 +43,8 @@
       "messages": "Mensajes",
       "agents": "Centro de agentes",
       "settings": "Configuración",
-      "photos": "Fotos de actividades"
+      "photos": "Fotos de actividades",
+      "contracts": "Contratos"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",
@@ -51,7 +52,8 @@
     "adminFallback": "Administrador",
     "workspace": "Espacio administrativo",
     "homeLink": "ETNARA Care, ir al resumen",
-    "activeOrganization": "Organización activa. Sus datos están separados de cualquier otra organización."
+    "activeOrganization": "Organización activa. Sus datos están separados de cualquier otra organización.",
+    "contractsPendingNotice": "Tu organización tiene contratos pendientes de aceptar. Revísalos en Contratos."
   },
   "caregiver": {
     "portalOf": "Portal del cuidador · {{name}}",
@@ -93,7 +95,9 @@
       "organizations": "Organizaciones",
       "organizationsShort": "Clientes",
       "tower": "ETNARA Tower",
-      "towerShort": "Tower"
+      "towerShort": "Tower",
+      "contracts": "Contratos",
+      "contractsShort": "Contratos"
     }
   }
 }
