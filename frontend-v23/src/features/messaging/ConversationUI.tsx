@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowLeft, PenSquare, Send } from "lucide-react";
+import { ArrowLeft, Building2, PenSquare, Send } from "lucide-react";
 import { Avatar, Badge, Button, Card, EmptyState, ErrorState, IconButton, Modal, Select, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -8,6 +8,7 @@ import {
   listCaregiverConversations,
   listConversations,
   listMessages,
+  openMyAgencyConversation,
   openRecipientConversation,
   sendMessage,
   type Conversation,
@@ -47,7 +48,32 @@ function lastMessageTime(value: string): string {
  * `directTitle` nombra las conversaciones directas agencia ↔ cuidador: por la
  * cuidador en la agencia y por la agencia en el portal del cuidador.
  */
-export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false, directTitle }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean; directTitle?: "caregiver" | "agency" }) {
+/**
+ * Quién puede leer cada conversación (D4, 5-nov-2026). Se muestra en la lista, en la cabecera y en
+ * el campo de escritura para que nadie escriba en una conversación creyendo que es otra.
+ */
+export function audienceOf(isDirectThread: boolean, directTitle: "caregiver" | "agency" | undefined, residentName: string | null): string {
+  if (isDirectThread) return directTitle === "agency"
+    ? "Solo tú y la administración de tu agencia"
+    : "Conversación interna: la cuidadora y la administración de la agencia";
+  return residentName ? `Familia de ${residentName} y equipo de la agencia` : "Familia y equipo de la agencia";
+}
+
+/** Texto del campo de escritura: a quién llega el mensaje. */
+export function composerHint(isDirectThread: boolean, directTitle: "caregiver" | "agency" | undefined, residentName: string | null): string {
+  // Corto para que quepa en el iPhone; la cabecera ya dice quién lee la conversación.
+  void residentName;
+  if (isDirectThread) return directTitle === "agency" ? "Mensaje para tu agencia" : "Mensaje interno para la cuidadora";
+  return "Mensaje para la familia y el equipo";
+}
+
+/** Residentes y familias primero; dentro de cada grupo, el mensaje más reciente primero. */
+export function conversationOrder<T extends { direct: boolean; last: string }>(a: T, b: T): number {
+  if (a.direct !== b.direct) return a.direct ? 1 : -1;
+  return b.last.localeCompare(a.last);
+}
+
+export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", recipients = [], canStart = false, directTitle, canWriteAgency = false }: { conversationTitle?: string; recipients?: MessagingRecipient[]; canStart?: boolean; directTitle?: "caregiver" | "agency"; /** 151: botón «Escribir a mi agencia» (portal de la cuidadora). */ canWriteAgency?: boolean }) {
   const { activeOrganization, user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, ConversationMessage[]>>({});
@@ -62,6 +88,29 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
   const [directNames, setDirectNames] = useState<Record<string, string>>({});
   const nameById = Object.fromEntries(recipients.map((recipient) => [recipient.id, recipient.name]));
   const isDirect = (conversation: Conversation) => conversation.thread_type === "caregiver_agency";
+  const residentNameOf = (conversation: Conversation) => (conversation.care_recipient_id && nameById[conversation.care_recipient_id]) || conversation.care_recipient_name || null;
+  const audience = (conversation: Conversation) => audienceOf(isDirect(conversation), directTitle, residentNameOf(conversation));
+  const [agencyError, setAgencyError] = useState<string | null>(null);
+  async function writeToAgency() {
+    const token = getToken();
+    const organizationId = activeOrganization?.id;
+    if (!token || !organizationId) return;
+    setOpening(true);
+    setAgencyError(null);
+    try {
+      const { conversationId } = await openMyAgencyConversation(organizationId, token);
+      setSearchParams({ thread: conversationId }, { replace: true });
+      await load();
+      setOpenId(conversationId);
+    } catch (requestError) {
+      const code = (requestError as ApiError)?.code;
+      setAgencyError(code === "AGENCY_HAS_NO_MESSAGE_HANDLER"
+        ? "Tu agencia todavía no tiene a nadie asignado para atender mensajes. Comunícate por otro medio."
+        : "No pudimos abrir la conversación con tu agencia. Intenta nuevamente.");
+    } finally {
+      setOpening(false);
+    }
+  }
   const titleOf = (conversation: Conversation) => isDirect(conversation)
     ? directNames[conversation.id] ?? (directTitle === "agency" ? "Agencia" : "Mensaje directo")
     // Nombre de la lista de residentes; si no está (p. ej. cuidador dentro de las 24 h
@@ -149,6 +198,13 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
     return <ErrorState kind={error} onRetry={() => void load()} />;
   }
 
+  const agencyButton = canWriteAgency && (
+    <div className="flex flex-col gap-1">
+      <Button variant="secondary" icon={<Building2 size={17} />} className="self-start" loading={opening} onClick={() => void writeToAgency()}>Escribir a mi agencia</Button>
+      <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">Solo tú y la administración de tu agencia. La familia no la ve.</p>
+      {agencyError && <p role="alert" className="text-[var(--text-small)] text-[var(--color-danger-700)]">{agencyError}</p>}
+    </div>
+  );
   const startButton = canStart && recipients.length > 0 && (
     <Button variant="secondary" icon={<PenSquare size={17} />} className="self-start" onClick={() => { setStartRecipient(recipients[0]?.id ?? ""); setStarting(true); }}>Nuevo mensaje</Button>
   );
@@ -164,13 +220,15 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
   );
 
   if (conversations.length === 0) {
-    return <div className="flex flex-col gap-3">{startButton}<EmptyState title="Sin conversaciones todavía" description="Las conversaciones autorizadas aparecerán aquí." />{startModal}</div>;
+    return <div className="flex flex-col gap-3">{agencyButton}{startButton}<EmptyState title="Sin conversaciones todavía" description="Las conversaciones autorizadas aparecerán aquí." />{startModal}</div>;
   }
 
   if (openId) {
     return (
       <ConversationThread
         title={titleOf(conversations.find((item) => item.id === openId) ?? { care_recipient_id: null } as Conversation)}
+        audience={audience(conversations.find((item) => item.id === openId) ?? { care_recipient_id: null } as Conversation)}
+        hint={(() => { const c = conversations.find((item) => item.id === openId) ?? { care_recipient_id: null } as Conversation; return composerHint(isDirect(c), directTitle, residentNameOf(c)); })()}
         messages={messagesByConversation[openId] ?? []}
         currentUserId={user.id}
         sending={sending}
@@ -187,13 +245,13 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
 
   return (
     <div className="flex flex-col gap-2">
+      {agencyButton}
       {startButton}
       {error && <ErrorState kind={error} onRetry={() => void load()} />}
-      {[...conversations].sort((a, b) => {
-        // La conversación con el mensaje más reciente primero.
-        const at = (id: string, fallback: string) => { const list = messagesByConversation[id] ?? []; return list[list.length - 1]?.created_at ?? fallback; };
-        return at(b.id, b.created_at).localeCompare(at(a.id, a.created_at));
-      }).map((conversation) => {
+      {[...conversations].map((conversation) => {
+        const list = messagesByConversation[conversation.id] ?? [];
+        return { conversation, direct: isDirect(conversation), last: list[list.length - 1]?.created_at ?? conversation.created_at };
+      }).sort(conversationOrder).map(({ conversation }) => {
         const messages = messagesByConversation[conversation.id] ?? [];
         const last = messages[messages.length - 1];
         const unread = !!last && last.sender_user_id !== user.id;
@@ -207,6 +265,7 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
                   <p className="min-w-0 flex-1 font-medium text-[var(--color-text-primary)] truncate">{title}</p>
                   {last && <span className="shrink-0 text-[var(--text-caption)] text-[var(--color-text-muted)]">{lastMessageTime(last.created_at)}</span>}
                 </div>
+                <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{audience(conversation)}</p>
                 <div className="flex items-center gap-2">
                   <p className="min-w-0 flex-1 text-[var(--text-small)] text-[var(--color-text-secondary)] truncate">
                     {last ? last.body : "Sin mensajes todavía"}
@@ -225,9 +284,13 @@ export function RealMessagingPanel({ conversationTitle = "Equipo de cuidado", re
 }
 
 function ConversationThread({
-  title, messages, currentUserId, sending, error, onSend, onBack,
+  title, audience, hint, messages, currentUserId, sending, error, onSend, onBack,
 }: {
   title: string;
+  /** Quién puede leer esta conversación. */
+  audience: string;
+  /** A quién llega lo que se escribe. */
+  hint: string;
   messages: ConversationMessage[];
   currentUserId: string;
   sending: boolean;
@@ -252,7 +315,10 @@ function ConversationThread({
     <div className="flex flex-col h-[calc(100dvh-250px)] min-h-[420px] rounded-[22px] border border-[#102b57]/10 bg-white p-4 shadow-[0_8px_28px_rgba(16,43,87,.05)]">
       <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-border)]">
         <IconButton icon={<ArrowLeft size={18} />} label="Volver" onClick={onBack} />
-        <p className="font-display text-[var(--text-h3)]">{title}</p>
+        <div className="min-w-0">
+          <p className="font-display text-[var(--text-h3)]">{title}</p>
+          <p className="text-[var(--text-caption)] text-[var(--color-text-secondary)]">{audience}</p>
+        </div>
       </div>
       {error && <ErrorState kind={error} />}
       <div className="flex-1 overflow-y-auto py-3 flex flex-col gap-2">
@@ -279,7 +345,7 @@ function ConversationThread({
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Escribe un mensaje..."
+          placeholder={hint}
           aria-label="Escribe un mensaje"
           disabled={sending}
           className="flex-1 h-11 rounded-[var(--radius-pill)] border border-[var(--color-border)] px-4 text-[var(--text-body)] disabled:opacity-60"
