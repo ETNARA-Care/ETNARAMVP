@@ -22,6 +22,31 @@ export interface AgencyContractVersion {
   version_label: string; status: "published" | "retired"; is_test: boolean; requires_new_acceptance: boolean;
   content_sha256: string; published_at: string; retired_at: string | null; body: string;
   organization_name: string; authorityDeclaration: string; acceptanceStatementTemplate: string;
+  /** 153: texto de la primera casilla (lo fija el servidor). */
+  acceptanceCheckboxText?: string;
+  /** 153: ¿esta persona puede firmar? (representante designada por la agencia ante ETNARA). */
+  signer?: { allowed: boolean; blockedReason?: "TEST_DOCUMENT" | "NOT_DESIGNATED" | null; designationRequired: boolean; designation: { fullName: string; title: string } | null; legallyApproved: boolean };
+  commercial_status?: "not_applicable" | "proposal" | "commercially_approved";
+  legal_status?: "pending_legal_approval" | "legally_approved";
+  /** 153: condiciones comerciales de una Orden de Suscripción (solo informativas; ningún cobro automático). */
+  commercial_terms?: SubscriptionOrderTerms | null;
+}
+
+/** Condiciones individuales de la Orden (153). Siempre propuesta; el servidor fija las salvaguardas. */
+export interface SubscriptionOrderTerms {
+  status?: "proposal"; planName?: string; features?: string[]; limits?: string | null;
+  pricing?: { currency: "USD"; proposedMonthlyPriceUsd: number | null; isProposal: true };
+  promotions?: Array<{ description: string; durationDays: number | null }>;
+  addOns?: Array<{ name: string; proposedMonthlyPriceUsd: number | null }>;
+  conditions?: string[];
+  foundingProgram?: { enrolled: true; programStatus: string; proposedBenefits: string[] } | null;
+  chargesRequireExpressAcceptance?: boolean; automaticCharges?: boolean; automaticRenewal?: boolean; billingActivated?: boolean;
+}
+
+/** 153: estado contractual de la agencia. Con las reglas apagadas en el servidor es solo informativo. */
+export interface ContractStatus {
+  serverEnforcementEnabled: boolean; mode: "off" | "notice" | "restrict_new_operations" | "contract_only";
+  enforceFrom: string | null; satisfied: boolean; pendingRequired: number; notice: boolean; restricted: boolean;
 }
 
 export interface AgencyContractAcceptance {
@@ -51,6 +76,7 @@ export const contractsApi = {
     apiClient.post<{ acceptance: AgencyContractAcceptance & { verified_email: string } }>(`${base(o)}/versions/${v}/accept`, input, t),
   documentFile: (o: string, v: string, t: string, format: "pdf" | "txt") => apiClient.getBinary(`${base(o)}/versions/${v}/document.${format}`, t),
   certificate: (o: string, a: string, t: string) => apiClient.getBinary(`${base(o)}/acceptances/${a}/certificate.pdf`, t),
+  status: (o: string, t: string) => apiClient.get<{ status: ContractStatus }>(`${base(o)}/status`, t),
   centralOverview: (t: string) => apiClient.get<CentralContractsOverview>(`/platform/contracts/overview`, t),
 };
 
@@ -75,6 +101,12 @@ export function contractErrorMessage(code?: string, status?: number): string {
     case "CONTRACT_CODE_DELIVERY_FAILED": return "No pudimos enviar el código a tu correo. Inténtalo más tarde o escribe a soporte.";
     case "CONTRACT_CONTENT_MISMATCH": return "El documento cambió mientras lo leías. Vuelve a abrirlo antes de firmar.";
     case "CONTRACT_VERSION_NOT_ACCEPTABLE": return "Esta versión ya no está vigente. Abre la versión actual.";
+    case "CONTRACT_SIGNATORY_NOT_DESIGNATED": return "Tu cuenta no figura como representante designada de la organización ante ETNARA. Pide a ETNARA que registre a la persona con autoridad para firmar.";
+    case "CONTRACT_ACCEPTANCE_REQUIRED": return "Tu organización tiene contratos pendientes de aceptar. Complétalos en Contratos para continuar con esta acción.";
+    case "CONTRACT_LEGAL_APPROVAL_REQUIRED": return "Este documento todavía no está aprobado para firma.";
+    case "CONTRACT_TEST_DOCUMENT_NOT_SIGNABLE": return "Este es un documento de prueba: se puede leer, pero no firmar.";
+    case "CONTRACT_COMMERCIAL_APPROVAL_REQUIRED": return "Esta Orden todavía no está aprobada para firma.";
+    case "CONTRACT_PLACEHOLDER_TEXT_NOT_ALLOWED": case "CONTRACT_DRAFT_MARKED_NOT_SIGNABLE": return "Este documento es un borrador y no se puede firmar.";
     case "CONTRACT_ALREADY_ACCEPTED": return "Tu organización ya aceptó esta versión.";
     case "CONTRACT_FORBIDDEN": case "ORGANIZATION_ACCESS_DENIED": return "Solo una administradora o administrador activo de la organización puede firmar.";
     case "INVALID_PAYLOAD": return "Revisa los datos: nombre y apellido, cargo y las dos casillas.";

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronRight, Download, FileSignature, History } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
-import { contractsApi, saveBlob, type AgencyContract, type AgencyContractAcceptance } from "@/api/contracts";
+import { contractsApi, saveBlob, type AgencyContract, type AgencyContractAcceptance, type ContractStatus } from "@/api/contracts";
 import type { ApiError } from "@/api/client";
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, SectionHeader, Skeleton } from "@/components/ui";
 import { acceptanceLabel, contractDate, contractDateTime } from "@/features/contracts/contractFormat";
@@ -20,6 +20,7 @@ export function AgencyContractsPage() {
   const [contracts, setContracts] = useState<AgencyContract[] | null | "error" | "forbidden" | "unavailable">(null);
   const [history, setHistory] = useState<AgencyContractAcceptance[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [status, setStatus] = useState<ContractStatus | null>(null);
   const load = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !token) return;
@@ -27,6 +28,8 @@ export function AgencyContractsPage() {
     try {
       const [c, h] = await Promise.all([contractsApi.list(organizationId, token), contractsApi.acceptances(organizationId, token)]);
       setContracts(c.contracts); setHistory(h.acceptances);
+      // Estado contractual (153); si el servidor aún no lo ofrece, la pantalla funciona igual.
+      contractsApi.status(organizationId, token).then((r) => setStatus(r.status)).catch(() => setStatus(null));
     } catch (e) {
       const s = (e as ApiError).status;
       setContracts(s === 403 ? "forbidden" : s === 404 ? "unavailable" : "error");
@@ -58,6 +61,16 @@ export function AgencyContractsPage() {
         : contracts.length === 0 ? <EmptyState icon={<FileSignature size={28} />} title="No hay documentos vigentes" description="Cuando ETNARA publique un documento para tu organización aparecerá aquí." />
         : (
           <div className="flex flex-col gap-3" data-testid="contracts-list">
+            {status && !status.satisfied && status.pendingRequired > 0 && (
+              <Card data-testid="contracts-status-pending" className={status.restricted ? "border-[var(--color-danger-700)]/40 bg-[var(--color-danger-100)]" : "border-[var(--color-warning-700)]/40 bg-[var(--color-warning-100)]"}>
+                <p className="text-[var(--text-small)] font-medium">
+                  {status.restricted
+                    ? (status.mode === "contract_only" ? "Para empezar a usar ETNARA Care, acepta los contratos pendientes." : "Mientras haya contratos pendientes no se puede abrir operación nueva (turnos, residentes, personal). Lo que ya está en curso sigue funcionando.")
+                    : `Tu organización tiene ${status.pendingRequired} ${status.pendingRequired === 1 ? "documento obligatorio pendiente" : "documentos obligatorios pendientes"} de aceptar.`}
+                  {status.notice && status.enforceFrom && !status.restricted ? ` Fecha límite: ${contractDate(status.enforceFrom)}.` : ""}
+                </p>
+              </Card>
+            )}
             {contracts.some((c) => c.isNewVersion && c.acceptance === "pending") && (
               <Card data-testid="contracts-new-version-notice" className="border-[var(--color-warning-700)]/40 bg-[var(--color-warning-100)]">
                 <p className="text-[var(--text-small)] font-medium text-[var(--color-warning-700)]">Hay una versión nueva de un documento que tu organización ya había aceptado. Revísala y acéptala; tus aceptaciones anteriores se conservan en el historial.</p>
