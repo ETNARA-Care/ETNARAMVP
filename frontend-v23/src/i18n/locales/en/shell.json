@@ -43,7 +43,8 @@
       "messages": "Messages",
       "agents": "Agent center",
       "settings": "Settings",
-      "photos": "Activity photos"
+      "photos": "Activity photos",
+      "contracts": "Contracts"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",
@@ -93,7 +94,9 @@
       "organizations": "Organizations",
       "organizationsShort": "Clients",
       "tower": "ETNARA Tower",
-      "towerShort": "Tower"
+      "towerShort": "Tower",
+      "contracts": "Contracts",
+      "contractsShort": "Contracts"
     }
   }
 }
