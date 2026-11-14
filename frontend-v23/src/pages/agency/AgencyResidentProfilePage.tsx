@@ -342,11 +342,11 @@ export function AgencyResidentProfilePage() {
       )}
 
       <Card>
-        <div className="flex items-center gap-2 mb-4"><CalendarRange size={21} /><h2 className="font-medium text-[var(--color-text-primary)]">Turno y cuidadora</h2></div>
+        <div className="flex items-center gap-2 mb-4"><CalendarRange size={21} /><h2 className="font-medium text-[var(--color-text-primary)]">Turno y cuidador</h2></div>
         {!activeShift ? <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">No hay turnos registrados.</p> : (
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-medium text-[var(--color-text-primary)]">{activeShift.caregiver?.display_name || activeShift.caregiver?.internal_role || "Sin cuidadora asignada"}</p>
+              <p className="font-medium text-[var(--color-text-primary)]">{activeShift.caregiver?.display_name || activeShift.caregiver?.internal_role || "Sin cuidador asignado"}</p>
               <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mt-1">
                 {new Date(activeShift.scheduled_start).toLocaleString("es-PR", { dateStyle: "medium", timeStyle: "short" })} – {new Date(activeShift.scheduled_end).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" })}
               </p>

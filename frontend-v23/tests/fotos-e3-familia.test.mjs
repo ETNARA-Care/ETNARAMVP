@@ -10,7 +10,7 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const code = (p) => read(p).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 const es = JSON.parse(read("src/i18n/locales/es/photos.json"));
 const en = JSON.parse(read("src/i18n/locales/en/photos.json"));
-const item = (id, photo, extra = {}) => ({ id, type: "MEAL", occurredAt: "2026-10-31T16:00:00Z", title: "Comida", summary: "Almuerzo", caregiver: { displayName: "Cuidadora", role: null }, ...(photo ? { photo } : {}), ...extra });
+const item = (id, photo, extra = {}) => ({ id, type: "MEAL", occurredAt: "2026-10-31T16:00:00Z", title: "Comida", summary: "Almuerzo", caregiver: { displayName: "Cuidador", role: null }, ...(photo ? { photo } : {}), ...extra });
 
 test("E3.1 solo se muestran las fotos cuya referencia envió el backend en esta respuesta", () => {
   const photos = familyPhotos([

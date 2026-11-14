@@ -3,7 +3,7 @@ import type { ShiftStatus } from "@/api/shifts";
 /**
  * Una sola regla de cobertura para todo el portal de agencia, igual a la del
  * Centro operacional (backend operations.service):
- *  - cubierto = la cuidadora ACEPTÓ (o ya registró llegada / terminó)
+ *  - cubierto = el cuidador ACEPTÓ (o ya registró llegada / terminó)
  *  - asignado pero sin respuesta = esperando respuesta (no está cubierto)
  *  - aceptado, pasaron 15 min del inicio y no hay llegada = sin llegada
  */
@@ -55,10 +55,10 @@ export function summarizeCoverage(shifts: CoverageInput[], now: number = Date.no
   };
 }
 
-/** "1 esperando respuesta · 1 sin cuidadora · 1 sin llegada", o null si todo está bien. */
+/** "1 esperando respuesta · 1 sin cuidador · 1 sin llegada", o null si todo está bien. */
 export function coverageProblems(summary: CoverageSummary): string | null {
   const parts = [
-    summary.open ? `${summary.open} sin cuidadora` : "",
+    summary.open ? `${summary.open} sin cuidador` : "",
     summary.awaiting ? `${summary.awaiting} esperando respuesta` : "",
     summary.late ? `${summary.late} sin llegada` : "",
   ].filter(Boolean);
@@ -72,7 +72,7 @@ export const coverageLabel: Record<CoverageState, string> = {
   late: "Sin llegada",
   covered: "Confirmado",
   awaiting: "Esperando respuesta",
-  open: "Sin cuidadora",
+  open: "Sin cuidador",
 };
 
 export const coverageTone: Record<CoverageState, "neutral" | "accent" | "success" | "warning" | "danger"> = {

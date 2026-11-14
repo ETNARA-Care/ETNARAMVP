@@ -28,7 +28,7 @@ const ADMIN_ROLES = ["PLATFORM_SUPERADMIN", "ORGANIZATION_ADMIN", "SUPERVISOR"];
 /**
  * Portales que la persona puede abrir. Una supervisora que también trabaja
  * turnos (decisión de Rafa, fase 12.3) entra a la agencia por defecto y puede
- * cambiar a "Mi día" de cuidadora: ambos portales son suyos.
+ * cambiar a "Mi día" de cuidador: ambos portales son suyos.
  */
 export function allowedExperiences(roles: string[], isPlatformAdmin = false): ExperienceRoute[] {
   const allowed: ExperienceRoute[] = [];

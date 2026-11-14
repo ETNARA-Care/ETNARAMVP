@@ -39,10 +39,10 @@ function shiftStatus(shift?: FamilyShiftSummary) {
 }
 function headline(label: string) {
   if (label === "En curso" || label === "Servicio iniciado") return "El cuidado está en curso";
-  if (label === "En camino") return "La cuidadora va en camino";
-  if (label === "Llegada registrada") return "La cuidadora llegó";
+  if (label === "En camino") return "El cuidador va en camino";
+  if (label === "Llegada registrada") return "El cuidador llegó";
   if (label === "Servicio finalizado") return "El servicio de hoy terminó";
-  if (label === "Cuidadora asignada") return "Cuidadora confirmada";
+  if (label === "Cuidador asignado") return "Cuidador confirmado";
   if (label === "Sin turno hoy") return "Hoy no hay turno";
   if (label === "Por confirmar") return "Turno por confirmar";
   return label;

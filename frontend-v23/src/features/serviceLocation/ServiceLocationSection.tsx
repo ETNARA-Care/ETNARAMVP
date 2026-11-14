@@ -131,12 +131,12 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
       if (form.id) {
         await updateServiceLocation(organizationId, recipientId, form.id, input, token);
         if (confirmPin) await confirmLocationGps(organizationId, recipientId, form.id, form.point!, token);
-        show(confirmPin ? "Ubicación confirmada. La cuidadora navegará hasta el PIN." : "Dirección actualizada. Vuelve a verificarla.", "success");
+        show(confirmPin ? "Ubicación confirmada. El cuidador navegará hasta el PIN." : "Dirección actualizada. Vuelve a verificarla.", "success");
       } else {
         const r = await createServiceLocation(organizationId, recipientId, { ...input, makePrimary: form.makePrimary }, token);
         if (confirmPin) {
           await confirmLocationGps(organizationId, recipientId, r.location.id, form.point!, token);
-          show("Ubicación registrada y confirmada. La cuidadora navegará hasta el PIN.", "success");
+          show("Ubicación registrada y confirmada. El cuidador navegará hasta el PIN.", "success");
         } else {
           show("Dirección registrada. Ahora ubica el punto exacto en el mapa.", "success");
           setGpsFor(r.location);
@@ -201,7 +201,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
           <div>
             <h2 className="font-medium text-[var(--color-text-primary)]">Ubicación del servicio</h2>
             <p className="mt-0.5 flex items-center gap-1 text-[var(--text-caption)] text-[var(--color-text-muted)]"><ShieldCheck size={13} aria-hidden />
-              Solo tu agencia. La cuidadora la ve durante su turno asignado; la familia, solo si la autorizas.</p>
+              Solo tu agencia. El cuidador la ve durante su turno asignado; la familia, solo si la autorizas.</p>
           </div>
         </div>
         <div className="flex w-full gap-2 sm:w-auto">
@@ -235,7 +235,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
       ))}
 
       {data && active.length === 0 && (
-        <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Sin dirección registrada. Añádela para que la cuidadora pueda abrir el mapa desde su turno.</p>
+        <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Sin dirección registrada. Añádela para que el cuidador pueda abrir el mapa desde su turno.</p>
       )}
       <ul className="space-y-3">
         {active.map((l) => (
@@ -334,7 +334,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
         footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" onClick={() => setMoveOffer(null)}>Mantener como están</Button>
           <Button loading={busy} onClick={() => moveOffer && void act(async (t) => { await reassignShifts(organizationId, recipientId, moveOffer.shiftIds, moveOffer.toLocationId, t); setMoveOffer(null); },
-            "Turnos actualizados. Avisamos a las cuidadoras asignadas.", "No se pudieron actualizar los turnos.")}>Actualizar {moveOffer?.shiftIds.length} turno(s)</Button>
+            "Turnos actualizados. Avisamos a los cuidadores asignados.", "No se pudieron actualizar los turnos.")}>Actualizar {moveOffer?.shiftIds.length} turno(s)</Button>
         </div>}>
         <p className="text-[var(--text-small)]">Estos turnos siguen con su dirección anterior. Actualízalos solo si el servicio será en la dirección nueva. El cambio queda registrado.</p>
         <ul className="mt-2 space-y-1 text-[var(--text-small)]">
@@ -356,7 +356,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
                 setGpsAfterApprove({ latitude: resolving.request.proposed_latitude, longitude: resolving.request.proposed_longitude });
               setResolving(null); },
               resolving.decision === "APPROVE"
-                ? (approvalShifts > 0 ? "Corrección aplicada. Avisamos al familiar y a la cuidadora de los turnos próximos." : "Corrección aplicada a la dirección principal. Avisamos al familiar.")
+                ? (approvalShifts > 0 ? "Corrección aplicada. Avisamos al familiar y al cuidador de los turnos próximos." : "Corrección aplicada a la dirección principal. Avisamos al familiar.")
                 : "Solicitud rechazada. Avisamos al familiar.",
               "No se pudo registrar la decisión.")}>Confirmar</Button>
         </div>}>
@@ -371,7 +371,7 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
           </div>}
           <p>Se aplicará a la dirección principal. Tendrás que verificarla de nuevo y, si cambia la calle, el municipio o el PIN, confirmar otra vez el punto GPS.</p>
           {approvalShifts > 0 && <div role="status" className="rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] p-3 text-[var(--color-warning-700)]">
-            <p>{approvalShifts} turno(s) próximo(s) usan esta dirección. Los turnos no se modifican, pero la cuidadora asignada verá la dirección corregida y recibirá un aviso (sin la dirección).</p>
+            <p>{approvalShifts} turno(s) próximo(s) usan esta dirección. Los turnos no se modifican, pero el cuidador asignado verá la dirección corregida y recibirá un aviso (sin la dirección).</p>
             <div className="mt-2"><Checkbox label={`Autorizo que ${approvalShifts === 1 ? "ese turno use" : "esos turnos usen"} la dirección corregida`} checked={shiftsAck} onChange={(e) => setShiftsAck(e.target.checked)} /></div>
           </div>}
         </div> : <p className="text-[var(--text-small)]">La dirección oficial no cambia.</p>}
@@ -389,9 +389,9 @@ export function ServiceLocationSection({ organizationId, recipientId }: { organi
           ))}
         </ol>
         {(history?.access ?? []).length > 0 && <>
-          <p className="mt-4 text-[var(--text-small)] font-medium">Accesos de cuidadoras</p>
+          <p className="mt-4 text-[var(--text-small)] font-medium">Accesos de cuidadores</p>
           <ul className="mt-1 space-y-1 text-[var(--text-caption)] text-[var(--color-text-secondary)]">
-            {history!.access.map((a, i) => <li key={i}>{a.display_name ?? "Cuidadora"} abrió «{labelOf(a.location_id)}» · {when(a.first_access_at)}</li>)}
+            {history!.access.map((a, i) => <li key={i}>{a.display_name ?? "Cuidador"} abrió «{labelOf(a.location_id)}» · {when(a.first_access_at)}</li>)}
           </ul>
         </>}
       </Modal>

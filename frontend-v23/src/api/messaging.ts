@@ -54,7 +54,7 @@ export async function sendMessage(
 
 /**
  * Personas sobre las que quien llama puede iniciar (o reabrir) una conversación.
- * Para una cuidadora: solo dentro de su ventana (asignación aceptada, hasta 24 h
+ * Para un cuidador: solo dentro de su ventana (asignación aceptada, hasta 24 h
  * después de terminar). El backend aplica la misma regla al abrir y al escribir.
  */
 export async function listStartableRecipients(organizationId: string, token: string): Promise<{ id: string }[]> {
@@ -78,7 +78,7 @@ export async function openRecipientConversation(organizationId: string, recipien
   return result.conversation;
 }
 
-/** Conversación directa agencia ↔ cuidadora (sin residente). Backend #238 / migración 136. */
+/** Conversación directa agencia ↔ cuidador (sin residente). Backend #238 / migración 136. */
 export interface CaregiverConversation {
   conversationId: string;
   organizationWorkerMembershipId: string;
@@ -87,7 +87,7 @@ export interface CaregiverConversation {
 }
 
 /**
- * Abre (o devuelve) la conversación directa con una cuidadora. Solo la
+ * Abre (o devuelve) la conversación directa con un cuidador. Solo la
  * administradora de la agencia; el backend nunca duplica la conversación.
  */
 export function openCaregiverConversation(
@@ -105,4 +105,12 @@ export async function listCaregiverConversations(organizationId: string, token: 
     token,
   );
   return result.conversations;
+}
+
+/**
+ * 151 — «Escribir a mi agencia»: la cuidadora abre (o recupera) su conversación directa con su
+ * agencia. Siempre la misma; la leen solo ella y quien atiende en la agencia.
+ */
+export function openMyAgencyConversation(organizationId: string, token: string): Promise<{ conversationId: string; created: boolean }> {
+  return apiClient.post(`/organizations/${organizationId}/my-agency-conversation`, undefined, token);
 }

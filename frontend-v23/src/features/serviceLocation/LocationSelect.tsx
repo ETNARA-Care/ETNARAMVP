@@ -11,13 +11,13 @@ export function LocationSelect({ options, value, onChange, requireChoice }: {
 }) {
   if (options === null) return null;
   if (options.length === 0) {
-    return <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">Esta persona no tiene dirección registrada. Añádela en su expediente para que la cuidadora pueda llegar.</p>;
+    return <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">Esta persona no tiene dirección registrada. Añádela en su expediente para que el cuidador pueda llegar.</p>;
   }
   const selected = options.find((o) => o.id === value);
   return (
     <div className="flex flex-col gap-1.5">
       <Select label="Dirección del servicio" value={value} onChange={(e) => onChange(e.target.value)} required
-        hint={requireChoice ? "Confirma dónde será el servicio. Solo la verá la cuidadora asignada." : "La cuidadora asignada la verá en «Cómo llegar»."}>
+        hint={requireChoice ? "Confirma dónde será el servicio. Solo la verá el cuidador asignado." : "El cuidador asignado la verá en «Cómo llegar»."}>
         {(requireChoice || !value) && <option value="">Selecciona la dirección</option>}
         {options.map((o) => (
           <option key={o.id} value={o.id}>{o.label}{o.isPrimary ? " (principal)" : ""} · {o.gpsConfirmed ? "GPS confirmado" : "sin GPS confirmado"} — {o.summary}</option>

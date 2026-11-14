@@ -14,5 +14,5 @@ test("caregiver header and profile use the authenticated worker identity", () =>
   assert.match(profile, /workerProfile\?\.displayName/);
   assert.match(profile, /workerProfile\?\.internalRole/);
   assert.doesNotMatch(layout, /María Rivera/);
-  assert.doesNotMatch(profile, /María Rivera|Cuidadora certificada/);
+  assert.doesNotMatch(profile, /María Rivera|Cuidador certificado/);
 });

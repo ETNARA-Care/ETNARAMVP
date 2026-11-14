@@ -40,7 +40,7 @@ test("review: records are read-only, one final observation, «Enviar a revisión
 
 test("expired window: no deletion, the report stays for the agency", () => {
   assert.match(review, /Pasaron las 24 horas\. La agencia revisará este informe\./);
-  assert.match(panel, /Plazo de la cuidadora vencido/);
+  assert.match(panel, /Plazo del cuidador vencido/);
   assert.doesNotMatch(review + panel, /\.delete\(|eliminar/i);
 });
 
@@ -50,7 +50,7 @@ test("agency: sees the caregiver's note, can return while the window is open, ap
   assert.match(panel, /disabled=\{!returnNote\.trim\(\)\}/); // a return always says why
   assert.match(panel, /\{report\.status !== "SUBMITTED" && <Button variant="secondary" icon=\{<RefreshCw/); // never refresh what she sent
   assert.match(agencyList, /\{ key: "PENDING", label: "Por aprobar" \}/);
-  assert.match(agencyList, /Enviado por la cuidadora/);
+  assert.match(agencyList, /Enviado por el cuidador/);
 });
 
 test("in-portal notifications open her report", () => {

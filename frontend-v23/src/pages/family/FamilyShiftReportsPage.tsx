@@ -52,7 +52,7 @@ export function FamilyShiftReportsPage() {
                   <Card className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-[var(--color-text-primary)] first-letter:uppercase">{reportShortDate(`${r.serviceDate}T16:00:00Z`)}</p>
-                      <p className="text-sm text-[var(--color-text-secondary)]">{r.scheduledStart && r.scheduledEnd && <span className="whitespace-nowrap">{reportTime(r.scheduledStart)} – {reportTime(r.scheduledEnd)} · </span>}{r.caregiverName ?? "Cuidadora"}</p>
+                      <p className="text-sm text-[var(--color-text-secondary)]">{r.scheduledStart && r.scheduledEnd && <span className="whitespace-nowrap">{reportTime(r.scheduledStart)} – {reportTime(r.scheduledEnd)} · </span>}{r.caregiverName ?? "Cuidador"}</p>
                     </div>
                     <ChevronRight size={18} aria-hidden className="shrink-0 text-[var(--color-text-muted)]" />
                   </Card>

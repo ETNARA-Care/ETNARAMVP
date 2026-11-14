@@ -12,7 +12,7 @@ const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   FACTURACION: { title: "Facturación Premium", detail: "Facturas de la agencia a sus clientes. Requiere Finanzas. ETNARA central solo enciende, apaga y designa al gestor de permisos: no ve facturas, tarifas ni importes." },
   SHIFT_REPORTS: { title: "Informe de turno", detail: "Informe de cada visita con sus registros reales, revisado y aprobado por la agencia. ETNARA central solo enciende o apaga: no ve el contenido de los informes." },
   PUSH_NOTIFICATIONS: { title: "Notificaciones en el teléfono", detail: "Avisos push de la agencia a las personas que los activen en su teléfono (texto general, sin nombres ni datos de salud). ETNARA central solo enciende o apaga: no ve los avisos ni los teléfonos." },
-  ACTIVITY_PHOTOS: { title: "Fotos de actividades", detail: "Fotos de las cuidadoras, revisadas por la agencia antes de que las vea la familia, con consentimiento. ETNARA central solo enciende o apaga: no ve las fotos ni los consentimientos." },
+  ACTIVITY_PHOTOS: { title: "Fotos de actividades", detail: "Fotos de los cuidadores, revisadas por la agencia antes de que las vea la familia, con consentimiento. ETNARA central solo enciende o apaga: no ve las fotos ni los consentimientos." },
 };
 const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS", "FACTURACION", "SHIFT_REPORTS", "PUSH_NOTIFICATIONS", "ACTIVITY_PHOTOS"];
 
