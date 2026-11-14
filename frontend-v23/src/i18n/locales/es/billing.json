@@ -284,6 +284,7 @@
     "NO_BILLING_RATE": "Sin tarifa de cobro",
     "PARTIAL_DAY": "Día parcial: decide la regla",
     "SHIFT_CANCELLED": "Turno cancelado",
+    "SHIFT_CLOSED_WITHOUT_SERVICE": "Cerrado sin servicio en el Centro operacional: no se factura",
     "NO_TIME": "Sin tiempo facturable",
     "TIMESHEETS_OVERLAP": "Hojas de horas que se solapan: factúralo con una línea manual justificada",
     "APPROVED_EXCEEDS_RECORDED": "Se aprobó más tiempo del registrado: factúralo con una línea manual justificada",
