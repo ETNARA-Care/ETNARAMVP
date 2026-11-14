@@ -15,6 +15,7 @@ import {
 } from "@/api/shifts";
 import { createShiftFromOpportunity, getShiftDraft, type SmartMatchShiftDraft } from "@/api/smartmatch";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Radio, Select, Skeleton, Textarea, useToast } from "@/components/ui";
+import { ClosedWithoutServiceBadge } from "@/features/shifts/ClosedWithoutServiceBadge";
 import { formatWindow as formatSmartMatchWindow, smartMatchErrorMessage } from "@/features/smartmatch/smartmatchText";
 import { useLocationOptions } from "@/features/serviceLocation/useLocationOptions";
 import { LocationSelect } from "@/features/serviceLocation/LocationSelect";
@@ -439,7 +440,7 @@ export function AgencyShiftsPage() {
                 </div>
  <div className="flex flex-wrap items-center gap-2">
                   {/* Una sola etiqueta con la misma regla del Resumen y del Centro operacional. */}
-                  {(() => { const state = coverageOf({ ...shift, assignmentResponse: assignment?.response_status === "accepted" || assignment?.response_status === "pending" ? assignment.response_status : null }); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })()}
+                  {shift.closed_without_service ? <ClosedWithoutServiceBadge /> : (() => { const state = coverageOf({ ...shift, assignmentResponse: assignment?.response_status === "accepted" || assignment?.response_status === "pending" ? assignment.response_status : null }); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })()}
  {shift.status === "unassigned" && !assignment && canStartCoverage && <Button variant="secondary" size="md" className="whitespace-nowrap" loading={offeringShiftId === shift.id} disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); void offerOpenShift(shift); }}>{campaign?.campaignStatus === "exhausted" ? "Reintentar cobertura" : "Ofrecer turno"}</Button>}
  {shift.status === "unassigned" && !assignment && <Button size="md" className="whitespace-nowrap" disabled={eligibleWorkers.length === 0} onClick={(event) => { event.stopPropagation(); openAssignment(shift); }}>Asignar cuidador</Button>}
                 </div>

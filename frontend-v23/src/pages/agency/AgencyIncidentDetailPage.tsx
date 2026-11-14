@@ -6,6 +6,7 @@ import { getToken } from "@/auth/token";
 import { getIncident, listIncidentTimeline, type Incident, type IncidentTimelineEntry } from "@/api/incidents";
 import { getCareRecipient, listWorkers, recipientName, type CareRecipient, type WorkerMembership } from "@/api/shifts";
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton, Timeline } from "@/components/ui";
+import { IncidentResolutionPanel } from "@/features/incidents/IncidentResolutionPanel";
 
 const statusLabels: Record<string, string> = { open: "Abierto", in_progress: "En seguimiento", resolved: "Resuelto" };
 
@@ -72,6 +73,7 @@ export function AgencyIncidentDetailPage() {
           {incident.resolution && <Detail label="Resolución" value={incident.resolution} />}
         </dl>
       </Card>
+      {organizationId && <IncidentResolutionPanel organizationId={organizationId} incident={incident} onChanged={() => void load()} />}
       <div>
         <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)] mb-3">Seguimiento</h2>
         {timeline.length === 0 ? (
