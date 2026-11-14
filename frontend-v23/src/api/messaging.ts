@@ -106,3 +106,11 @@ export async function listCaregiverConversations(organizationId: string, token: 
   );
   return result.conversations;
 }
+
+/**
+ * 151 — «Escribir a mi agencia»: la cuidadora abre (o recupera) su conversación directa con su
+ * agencia. Siempre la misma; la leen solo ella y quien atiende en la agencia.
+ */
+export function openMyAgencyConversation(organizationId: string, token: string): Promise<{ conversationId: string; created: boolean }> {
+  return apiClient.post(`/organizations/${organizationId}/my-agency-conversation`, undefined, token);
+}

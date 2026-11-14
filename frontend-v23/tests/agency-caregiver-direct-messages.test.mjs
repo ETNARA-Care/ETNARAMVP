@@ -9,7 +9,9 @@ test("the agency admin starts a direct conversation from the caregiver profile",
   assert.match(api, /\/workers\/\$\{workerMembershipId\}\/conversation`/);
   assert.match(api, /\/caregiver-conversations`/);
   const profile = read("src/pages/agency/AgencyWorkerProfilePage.tsx");
-  assert.match(profile, /worker\.status === "active" && roles\.includes\("ORGANIZATION_ADMIN"\) && <Button.*?>Enviar mensaje<\/Button>/);
+  // 151: también una supervisora (el backend exige que una administradora la haya autorizado).
+  assert.match(profile, /worker\.status === "active" && \(roles\.includes\("ORGANIZATION_ADMIN"\) \|\| roles\.includes\("SUPERVISOR"\)\) && <Button.*?>Enviar mensaje<\/Button>/);
+  assert.match(profile, /CAREGIVER_THREAD_FORBIDDEN"\s*\?\s*"Para escribir a las cuidadoras, una administradora debe autorizarte en Ajustes › Equipo\."/);
   assert.match(profile, /openCaregiverConversation\(organizationId, membershipId, token\)/);
   assert.match(profile, /navigate\(`\/agency\/messages\?thread=\$\{conversationId\}`\)/);
   assert.match(profile, /CAREGIVER_NO_ACCOUNT/);
