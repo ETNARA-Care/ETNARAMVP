@@ -4,7 +4,7 @@ import type { OperationsCenter } from "@/api/operations";
 import { ErrorState, Skeleton } from "@/components/ui";
 import { AdminPanel, AdminPanelHeader } from "@/components/admin/AdminUI";
 import { severityStyle } from "@/components/admin/severity";
-import { categoryAction, categoryPillar, relativeFmt, sortAlerts } from "./overviewModel";
+import { alertAction, categoryPillar, relativeFmt, sortAlerts } from "./overviewModel";
 
 export function AttentionQueue({ center, loading, error, onRetry, className = "" }: {
  center: OperationsCenter | null; loading: boolean; error: boolean; onRetry: () => void; className?: string;
@@ -43,7 +43,7 @@ export function AttentionQueue({ center, loading, error, onRetry, className = ""
  </div>
  <button type="button" onClick={() => navigate(a.actionPath)}
  className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1 self-start rounded-[10px] px-3.5 text-sm font-medium transition-colors sm:self-center ${a.severity === "critical" ? "bg-[var(--color-navy-900)] text-white hover:bg-[var(--color-navy-800)]" : "border border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-text-primary)]/25"}`}>
- {categoryAction[a.category]}<ChevronRight size={16} className="-mr-1 opacity-70" aria-hidden />
+ {alertAction(a)}<ChevronRight size={16} className="-mr-1 opacity-70" aria-hidden />
  </button>
  </div>
  </li>

@@ -5,6 +5,7 @@ import {
   BellRing,
   Bot,
   CheckCircle2,
+  History,
   RefreshCw,
   ShieldAlert,
   Sparkles,
@@ -115,13 +116,18 @@ export function AgencyOperationsPage() {
         title="Centro operacional"
         description="Alertas reales, prioridades asistidas y acciones de la agencia"
         actions={
-          <Button
-            variant="secondary"
-            icon={<RefreshCw size={18} />}
-            onClick={() => void load()}
-          >
-            Actualizar
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" icon={<History size={18} />} onClick={() => navigate("/agency/operations/history")}>
+              Pendientes cerrados
+            </Button>
+            <Button
+              variant="secondary"
+              icon={<RefreshCw size={18} />}
+              onClick={() => void load()}
+            >
+              Actualizar
+            </Button>
+          </div>
         }
       />
 

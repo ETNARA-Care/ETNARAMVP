@@ -17,6 +17,13 @@ export const categoryAction: Record<OperationalCategory, string> = {
  open_incident: "Revisar incidente",
 };
 
+/** 154: an ended shift without service and an open incident are resolved from their detail page. */
+export const alertAction = (alert: Pick<OperationalAlert, "category" | "title">) => {
+  if (alert.category === "missed_check_in" && alert.title.startsWith("Turno terminado")) return "Resolver turno";
+  if (alert.category === "open_incident") return "Resolver incidente";
+  return categoryAction[alert.category];
+};
+
 const severityRank = { critical: 0, warning: 1, info: 2 } as const;
 export const sortAlerts = (alerts: OperationalAlert[]) =>
  [...alerts].sort((a, b) => severityRank[a.severity] - severityRank[b.severity] || new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());

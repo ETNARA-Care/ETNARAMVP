@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { createEstablishment, listEstablishments, updateEstablishment, type Establishment } from "@/api/establishments";
 import { TeamPanel } from "@/features/agency/TeamPanel";
+import { IncidentClosersCard } from "@/features/incidents/IncidentClosersCard";
 import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCard";
 
 export function AgencyOrganizationSettingsPage() {
@@ -81,6 +82,7 @@ export function AgencyOrganizationSettingsPage() {
     </Card>
 
     {isOrgAdmin && organizationId && <TeamPanel organizationId={organizationId} />}
+    {isOrgAdmin && organizationId && <IncidentClosersCard organizationId={organizationId} />}
 
     <div className="flex items-center justify-between gap-3"><div><h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Establecimientos</h2><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Hogares o centros donde residen o asisten personas, de {activeOrganization?.name}. Las oficinas administrativas no se registran aquí.</p></div><Button icon={<Plus size={18} />} onClick={openCreate}>Añadir</Button></div>
     {establishments === null ? <Skeleton className="h-28" /> : error ? <ErrorState kind="server" onRetry={() => void load()} /> : establishments.length === 0 ? <EmptyState icon={<Building2 size={28} />} title="No hay establecimientos" description="Añade el primer hogar o centro de esta organización. Una agencia de cuido domiciliario sin hogar ni centro propio no necesita establecimientos." action={{ label: "Añadir establecimiento", onClick: openCreate }} /> :
