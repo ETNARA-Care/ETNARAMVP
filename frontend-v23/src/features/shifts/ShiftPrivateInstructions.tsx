@@ -6,7 +6,7 @@ import { Button, Card, Textarea, useToast } from "@/components/ui";
 
 /**
  * Instrucciones operativas privadas del turno (migración 099). El servidor solo
- * las entrega a administradores y supervisores de la agencia y a la cuidadora
+ * las entrega a administradores y supervisores de la agencia y al cuidador
  * asignada; familiares y ETNARA central nunca las reciben.
  */
 export function ShiftPrivateInstructions({ organizationId, shiftId, editable }: { organizationId: string; shiftId: string; editable: boolean }) {
@@ -55,7 +55,7 @@ export function ShiftPrivateInstructions({ organizationId, shiftId, editable }: 
           <Button loading={saving} disabled={!draft.trim()} onClick={() => void save()}>Guardar</Button>
         </div>
       </>}
-      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Privadas: solo la agencia y la cuidadora asignada.</p>
+      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Privadas: solo la agencia y el cuidador asignado.</p>
     </Card>
   );
 }

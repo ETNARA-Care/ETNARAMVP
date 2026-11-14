@@ -1,4 +1,4 @@
-// Fotos de actividades v2 (2-nov-2026): V3 familia, V4 agencia, V5 cuidadora.
+// Fotos de actividades v2 (2-nov-2026): V3 familia, V4 agencia, V5 cuidador.
 // Sin aprobación manual: la foto se comparte al enviarse si hay consentimiento y el familiar lo autorizó
 // (sin retroactividad). La agencia retira, elimina y retiene; la retención legal es solo de la administración.
 import assert from "node:assert/strict";
@@ -84,7 +84,7 @@ test("V4.3 cada error nuevo del backend tiene mensaje en español e inglés", ()
   }
 });
 
-test("V5 cuidadora: envío directo, aviso de si se compartió, «Quitar foto» y sin galería propia", () => {
+test("V5 cuidador: envío directo, aviso de si se compartió, «Quitar foto» y sin galería propia", () => {
   const thumb = code("src/features/activityPhotos/ActivityPhotoThumb.tsx");
   assert.match(thumb, /deleteActivityPhoto\(organizationId, photo\.id, token\)/);
   assert.match(thumb, /activity-photo-remove-confirm/);
@@ -104,7 +104,7 @@ test("V4.4 tocar la pestaña activa no deja la lista cargando para siempre", () 
   assert.match(page, /function chooseTab\(next: Tab\) \{\s*\n\s*if \(next === tab && !legalOverdue\) return;/);
 });
 
-test("D1 cuidadora: si la agencia conserva la foto no se ofrece «Quitar foto», se explica sin dar el motivo, y el rechazo del backend tiene mensaje propio", async () => {
+test("D1 cuidador: si la agencia conserva la foto no se ofrece «Quitar foto», se explica sin dar el motivo, y el rechazo del backend tiene mensaje propio", async () => {
   const thumb = code("src/features/activityPhotos/ActivityPhotoThumb.tsx");
   assert.match(thumb, /\{photo\.keptByAgency && <span[^>]*data-testid="activity-photo-kept"/);
   assert.match(thumb, /\{photo\.canRemove !== false && !photo\.keptByAgency && onRemoved && \(/);

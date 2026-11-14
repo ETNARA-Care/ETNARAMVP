@@ -17,7 +17,7 @@ test("Administration sees wave progress but keeps the final assignment", () => {
   assert.match(page, /Próxima ola automática/);
   assert.match(page, /Escalación detenida/);
   assert.match(page, /Reintentar cobertura/);
-  assert.match(page, /Asignar cuidadora/);
+  assert.match(page, /Asignar cuidador/);
   assert.doesNotMatch(page, /asignación automática/i);
 });
 

@@ -34,10 +34,10 @@ function notificationSummary(type: string): string {
   if (type === "NEW_CARE_EVENT") return "Nueva actividad de cuidado";
   if (type === "NEW_INCIDENT") return "Nuevo incidente";
   if (type === "SHIFT_ASSIGNMENT_PENDING") return "Nuevo turno pendiente de respuesta";
-  if (type === "SHIFT_ASSIGNMENT_ACCEPTED") return "Turno aceptado por la cuidadora";
-  if (type === "SHIFT_ASSIGNMENT_REJECTED") return "Turno rechazado por la cuidadora";
+  if (type === "SHIFT_ASSIGNMENT_ACCEPTED") return "Turno aceptado por el cuidador";
+  if (type === "SHIFT_ASSIGNMENT_REJECTED") return "Turno rechazado por el cuidador";
   if (type === "OPEN_SHIFT_OFFER") return "Nuevo turno disponible";
-  if (type === "OPEN_SHIFT_INTERESTED") return "Una cuidadora está disponible para un turno";
+  if (type === "OPEN_SHIFT_INTERESTED") return "Un cuidador está disponible para un turno";
   if (type === "OPEN_SHIFT_DECLINED") return "Respuesta a una oferta de turno";
   if (type === "SMARTMATCH_APPLICATION_SUBMITTED") return "Nueva solicitud en SmartMatch";
   if (type === "SMARTMATCH_APPLICATION_APPROVED") return "Tu solicitud fue aprobada";
@@ -54,18 +54,18 @@ function notificationSummary(type: string): string {
   if (type === "LOCATION_CHANGE_APPROVED") return "La agencia aplicó tu corrección de dirección";
   if (type === "LOCATION_CHANGE_REJECTED") return "La agencia revisó tu corrección de dirección";
   // Gate 7 «En camino»: never an address, a location or an estimated time.
-  if (type === "FAMILY_CAREGIVER_EN_ROUTE") return "La cuidadora va en camino";
-  if (type === "FAMILY_CAREGIVER_DELAYED") return "La cuidadora informó un retraso";
+  if (type === "FAMILY_CAREGIVER_EN_ROUTE") return "El cuidador va en camino";
+  if (type === "FAMILY_CAREGIVER_DELAYED") return "El cuidador informó un retraso";
   if (type === "FAMILY_CAREGIVER_ARRIVED") return "Llegada registrada";
   // Migration 113: cancellations and reassignments are announced (never an address or a name).
   if (type === "SHIFT_CANCELLED") return "La agencia canceló uno de tus turnos";
   if (type === "SHIFT_UNASSIGNED") return "Ya no tienes asignado un turno";
   if (type === "FAMILY_VISIT_CANCELLED") return "La agencia canceló una visita";
-  if (type === "FAMILY_CAREGIVER_CHANGED") return "Cambió la cuidadora de una visita";
+  if (type === "FAMILY_CAREGIVER_CHANGED") return "Cambió el cuidador de una visita";
   if (type === "SHIFT_NOT_EN_ROUTE") return "Aún no registra salida (turno en 30 min)";
   if (type === "SHIFT_DELAY_REPORTED") return "Retraso de 30 min o más informado";
-  if (type === "SHIFT_STARTED") return "La cuidadora comenzó el turno";
-  if (type === "SHIFT_COMPLETED") return "La cuidadora finalizó el turno";
+  if (type === "SHIFT_STARTED") return "El cuidador comenzó el turno";
+  if (type === "SHIFT_COMPLETED") return "El cuidador finalizó el turno";
   if (type === "SHIFT_REPORT_READY") return "Tu informe de turno está listo para revisar";
   if (type === "SHIFT_REPORT_RETURNED") return "La agencia devolvió tu informe de turno";
   if (type === "CREDENTIAL_EXPIRING") return "Credencial próxima a vencer";

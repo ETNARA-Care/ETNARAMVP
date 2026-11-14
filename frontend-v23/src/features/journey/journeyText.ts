@@ -14,7 +14,7 @@ export const DELAY_REASON_TEXT: Record<DelayReason, string> = {
 export const STATE_TEXT: Record<JourneyStateName, string> = {
   UNASSIGNED: "Por confirmar",
   PENDING_ACCEPTANCE: "Por confirmar",
-  ASSIGNED: "Cuidadora asignada",
+  ASSIGNED: "Cuidador asignado",
   EN_ROUTE: "En camino",
   ARRIVED: "Llegada registrada",
   IN_SERVICE: "Servicio iniciado",
@@ -28,9 +28,9 @@ export const RISK_TEXT: Record<JourneyRisk, string> = {
   DELAY_30: "Retraso de 30 min o más",
 };
 
-/** «La cuidadora informó un retraso de unos 15 minutos (tráfico).» — declared, not an ETA. */
+/** «El cuidador informó un retraso de unos 15 minutos (tráfico).» — declared, not an ETA. */
 export const delaySentence = (d: { minutes: number; reason: DelayReason }) =>
-  `La cuidadora informó un retraso de unos ${d.minutes}${d.minutes === 60 ? " o más" : ""} minutos (${DELAY_REASON_TEXT[d.reason].toLowerCase()}).`;
+  `El cuidador informó un retraso de unos ${d.minutes}${d.minutes === 60 ? " o más" : ""} minutos (${DELAY_REASON_TEXT[d.reason].toLowerCase()}).`;
 
 export const JOURNEY_ERROR_TEXT: Record<string, string> = {
   JOURNEY_OUTSIDE_WINDOW: "Solo puedes avisar desde 2 horas antes hasta 1 hora después del inicio.",

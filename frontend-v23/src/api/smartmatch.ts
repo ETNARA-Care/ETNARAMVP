@@ -21,7 +21,7 @@ export interface AgencyOpportunity {
   shift_status?: "unassigned" | "confirmed" | "in_progress" | "completed" | "cancelled" | null;
   shift_assignment_status?: "pending" | "accepted" | "rejected" | null;
 }
-/** What the "Crear turno con esta cuidadora" form needs. No clinical or personal data. */
+/** What the "Crear turno con este cuidador" form needs. No clinical or personal data. */
 export interface SmartMatchShiftDraft {
   opportunity: { id: string; status: OpportunityStatus; role_label: string; region_label: string;
     starts_at: string; ends_at: string; shift_id: string | null; started: boolean };

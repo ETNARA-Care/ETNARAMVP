@@ -27,7 +27,7 @@ export function FamilyShiftReportView({ report }: { report: FamilyShiftReport })
     <div className="flex flex-col gap-3" data-testid="family-report-view">
       <div className="grid grid-cols-2 gap-3 text-[var(--text-small)]">
         <div><p className="text-[var(--color-text-muted)]">Agencia</p><p className="font-medium">{report.organization.name ?? "—"}</p></div>
-        <div><p className="text-[var(--color-text-muted)]">Cuidadora</p><p className="font-medium">{report.caregiver.name ?? "—"}</p></div>
+        <div><p className="text-[var(--color-text-muted)]">Cuidador</p><p className="font-medium">{report.caregiver.name ?? "—"}</p></div>
         <div><p className="text-[var(--color-text-muted)]">Fecha</p><p className="font-medium first-letter:uppercase">{reportShortDate(`${report.serviceDate}T16:00:00Z`)}</p></div>
         <div><p className="text-[var(--color-text-muted)]">Aprobado</p><p className="font-medium">{reportShortDate(report.approvedAt)}, {reportTime(report.approvedAt)}</p></div>
       </div>
@@ -45,7 +45,7 @@ export function FamilyShiftReportView({ report }: { report: FamilyShiftReport })
         return <Section key={key} title={title} empty={empty} count={items.length}>{items.map((i, n) => <Row key={n} refDay={refDay} at={i.at} note={str(i.note)}>{line(i)}</Row>)}</Section>;
       })}
       {o && (
-        <Section title="Observaciones de la cuidadora" empty="Sin observaciones." count={o.notes.length + (o.caregiverNote ? 1 : 0)}>
+        <Section title="Observaciones del cuidador" empty="Sin observaciones." count={o.notes.length + (o.caregiverNote ? 1 : 0)}>
           {o.notes.map((n, i) => <Row key={i} refDay={refDay} at={n.at}><span className="whitespace-pre-line">{n.text}</span></Row>)}
           {o.caregiverNote && <Row refDay={refDay} at={o.caregiverNote.at} note={o.caregiverNote.text}>Observación final</Row>}
         </Section>

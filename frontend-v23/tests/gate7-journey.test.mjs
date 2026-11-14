@@ -30,7 +30,7 @@ test("caregiver: «Voy en camino» inside the window, delay from fixed minutes a
 });
 
 test("family: progress with declared times; arrival review never shown; cancellation shown as such", () => {
-  for (const s of ["Cuidadora asignada", "En camino", "Llegada registrada", "Servicio iniciado", "Servicio finalizado"]) assert.ok(family.includes(s), s);
+  for (const s of ["Cuidador asignado", "En camino", "Llegada registrada", "Servicio iniciado", "Servicio finalizado"]) assert.ok(family.includes(s), s);
   assert.doesNotMatch(code(family), /arrivalNeedsReview|revisi/);
   assert.match(family, /Este turno fue cancelado por la agencia/);
   assert.match(read("src/pages/family/FamilyTodayPage.tsx"), /<FamilyJourneyProgress journey=\{shift\.journey\} \/>/);

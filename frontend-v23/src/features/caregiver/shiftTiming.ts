@@ -1,5 +1,5 @@
 /**
- * Hora de un turno para la cuidadora (auditoría B5, 28-oct-2026).
+ * Hora de un turno para el cuidador (auditoría B5, 28-oct-2026).
  *
  * - Vencido sin iniciar: el horario ya terminó y nunca comenzó (estado sin asignar o
  *   asignado). No se cancela ni se cambia nada: se muestra aparte y sin botones de

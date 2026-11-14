@@ -79,7 +79,7 @@
   },
   "review": {
     "title": "Fotos de actividades",
-    "description": "Historial de las fotos que envían las cuidadoras. Si hay consentimiento, se comparten solas con los familiares que aceptaron recibirlas. Puedes retirarlas o eliminarlas; todo queda registrado.",
+    "description": "Historial de las fotos que envían los cuidadores. Si hay consentimiento, se comparten solas con los familiares que aceptaron recibirlas. Puedes retirarlas o eliminarlas; todo queda registrado.",
     "tabs": {
       "pending": "Solo agencia",
       "approved": "Compartidas",
@@ -95,7 +95,7 @@
     "loadFailed": "No se pudieron cargar las fotos.",
     "retry": "Reintentar",
     "takenBy": "Tomada por {{name}}",
-    "takenByUnknown": "Cuidadora no disponible",
+    "takenByUnknown": "Cuidador no disponible",
     "at": "{{date}}, {{time}}",
     "note": "Nota: {{note}}",
     "share": "Compartir con la familia",
@@ -135,7 +135,7 @@
     "deletedOn": "Eliminada el {{date}} · {{kind}}",
     "deletionKind": {
       "MANUAL": "por la agencia",
-      "CAREGIVER_UNDO": "por la cuidadora",
+      "CAREGIVER_UNDO": "por el cuidador",
       "RETENTION": "por vencimiento del plazo",
       "RECONCILED": "archivo inexistente"
     },
@@ -260,7 +260,7 @@
   "family": {
     "todayTitle": "Fotos de hoy",
     "todayEyebrow": "Fotos compartidas",
-    "noneToday": "Todavía no hay fotos compartidas hoy. Cuando una cuidadora envíe una foto de una actividad, aparecerá aquí.",
+    "noneToday": "Todavía no hay fotos compartidas hoy. Cuando un cuidador envíe una foto de una actividad, aparecerá aquí.",
     "noneShift": "No hay fotos compartidas de este turno.",
     "shiftPhotos": "Fotos del turno",
     "count_one": "{{count}} foto",
@@ -280,7 +280,7 @@
     "receipt": {
       "title": "Fotos de actividades",
       "question": "¿Quieres recibir fotos de las actividades de {{name}}?",
-      "body1": "Las cuidadoras pueden enviar fotos de actividades del día, como comidas o paseos. Solo las verás si aceptas.",
+      "body1": "Los cuidadores pueden enviar fotos de actividades del día, como comidas o paseos. Solo las verás si aceptas.",
       "body2": "Solo recibirás las fotos enviadas desde que aceptes, no las anteriores.",
       "body3": "Cada foto estará disponible por un tiempo limitado y luego se elimina. No se pueden descargar desde la app, pero sí podrían copiarse de la pantalla: trátalas con cuidado.",
       "body4": "Puedes cambiar de opinión cuando quieras.",

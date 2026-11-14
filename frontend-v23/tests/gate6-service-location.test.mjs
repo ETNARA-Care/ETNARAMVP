@@ -44,7 +44,7 @@ test("arrival: one reading only after consent, never tracking, never blocks the 
 
 test("agency record: addresses, ZIP, access, map, alternates, primary, verify, history, family permission and requests", () => {
   for (const s of ["Ubicación del servicio", "Código postal", "Referencias de acceso", "GpsConfirmModal", "Hacer principal", "Verificar",
-    "Historial de la ubicación", "Accesos de cuidadoras", "Familiares que pueden ver la dirección principal", "Aprobar y aplicar",
+    "Historial de la ubicación", "Accesos de cuidadores", "Familiares que pueden ver la dirección principal", "Aprobar y aplicar",
     "Usar la dirección del hogar", "Turnos próximos con otra dirección", "Mantener como están"]) assert.ok(section.includes(s), s);
 });
 
@@ -64,7 +64,7 @@ test("family: own permission-gated route, request a correction, see its status; 
 test("SmartMatch: cancel a FILLED opportunity with a reason; active shift sends the admin to Turnos", () => {
   assert.match(agencySM, /cancelOpportunityApi\(organizationId, cancelTarget\.id, cancelReason, cancelNote, token\)/);
   assert.match(agencySM, /SmartMatch no cancela ni reasigna turnos reales/);
-  assert.match(agencySM, /No se envía a la cuidadora/);
+  assert.match(agencySM, /No se envía al cuidador/);
 });
 
 test("notifications route to the right place and never show an address", () => {

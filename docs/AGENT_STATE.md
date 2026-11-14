@@ -2,6 +2,19 @@
 
 ## Current Status
 
+## 2026-11-09 — Etapa 0: Central nunca muestra el enlace de activación (rama claude/session-continuation-q649y3, sin desplegar)
+- `PlatformOrganizationsPage`:
+  - se quitó la caja que mostraba el token cuando fallaba el correo; en su lugar hay un aviso con los pasos («Reenviar», o revocar e invitar a la dirección correcta);
+  - nueva sección «Invitaciones enviadas por ETNARA Central» con estado, vencimiento y los botones Reenviar y Revocar (según `resendable`/`revocable` del backend).
+- `api/platformOrganizations.ts`: sin `activationToken`; `inviteOrganizationAdmin` solo pasa `invitation` y `emailDelivery` normalizado; nuevas funciones `listCentralAdminInvitations`, `resendCentralAdminInvitation` y `revokeCentralAdminInvitation`.
+- La página de activación del invitado no cambia.
+- **Pruebas:**
+  - `tests/etapa0-invitacion-central-sin-token.test.mjs`; la suite completa da 399/399;
+  - typecheck y build;
+  - prueba en navegador (Playwright) contra el backend local con el correo sin configurar: ningún token en la página ni en las respuestas de la API, tanto al invitar como al reenviar.
+- **Depende de:** backend Etapa 0 (misma rama en ETNARA-Backend). El frontend tolera el backend anterior.
+- **Siguiente paso:** revisión de Rafa. No fusionar ni desplegar sin autorización.
+
 ## 2026-11-03 — Fotos v2: endurecimiento (backend 145) en el portal (rama local claude/activity-photos-v2-frontend-hardening, sobre #261 `ec104a7`, sin publicar)
 - **M1:** `PHOTO_KEPT_BY_AGENCY` → «La agencia conserva esta foto».
 - **§5:** `usePhotoMode()`:

@@ -116,9 +116,9 @@ function ResidentRow({ id, name, status, shift }: { id: string; name: string; st
         <p className="font-medium text-[var(--color-text-primary)]">{name}</p>
         <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">
           {!shift ? "Sin turno programado hoy"
-            : !workerName ? "Sin cuidadora asignada"
+            : !workerName ? "Sin cuidador asignado"
             : shift.assignmentResponse === "pending" ? `Esperando respuesta de ${workerName}`
-            : `Cuidadora: ${workerName}`}
+            : `Cuidador: ${workerName}`}
         </p>
       </div>
       {status === "archived" ? <Badge tone="neutral">Archivado</Badge> : shift ? (() => { const state = coverageOf(shift); return <Badge tone={coverageTone[state]}>{coverageLabel[state]}</Badge>; })() : null}
@@ -252,7 +252,7 @@ export function AgencyMessagesPage() {
   const recipients = useMessagingRecipients();
   return (
     <div>
-      <PageHeader title="Mensajes" description="Conversaciones con la familia y el equipo de cada residente, y mensajes directos con tus cuidadoras." />
+      <PageHeader title="Mensajes" description="Conversaciones con la familia y el equipo de cada residente, y mensajes directos con tus cuidadores." />
       <RealMessagingPanel recipients={recipients} canStart directTitle="caregiver" />
     </div>
   );
@@ -278,7 +278,7 @@ export function AgencyCompliancePage() {
   const navigate = useNavigate();
   const { hash } = useLocation();
 
-  // Desde el perfil de una cuidadora sin requisitos: ir directo a Políticas cuando ya cargó.
+  // Desde el perfil de un cuidador sin requisitos: ir directo a Políticas cuando ya cargó.
   useEffect(() => {
     if (hash !== `#${COMPLIANCE_POLICIES_ANCHOR}` || !configuration) return;
     document.getElementById(COMPLIANCE_POLICIES_ANCHOR)?.scrollIntoView({ behavior: "smooth", block: "start" });

@@ -7,7 +7,7 @@ import { MAX_AGE_MS, secureDelete, secureGet, secureSet } from "./secureStore";
  * Turnos próximos guardados CIFRADOS en el teléfono (Phase 12.5, aprobado por
  * Rafa 2026-10-23) para que la app abra sin señal desde cero.
  *
- * Mínimo necesario: solo los turnos propios de la cuidadora que no han
+ * Mínimo necesario: solo los turnos propios del cuidador que no han
  * terminado y empiezan en las próximas 36 horas, con su residente (nombre,
  * dirección, plan de cuidado) y lo registrado en esa visita. Un turno que
  * termina sale del caché en el siguiente guardado o al abrir la app. Solo
@@ -107,7 +107,7 @@ export async function saveShiftCacheNow(): Promise<boolean> {
 }
 const save = saveShiftCacheNow;
 
-/** Empieza a guardar (cifrado) lo que la cuidadora va viendo de sus turnos cercanos. */
+/** Empieza a guardar (cifrado) lo que el cuidador va viendo de sus turnos cercanos. */
 export function startShiftCache(): void {
   onRemembered(() => {
     if (!isKeptSession()) return;

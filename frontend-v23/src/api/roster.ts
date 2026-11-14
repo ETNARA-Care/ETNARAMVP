@@ -88,7 +88,7 @@ export async function updateWorker(
 
 /** Shown when saving a staff member fails; covers the backend's rule for inactive memberships (30-oct-2026). */
 export const INACTIVE_RENAME_MESSAGE = "Esta persona tiene la membresía inactiva. Reactívala para cambiar su nombre.";
-/** C2 (31-oct-2026): rol, estado y nombre de una cuidadora los cambia la administración de la agencia. */
+/** C2 (31-oct-2026): rol, estado y nombre de un cuidador los cambia la administración de la agencia. */
 export const ESTABLISHMENT_STAFF_CHANGE_MESSAGE = "El rol, el estado y el nombre del personal los cambia la administración o la supervisión de la agencia.";
 
 /** C1/C2: mensajes de asignación en un establecimiento. */

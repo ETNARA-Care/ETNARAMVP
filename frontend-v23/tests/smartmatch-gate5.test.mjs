@@ -66,8 +66,8 @@ const smApi = read("src/api/smartmatch.ts");
 const shiftsApi = read("src/api/shifts.ts");
 const instructionsCard = read("src/features/shifts/ShiftPrivateInstructions.tsx");
 
-test("Turnos: approval offers 'Crear turno con esta cuidadora' and deferred state stays actionable", () => {
-  assert.match(agency, /Crear turno con esta cuidadora/);
+test("Turnos: approval offers 'Crear turno con este cuidador' and deferred state stays actionable", () => {
+  assert.match(agency, /Crear turno con este cuidador/);
   assert.match(agency, /navigate\(`\/agency\/shifts\?create=1&smartmatch=\$\{opportunityId\}`\)/);
   assert.match(agency, /opp\.status === "FILLED" && !opp\.shift_id && <Button/);
   assert.match(text, /"Cubierta — pendiente de asignación"/);
