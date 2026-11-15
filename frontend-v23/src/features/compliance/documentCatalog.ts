@@ -37,14 +37,21 @@ export const RESIDENTIAL_ESTABLISHMENT_DOCUMENTS = [
   "Menú certificado",
 ] as const;
 
-/** Expediente de un residente de un hogar residencial. Mismos nombres que antes. */
+/**
+ * Expediente de un residente de un hogar residencial (documentos administrativos).
+ * Alcance no médico (14-nov-2026): las evaluaciones médica y dental ya no se piden ni se
+ * ofrecen para subir; el hogar las conserva fuera de ETNARA. Los documentos ya cargados con
+ * esos nombres se conservan y se siguen mostrando.
+ */
 export const RESIDENTIAL_RESIDENT_DOCUMENTS = [
   "Expediente de ingreso",
-  "Evaluación médica",
-  "Evaluación dental",
   "Consentimiento",
   "Identificación",
 ] as const;
+
+/** Aviso al subir un documento de residente. */
+export const RESIDENT_DOCUMENT_NON_MEDICAL_HINT =
+  "Solo documentos administrativos. No subas evaluaciones médicas, recetas ni documentos clínicos: consérvalos fuera de ETNARA.";
 
 /**
  * ¿Se muestran el cumplimiento de establecimientos y los expedientes de residentes?

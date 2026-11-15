@@ -17,7 +17,7 @@ function sources(dir = new URL("src/", root).pathname) {
 }
 
 test("one catalog: the residential lists are written in exactly one file", () => {
-  for (const marker of ["Certificación de Bomberos", "Evaluación dental", "Menú certificado", "Licencia del Departamento de la Familia"]) {
+  for (const marker of ["Certificación de Bomberos", "Licencia sanitaria", "Menú certificado", "Licencia del Departamento de la Familia"]) {
     const files = sources().filter((file) => readFileSync(file, "utf8").includes(`"${marker}"`));
     assert.deepEqual(files.map((f) => f.split("/src/")[1]), ["features/compliance/documentCatalog.ts"], marker);
   }
@@ -28,7 +28,8 @@ test("one catalog: the residential lists are written in exactly one file", () =>
 
 test("residential homes keep exactly their current requirements (same names, same order)", () => {
   assert.match(catalog, /RESIDENTIAL_ESTABLISHMENT_DOCUMENTS = \[\s*"Licencia del Departamento de la Familia",\s*"Certificación de Bomberos",\s*"Licencia sanitaria",\s*"Póliza de responsabilidad",\s*"Menú certificado",\s*\] as const;/);
-  assert.match(catalog, /RESIDENTIAL_RESIDENT_DOCUMENTS = \[\s*"Expediente de ingreso",\s*"Evaluación médica",\s*"Evaluación dental",\s*"Consentimiento",\s*"Identificación",\s*\] as const;/);
+  // Alcance no médico (14-nov-2026): sin evaluaciones médica ni dental. Ver alcance-no-medico-expediente.test.mjs.
+  assert.match(catalog, /RESIDENTIAL_RESIDENT_DOCUMENTS = \[\s*"Expediente de ingreso",\s*"Consentimiento",\s*"Identificación",\s*\] as const;/);
   assert.match(catalog, /normalizeDocumentType = \(value: string\) => value\.trim\(\)\.toLocaleLowerCase\("es-PR"\)/);
 });
 
