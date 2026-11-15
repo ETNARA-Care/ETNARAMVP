@@ -13,6 +13,7 @@ import {
   type WorkerCredentialSummary,
   type WorkerMembership,
 } from "@/api/shifts";
+import { ALLERGIES_HINT, ALLERGIES_LABEL } from "@/features/scope/nonMedicalScope";
 import { isToday, useAgencySupervision, type AdminShift } from "@/features/agency/useAgencySupervision";
 import { credentialState } from "./workerCredentialUtils";
 import { WorkerCredentialBadge } from "./WorkerCredentialBadge";
@@ -91,7 +92,7 @@ export function AgencyResidentsPage() {
           <Input label="Apellidos" value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} required />
           <Input label="Nombre preferido (opcional)" value={form.preferredName} onChange={(event) => setForm((current) => ({ ...current, preferredName: event.target.value }))} />
           <Input label="Fecha de nacimiento (opcional)" type="date" value={form.dateOfBirth} onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))} />
-          <Input label="Alergias (opcional)" hint="Separa varias alergias con comas." value={form.allergies} onChange={(event) => setForm((current) => ({ ...current, allergies: event.target.value }))} />
+          <Input label={`${ALLERGIES_LABEL} (opcional)`} hint={ALLERGIES_HINT} value={form.allergies} onChange={(event) => setForm((current) => ({ ...current, allergies: event.target.value }))} />
         </div>
       </Modal>
     </div>

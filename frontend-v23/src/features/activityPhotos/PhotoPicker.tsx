@@ -50,6 +50,7 @@ export function PhotoPicker({ eligibility, value, onChange, disabled }: {
   return (
     <section aria-label={t("picker.section")} className="flex flex-col gap-2" data-testid="activity-photo-picker">
       <p className="text-[var(--text-small)] font-medium text-[var(--color-text-secondary)]">{t("picker.title")} <span className="font-normal text-[var(--color-text-muted)]">{t("picker.optional")}</span></p>
+      <p data-testid="activity-photo-non-medical" className="text-[var(--text-caption)] text-[var(--color-text-muted)]">{t("picker.nonMedical")}</p>
 
       {eligibility === "loading" && (
         <p className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] px-3 py-3 text-[var(--text-small)] text-[var(--color-text-muted)]" role="status">{t("picker.checking")}</p>

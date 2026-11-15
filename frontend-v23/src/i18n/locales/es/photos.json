@@ -16,7 +16,8 @@
     "noPreview": "Este teléfono no puede mostrar la vista previa. Se convertirá al enviarla.",
     "remove": "Quitar foto",
     "privacy": "Se quitan la ubicación y los datos de la cámara. Si hay consentimiento, se comparte en seguida con los familiares que aceptaron recibir fotos.",
-    "needsInternet": "La foto se envía en cuanto guardes, con internet. No se guarda en el teléfono."
+    "needsInternet": "La foto se envía en cuanto guardes, con internet. No se guarda en el teléfono.",
+    "nonMedical": "Solo actividades cotidianas. No fotografíes heridas, medicamentos ni documentos médicos."
   },
   "status": {
     "pending": "Solo agencia",

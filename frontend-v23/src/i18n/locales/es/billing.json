@@ -367,7 +367,7 @@
     "retentionHint": "Mínimo 6 años.",
     "retentionInvalid": "Entre 6 y 30 años.",
     "showCaregiver": "Mostrar el nombre del cuidador/a en la factura",
-    "showCaregiverHint": "Apagado por defecto. Nunca se muestran diagnósticos, notas ni ubicaciones.",
+    "showCaregiverHint": "Apagado por defecto. Nunca se muestran notas ni ubicaciones.",
     "logoAlt": "Logo de la agencia",
     "noLogo": "Sin logo",
     "logoUpload": "Subir logo",

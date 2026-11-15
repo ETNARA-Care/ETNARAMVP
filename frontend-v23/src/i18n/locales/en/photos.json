@@ -16,7 +16,8 @@
     "noPreview": "This phone can't show the preview. It will be converted when sent.",
     "remove": "Remove photo",
     "privacy": "Location and camera data are removed. With consent, it is shared right away with the relatives who agreed to receive photos.",
-    "needsInternet": "The photo is sent when you save, with internet. It is not stored on the phone."
+    "needsInternet": "The photo is sent when you save, with internet. It is not stored on the phone.",
+    "nonMedical": "Everyday activities only. Do not photograph wounds, medications or medical documents."
   },
   "status": {
     "pending": "Agency only",

@@ -19,6 +19,7 @@ import {
 import { getCareRecipient, recipientName, type CareRecipient } from "@/api/shifts";
 import { Badge, BottomSheet, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { useAgencySupervision } from "@/features/agency/useAgencySupervision";
+import { ALLERGIES_HINT, ALLERGIES_LABEL, NON_MEDICAL_TEXT_HINT, selectableTaskCategories } from "@/features/scope/nonMedicalScope";
 import { updateCareRecipient } from "@/api/roster";
 import { ServiceLocationSection } from "@/features/serviceLocation/ServiceLocationSection";
 import { AccessInvitationPanel } from "./AccessInvitationPanel";
@@ -288,7 +289,7 @@ export function AgencyResidentProfilePage() {
         </Card>
         <Card>
           <div className="flex items-center gap-2 mb-4"><HeartPulse size={21} /><h2 className="font-medium text-[var(--color-text-primary)]">Información de cuidado</h2></div>
-          <ProfileField label="Alergias" value={resident.allergies?.length ? resident.allergies.join(", ") : "No registradas"} />
+          <ProfileField label={ALLERGIES_LABEL} value={resident.allergies?.length ? resident.allergies.join(", ") : "No registradas"} />
           <ListField label="Preferencias" items={preferenceItems} />
           <ListField label="Rutinas" items={routineItems} />
         </Card>
@@ -394,7 +395,7 @@ export function AgencyResidentProfilePage() {
           <Input label="Apellidos" value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} required />
           <Input label="Nombre preferido (opcional)" value={form.preferredName} onChange={(event) => setForm((current) => ({ ...current, preferredName: event.target.value }))} />
           <Input label="Fecha de nacimiento (opcional)" type="date" value={form.dateOfBirth} onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))} />
-          <Input label="Alergias (opcional)" hint="Separa varias alergias con comas." value={form.allergies} onChange={(event) => setForm((current) => ({ ...current, allergies: event.target.value }))} />
+          <Input label={`${ALLERGIES_LABEL} (opcional)`} hint={ALLERGIES_HINT} value={form.allergies} onChange={(event) => setForm((current) => ({ ...current, allergies: event.target.value }))} />
         </div>
       </Modal>
 
@@ -410,9 +411,9 @@ export function AgencyResidentProfilePage() {
           <Select label="Nivel de apoyo" value={planForm.supportLevel} onChange={(event) => setPlanForm((current) => ({ ...current, supportLevel: event.target.value as CarePlanSupportLevel }))}>
             {Object.entries(supportLevelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
-          <Textarea label="Objetivos" hint="Escribe un objetivo por línea." value={planForm.goals} onChange={(event) => setPlanForm((current) => ({ ...current, goals: event.target.value }))} placeholder="Mantener movilidad segura" />
-          <Textarea label="Instrucciones" hint="Escribe una instrucción por línea." value={planForm.instructions} onChange={(event) => setPlanForm((current) => ({ ...current, instructions: event.target.value }))} placeholder="Hablar despacio y confirmar comprensión" />
-          <Textarea label="Precauciones" hint="Escribe una precaución por línea." value={planForm.precautions} onChange={(event) => setPlanForm((current) => ({ ...current, precautions: event.target.value }))} placeholder="Riesgo de caída" />
+          <Textarea label="Objetivos" hint={`Escribe un objetivo por línea. ${NON_MEDICAL_TEXT_HINT}`} value={planForm.goals} onChange={(event) => setPlanForm((current) => ({ ...current, goals: event.target.value }))} placeholder="Mantener movilidad segura" />
+          <Textarea label="Instrucciones" hint={`Escribe una instrucción por línea. ${NON_MEDICAL_TEXT_HINT}`} value={planForm.instructions} onChange={(event) => setPlanForm((current) => ({ ...current, instructions: event.target.value }))} placeholder="Hablar despacio y confirmar comprensión" />
+          <Textarea label="Precauciones" hint={`Escribe una precaución por línea. ${NON_MEDICAL_TEXT_HINT}`} value={planForm.precautions} onChange={(event) => setPlanForm((current) => ({ ...current, precautions: event.target.value }))} placeholder="Riesgo de caída" />
 
           <div className="flex items-center justify-between gap-3">
             <div><p className="font-medium text-[var(--color-text-primary)]">Tareas</p><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Define lo que debe realizarse durante el cuidado.</p></div>
@@ -422,10 +423,10 @@ export function AgencyResidentProfilePage() {
             <div key={task.id ?? `new-${index}`} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2"><p className="font-medium text-[var(--color-text-primary)]">Tarea {index + 1}</p><Button type="button" variant="ghost" icon={<Trash2 size={17} />} onClick={() => setPlanForm((current) => ({ ...current, tasks: current.tasks.filter((_, taskIndex) => taskIndex !== index) }))}>Quitar</Button></div>
               <Input label="Tarea" value={task.title} onChange={(event) => updateTask(index, { title: event.target.value })} placeholder="Ej. Ofrecer un vaso de agua" required />
-              <Textarea label="Detalles (opcional)" value={task.details} onChange={(event) => updateTask(index, { details: event.target.value })} />
+              <Textarea label="Detalles (opcional)" hint={NON_MEDICAL_TEXT_HINT} value={task.details} onChange={(event) => updateTask(index, { details: event.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Select label="Categoría" value={task.category} onChange={(event) => updateTask(index, { category: event.target.value as CarePlanTaskCategory })}>
-                  {Object.entries(taskCategoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  {selectableTaskCategories(task.category).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </Select>
                 <Select label="Frecuencia" value={task.frequency} onChange={(event) => updateTask(index, { frequency: event.target.value as CarePlanTaskFrequency })}>
                   {Object.entries(taskFrequencyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}

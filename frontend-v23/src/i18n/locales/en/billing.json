@@ -367,7 +367,7 @@
     "retentionHint": "At least 6 years.",
     "retentionInvalid": "Between 6 and 30 years.",
     "showCaregiver": "Show the caregiver's name on the invoice",
-    "showCaregiverHint": "Off by default. Diagnoses, notes and locations are never shown.",
+    "showCaregiverHint": "Off by default. Notes and locations are never shown.",
     "logoAlt": "Agency logo",
     "noLogo": "No logo",
     "logoUpload": "Upload logo",

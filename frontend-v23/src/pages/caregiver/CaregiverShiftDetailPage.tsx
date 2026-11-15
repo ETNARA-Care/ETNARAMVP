@@ -7,6 +7,7 @@ import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { listShiftCareEvents, type CareEvent, type CareEventTypeCode } from "@/api/careEvents";
+import { NON_MEDICAL_TEXT_HINT } from "@/features/scope/nonMedicalScope";
 import { isConnectivityError, queuedJourneyState, queuedVisitState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { createIncident } from "@/api/incidents";
 import {
@@ -729,7 +730,7 @@ export function CaregiverShiftDetailPage() {
           {activeAction === "MOBILITY" && <Select label="Actividad realizada" value={mobilityActivity} onChange={(event) => setMobilityActivity(event.target.value)}><option>No realizada</option><option>Caminata corta</option><option>Caminata 15 minutos</option><option>Con asistencia</option><option>Silla de ruedas</option></Select>}
           {activeAction === "ACTIVITY" && <><Input label="Descripción de la actividad" value={activityLabel} onChange={(event) => setActivityLabel(event.target.value)} placeholder="Ej. Música o caminata" required /><Input label="Duración en minutos (opcional)" type="number" min={1} value={activityDuration} onChange={(event) => setActivityDuration(event.target.value)} /></>}
           {activeAction === "MOOD" && <Select label="Estado observado" value={mood} onChange={(event) => setMood(event.target.value)}><option>Contento</option><option>Tranquilo</option><option>Triste</option><option>Ansioso</option><option>Confundido</option><option>Irritable</option><option>Somnoliento</option></Select>}
-          <Textarea label={activeAction === "NOTE" ? "Observación" : "Nota adicional (opcional)"} value={note} onChange={(event) => setNote(event.target.value)} required={activeAction === "NOTE"} placeholder="Detalles..." />
+          <Textarea label={activeAction === "NOTE" ? "Observación" : "Nota adicional (opcional)"} value={note} onChange={(event) => setNote(event.target.value)} required={activeAction === "NOTE"} hint={NON_MEDICAL_TEXT_HINT} placeholder="Detalles..." />
           {photosOn && <PhotoPicker eligibility={photoEligibility} value={photo} onChange={setPhoto} disabled={saving} />}
         </div>
       </BottomSheet>
@@ -747,7 +748,7 @@ export function CaregiverShiftDetailPage() {
             <option>Grave</option>
             <option>Crítico</option>
           </Select>
-          <Textarea label="¿Qué ocurrió?" value={incidentDescription} onChange={(event) => setIncidentDescription(event.target.value)} required placeholder="Describe lo ocurrido con claridad..." />
+          <Textarea label="¿Qué ocurrió?" value={incidentDescription} onChange={(event) => setIncidentDescription(event.target.value)} required hint={NON_MEDICAL_TEXT_HINT} placeholder="Describe lo ocurrido con claridad..." />
           <Textarea label="Acciones tomadas (opcional)" value={incidentActions} onChange={(event) => setIncidentActions(event.target.value)} placeholder="Ej. Se notificó al supervisor..." />
           <div className="rounded-[var(--radius-sm)] bg-[var(--color-ivory-100)] p-3">
             <p className="text-[var(--text-caption)] font-medium text-[var(--color-text-secondary)]">Al confirmar, ETNARA guardará el incidente usando el registro real de la organización. No se añadirá información que no hayas escrito.</p>
