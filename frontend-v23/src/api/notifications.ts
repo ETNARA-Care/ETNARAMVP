@@ -46,6 +46,8 @@ function notificationSummary(type: string): string {
   if (type === "SMARTMATCH_OPPORTUNITY_CANCELLED") return "La agencia canceló una oportunidad que tenías aprobada";
   if (type === "SMARTMATCH_APPLICATION_OPPORTUNITY_CANCELLED") return "La agencia canceló una oportunidad a la que te postulaste";
   if (type === "SMARTMATCH_APPLICATION_OPPORTUNITY_EXPIRED") return "Venció una oportunidad a la que te postulaste";
+  // Backend 155: a new SmartMatch opportunity in the caregiver's agency (general text only).
+  if (type === "SMARTMATCH_OPPORTUNITY_PUBLISHED") return "Hay una nueva oportunidad en SmartMatch";
   if (type === "SHIFT_LATE_ARRIVAL") return "Turno sin llegada registrada (15 min)";
   if (type === "SHIFT_ARRIVAL_NEEDS_REVIEW") return "Llegada pendiente de revisión";
   if (type === "TIMESHEET_NEEDS_REVIEW") return "Visita de más de 48 h: revisa las horas";

@@ -2,6 +2,10 @@
 
 ## Current Status
 
+## 2026-11-16 — SmartMatch «Hay una nueva oportunidad» en la campana (acompaña a backend 155) — rama claude/smartmatch-push-new-opportunity, PR borrador
+- `notifications.ts`: texto del aviso; `NotificationBell`: abre `/caregiver/smartmatch`. El push abre lo mismo vía `/abrir` (destino decidido por el servidor).
+- Pruebas: typecheck, 423/423, build.
+
 ## 2026-11-09 — Etapa 0: Central nunca muestra el enlace de activación (rama claude/session-continuation-q649y3, sin desplegar)
 - `PlatformOrganizationsPage`:
   - se quitó la caja que mostraba el token cuando fallaba el correo; en su lugar hay un aviso con los pasos («Reenviar», o revocar e invitar a la dirección correcta);
