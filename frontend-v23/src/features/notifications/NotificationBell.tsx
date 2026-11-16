@@ -28,6 +28,8 @@ export function NotificationBell({ onDark = false }: { onDark?: boolean } = {}) 
     if (type === "PLATFORM_AGENCY_NO_ACTIVE_ADMIN") { navigate("/platform/organizations"); return; }
     if (type === "AGENCY_NO_ACTIVE_ADMIN") return;
 
+    // Backend 155: a newly published opportunity opens the caregiver's «Disponibles».
+    if (type === "SMARTMATCH_OPPORTUNITY_PUBLISHED") { navigate("/caregiver/smartmatch"); return; }
     // SmartMatch: open the exact application (agency review) or the caregiver's own list.
     if (entityType === "smartmatch_application" && entityId) {
       if (type === "SMARTMATCH_APPLICATION_SUBMITTED") navigate(`/agency/smartmatch?application=${entityId}`);
