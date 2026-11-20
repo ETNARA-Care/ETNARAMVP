@@ -62,8 +62,9 @@ test("settings: only billing.manage edits; prefix rule matches the backend and l
   assert.match(s, /disabled=\{!canManage \|\| data\.series\.locked\}/);
   assert.match(s, /years >= 6 && years <= 30/);
   assert.match(s, /if \(!data\.series\.locked && prefix !== data\.series\.prefix\) body\.prefix = prefix/);
-  assert.match(s, /\["image\/png", "image\/jpeg"\]\.includes\(file\.type\)/);
-  assert.match(s, /LOGO_MAX_BYTES = 300 \* 1024/);
+  assert.match(s, /LOGO_TYPES = \["image\/png", "image\/jpeg", "image\/webp"\]/); // 20-nov: igual que el backend (ver logo-factura-5mb)
+  assert.match(s, /LOGO_TYPES\.includes\(file\.type\)/);
+  assert.match(s, /LOGO_MAX_BYTES = 5 \* 1024 \* 1024/);
   assert.match(read("src/features/billing/BillingTab.tsx"), /<BillingSettingsSection organizationId=\{organizationId\} canManage=\{capabilities\.includes\("manage"\) && module\.enabled\}/);
 });
 

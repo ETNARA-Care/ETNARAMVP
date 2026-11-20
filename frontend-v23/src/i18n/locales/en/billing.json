@@ -100,8 +100,9 @@
     "BILLING_DOCUMENT_INTEGRITY": "The stored PDF doesn't match its fingerprint. It wasn't downloaded; contact support.",
     "DOCUMENT_NOT_FOUND": "The PDF wasn't found.",
     "INVOICE_NOT_FOUND": "The invoice wasn't found.",
-    "LOGO_TOO_LARGE": "The logo is larger than 300 KB.",
-    "LOGO_TYPE_NOT_ALLOWED": "The logo must be PNG or JPEG.",
+    "LOGO_TOO_LARGE": "The logo is larger than 5 MB.",
+    "LOGO_TYPE_NOT_ALLOWED": "The logo must be PNG, JPEG or WebP.",
+    "LOGO_TOO_SMALL": "The logo is too small. Use an image at least 16 px on each side.",
     "LOGO_UNREADABLE": "The logo image couldn't be read.",
     "LOGO_NOT_FOUND": "The agency has no logo.",
     "REASON_REQUIRED": "Write the reason or note.",
@@ -372,7 +373,7 @@
     "noLogo": "No logo",
     "logoUpload": "Upload logo",
     "logoReplace": "Replace logo",
-    "logoHint": "PNG or JPEG, up to 300 KB.",
+    "logoHint": "PNG, JPEG or WebP, up to 5 MB. It is optimised automatically.",
     "logoSaved": "Logo saved.",
     "saved": "Details saved."
   }

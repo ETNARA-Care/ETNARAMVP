@@ -6,7 +6,9 @@ import { billingIssueApi, type BillingSettingsInput, type BillingSettingsRespons
 import { Badge, Button, Card, Checkbox, Input, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
 import { dateTime, errorText, langOf, tx } from "./billingFormat";
 
-const LOGO_MAX_BYTES = 300 * 1024;
+// Same limit as the backend (5 MB in). The server re-encodes it to one optimised PNG (≤ 800 px).
+const LOGO_MAX_BYTES = 5 * 1024 * 1024;
+const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 type Form = Required<Pick<BillingSettingsInput, "legalName" | "tradeName" | "address" | "phone" | "email" | "merchantRegistration" | "paymentTerms" | "footerNote">>;
 const FIELDS: (keyof Form)[] = ["legalName", "tradeName", "address", "phone", "email", "merchantRegistration", "paymentTerms", "footerNote"];
 const LONG: (keyof Form)[] = ["address", "paymentTerms", "footerNote"];
@@ -85,7 +87,7 @@ export function BillingSettingsSection({ organizationId, canManage }: { organiza
 
   async function uploadLogo(file: File) {
     const token = getToken(); if (!token) return;
-    if (!["image/png", "image/jpeg"].includes(file.type)) { toast.show(t("errors.LOGO_TYPE_NOT_ALLOWED"), "danger"); return; }
+    if (!LOGO_TYPES.includes(file.type)) { toast.show(t("errors.LOGO_TYPE_NOT_ALLOWED"), "danger"); return; }
     if (file.size > LOGO_MAX_BYTES) { toast.show(t("errors.LOGO_TOO_LARGE"), "danger"); return; }
     setSaving(true);
     try { await billingIssueApi.uploadLogo(organizationId, file, token); toast.show(t("settings.logoSaved"), "success"); await load(); setLogoRev((r) => r + 1); }
@@ -159,7 +161,7 @@ export function BillingSettingsSection({ organizationId, canManage }: { organiza
           </div>
           {canManage && (
             <div className="min-w-0">
-              <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="sr-only" id="billing-logo-input" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadLogo(f); }} />
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" id="billing-logo-input" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadLogo(f); }} />
               <Button size="sm" variant="secondary" icon={<ImageUp size={15} />} disabled={saving} onClick={() => fileRef.current?.click()}>{s.hasLogo ? t("settings.logoReplace") : t("settings.logoUpload")}</Button>
               <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("settings.logoHint")}</p>
             </div>
