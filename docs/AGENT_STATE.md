@@ -2,6 +2,11 @@
 
 ## Current Status
 
+## 2026-11-21 — Central: administrar contratos por agencia (acompaña a backend 158) — rama claude/central-contratos-admin, PR borrador
+- `/platform/contracts` con pestañas «Estado» (la consulta de siempre) y «Administrar por agencia» (`features/contracts/central/CentralAgencyContractsPanel.tsx`): interruptor «Contratos» con motivo; representantes (solo administradoras activas que da el servidor; revocar con motivo); documentos de PRUEBA de esa agencia (crear borrador con marcas obligatorias, publicar con confirmación, ver aceptaciones, retirar con motivo); estado de la agencia.
+- No crea documentos oficiales ni registra aprobación jurídica; Central nunca firma.
+- Pruebas: 440/440, typecheck, lint, build; E2E local 12/12 (escritorio + iPhone 14).
+
 ## 2026-11-21 — Interruptor «Contratos» por agencia (acompaña a backend 157, PR #271) — rama claude/contratos-interruptor-agencia, PR borrador
 - Central: «Contratos» en OrganizationFeaturesCard. Agencia: menú «Contratos», pantallas (FeatureRoute) y aviso de términos solo con CONTRACTS en las funciones de la agencia.
 - Pruebas: 434/434, typecheck, lint, build; E2E iPhone 14 local 7/7 (Casa Demo encendida, otra agencia apagada, apagar en Central).
