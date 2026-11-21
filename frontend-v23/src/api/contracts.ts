@@ -82,6 +82,73 @@ export const contractsApi = {
   centralOverview: (t: string) => apiClient.get<CentralContractsOverview>(`/platform/contracts/overview`, t),
 };
 
+/**
+ * 158: herramientas de ETNARA Central (solo superadministración). Reutilizan las rutas del módulo
+ * contractual: documentos de PRUEBA dirigidos a una agencia, representantes designadas, estado y
+ * aceptaciones, y retiro con motivo (nunca borra evidencias). Central nunca firma por nadie.
+ */
+export interface CentralVersion {
+  id: string; document_id: string; version_label: string; status: "draft" | "published" | "retired"; is_test: boolean;
+  content_sha256: string; created_at: string; published_at: string | null; retired_at: string | null; acceptances: number;
+}
+export interface CentralDocument {
+  id: string; code: string; title: string; kind: string; is_test: boolean; created_at: string;
+  organization_id: string | null; organization_name: string | null; versions: CentralVersion[];
+}
+export interface CentralAcceptance {
+  organization_id: string; organization_name: string; accepted_by_login: string; accepted_role: string; signer_full_name: string;
+  signer_title: string; verification_method: string; accepted_at: string; content_sha256: string; is_test: boolean;
+}
+export interface CentralSignatory { id: string; user_id: string; full_name: string; title: string; basis: string; designated_at: string; revoked_at: string | null }
+export interface EligibleSignatory { userId: string; email: string }
+const pc = "/platform/contracts";
+export const centralContractsApi = {
+  documents: (t: string) => apiClient.get<{ documents: CentralDocument[] }>(pc, t),
+  createTestDocument: (t: string, input: { code: string; title: string; organizationId: string }) =>
+    apiClient.post<{ document: { id: string } }>(`${pc}/documents`, { ...input, kind: "SERVICE_AGREEMENT", isTest: true, requiredForOperation: false }, t),
+  createVersion: (t: string, documentId: string, body: string) =>
+    apiClient.post<{ version: CentralVersion }>(`${pc}/documents/${documentId}/versions`, { versionLabel: "1.0", body }, t),
+  publish: (t: string, versionId: string) => apiClient.post<{ version: CentralVersion }>(`${pc}/versions/${versionId}/publish`, {}, t),
+  retire: (t: string, versionId: string, reason: string) => apiClient.post<{ version: CentralVersion }>(`${pc}/versions/${versionId}/retire`, { reason }, t),
+  acceptances: (t: string, versionId: string) => apiClient.get<{ acceptances: CentralAcceptance[] }>(`${pc}/versions/${versionId}/acceptances`, t),
+  signatories: (t: string, o: string) => apiClient.get<{ signatories: CentralSignatory[] }>(`${pc}/organizations/${o}/signatories`, t),
+  eligible: (t: string, o: string) => apiClient.get<{ eligible: EligibleSignatory[] }>(`${pc}/organizations/${o}/eligible-signatories`, t),
+  designate: (t: string, o: string, input: { userId: string; fullName: string; title: string; basis: string }) =>
+    apiClient.post<{ signatory: CentralSignatory }>(`${pc}/organizations/${o}/signatories`, input, t),
+  revoke: (t: string, o: string, id: string, reason: string) => apiClient.post<{ signatory: { id: string } }>(`${pc}/organizations/${o}/signatories/${id}/revoke`, { reason }, t),
+};
+
+/** Marcas obligatorias de un documento de prueba (la base también las exige). */
+export const TEST_BANNER = "DOCUMENTO FICTICIO DE PRUEBA — PRUEBA — SIN VALOR CONTRACTUAL. No es el contrato oficial de ETNARA Care.";
+export function testDocumentTitle(title: string) {
+  const t = title.trim().replace(/^\[PRUEBA\]\s*/i, "");
+  return `[PRUEBA] ${t}${/SIN VALOR CONTRACTUAL/i.test(t) ? "" : " — SIN VALOR CONTRACTUAL"}`.slice(0, 200);
+}
+export function testDocumentBody(text: string) {
+  const t = text.trim();
+  return t.startsWith("DOCUMENTO FICTICIO DE PRUEBA") ? `${t}\n` : `${TEST_BANNER}\n\n${t}\n`;
+}
+export function testDocumentCode(orgName: string, now = new Date()) {
+  const slug = orgName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 24) || "AGENCIA";
+  const stamp = now.toISOString().replace(/[-:T]/g, "").slice(0, 12);
+  return `TEST_${slug}_${stamp}`;
+}
+export function centralContractError(code?: string, status?: number): string {
+  switch (code) {
+    case "CONTRACT_SIGNATORY_MUST_BE_ACTIVE_ADMIN": return "Solo se puede designar a una administradora o administrador activo de esta agencia.";
+    case "CONTRACT_SIGNATORY_ALREADY_DESIGNATED": return "Esa persona ya está designada como representante de esta agencia.";
+    case "CONTRACT_CODE_TAKEN": return "Ya existe un documento con ese código. Inténtalo de nuevo en un minuto.";
+    case "CONTRACT_VERSION_INVALID_TRANSITION": return "Ese documento ya no está vigente.";
+    case "CONTRACT_VERSION_IMMUTABLE": return "Esa versión ya se publicó y no se puede cambiar.";
+    case "CONTRACT_SCOPE_TEST_ONLY": return "Solo los documentos de prueba se pueden dirigir a una agencia.";
+    case "CONTRACT_INVALID_DOCUMENT": case "CONTRACT_TEST_BANNER_REQUIRED": return "El documento no cumple las marcas de prueba obligatorias.";
+    case "CONTRACT_NOT_FOUND": return "No se encontró. Recarga la página.";
+    case "PLATFORM_ACCESS_DENIED": return "Solo ETNARA Central puede hacer esto.";
+    case "INVALID_PAYLOAD": return "Revisa los datos: nombre y apellido, cargo y un fundamento de al menos 10 caracteres; los motivos, de al menos 5.";
+    default: return status === 404 ? "El módulo de contratos está apagado en el servidor." : status === 0 ? "Sin conexión." : "No se pudo completar. Inténtalo de nuevo.";
+  }
+}
+
 /** Guarda un archivo recibido con la sesión (nunca por un enlace público). */
 /** 156: términos individuales de la función de cada persona (Anexo E del contrato). */
 export type RoleTermsRole = "ADMINISTRATION" | "CAREGIVER" | "FAMILY";

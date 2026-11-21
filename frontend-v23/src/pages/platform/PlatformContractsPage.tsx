@@ -3,19 +3,23 @@ import { FileSignature } from "lucide-react";
 import { getToken } from "@/auth/token";
 import { contractsApi, type CentralContractsOverview } from "@/api/contracts";
 import type { ApiError } from "@/api/client";
-import { Badge, Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
+import { Badge, Card, EmptyState, ErrorState, Skeleton, Tabs } from "@/components/ui";
+import { CentralAgencyContractsPanel } from "@/features/contracts/central/CentralAgencyContractsPanel";
 import { acceptanceLabel, contractDate } from "@/features/contracts/contractFormat";
 
 type Filter = "all" | "pending" | "accepted";
 
 /**
- * ETNARA Central — consulta del estado contractual de cada agencia (Etapa 2). Solo lectura:
- * pendiente o aceptado, versión, fecha y representante que firmó. Central no acepta por nadie
- * y aquí no hay ningún botón para hacerlo.
+ * ETNARA Central — contratos de las agencias.
+ *  · «Estado» (Etapa 2): consulta de solo lectura de cada agencia frente a lo vigente.
+ *  · «Administrar por agencia» (158): interruptor, representantes, documentos de prueba y su retiro,
+ *    con las rutas existentes del módulo (solo superadministración, auditadas).
+ * Central no acepta por nadie y aquí no hay ningún botón para hacerlo.
  */
 export function PlatformContractsPage() {
   const [data, setData] = useState<CentralContractsOverview | null | "error" | "unavailable">(null);
   const [filter, setFilter] = useState<Filter>("all");
+  const [tab, setTab] = useState("status");
   const load = useCallback(async () => {
     const token = getToken();
     if (!token) return;
@@ -36,12 +40,15 @@ export function PlatformContractsPage() {
     <div className="flex min-w-0 flex-col gap-[var(--spacing-md)]">
       <header>
         <h1 className="font-display text-[length:1.75rem] leading-tight text-[var(--color-text-primary)] md:text-[length:2rem]">Contratos de las agencias</h1>
-        <p className="mt-2 max-w-3xl text-[var(--text-small)] text-[var(--color-text-secondary)]">Consulta de solo lectura: qué agencias aceptaron cada documento vigente, qué versión, cuándo y quién firmó. ETNARA no acepta en nombre de ninguna agencia.</p>
+        <p className="mt-2 max-w-3xl text-[var(--text-small)] text-[var(--color-text-secondary)]">Estado de cada agencia y administración de sus contratos de prueba, representantes e interruptor. ETNARA no acepta en nombre de ninguna agencia.</p>
       </header>
       {data === null ? <Skeleton className="h-48" />
         : data === "error" ? <ErrorState kind="server" onRetry={() => void load()} />
         : data === "unavailable" ? <EmptyState icon={<FileSignature size={28} />} title="Módulo contractual apagado" description="Las rutas de contratos no están activas en este servidor." />
-        : data.documents.length === 0 ? <EmptyState icon={<FileSignature size={28} />} title="No hay documentos vigentes" description="Cuando se publique una versión aparecerá el estado de cada agencia." />
+        : <Tabs items={[{ id: "status", label: "Estado" }, { id: "admin", label: "Administrar por agencia" }]} value={tab} onChange={setTab}>
+          {(active) => <div className="pt-[var(--spacing-md)]">{active === "admin"
+            ? <CentralAgencyContractsPanel overview={data} onChanged={() => void contractsApi.centralOverview(getToken() ?? "").then(setData).catch(() => undefined)} />
+            : data.documents.length === 0 ? <EmptyState icon={<FileSignature size={28} />} title="No hay documentos vigentes" description="Cuando se publique una versión aparecerá el estado de cada agencia." />
         : <>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar">
             {([["all", `Todas (${rows.length})`], ["pending", `Pendientes (${pending})`], ["accepted", `Aceptadas (${rows.length - pending})`]] as const).map(([k, label]) => (
@@ -69,7 +76,8 @@ export function PlatformContractsPage() {
             })}
             {shown.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-text-muted)]">Nada que mostrar con este filtro.</p>}
           </div>
-        </>}
+        </>}</div>}
+        </Tabs>}
     </div>
   );
 }
