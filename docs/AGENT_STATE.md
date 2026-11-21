@@ -2,6 +2,11 @@
 
 ## Current Status
 
+## 2026-11-21 — Contrato Oficial v1.1: Word original y términos por función (acompaña a backend 156, PR #270) — rama claude/contrato-oficial-156, PR borrador
+- `api/contracts.ts`: `sourceFile`, descarga `docx` y `roleTermsApi`. `AgencyContractDetailPage`: botón «Word original (.docx)» con su huella.
+- `features/contracts/RoleTermsGate.tsx` en los tres portales: términos de la función con casilla desmarcada, PDF y aceptación con la huella vista; «Más tarde» (por sesión). No bloquea; con el módulo apagado (404) no aparece.
+- Pruebas: typecheck, 430/430, lint, build; E2E iPhone 14 local 10/10.
+
 ## 2026-11-16 — SmartMatch «Hay una nueva oportunidad» en la campana (acompaña a backend 155) — rama claude/smartmatch-push-new-opportunity, PR borrador
 - `notifications.ts`: texto del aviso; `NotificationBell`: abre `/caregiver/smartmatch`. El push abre lo mismo vía `/abrir` (destino decidido por el servidor).
 - Pruebas: typecheck, 423/423, build.

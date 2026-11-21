@@ -30,6 +30,8 @@ export interface AgencyContractVersion {
   legal_status?: "pending_legal_approval" | "legally_approved";
   /** 153: condiciones comerciales de una Orden de Suscripción (solo informativas; ningún cobro automático). */
   commercial_terms?: SubscriptionOrderTerms | null;
+  /** 156: Word original aprobado, si ETNARA lo guardó (se descarga íntegro, con su huella). */
+  sourceFile?: { fileName: string; byteSize: number; sha256: string } | null;
 }
 
 /** Condiciones individuales de la Orden (153). Siempre propuesta; el servidor fija las salvaguardas. */
@@ -74,13 +76,28 @@ export const contractsApi = {
   requestCode: (o: string, v: string, t: string, input: SignerInput) => apiClient.post<SignatureCode>(`${base(o)}/versions/${v}/signature-code`, input, t),
   accept: (o: string, v: string, t: string, input: SignerInput & { challengeId: string; code: string }) =>
     apiClient.post<{ acceptance: AgencyContractAcceptance & { verified_email: string } }>(`${base(o)}/versions/${v}/accept`, input, t),
-  documentFile: (o: string, v: string, t: string, format: "pdf" | "txt") => apiClient.getBinary(`${base(o)}/versions/${v}/document.${format}`, t),
+  documentFile: (o: string, v: string, t: string, format: "pdf" | "txt" | "docx") => apiClient.getBinary(`${base(o)}/versions/${v}/document.${format}`, t),
   certificate: (o: string, a: string, t: string) => apiClient.getBinary(`${base(o)}/acceptances/${a}/certificate.pdf`, t),
   status: (o: string, t: string) => apiClient.get<{ status: ContractStatus }>(`${base(o)}/status`, t),
   centralOverview: (t: string) => apiClient.get<CentralContractsOverview>(`/platform/contracts/overview`, t),
 };
 
 /** Guarda un archivo recibido con la sesión (nunca por un enlace público). */
+/** 156: términos individuales de la función de cada persona (Anexo E del contrato). */
+export type RoleTermsRole = "ADMINISTRATION" | "CAREGIVER" | "FAMILY";
+export interface RoleTermsItem {
+  id: string; role: RoleTermsRole; version_label: string; title: string; body: string; content_sha256: string; is_test: boolean;
+  published_at: string; accepted: boolean; acceptedAt: string | null; acceptable: boolean; blockedReason: "TEST_DOCUMENT" | null;
+}
+export interface MyRoleTerms { roles: RoleTermsRole[]; items: RoleTermsItem[]; checkboxText: string }
+const termsBase = (o: string) => `/organizations/${o}/role-terms`;
+export const roleTermsApi = {
+  mine: (o: string, t: string) => apiClient.get<MyRoleTerms>(termsBase(o), t),
+  accept: (o: string, id: string, t: string, contentSha256: string) =>
+    apiClient.post<{ acceptance: { id: string; accepted_at: string } }>(`${termsBase(o)}/${id}/accept`, { contentSha256, confirm: true }, t),
+  pdf: (o: string, id: string, t: string) => apiClient.getBinary(`${termsBase(o)}/${id}/document.pdf`, t),
+};
+
 export function saveBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -108,6 +125,7 @@ export function contractErrorMessage(code?: string, status?: number): string {
     case "CONTRACT_COMMERCIAL_APPROVAL_REQUIRED": return "Esta Orden todavía no está aprobada para firma.";
     case "CONTRACT_PLACEHOLDER_TEXT_NOT_ALLOWED": case "CONTRACT_DRAFT_MARKED_NOT_SIGNABLE": return "Este documento es un borrador y no se puede firmar.";
     case "CONTRACT_ALREADY_ACCEPTED": return "Tu organización ya aceptó esta versión.";
+    case "ROLE_TERMS_ROLE_MISMATCH": return "Estos términos no corresponden a tu función en esta organización.";
     case "CONTRACT_FORBIDDEN": case "ORGANIZATION_ACCESS_DENIED": return "Solo una administradora o administrador activo de la organización puede firmar.";
     case "INVALID_PAYLOAD": return "Revisa los datos: nombre y apellido, cargo y las dos casillas.";
     default: return status === 0 ? "Sin conexión. Inténtalo cuando vuelva la señal." : "No se pudo completar. Inténtalo de nuevo.";

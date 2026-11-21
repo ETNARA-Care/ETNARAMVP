@@ -2,13 +2,14 @@ import { Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Home, HeartPulse, CalendarDays, MessageCircle, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { PortalBottomNav } from "./PortalBottomNav";
 import { AccountMenu } from "./AccountMenu";
 import { FamilyRecipientProvider, FamilyRecipientSwitcher } from "@/features/family/FamilyRecipientContext";
 
 export function FamilyLayout() {
-  const { user, organizations, logout } = useAuth();
+  const { user, organizations, logout, activeOrganization } = useAuth();
   const { t } = useTranslation("shell");
   return (
     <FamilyRecipientProvider>
@@ -31,6 +32,7 @@ export function FamilyLayout() {
       </header>
       <main className="mx-auto w-full max-w-[760px] flex-1 px-4 py-5 pb-28 md:px-6 md:py-7">
         <FamilyRecipientSwitcher />
+        <RoleTermsGate organizationId={activeOrganization?.id} />
         <Outlet />
       </main>
       <PortalBottomNav tabs={[

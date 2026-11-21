@@ -3,6 +3,7 @@ import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { useTranslation } from "react-i18next";
 import { Camera, HeartHandshake, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
@@ -94,7 +95,7 @@ export function AgencyLayout() {
      {t("agency.contractsPendingNotice")}
    </Link>
  )}
- {contractOnlyRedirect(contracts.status, location.pathname) ? <Navigate to="/agency/contracts" replace /> : <Outlet />}
+ <RoleTermsGate organizationId={activeOrganization?.id} />{contractOnlyRedirect(contracts.status, location.pathname) ? <Navigate to="/agency/contracts" replace /> : <Outlet />}
  </main>
  </div>
  <AdminMobileNav tabs={MOBILE_TABS.map(toNav)} groups={groups} platformLink={platformLink} />

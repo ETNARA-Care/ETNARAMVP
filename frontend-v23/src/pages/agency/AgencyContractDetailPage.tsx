@@ -31,7 +31,7 @@ export function AgencyContractDetailPage() {
   const [challenge, setChallenge] = useState<SignatureCode | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"code" | "sign" | "pdf" | "txt" | "cert" | null>(null);
+  const [busy, setBusy] = useState<"code" | "sign" | "pdf" | "txt" | "docx" | "cert" | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [sentAt, setSentAt] = useState(0);
   const [downloaded, setDownloaded] = useState(false);
@@ -58,11 +58,12 @@ export function AgencyContractDetailPage() {
   const secondsLeft = challenge ? Math.max(0, Math.round((new Date(challenge.expiresAt).getTime() - now) / 1000)) : 0;
   const resendIn = challenge ? Math.max(0, Math.ceil((sentAt + challenge.resendAfterSeconds * 1000 - now) / 1000)) : 0;
 
-  const download = async (format: "pdf" | "txt") => {
+  const download = async (format: "pdf" | "txt" | "docx") => {
     const token = getToken();
     if (!organizationId || !token || !v) return;
     setBusy(format);
-    try { saveBlob(await contractsApi.documentFile(organizationId, v.id, token, format), `${v.code}-v${v.version_label}.${format}`); setDownloaded(true); }
+    const fileName = format === "docx" && v.sourceFile ? v.sourceFile.fileName : `${v.code}-v${v.version_label}.${format}`;
+    try { saveBlob(await contractsApi.documentFile(organizationId, v.id, token, format), fileName); setDownloaded(true); }
     catch (e) { setError(contractErrorMessage((e as ApiError).code, (e as ApiError).status)); }
     finally { setBusy(null); }
   };
@@ -117,7 +118,9 @@ export function AgencyContractDetailPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" icon={<Download size={16} />} loading={busy === "pdf"} onClick={() => void download("pdf")} data-testid="download-pdf">Descargar PDF</Button>
           <Button variant="ghost" size="sm" icon={<Download size={16} />} loading={busy === "txt"} onClick={() => void download("txt")} data-testid="download-txt">Texto exacto (.txt)</Button>
+          {v.sourceFile && <Button variant="ghost" size="sm" icon={<Download size={16} />} loading={busy === "docx"} onClick={() => void download("docx")} data-testid="download-docx">Word original (.docx)</Button>}
         </div>
+        {v.sourceFile && <p className="break-all text-[var(--text-caption)] text-[var(--color-text-muted)]">Word original aprobado: {v.sourceFile.fileName} · huella SHA-256 <span className="font-mono" data-testid="source-file-hash">{v.sourceFile.sha256}</span></p>}
         <div className="max-h-[60vh] overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-4" tabIndex={0} aria-label="Texto completo del documento">
           <p className="whitespace-pre-wrap break-words text-[var(--text-small)] leading-relaxed text-[var(--color-text-primary)]" data-testid="contract-body">{v.body}</p>
         </div>
