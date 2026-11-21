@@ -179,8 +179,12 @@ export function AgencyContractDetailPage() {
           ) : (
             <div className="flex flex-col gap-3" data-testid="code-step">
               <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Enviamos un código a <strong data-testid="code-email">{challenge.emailMasked}</strong>. {secondsLeft > 0 ? `Vence en ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}.` : "El código venció; pide uno nuevo."}</p>
-              <div className="max-w-xs">
-                <Input label="Código de verificación" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" className="font-mono tracking-[0.3em]" data-testid="code-input" />
+              {/* Ancho explícito: los anchos con nombre (xs, md…) chocan con --spacing-* del tema y en Tailwind v4
+                  valen 0,75 rem, 1,5 rem… (ver tests/tamanos-tailwind-colision). Sin maxLength a propósito: así se puede pegar «123 456» y se
+                  conservan los seis dígitos. */}
+              <div className="w-full max-w-[20rem]" data-testid="code-field">
+                <Input label="Código de verificación" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" placeholder="000000" aria-describedby="code-help" className="font-mono text-[length:1.25rem] tracking-[0.3em]" data-testid="code-input" />
+                <p id="code-help" className="mt-1 text-[var(--text-caption)] text-[var(--color-text-muted)]">Escribe o pega los 6 dígitos del correo.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button icon={<CheckCircle2 size={18} />} disabled={!validCode(code) || secondsLeft === 0} loading={busy === "sign"} onClick={() => void sign()} data-testid="sign-button">Firmar y aceptar</Button>
