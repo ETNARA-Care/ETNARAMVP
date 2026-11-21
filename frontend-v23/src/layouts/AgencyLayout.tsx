@@ -65,7 +65,7 @@ export function AgencyLayout() {
  const photos = photoMode === "full" || photoMode === "legal-review";
  // 157: solo si ETNARA encendió «Contratos» para esta agencia (y el servidor tiene el módulo).
  const contractsOn = hasOrgFeature(activeOrganization?.features, "CONTRACTS");
- const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN") && contractsOn);
+ const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"), contractsOn);
  const location = useLocation();
  const groups: AdminNavGroup[] = GROUPS.map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
    (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch" && item.to !== "/agency/finance"))
