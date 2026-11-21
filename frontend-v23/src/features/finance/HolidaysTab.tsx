@@ -4,6 +4,7 @@ import { getToken } from "@/auth/token";
 import { financeApi, type FinanceHoliday } from "@/api/finance";
 import { Button, EmptyState, ErrorState, Input, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
 import { financeErrorText, formatDate } from "./money";
+import { DateField } from "./DateField";
 
 /**
  * Optional agency holiday calendar. ETNARA does not assume any official list:
@@ -53,7 +54,7 @@ export function HolidaysTab({ organizationId }: { organizationId: string }) {
         Un precio acordado con un cliente (o una excepción de un cuidador) se mantiene en feriado, salvo que ese cliente o cuidador tenga su propia tarifa de feriado.
       </p>
       <div className="grid gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-[180px_1fr_auto] sm:items-end [&>*]:min-w-0">
-        <Input label="Fecha" type="date" className="min-w-0 appearance-none" value={date} onChange={(e) => setDate(e.target.value)} />
+        <DateField label="Fecha" value={date} onChange={setDate} />
         <Input label="Nombre" maxLength={80} placeholder="Ej.: Día de Acción de Gracias" value={name} onChange={(e) => setName(e.target.value)} />
         <Button icon={<CalendarPlus size={18} />} loading={saving} disabled={!date || name.trim().length < 2} onClick={() => void add()}>Añadir</Button>
       </div>
