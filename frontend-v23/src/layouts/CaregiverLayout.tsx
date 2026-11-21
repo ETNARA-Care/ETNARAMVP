@@ -9,6 +9,7 @@ import { CareEventQueueBanner, CareEventQueueProvider } from "@/features/caregiv
 import { useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { AppLockGate } from "@/features/caregiver/AppLock";
 import { useAuth } from "@/auth/AuthProvider";
+import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
@@ -74,7 +75,7 @@ export function CaregiverLayout() {
       </button>
     </div>}
 
-    <main className="mx-auto w-full max-w-[760px] px-4 py-5 pb-28 sm:px-6"><Outlet/></main>
+    <main className="mx-auto w-full max-w-[760px] px-4 py-5 pb-28 sm:px-6"><RoleTermsGate organizationId={activeOrganization?.id} /><Outlet/></main>
 
     <PortalBottomNav tabs={[
       { to: "/caregiver/today", icon: Home, label: t("caregiver.items.today") },
