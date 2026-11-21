@@ -2,6 +2,12 @@
 
 ## Current Status
 
+## 2026-11-21 — Firma: campo «Código de verificación» de 12 px en iPhone — rama claude/codigo-verificacion-ancho, PR borrador
+- Causa: el tema define --spacing-xs (0,75 rem) y Tailwind v4 resuelve `max-w-<nombre>` con los espaciados del tema; el contenedor del campo medía 12 px (30 px con el borde).
+- Corrección: ancho explícito `w-full max-w-[20rem]`, dígitos más grandes y ayuda «Escribe o pega». Validación, vencimiento e intentos sin cambios; sin maxLength para poder pegar «123 456».
+- Prevención: tests/tamanos-tailwind-colision.test.mjs falla si una clase de ancho/alto usa un nombre de espaciado del tema. Era el único uso en src.
+- Pruebas: 443/443, typecheck, lint, build; E2E local 15/15 (iPhone SE, 14, 15 Pro Max y escritorio: escribir, pegar, firmar). Con el código anterior: 7/15 (campo de 30 px).
+
 ## 2026-11-21 — Central: administrar contratos por agencia (acompaña a backend 158) — rama claude/central-contratos-admin, PR borrador
 - `/platform/contracts` con pestañas «Estado» (la consulta de siempre) y «Administrar por agencia» (`features/contracts/central/CentralAgencyContractsPanel.tsx`): interruptor «Contratos» con motivo; representantes (solo administradoras activas que da el servidor; revocar con motivo); documentos de PRUEBA de esa agencia (crear borrador con marcas obligatorias, publicar con confirmación, ver aceptaciones, retirar con motivo); estado de la agencia.
 - No crea documentos oficiales ni registra aprobación jurídica; Central nunca firma.
