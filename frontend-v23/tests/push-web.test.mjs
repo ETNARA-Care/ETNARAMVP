@@ -112,6 +112,6 @@ test("textos es/en completos y sin promesas falsas de privacidad", () => {
 test("ETNARA central: interruptor «Notificaciones en el teléfono» por agencia (solo enciende o apaga)", () => {
   const card = read("src/features/platform/OrganizationFeaturesCard.tsx");
   assert.match(card, /PUSH_NOTIFICATIONS: \{ title: "Notificaciones en el teléfono"/);
-  assert.match(card, /"SHIFT_REPORTS", "PUSH_NOTIFICATIONS", "ACTIVITY_PHOTOS"\]/);
-  assert.match(read("src/api/platformOrganizations.ts"), /\| "PUSH_NOTIFICATIONS" \| "ACTIVITY_PHOTOS";/);
+  assert.match(card, /"SHIFT_REPORTS", "PUSH_NOTIFICATIONS", "ACTIVITY_PHOTOS"(, "CONTRACTS")?\]/);
+  assert.match(read("src/api/platformOrganizations.ts"), /\| "PUSH_NOTIFICATIONS" \| "ACTIVITY_PHOTOS"( \| "CONTRACTS")?;/);
 });

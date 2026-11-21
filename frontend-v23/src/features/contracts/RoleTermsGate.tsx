@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { getToken } from "@/auth/token";
+import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { contractErrorMessage, roleTermsApi, saveBlob, type MyRoleTerms, type RoleTermsItem } from "@/api/contracts";
 import type { ApiError } from "@/api/client";
 import { Button, Checkbox, Modal } from "@/components/ui";
@@ -13,6 +15,9 @@ import { Button, Checkbox, Modal } from "@/components/ui";
  * operación depende de aceptarlos. Con el módulo apagado el servidor responde 404 y no se muestra.
  */
 export function RoleTermsGate({ organizationId }: { organizationId: string | undefined }) {
+  // 157: solo en agencias con «Contratos» encendido por ETNARA (el servidor también lo exige).
+  const { activeOrganization } = useAuth();
+  const enabled = !!organizationId && activeOrganization?.id === organizationId && hasOrgFeature(activeOrganization?.features, "CONTRACTS");
   const [data, setData] = useState<MyRoleTerms | null>(null);
   const [checked, setChecked] = useState(false);
   const [busy, setBusy] = useState<"pdf" | "accept" | null>(null);
@@ -21,9 +26,9 @@ export function RoleTermsGate({ organizationId }: { organizationId: string | und
 
   const load = useCallback(() => {
     const token = getToken();
-    if (!organizationId || !token) { setData(null); return; }
+    if (!organizationId || !token || !enabled) { setData(null); return; }
     roleTermsApi.mine(organizationId, token).then(setData).catch(() => setData(null));
-  }, [organizationId]);
+  }, [organizationId, enabled]);
   useEffect(() => { setLaterState(false); load(); }, [load]);
 
   const pending: RoleTermsItem | undefined = data?.items.find((i) => !i.accepted && i.acceptable);
@@ -32,7 +37,7 @@ export function RoleTermsGate({ organizationId }: { organizationId: string | und
   let laterStored = false;
   try { laterStored = !!laterKey && sessionStorage.getItem(laterKey) === "1"; } catch { /* sin almacenamiento: solo en memoria */ }
   const setLater = (v: boolean) => { setLaterState(v); try { if (v && laterKey) sessionStorage.setItem(laterKey, "1"); } catch { /* ignorar */ } };
-  if (!organizationId || !pending || later || laterStored) return null;
+  if (!enabled || !organizationId || !pending || later || laterStored) return null;
 
   const downloadPdf = async () => {
     const token = getToken(); if (!token) return;

@@ -111,6 +111,6 @@ test("E2.7 imágenes y formularios privados: nunca en el almacenamiento del nave
 test("E2.8 ETNARA central: el interruptor tiene nombre legible y deja claro que no ve fotos ni consentimientos", () => {
   const card = code("src/features/platform/OrganizationFeaturesCard.tsx");
   assert.match(card, /ACTIVITY_PHOTOS: \{ title: "Fotos de actividades", detail: "[^"]*no ve las fotos ni los consentimientos\." \}/);
-  assert.match(card, /const ORDER: PilotFeatureCode\[\] = \[[^\]]*"ACTIVITY_PHOTOS"\]/);
-  assert.match(read("src/api/platformOrganizations.ts"), /export type PilotFeatureCode = [^;]*"ACTIVITY_PHOTOS";/);
+  assert.match(card, /const ORDER: PilotFeatureCode\[\] = \[[^\]]*"ACTIVITY_PHOTOS"(, "CONTRACTS")?\]/);
+  assert.match(read("src/api/platformOrganizations.ts"), /export type PilotFeatureCode = [^;]*"ACTIVITY_PHOTOS"( \| "CONTRACTS")?;/);
 });

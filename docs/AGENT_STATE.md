@@ -2,6 +2,10 @@
 
 ## Current Status
 
+## 2026-11-21 — Interruptor «Contratos» por agencia (acompaña a backend 157, PR #271) — rama claude/contratos-interruptor-agencia, PR borrador
+- Central: «Contratos» en OrganizationFeaturesCard. Agencia: menú «Contratos», pantallas (FeatureRoute) y aviso de términos solo con CONTRACTS en las funciones de la agencia.
+- Pruebas: 434/434, typecheck, lint, build; E2E iPhone 14 local 7/7 (Casa Demo encendida, otra agencia apagada, apagar en Central).
+
 ## 2026-11-21 — Contrato Oficial v1.1: Word original y términos por función (acompaña a backend 156, PR #270) — rama claude/contrato-oficial-156, PR borrador
 - `api/contracts.ts`: `sourceFile`, descarga `docx` y `roleTermsApi`. `AgencyContractDetailPage`: botón «Word original (.docx)» con su huella.
 - `features/contracts/RoleTermsGate.tsx` en los tres portales: términos de la función con casilla desmarcada, PDF y aceptación con la huella vista; «Más tarde» (por sesión). No bloquea; con el módulo apagado (404) no aparece.

@@ -55,7 +55,7 @@ test("solo la administración: supervisión, cuidadores y familiares no ven el f
     assert.match(page, /isAdmin = roles\.includes\("ORGANIZATION_ADMIN"\)/);
     assert.match(page, /contracts-not-authorized/);
   }
-  assert.match(layout, /useContractsAvailable\(activeOrganization\?\.id, roles\.includes\("ORGANIZATION_ADMIN"\)\)/);
+  assert.match(layout, /useContractsAvailable\(activeOrganization\?\.id, roles\.includes\("ORGANIZATION_ADMIN"\) && contractsOn\)/);
   assert.match(layout, /contracts\.available \|\| item\.to !== "\/agency\/contracts"/);
 });
 
