@@ -63,7 +63,9 @@ export function AgencyLayout() {
  // 145 (§5): con el módulo apagado, la administración conserva la entrada si hay retenciones legales que revisar.
  const photoMode = usePhotoMode();
  const photos = photoMode === "full" || photoMode === "legal-review";
- const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"));
+ // 157: solo si ETNARA encendió «Contratos» para esta agencia (y el servidor tiene el módulo).
+ const contractsOn = hasOrgFeature(activeOrganization?.features, "CONTRACTS");
+ const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"), contractsOn);
  const location = useLocation();
  const groups: AdminNavGroup[] = GROUPS.map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
    (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch" && item.to !== "/agency/finance"))

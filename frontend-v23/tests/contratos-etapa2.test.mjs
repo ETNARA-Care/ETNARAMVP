@@ -55,7 +55,7 @@ test("solo la administración: supervisión, cuidadores y familiares no ven el f
     assert.match(page, /isAdmin = roles\.includes\("ORGANIZATION_ADMIN"\)/);
     assert.match(page, /contracts-not-authorized/);
   }
-  assert.match(layout, /useContractsAvailable\(activeOrganization\?\.id, roles\.includes\("ORGANIZATION_ADMIN"\)\)/);
+  assert.match(layout, /useContractsAvailable\(activeOrganization\?\.id, roles\.includes\("ORGANIZATION_ADMIN"\), contractsOn\)/);
   assert.match(layout, /contracts\.available \|\| item\.to !== "\/agency\/contracts"/);
 });
 
@@ -72,7 +72,7 @@ test("versiones: aviso de versión nueva y el historial conserva las aceptacione
 });
 
 test("sin bloqueos: con el módulo apagado (404) no aparece en el menú y la pantalla lo explica", () => {
-  assert.match(read("src/features/contracts/useContractsAvailable.ts"), /catch\(\(\) => \{ if \(!cancelled\) setState\(\{ available: false, pending: 0, status: null \}\)/);
+  assert.match(read("src/features/contracts/useContractsAvailable.ts"), /catch\(\(\) => \{ if \(!cancelled\) setState\(\{ available: false, pending: 0, status: null(, readOnly: (false|true))? \}\)/);
   assert.match(list, /Contratos no disponibles/);
   assert.doesNotMatch(app, /ContractGate|RequireContract/);
 });

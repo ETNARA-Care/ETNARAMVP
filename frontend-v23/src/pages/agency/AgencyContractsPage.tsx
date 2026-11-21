@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Download, FileSignature, History } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { contractsApi, saveBlob, type AgencyContract, type AgencyContractAcceptance, type ContractStatus } from "@/api/contracts";
 import type { ApiError } from "@/api/client";
@@ -17,6 +18,8 @@ export function AgencyContractsPage() {
   const { activeOrganization, roles } = useAuth();
   const organizationId = activeOrganization?.id;
   const isAdmin = roles.includes("ORGANIZATION_ADMIN");
+  // 157: sin «Contratos» encendido para la agencia, solo consulta de las constancias ya firmadas.
+  const readOnly = !hasOrgFeature(activeOrganization?.features, "CONTRACTS");
   const [contracts, setContracts] = useState<AgencyContract[] | null | "error" | "forbidden" | "unavailable">(null);
   const [history, setHistory] = useState<AgencyContractAcceptance[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -26,6 +29,11 @@ export function AgencyContractsPage() {
     if (!organizationId || !token) return;
     setContracts(null);
     try {
+      if (readOnly) {
+        const h = await contractsApi.acceptances(organizationId, token);
+        setContracts([]); setHistory(h.acceptances);
+        return;
+      }
       const [c, h] = await Promise.all([contractsApi.list(organizationId, token), contractsApi.acceptances(organizationId, token)]);
       setContracts(c.contracts); setHistory(h.acceptances);
       // Estado contractual (153); si el servidor aún no lo ofrece, la pantalla funciona igual.
@@ -34,7 +42,7 @@ export function AgencyContractsPage() {
       const s = (e as ApiError).status;
       setContracts(s === 403 ? "forbidden" : s === 404 ? "unavailable" : "error");
     }
-  }, [organizationId]);
+  }, [organizationId, readOnly]);
   useEffect(() => { void load(); }, [load]);
 
   const certificate = async (a: AgencyContractAcceptance) => {
@@ -54,8 +62,10 @@ export function AgencyContractsPage() {
   }
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
-      <PageHeader title="Contratos" description="Documentos de tu organización con ETNARA Care. Léelos, descárgalos y, cuando corresponda, acéptalos en nombre de la organización." />
+      <PageHeader title="Contratos" description={readOnly ? "Constancias de los documentos que tu organización aceptó. Solo consulta." : "Documentos de tu organización con ETNARA Care. Léelos, descárgalos y, cuando corresponda, acéptalos en nombre de la organización."} />
+      {readOnly && Array.isArray(contracts) && <Card data-testid="contracts-read-only"><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Los contratos no están activos ahora para tu organización. Puedes consultar y descargar las constancias de lo que ya aceptaste; no se pueden firmar documentos nuevos.</p></Card>}
       {contracts === null ? <Skeleton className="h-40" />
+        : readOnly && Array.isArray(contracts) ? null
         : contracts === "error" ? <ErrorState kind="server" onRetry={() => void load()} />
         : contracts === "unavailable" ? <EmptyState icon={<FileSignature size={28} />} title="Contratos no disponibles" description="Esta sección todavía no está activa para tu organización." />
         : contracts.length === 0 ? <EmptyState icon={<FileSignature size={28} />} title="No hay documentos vigentes" description="Cuando ETNARA publique un documento para tu organización aparecerá aquí." />
