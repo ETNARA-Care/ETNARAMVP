@@ -2,6 +2,10 @@
 
 ## Current Status
 
+## 2026-11-23 — 159 en el portal: mensajes de activación y aviso de documentos profesionales — rama claude/159-mensajes-activacion, PR borrador
+- ActivateInvitationPage: mensaje claro por código (WORKER_ALREADY_IN_ORGANIZATION, WORKER_PROFILE_CONFLICT, WORKER_ALREADY_LINKED, WORKER_NOT_ACTIVE, ACCOUNT_DISABLED, vencida); aviso en invitaciones de cuidador: la organización podrá ver credenciales y documentos profesionales mientras trabaje con ella.
+- Pruebas: 446/446, typecheck, lint, build; E2E iPhone 14 local 4/4. Requiere backend 159.
+
 ## 2026-11-21 — Firma: campo «Código de verificación» de 12 px en iPhone — rama claude/codigo-verificacion-ancho, PR borrador
 - Causa: el tema define --spacing-xs (0,75 rem) y Tailwind v4 resuelve `max-w-<nombre>` con los espaciados del tema; el contenedor del campo medía 12 px (30 px con el borde).
 - Corrección: ancho explícito `w-full max-w-[20rem]`, dígitos más grandes y ayuda «Escribe o pega». Validación, vencimiento e intentos sin cambios; sin maxLength para poder pegar «123 456».

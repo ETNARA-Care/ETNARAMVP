@@ -7,6 +7,20 @@ import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { Button, Card, Input, Skeleton } from "@/components/ui";
 
+/** 159: mensajes claros por código (nunca un error genérico cuando el servidor sabe qué pasó). */
+export function activationErrorMessage(code?: string): string {
+  switch (code) {
+    case "INVITATION_IDENTITY_MISMATCH": return "La cuenta utilizada no corresponde al correo invitado.";
+    case "WORKER_ALREADY_IN_ORGANIZATION": return "Ya trabajas como cuidador en esta organización. No necesitas aceptar esta invitación; entra a ETNARA con tu cuenta.";
+    case "WORKER_PROFILE_CONFLICT": return "Tu perfil profesional necesita revisión antes de unirlo a esta organización. Pide a la organización que te envíe una invitación nueva o escribe a soporte.";
+    case "WORKER_ALREADY_LINKED": return "Esta ficha de cuidador ya está vinculada a otra cuenta. Pide a la organización una invitación nueva.";
+    case "WORKER_NOT_ACTIVE": return "La organización desactivó esta ficha de cuidador. Pide una invitación nueva.";
+    case "ACCOUNT_DISABLED": return "Tu cuenta está desactivada. Escribe a soporte.";
+    case "INVITATION_EXPIRED": case "INVITATION_NOT_AVAILABLE": return "Esta invitación venció, fue utilizada o fue revocada. Pide un enlace nuevo.";
+    default: return "No pudimos completar la activación. Verifica los datos o solicita un enlace nuevo.";
+  }
+}
+
 export function ActivateInvitationPage() {
   const navigate = useNavigate();
   const auth = useAuth();
@@ -61,10 +75,7 @@ export function ActivateInvitationPage() {
         setDone(true);
       }
     } catch (caught) {
-      const apiError = caught as ApiError;
-      setError(apiError.code === "INVITATION_IDENTITY_MISMATCH"
-        ? "La cuenta utilizada no corresponde al correo invitado."
-        : "No pudimos completar la activación. Verifica los datos o solicita un enlace nuevo.");
+      setError(activationErrorMessage((caught as ApiError).code));
     } finally {
       setSubmitting(false);
     }
@@ -94,6 +105,11 @@ export function ActivateInvitationPage() {
               Correo invitado: <strong>{invitation.email_masked}</strong><br />
               Vence: {new Date(invitation.expires_at).toLocaleString("es-PR")}
             </div>
+            {invitation.invitation_type === "worker" && (
+              <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]" data-testid="professional-documents-notice">
+                Al aceptar, {invitation.organization_name} podrá ver tus credenciales y documentos profesionales mientras trabajes con esta organización. Si ya los registraste en ETNARA, no tendrás que subirlos otra vez.
+              </p>
+            )}
             {invitation.account_exists && auth.status !== "authenticated" && <Input label="Correo electrónico" type="email" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} required />}
             {(!invitation.account_exists || auth.status !== "authenticated") && <Input label={invitation.account_exists ? "Contraseña actual" : "Crea una contraseña"} type="password" autoComplete={invitation.account_exists ? "current-password" : "new-password"} hint={!invitation.account_exists ? "Usa al menos 12 caracteres." : undefined} minLength={invitation.account_exists ? undefined : 12} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} required />}
             {!invitation.account_exists && <Input label="Confirma la contraseña" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required />}
