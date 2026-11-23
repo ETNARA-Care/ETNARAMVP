@@ -2,6 +2,11 @@
 
 ## Current Status
 
+## 2026-11-23 — 160 en Central: «Cuidador independiente» (PR A) — rama claude/160-central-cuidador-independiente, PR borrador
+- api/platformOrganizations: tres tipos con tablas de traducción (antes todo lo que no era agencia se mostraba como hogar) y listAvailableOrganizationTypes (GET /platform/organization-types).
+- Central: la opción aparece solo si el backend la declara disponible; aviso de una sola persona y sin verificación de ETNARA; errores INDEPENDENT_MODALITY_DISABLED e INDEPENDENT_SINGLE_OPERATOR. SelectOrganizationPage con la etiqueta.
+- Pruebas: 449/449 (incluye central-cuidador-independiente-160), typecheck, build; E2E local iPhone 14 + escritorio 8/8. Requiere backend 160.
+
 ## 2026-11-23 — 159 en el portal: mensajes de activación y aviso de documentos profesionales — rama claude/159-mensajes-activacion, PR borrador
 - ActivateInvitationPage: mensaje claro por código (WORKER_ALREADY_IN_ORGANIZATION, WORKER_PROFILE_CONFLICT, WORKER_ALREADY_LINKED, WORKER_NOT_ACTIVE, ACCOUNT_DISABLED, vencida); aviso en invitaciones de cuidador: la organización podrá ver credenciales y documentos profesionales mientras trabaje con ella.
 - Pruebas: 446/446, typecheck, lint, build; E2E iPhone 14 local 4/4. Requiere backend 159.

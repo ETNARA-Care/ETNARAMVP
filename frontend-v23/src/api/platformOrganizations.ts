@@ -1,7 +1,18 @@
 import { apiClient } from "@/api/client";
 
-export type PlatformOrganizationType = "agency" | "residential_establishment";
-type BackendOrganizationType = "HOME_CARE_AGENCY" | "RESIDENTIAL_CARE_HOME";
+export type PlatformOrganizationType = "agency" | "residential_establishment" | "independent_provider";
+type BackendOrganizationType = "HOME_CARE_AGENCY" | "RESIDENTIAL_CARE_HOME" | "INDEPENDENT_PROVIDER";
+
+const FROM_BACKEND: Record<BackendOrganizationType, PlatformOrganizationType> = {
+  HOME_CARE_AGENCY: "agency",
+  RESIDENTIAL_CARE_HOME: "residential_establishment",
+  INDEPENDENT_PROVIDER: "independent_provider",
+};
+const TO_BACKEND: Record<PlatformOrganizationType, BackendOrganizationType> = {
+  agency: "HOME_CARE_AGENCY",
+  residential_establishment: "RESIDENTIAL_CARE_HOME",
+  independent_provider: "INDEPENDENT_PROVIDER",
+};
 
 interface BackendPlatformOrganization {
   id: string;
@@ -82,12 +93,19 @@ export interface CentralAdminInvitation {
   revocable: boolean;
 }
 
+// 160: antes todo lo que no era agencia se mostraba como hogar; un cuidador independiente se habría visto como hogar.
 function fromBackend(o: BackendPlatformOrganization): PlatformOrganization {
-  return { ...o, type: o.organization_type === "HOME_CARE_AGENCY" ? "agency" : "residential_establishment" };
+  return { ...o, type: FROM_BACKEND[o.organization_type] ?? "agency" };
 }
 
 function toBackendType(type: PlatformOrganizationType): BackendOrganizationType {
-  return type === "agency" ? "HOME_CARE_AGENCY" : "RESIDENTIAL_CARE_HOME";
+  return TO_BACKEND[type];
+}
+
+/** 160: qué modalidades puede crear Central ahora mismo («Cuidador independiente» está apagada hasta completar los PR A, B y C). */
+export async function listAvailableOrganizationTypes(token: string): Promise<PlatformOrganizationType[]> {
+  const result = await apiClient.get<{ types: { code: BackendOrganizationType; available: boolean }[] }>("/platform/organization-types", token);
+  return result.types.filter((t) => t.available && FROM_BACKEND[t.code]).map((t) => FROM_BACKEND[t.code]);
 }
 
 export async function listPlatformOrganizations(token: string): Promise<PlatformOrganization[]> {
