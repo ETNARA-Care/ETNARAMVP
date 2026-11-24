@@ -2,6 +2,12 @@
 
 ## Current Status
 
+## 2026-11-23 — 161 PR C (portal): «Mis documentos», confirmación e «Informe del proveedor» — rama claude/161-mis-documentos-informe-proveedor (apilada sobre claude/160b-mi-practica), PR borrador
+- api/practice.ts; /agency/documents (PracticeDocumentsPage): requisitos propios, registrar/corregir/renovar/retirar; estados Registrado · Vence pronto · Vencido · Falta · Retirado; «Autodeclarado»; nunca Verificado/Aprobado.
+- Mis turnos: advertencia con lo que falta, casilla «Confirmo que cumplo…» y aviso legal fijo antes de enviar confirmSelfDeclaration.
+- ShiftReportPanel providerMode: «Publicar a la familia» como «Informe del proveedor»; familia: etiquetas del proveedor (lista, detalle); agencia: «Registrado por la cuidadora · pendiente de revisión de la agencia».
+- Pruebas: 461/461 (mis-documentos-161), typecheck, build; E2E local iPhone 14 + escritorio 11/11. Requiere backend PR C.
+
 ## 2026-11-23 — 160 PR B «Mi práctica» (portal) — rama claude/160b-mi-practica (apilada sobre claude/160-central-cuidador-independiente), PR borrador
 - features/practice/modality.ts (puro): isIndependentOrganization, secciones de agencia ocultas y redirigidas a /agency.
 - AgencyLayout: menú «Mi práctica» (Inicio, Turnos, Clientes, Incidentes, Mensajes + Configuración, Contratos) y pestañas móviles; «Mi día de cuidador» se mantiene.
