@@ -7,6 +7,7 @@ import { resolveExperienceRoute } from "@/auth/roles";
 const ORGANIZATION_TYPE_LABEL: Record<string, string> = {
   HOME_CARE_AGENCY: "Agencia de cuidado en el hogar",
   RESIDENTIAL_CARE_HOME: "Hogar de cuidado",
+  INDEPENDENT_PROVIDER: "Cuidador independiente",
 };
 const ROLE_LABEL: Record<string, string> = {
   ORGANIZATION_ADMIN: "Administrador/a",

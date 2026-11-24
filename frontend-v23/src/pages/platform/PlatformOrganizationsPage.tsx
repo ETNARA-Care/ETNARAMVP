@@ -4,6 +4,7 @@ import { getToken } from "@/auth/token";
 import { OrganizationFeaturesCard } from "@/features/platform/OrganizationFeaturesCard";
 import {
   createPlatformOrganization,
+  listAvailableOrganizationTypes,
   getPlatformOrganizationEstablishment,
   getPlatformOrganizationOverview,
   inviteOrganizationAdmin,
@@ -52,7 +53,12 @@ const shortDate = (iso: string) => new Date(iso).toLocaleDateString("es-PR", { d
  * correo) o se revoca y se invita a la dirección corregida.
  */
 const DELIVERY_FAILED_TEXT = "El correo no pudo enviarse. Por seguridad, ETNARA Central no muestra el enlace de activación: revisa la dirección y usa «Reenviar», o revoca la invitación e invita a la dirección correcta.";
-const orgTypeLabel = (type: string) => (type === "agency" ? "Agencia de cuidado" : "Hogar / establecimiento residencial");
+const ORG_TYPE_LABEL: Record<string, string> = {
+  agency: "Agencia de cuidado",
+  residential_establishment: "Hogar / establecimiento residencial",
+  independent_provider: "Cuidador independiente",
+};
+const orgTypeLabel = (type: string) => ORG_TYPE_LABEL[type] ?? "Organización";
 
 export function PlatformOrganizationsPage() {
   const [organizations, setOrganizations] = useState<PlatformOrganization[] | null>(null);
@@ -61,6 +67,8 @@ export function PlatformOrganizationsPage() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<PlatformOrganizationType>("agency");
+  // 160: «Cuidador independiente» solo aparece si ETNARA encendió la modalidad (el backend y la base lo exigen igual).
+  const [availableTypes, setAvailableTypes] = useState<PlatformOrganizationType[]>(["agency", "residential_establishment"]);
   const [saving, setSaving] = useState(false);
 
   const [selectedOrg, setSelectedOrg] = useState<PlatformOrganization | null>(null);
@@ -96,6 +104,16 @@ export function PlatformOrganizationsPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!creating) return;
+    const token = getToken();
+    if (!token) return;
+    let active = true;
+    listAvailableOrganizationTypes(token)
+      .then((types) => { if (active) setAvailableTypes(types); })
+      .catch(() => { if (active) setAvailableTypes(["agency", "residential_establishment"]); });
+    return () => { active = false; };
+  }, [creating]);
 
   async function inspect(org: PlatformOrganization) {
     const token = getToken();
@@ -135,8 +153,9 @@ export function PlatformOrganizationsPage() {
       setName("");
       await load();
       toast.show("Organización creada.", "success");
-    } catch {
-      toast.show("No pudimos crear la organización.", "danger");
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      toast.show(code === "INDEPENDENT_MODALITY_DISABLED" ? "La modalidad «Cuidador independiente» todavía no está disponible." : "No pudimos crear la organización.", "danger");
     } finally {
       setSaving(false);
     }
@@ -201,8 +220,9 @@ export function PlatformOrganizationsPage() {
       setEmailDelivery(result.emailDelivery);
       toast.show(result.emailDelivery.status === "sent" ? "Invitación enviada." : "Invitación creada; el correo no pudo enviarse.", result.emailDelivery.status === "sent" ? "success" : "warning");
       await loadInvitations(inviteOrg.id);
-    } catch {
-      toast.show("No pudimos crear la invitación.", "danger");
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      toast.show(code === "INDEPENDENT_SINGLE_OPERATOR" ? "Un cuidador independiente tiene una sola persona administradora." : "No pudimos crear la invitación.", "danger");
     } finally {
       setInviting(false);
     }
@@ -355,7 +375,7 @@ export function PlatformOrganizationsPage() {
       </Modal>
 
       <Modal sheetOnMobile open={creating} onClose={() => !saving && setCreating(false)} title="Nueva organización" footer={<><Button variant="secondary" disabled={saving} onClick={() => setCreating(false)}>Cancelar</Button><Button loading={saving} onClick={() => void createOrganization()}>Crear organización</Button></>}>
-        <div className="space-y-4"><Input label="Nombre de la organización" value={name} onChange={(e) => setName(e.target.value)}/><label className="block text-[length:var(--text-small)] font-medium text-[var(--color-text-primary)]">Tipo<select className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-[length:1rem]" value={type} onChange={(e) => setType(e.target.value as PlatformOrganizationType)}><option value="agency">Agencia de cuidado</option><option value="residential_establishment">Hogar / establecimiento residencial</option></select></label></div>
+        <div className="space-y-4"><Input label="Nombre de la organización" value={name} onChange={(e) => setName(e.target.value)}/><label className="block text-[length:var(--text-small)] font-medium text-[var(--color-text-primary)]">Tipo<select className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-[length:1rem]" value={type} onChange={(e) => setType(e.target.value as PlatformOrganizationType)}><option value="agency">Agencia de cuidado</option><option value="residential_establishment">Hogar / establecimiento residencial</option>{availableTypes.includes("independent_provider") ? <option value="independent_provider">Cuidador independiente</option> : null}</select></label>{type === "independent_provider" ? <p data-testid="independent-modality-note" className="text-[length:var(--text-small)] text-[var(--color-text-secondary)]">Una sola persona administra la cuenta y presta el servicio. Se invita a esa persona como administradora; al aceptar, también queda como cuidadora. ETNARA Care no verifica ni aprueba sus credenciales.</p> : null}</div>
       </Modal>
 
       <Modal sheetOnMobile open={inviteOrg !== null} onClose={() => !inviting && setInviteOrg(null)} eyebrow="Invitar administrador" title={inviteOrg?.name ?? "Invitar administrador"} footer={emailDelivery ? <Button onClick={() => setInviteOrg(null)}>Cerrar</Button> : <><Button variant="secondary" disabled={inviting} onClick={() => setInviteOrg(null)}>Cancelar</Button><Button loading={inviting} onClick={() => void invite()}>Enviar invitación</Button></>}>
