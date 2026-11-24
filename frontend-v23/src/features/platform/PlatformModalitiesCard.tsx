@@ -3,12 +3,13 @@ import { History, UserRound } from "lucide-react";
 import { getToken } from "@/auth/token";
 import { listPlatformModalities, setPlatformModality, type PlatformModality } from "@/api/platformModalities";
 import { Button, Input, Skeleton, useToast } from "@/components/ui";
-import { MODALITY_REASON_MAX, MODALITY_REASON_MIN, modalityErrorMessage, reasonValid, stateNote, switchAvailable } from "./modalitySwitch";
+import { MODALITY_REASON_MAX, MODALITY_REASON_MIN, lockLines, modalityErrorMessage, reasonValid, stateNote, switchAvailable } from "./modalitySwitch";
 
 /**
  * 163 · ETNARA Central: interruptor de la modalidad «Cuidador independiente».
  * Muestra solo el estado guardado; cambiarlo siempre pide motivo y queda en el historial (solo añadir).
- * Encender solo si el servidor lo autoriza; apagar siempre. Solo gobierna los NUEVOS registros.
+ * Encender solo con la autorización del servidor y la autorización vigente de la base de datos (segundo candado);
+ * apagar siempre. Solo gobierna los NUEVOS registros.
  */
 export function PlatformModalitiesCard() {
   const toast = useToast();
@@ -63,6 +64,11 @@ export function PlatformModalitiesCard() {
                 </p>
                 <p className="mt-1 text-[length:var(--text-small)] leading-5 text-[var(--color-text-secondary)]" data-ui="modality-note">{stateNote(modality)}</p>
                 <p className="mt-1 text-[length:var(--text-caption)] text-[var(--color-text-muted)]">Proveedores registrados: {modality.registeredOrganizations}</p>
+                {!modality.enabled && (
+                  <ul className="mt-1 space-y-0.5 text-[length:var(--text-caption)] text-[var(--color-text-muted)]" data-ui="modality-locks" data-db={modality.databaseUnlocked ? "unlocked" : "locked"}>
+                    {lockLines(modality).map((line) => <li key={line}>{line}</li>)}
+                  </ul>
+                )}
               </div>
               <button type="button" role="switch" aria-checked={modality.enabled} disabled={saving || !available}
                 aria-label={`Cuidador independiente: ${modality.enabled ? "encendida. Apagar" : "apagada. Encender"} (pide motivo)`}

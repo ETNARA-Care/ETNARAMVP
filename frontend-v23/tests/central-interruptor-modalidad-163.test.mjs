@@ -13,13 +13,17 @@ const api = read("src/api/platformModalities.ts");
 const page = read("src/pages/platform/PlatformOrganizationsPage.tsx");
 
 // 163 (24-nov-2026): interruptor de la modalidad «Cuidador independiente», solo en ETNARA Central.
-test("apagar siempre; encender solo con la autorización del servidor", async () => {
+test("apagar siempre; encender solo con la autorización del servidor y el candado de la base abierto", async () => {
   const m = await load("src/features/platform/modalitySwitch.ts");
-  assert.equal(m.switchAvailable({ enabled: false, activationAllowed: false }), false);
-  assert.equal(m.switchAvailable({ enabled: false, activationAllowed: true }), true);
-  assert.equal(m.switchAvailable({ enabled: true, activationAllowed: false }), true);
-  assert.match(m.stateNote({ enabled: false, activationAllowed: false }), /autorización expresa/);
+  assert.equal(m.switchAvailable({ enabled: false, activationAllowed: false, databaseUnlocked: false }), false);
+  assert.equal(m.switchAvailable({ enabled: false, activationAllowed: true, databaseUnlocked: false }), false);
+  assert.equal(m.switchAvailable({ enabled: false, activationAllowed: false, databaseUnlocked: true }), false);
+  assert.equal(m.switchAvailable({ enabled: false, activationAllowed: true, databaseUnlocked: true }), true);
+  assert.equal(m.switchAvailable({ enabled: true, activationAllowed: false, databaseUnlocked: false }), true);
+  assert.match(m.stateNote({ enabled: false, activationAllowed: false, databaseUnlocked: false }), /servidor y en la base de datos/);
   assert.match(m.modalityErrorMessage("MODALITY_ACTIVATION_NOT_AUTHORIZED"), /no está autorizada/);
+  assert.match(m.modalityErrorMessage("MODALITY_ACTIVATION_LOCKED"), /candado de la base de datos/);
+  assert.deepEqual(m.lockLines({ enabled: false, activationAllowed: false, databaseUnlocked: false }), ["Servidor: sin autorización", "Base de datos: candado cerrado"]);
 });
 
 test("el motivo es obligatorio (10 a 1000 caracteres)", async () => {

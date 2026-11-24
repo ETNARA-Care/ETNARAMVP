@@ -20,6 +20,9 @@ export interface PlatformModality {
   canDisable: boolean;
   /** El servidor permite encender (INDEPENDENT_MODALITY_ACTIVATION_ALLOWED). Apagar siempre se puede. */
   activationAllowed: boolean;
+  /** Segundo candado: hay una autorización de activación vigente en la base de datos (un solo uso). */
+  databaseUnlocked: boolean;
+  databaseUnlockedUntil: string | null;
   history: PlatformModalityHistoryEntry[];
 }
 
