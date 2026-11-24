@@ -17,6 +17,8 @@ import { IncidentsPanel } from "./overview/IncidentsPanel";
 import { ActivityFeed } from "./overview/ActivityFeed";
 import { SmartMatchPanel } from "./overview/SmartMatchPanel";
 import { hasOrgFeature } from "@/auth/orgFeatures";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { PracticeHomePage } from "./practice/PracticeHomePage";
 function DashboardAction({ label, Icon, to, primary = false, onNavigate }: { label: string; Icon: typeof CalendarPlus; to: string; primary?: boolean; onNavigate: (to: string) => void }) {
  return (
  <button type="button" onClick={() => onNavigate(to)}
@@ -35,7 +37,13 @@ const QUICK_ACTIONS = [
  { label: "Incidentes", Icon: AlertTriangle, to: "/agency/incidents" },
 ];
 /** Centro de mando del Portal Administrativo: todo con datos reales de la organización activa. */
+/** 160 (PR B): un cuidador independiente ve «Mi práctica»; agencias y hogares, el resumen de siempre. */
 export function AgencyOverviewPage() {
+  const { activeOrganization } = useAuth();
+  return isIndependentOrganization(activeOrganization) ? <PracticeHomePage /> : <AgencyOverviewContent />;
+}
+
+function AgencyOverviewContent() {
  const navigate = useNavigate();
  const { activeOrganization, roles } = useAuth();
  const supervision = useAgencySupervision();
