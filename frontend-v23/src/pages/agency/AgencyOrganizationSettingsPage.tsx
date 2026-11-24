@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { useNavigate } from "react-router-dom";
 import { Archive, Building2, LogOut, MapPin, Pencil, Plus, RefreshCcw, Settings2 } from "lucide-react";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Skeleton, useToast } from "@/components/ui";
@@ -12,6 +13,8 @@ import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCa
 export function AgencyOrganizationSettingsPage() {
   const { user, logout, activeOrganization, organizations, roles } = useAuth();
   const isOrgAdmin = roles.includes("ORGANIZATION_ADMIN");
+  // 160 (PR B): un cuidador independiente no tiene equipo ni establecimientos (cerrados también en el backend).
+  const independent = isIndependentOrganization(activeOrganization);
   const organizationId = activeOrganization?.id;
   const navigate = useNavigate();
   const toast = useToast();
@@ -23,7 +26,7 @@ export function AgencyOrganizationSettingsPage() {
 
   const load = useCallback(async () => {
     const token = getToken();
-    if (!organizationId || !token) return;
+    if (!organizationId || !token || independent) return;
     setError(false);
     try {
       const result = await listEstablishments(organizationId, token);
@@ -32,7 +35,7 @@ export function AgencyOrganizationSettingsPage() {
       setEstablishments([]);
       setError(true);
     }
-  }, [organizationId]);
+  }, [organizationId, independent]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -81,9 +84,12 @@ export function AgencyOrganizationSettingsPage() {
       {organizations.length > 1 && <Button variant="secondary" onClick={() => navigate("/select-organization")}>Cambiar organización</Button>}
     </Card>
 
+    {!independent && <>
     {isOrgAdmin && organizationId && <TeamPanel organizationId={organizationId} />}
     {isOrgAdmin && organizationId && <IncidentClosersCard organizationId={organizationId} />}
+    </>}
 
+    {!independent && <>
     <div className="flex items-center justify-between gap-3"><div><h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Establecimientos</h2><p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Hogares o centros donde residen o asisten personas, de {activeOrganization?.name}. Las oficinas administrativas no se registran aquí.</p></div><Button icon={<Plus size={18} />} onClick={openCreate}>Añadir</Button></div>
     {establishments === null ? <Skeleton className="h-28" /> : error ? <ErrorState kind="server" onRetry={() => void load()} /> : establishments.length === 0 ? <EmptyState icon={<Building2 size={28} />} title="No hay establecimientos" description="Añade el primer hogar o centro de esta organización. Una agencia de cuido domiciliario sin hogar ni centro propio no necesita establecimientos." action={{ label: "Añadir establecimiento", onClick: openCreate }} /> :
       <div className="flex flex-col gap-3">{establishments.map((establishment) => <Card key={establishment.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -97,6 +103,8 @@ export function AgencyOrganizationSettingsPage() {
           <Button variant="ghost" icon={establishment.status === "active" ? <Archive size={16} /> : <RefreshCcw size={16} />} disabled={saving} onClick={() => void setEstablishmentStatus(establishment)}>{establishment.status === "active" ? "Archivar" : "Reactivar"}</Button>
         </div>
       </Card>)}</div>}
+
+    </>}
 
     <Modal open={editing !== null} onClose={() => !saving && setEditing(null)} title={editing === "new" ? "Añadir establecimiento" : "Editar establecimiento"} footer={<><Button variant="secondary" disabled={saving} onClick={() => setEditing(null)}>Cancelar</Button><Button loading={saving} disabled={!form.name.trim()} onClick={() => void saveEstablishment()}>Guardar</Button></>}>
       <div className="flex flex-col gap-3"><Input label="Nombre" value={form.name} maxLength={120} required onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /><Input label="Dirección (opcional)" value={form.address} maxLength={500} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} /><p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Un establecimiento es un hogar o centro donde residen o asisten personas. No registres aquí oficinas administrativas: las listas de documentos de establecimiento son las de un hogar residencial. Este establecimiento quedará asociado exclusivamente a la organización activa.</p></div>

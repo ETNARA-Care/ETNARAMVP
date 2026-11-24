@@ -24,7 +24,8 @@
     "groups": {
       "operation": "Operación",
       "care": "Cuidado",
-      "administration": "Administración"
+      "administration": "Administración",
+      "practice": "Mi práctica"
     },
     "items": {
       "overview": "Resumen",
@@ -44,7 +45,9 @@
       "agents": "Centro de agentes",
       "settings": "Configuración",
       "photos": "Fotos de actividades",
-      "contracts": "Contratos"
+      "contracts": "Contratos",
+      "practiceHome": "Inicio",
+      "clients": "Clientes"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",

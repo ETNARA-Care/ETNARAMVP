@@ -2,6 +2,13 @@
 
 ## Current Status
 
+## 2026-11-23 — 160 PR B «Mi práctica» (portal) — rama claude/160b-mi-practica (apilada sobre claude/160-central-cuidador-independiente), PR borrador
+- features/practice/modality.ts (puro): isIndependentOrganization, secciones de agencia ocultas y redirigidas a /agency.
+- AgencyLayout: menú «Mi práctica» (Inicio, Turnos, Clientes, Incidentes, Mensajes + Configuración, Contratos) y pestañas móviles; «Mi día de cuidador» se mantiene.
+- PracticeHomePage y PracticeShiftsPage (crear turno + «Asignármelo» vía /me/shifts/:id/self-assign; mensajes sin aprobación ni certificación; caso confirmation_required preparado para el PR C).
+- Configuración sin equipo ni establecimientos; portal de cuidadora sin «Escribir a mi agencia», ofertas de cobertura ni establecimientos en independientes.
+- Pruebas: 455/455 (mi-practica-160b), typecheck, build; E2E local iPhone 14 + escritorio 17/17 (incluye persona que también trabaja en una agencia y 0 llamadas a rutas cerradas). Requiere backend PR B.
+
 ## 2026-11-23 — 160 en Central: «Cuidador independiente» (PR A) — rama claude/160-central-cuidador-independiente, PR borrador
 - api/platformOrganizations: tres tipos con tablas de traducción (antes todo lo que no era agencia se mostraba como hogar) y listAvailableOrganizationTypes (GET /platform/organization-types).
 - Central: la opción aparece solo si el backend la declara disponible; aviso de una sola persona y sin verificación de ETNARA; errores INDEPENDENT_MODALITY_DISABLED e INDEPENDENT_SINGLE_OPERATOR. SelectOrganizationPage con la etiqueta.
