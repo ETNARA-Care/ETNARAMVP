@@ -402,8 +402,12 @@ export function AgencyWorkerProfilePage() {
           </div>
           {worker.status === "active" && <Button icon={<Plus size={18} />} onClick={openCredentialCreate} disabled={credentialTypes.length === 0}>Agregar credencial</Button>}
         </div>
-        {worker.status !== "active" && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-3">Reactiva la membresía para registrar o modificar credenciales.</p>}
-        {credentials.length === 0 ? (
+        {/* 162: sin membresía activa la agencia conserva el perfil, pero no las credenciales ni los archivos. */}
+        {worker.status !== "active" ? (
+          <p data-ui="former-member-credentials" className="text-[var(--text-small)] text-[var(--color-text-secondary)] mb-3">
+            Esta persona ya no pertenece a la agencia: sus credenciales y archivos profesionales no están disponibles. El historial de revisiones de la agencia se conserva. Si se reactiva la membresía, el acceso vuelve.
+          </p>
+        ) : credentials.length === 0 ? (
           <EmptyState title="Sin credenciales registradas" />
         ) : (
           <div className="flex flex-col gap-2">
