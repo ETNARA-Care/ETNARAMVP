@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppLockSetting } from "@/features/caregiver/AppLock";
+import { AGENCY_APPROVAL_LABEL, showAgencyApproval } from "@/features/caregiver/credentialApproval";
 import { useNavigate } from "react-router-dom";
 import { Card, Avatar, Badge, Button, Checkbox, Input, Skeleton, useToast } from "@/components/ui";
 import { CalendarClock, CheckCircle2, LogOut, Plus, ShieldCheck, Trash2, Upload } from "lucide-react";
@@ -219,7 +220,7 @@ export function CaregiverProfilePage() {
         <div className="bg-[var(--color-navy-900)] p-5 text-white">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2"><ShieldCheck size={20} /><p className="font-semibold">Mis credenciales</p></div>
-            {credentials && credentials.some((item) => item.verificationStatus === "verified") && <Badge tone="success">Verificada</Badge>}
+            {showAgencyApproval(credentials) && <Badge tone="success">{AGENCY_APPROVAL_LABEL}</Badge>}
           </div>
           <p className="mt-2 text-sm text-white/70">Consulta el estado de los requisitos que tu organización mantiene en tu expediente.</p>
         </div>

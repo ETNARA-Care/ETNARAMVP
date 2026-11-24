@@ -74,7 +74,8 @@ export const OPPORTUNITY_EVENT_LABELS: Record<string, string> = {
   EXPIRED: "Vencida automáticamente",
 };
 export const REASON_LABELS: Record<string, string> = {
-  APPROVED_ELIGIBLE: "Cumple todos los requisitos verificados",
+  // Solo se registra cuando la agencia aprueba y su propia política de requisitos (con sus revisiones) da «eligible».
+  APPROVED_ELIGIBLE: "Cumple todos los requisitos revisados por la agencia",
   AGENCY_REJECTED: "Decisión de la agencia",
   OPPORTUNITY_FILLED: "La oportunidad se cubrió con otra persona",
   OPPORTUNITY_CANCELLED: "La agencia canceló la oportunidad",
