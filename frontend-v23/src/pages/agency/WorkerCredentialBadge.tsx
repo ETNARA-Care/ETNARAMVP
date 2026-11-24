@@ -6,6 +6,8 @@ type ReviewAwareCredential = WorkerCredentialSummary & {
   document_status?: "presented" | "verified" | "rejected" | null;
   /** The agency's own decision (organization_credential_reviews). Absent in the short summary. */
   organization_review_status?: "pending" | "approved" | "rejected" | null;
+  /** 161: registrado por la cuidadora en su práctica independiente (autodeclarado). */
+  declared_by_holder?: boolean;
 };
 
 /**
@@ -32,6 +34,8 @@ export function WorkerCredentialBadge({ credential }: { credential: ReviewAwareC
       ? <Badge tone="warning">Aprobada por la agencia · vence pronto</Badge>
       : <Badge tone="success">Aprobada por la agencia</Badge>;
   }
+  // 161: autodeclarado en su práctica independiente: no cuenta para esta agencia hasta su revisión.
+  if (credential.declared_by_holder) return <Badge tone="warning">Registrado por la cuidadora · pendiente de revisión de la agencia</Badge>;
   if (credential.document_status) return <Badge tone="warning">Pendiente de revisión de la agencia</Badge>;
   return <Badge tone="neutral">Sin documento</Badge>;
 }

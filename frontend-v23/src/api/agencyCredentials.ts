@@ -52,6 +52,8 @@ export interface WorkerCredential {
   document_status: "presented" | "verified" | "rejected" | null;
   organization_review_status: "pending" | "approved" | "rejected" | null;
   organization_review_notes: string | null;
+  /** 161: registrado por la propia cuidadora en su práctica independiente. Para esta agencia solo cuenta tras SU revisión. */
+  declared_by_holder?: boolean;
 }
 
 export interface CredentialDocumentVersion {

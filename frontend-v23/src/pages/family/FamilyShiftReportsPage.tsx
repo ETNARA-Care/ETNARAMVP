@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ChevronRight, Download, FileText } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
 import { familyShiftReportsApi, type FamilyShiftReport, type FamilyShiftReportListItem } from "@/api/shiftReports";
@@ -22,7 +23,11 @@ function useSelectedRecipient() {
 
 export function FamilyShiftReportsPage() {
   const { recipient } = useSelectedRecipient();
+  const { activeOrganization } = useAuth();
   const [rows, setRows] = useState<FamilyShiftReportListItem[] | null | "error">(null);
+  // 161: en un cuidador independiente los informes son «del proveedor» (sin aprobación de agencia).
+  const independent = (Array.isArray(rows) && rows.some((r) => r.publishedByProvider === true))
+    || (activeOrganization?.id === recipient?.organizationId && isIndependentOrganization(activeOrganization));
   const load = useCallback(async () => {
     const token = getToken();
     if (!recipient || !token) return;
@@ -37,13 +42,13 @@ export function FamilyShiftReportsPage() {
     <div className="space-y-5">
       <Link to="/family/history" className="text-sm font-medium text-[#667085]">← Turnos</Link>
       <section>
-        <p className="text-sm font-medium text-[#66845f]">Aprobados por la agencia</p>
+        <p className="text-sm font-medium text-[#66845f]">{independent ? "Informes del proveedor" : "Aprobados por la agencia"}</p>
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">Informes de {name}</h1>
-        <p className="mt-1 text-sm text-[#667085]">Un resumen de cada turno, con lo que la agencia decidió compartir contigo.</p>
+        <p className="mt-1 text-sm text-[#667085]">{independent ? "Un resumen de cada visita, publicado por el propio proveedor. ETNARA Care no lo revisa ni lo aprueba." : "Un resumen de cada turno, con lo que la agencia decidió compartir contigo."}</p>
       </section>
       {rows === null ? <div className="space-y-3"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
         : rows === "error" ? <ErrorState kind="network" onRetry={() => void load()} />
-        : rows.length === 0 ? <EmptyState icon={<FileText size={28} />} title="Aún no hay informes" description="Cuando la agencia apruebe el informe de un turno, aparecerá aquí." />
+        : rows.length === 0 ? <EmptyState icon={<FileText size={28} />} title="Aún no hay informes" description={independent ? "Cuando el proveedor publique el informe de una visita, aparecerá aquí." : "Cuando la agencia apruebe el informe de un turno, aparecerá aquí."} />
         : (
           <ul className="space-y-3" data-testid="family-report-list">
             {rows.map((r) => (
@@ -107,7 +112,7 @@ export function FamilyShiftReportPage() {
       <section className="rounded-[22px] bg-[#102b57] p-5 text-white shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#b8c9ad]">Informe de turno</p>
-          <span className="rounded-full bg-[#b8c9ad] px-3 py-1 text-xs font-semibold text-[#102b57]">Aprobado</span>
+          <span className="rounded-full bg-[#b8c9ad] px-3 py-1 text-xs font-semibold text-[#102b57]">{report.publishedByProvider ? "Informe del proveedor" : "Aprobado"}</span>
         </div>
         <h1 className="mt-1 font-display text-2xl">{report.recipient.name}</h1>
         <p className="mt-1 text-sm text-white/75 first-letter:uppercase">{reportShortDate(`${report.serviceDate}T16:00:00Z`)}</p>

@@ -30,7 +30,8 @@ function errorText(error: unknown) {
   return "No se pudo completar la acción. Intenta de nuevo.";
 }
 
-export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: string; shiftId: string }) {
+/** 161: `providerMode` (cuidador independiente): publica SU informe como «Informe del proveedor», sin revisión de terceros. */
+export function ShiftReportPanel({ organizationId, shiftId, providerMode = false }: { organizationId: string; shiftId: string; providerMode?: boolean }) {
   const { show } = useToast();
   const [data, setData] = useState<{ reports: ShiftReport[]; openVisits: number } | null | "error" | "forbidden">(null);
   const [approving, setApproving] = useState<ShiftReport | null>(null);
@@ -60,8 +61,10 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
     const token = getToken(); if (!token || !approving) return;
     setBusy(true);
     try {
-      await shiftReportsApi.approve(organizationId, approving.id, { expectedGeneratedAt: approving.generatedAt, familySections: sections, ...(summary.trim() ? { agencySummary: summary.trim() } : {}) }, token);
-      show("Informe aprobado.", "success"); setApproving(null);
+      const body = { expectedGeneratedAt: approving.generatedAt, familySections: sections, ...(summary.trim() ? { agencySummary: summary.trim() } : {}) };
+      if (providerMode) { await shiftReportsApi.publishAsProvider(organizationId, approving.id, body, token); show("Informe del proveedor publicado a la familia.", "success"); }
+      else { await shiftReportsApi.approve(organizationId, approving.id, body, token); show("Informe aprobado.", "success"); }
+      setApproving(null);
     } catch (e) { show(errorText(e), "danger"); }
     finally { setBusy(false); await load(); }
   }
@@ -110,7 +113,7 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
             )}
             {report.status === "APPROVED" && report.familySections && (
               <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-[var(--text-small)]" data-testid="shift-report-approved">
-                <p className="font-medium">Aprobado {report.approvedAt ? reportTime(report.approvedAt) : ""}{report.approvedBy?.email ? ` · ${report.approvedBy.email}` : ""}</p>
+                <p className="font-medium">{report.publishedByProvider ? <span data-testid="shift-report-provider-published">Publicado como «Informe del proveedor» {report.approvedAt ? reportTime(report.approvedAt) : ""}</span> : <>Aprobado {report.approvedAt ? reportTime(report.approvedAt) : ""}{report.approvedBy?.email ? ` · ${report.approvedBy.email}` : ""}</>}</p>
                 {report.agencySummary && <p className="mt-1 whitespace-pre-line text-[var(--color-text-secondary)]">Resumen de la agencia: {report.agencySummary}</p>}
                 <p className="mt-1 text-[var(--color-text-secondary)]">La familia podrá ver: {FAMILY_ORDER.filter((k) => report.familySections![k]).map((k) => FAMILY_LABEL[k]).join(", ") || "nada"}.</p>
               </div>
@@ -128,9 +131,11 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
                 {report.status !== "SUBMITTED" && <Button variant="secondary" icon={<RefreshCw size={18} />} disabled={busy} onClick={() => void refresh(report)}>Actualizar borrador</Button>}
                 {report.status === "SUBMITTED" && !report.caregiverWindowExpired && !report.ownVisit &&
                   <Button variant="secondary" disabled={busy} data-testid="shift-report-return" onClick={() => { setReturnNote(""); setReturning(report); }}>Devolver al cuidador</Button>}
-                {report.ownVisit
+                {providerMode && report.ownVisit
+                  ? <Button disabled={busy} data-testid="shift-report-provider-publish" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Publicar a la familia</Button>
+                  : <>{report.ownVisit
                   ? <p className="flex min-h-11 items-center text-[var(--text-small)] text-[var(--color-text-secondary)]" data-testid="shift-report-own-visit">Trabajaste este turno: otra persona autorizada debe aprobarlo.</p>
-                  : <Button disabled={busy} data-testid="shift-report-approve" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Revisar y aprobar</Button>}
+                  : <Button disabled={busy} data-testid="shift-report-approve" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Revisar y aprobar</Button>}</>}
               </div>
             )}
           </Card>
@@ -146,13 +151,15 @@ export function ShiftReportPanel({ organizationId, shiftId }: { organizationId: 
           <Textarea label="Qué debe revisar" rows={3} maxLength={1000} value={returnNote} onChange={(e) => setReturnNote(e.target.value)} data-testid="shift-report-return-note" />
         </div>
       </Modal>
-      <Modal open={approving !== null} onClose={() => !busy && setApproving(null)} title="Aprobar informe de turno" sheetOnMobile
+      <Modal open={approving !== null} onClose={() => !busy && setApproving(null)} title={providerMode ? "Publicar «Informe del proveedor»" : "Aprobar informe de turno"} sheetOnMobile
         footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setApproving(null)}>Volver</Button>
-          <Button loading={busy} data-testid="shift-report-confirm-approve" onClick={() => void approve()}>Aprobar informe</Button>
+          <Button loading={busy} data-testid="shift-report-confirm-approve" onClick={() => void approve()}>{providerMode ? "Publicar a la familia" : "Aprobar informe"}</Button>
         </div>}>
         <div className="flex flex-col gap-3 text-[var(--text-small)]">
-          <p className="text-[var(--color-text-secondary)]">Una vez aprobado, el informe no se puede cambiar. Elige qué podrá ver la familia cuando esté disponible para ella.</p>
+          <p className="text-[var(--color-text-secondary)]">{providerMode
+            ? "Se publicará a la familia como «Informe del proveedor». ETNARA Care no lo revisa ni lo aprueba. Una vez publicado no se puede cambiar. Elige qué podrá ver la familia."
+            : "Una vez aprobado, el informe no se puede cambiar. Elige qué podrá ver la familia cuando esté disponible para ella."}</p>
           <fieldset className="flex flex-col">
             <legend className="mb-1 font-medium">Qué verá la familia</legend>
             {FAMILY_ORDER.map((key) => (
