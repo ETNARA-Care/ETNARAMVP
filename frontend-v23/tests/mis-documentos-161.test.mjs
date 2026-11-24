@@ -68,3 +68,14 @@ test("la agencia ve el autodeclarado como pendiente de SU revisión (sin herenci
   assert.match(badge, /if \(credential\.declared_by_holder\) return <Badge tone="warning">Registrado por la cuidadora · pendiente de revisión de la agencia<\/Badge>;/);
   assert.ok(badge.indexOf('review === "approved"') < badge.indexOf("declared_by_holder) return"));
 });
+
+test("revisión final: adjuntar con el almacenamiento existente y nombre profesional obligatorio para publicar", () => {
+  assert.match(docsPage, /import \{ uploadMyCredentialDocument \} from "@\/api\/credentials";/); // mismo flujo seguro que la cuidadora
+  assert.match(docsPage, /await uploadMyCredentialDocument\(organizationId, doc\.id, file, token\)/);
+  assert.match(docsPage, /accept="application\/pdf,image\/jpeg,image\/png"/);
+  assert.doesNotMatch(docsPage, /fetch\(|s3|bucket/i); // ningún sistema de archivos aparte
+  assert.match(docsPage, /practiceApi\.saveProfile\(organizationId, value, token\)/);
+  assert.match(panel, /providerMode && report\.ownVisit && !report\.content\.caregiver\?\.name\?\.trim\(\)/);
+  assert.match(panel, /await practiceApi\.saveProfile\(organizationId, value, token\);\n\s*await shiftReportsApi\.refresh\(organizationId, report\.id, token\);/);
+  assert.match(panel, /PROVIDER_NAME_REQUIRED/);
+});

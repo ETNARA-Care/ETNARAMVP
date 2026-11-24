@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { FileText, RefreshCw } from "lucide-react";
 import { getToken } from "@/auth/token";
 import type { ApiError } from "@/api/client";
+import { practiceApi } from "@/api/practice";
 import { FAMILY_SECTION_DEFAULTS, shiftReportsApi, type FamilySectionKey, type FamilySections, type ShiftReport } from "@/api/shiftReports";
-import { Badge, Button, Card, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
+import { Badge, Button, Card, Input, Modal, Skeleton, Textarea, useToast } from "@/components/ui";
 import { ShiftReportView } from "./ShiftReportView";
 import { STATUS_LABEL, reportShortDate, reportTime } from "./reportFormat";
 
@@ -20,6 +21,7 @@ const HISTORY_LABEL: Record<string, string> = {
 };
 function errorText(error: unknown) {
   const code = (error as ApiError)?.code;
+  if (code === "PROVIDER_NAME_REQUIRED") return "Escribe tu nombre profesional antes de publicar: el informe debe identificar a quien prestó el servicio.";
   if (code === "SHIFT_REPORT_CHANGED") return "El borrador cambió mientras lo revisabas. Revísalo de nuevo antes de aprobar.";
   if (code === "SHIFT_REPORT_ALREADY_APPROVED") return "Este informe ya fue aprobado.";
   if (code === "SHIFT_REPORT_NOT_DRAFT") return "Solo se puede actualizar un borrador.";
@@ -41,6 +43,7 @@ export function ShiftReportPanel({ organizationId, shiftId, providerMode = false
   const [returning, setReturning] = useState<ShiftReport | null>(null);
   const [returnNote, setReturnNote] = useState("");
 
+  const [providerName, setProviderName] = useState("");
   const load = useCallback(async () => {
     const token = getToken();
     if (!token) return;
@@ -55,6 +58,18 @@ export function ShiftReportPanel({ organizationId, shiftId, providerMode = false
     setBusy(true);
     try { await shiftReportsApi.refresh(organizationId, report.id, token); show("Borrador actualizado con los registros del turno.", "success"); }
     catch (e) { show(errorText(e), "danger"); }
+    finally { setBusy(false); await load(); }
+  }
+  // 161: el «Informe del proveedor» identifica siempre a quien prestó el servicio (nunca «Cuidador: —»).
+  async function saveProviderName(report: ShiftReport) {
+    const token = getToken(); const value = providerName.trim();
+    if (!token || value.length < 2) return;
+    setBusy(true);
+    try {
+      await practiceApi.saveProfile(organizationId, value, token);
+      await shiftReportsApi.refresh(organizationId, report.id, token);
+      show("Nombre guardado y borrador actualizado.", "success"); setProviderName("");
+    } catch (e) { show(errorText(e), "danger"); }
     finally { setBusy(false); await load(); }
   }
   async function approve() {
@@ -131,7 +146,15 @@ export function ShiftReportPanel({ organizationId, shiftId, providerMode = false
                 {report.status !== "SUBMITTED" && <Button variant="secondary" icon={<RefreshCw size={18} />} disabled={busy} onClick={() => void refresh(report)}>Actualizar borrador</Button>}
                 {report.status === "SUBMITTED" && !report.caregiverWindowExpired && !report.ownVisit &&
                   <Button variant="secondary" disabled={busy} data-testid="shift-report-return" onClick={() => { setReturnNote(""); setReturning(report); }}>Devolver al cuidador</Button>}
-                {providerMode && report.ownVisit
+                {providerMode && report.ownVisit && !report.content.caregiver?.name?.trim()
+                  ? <div className="flex w-full flex-col gap-2" data-testid="shift-report-provider-name">
+                      <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Para publicar, el informe debe mostrar tu nombre profesional.</p>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                        <Input label="Tu nombre profesional" value={providerName} maxLength={120} onChange={(e) => setProviderName(e.target.value)} placeholder="Ej.: María Rivera, CNA" />
+                        <Button disabled={busy || providerName.trim().length < 2} onClick={() => void saveProviderName(report)} data-testid="shift-report-provider-name-save">Guardar y actualizar informe</Button>
+                      </div>
+                    </div>
+                  : providerMode && report.ownVisit
                   ? <Button disabled={busy} data-testid="shift-report-provider-publish" onClick={() => { setSections(FAMILY_SECTION_DEFAULTS); setSummary(""); setApproving(report); }}>Publicar a la familia</Button>
                   : <>{report.ownVisit
                   ? <p className="flex min-h-11 items-center text-[var(--text-small)] text-[var(--color-text-secondary)]" data-testid="shift-report-own-visit">Trabajaste este turno: otra persona autorizada debe aprobarlo.</p>

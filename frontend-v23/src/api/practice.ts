@@ -19,9 +19,9 @@ export const PRACTICE_STATUS_TONE: Record<PracticeDocumentStatus, "success" | "w
 };
 
 export interface PracticeRequirement { credentialTypeCode: string; name: string; isMandatory: boolean; status: PracticeDocumentStatus; expiresAt: string | null; documentId: string | null }
-export interface PracticeDocument { id: string; credentialTypeCode: string; name: string; issuingEntityName: string | null; issuedAt: string | null; expiresAt: string | null; status: PracticeDocumentStatus; selfDeclared: boolean }
+export interface PracticeDocument { id: string; credentialTypeCode: string; name: string; issuingEntityName: string | null; issuedAt: string | null; expiresAt: string | null; status: PracticeDocumentStatus; selfDeclared: boolean; hasFile?: boolean }
 export interface PracticeDocuments {
-  notice: string; policyConfigured: boolean; expiringSoonDays: number;
+  notice: string; policyConfigured: boolean; expiringSoonDays: number; professionalName?: string | null;
   requirements: PracticeRequirement[]; pendingMandatory: string[];
   documents: PracticeDocument[]; credentialTypes: Array<{ code: string; name: string }>;
 }
@@ -33,6 +33,9 @@ export const practiceApi = {
     apiClient.post<{ id: string }>(`${P(org)}/documents`, body, token),
   update: (org: string, id: string, body: { issuingEntityName?: string | null; issuedAt?: string | null; expiresAt?: string | null; retire?: true }, token: string) =>
     apiClient.patch<{ id: string }>(`${P(org)}/documents/${id}`, body, token),
+  /** 161: nombre profesional que verán sus clientes y familias en el «Informe del proveedor». */
+  saveProfile: (org: string, professionalName: string, token: string) =>
+    apiClient.put<{ professionalName: string }>(`${P(org)}/profile`, { professionalName }, token),
   saveRequirements: (org: string, credentialTypeCodes: string[], token: string) =>
     apiClient.put<{ policy: unknown }>(`${P(org)}/requirements`, { credentialTypeCodes }, token),
 };

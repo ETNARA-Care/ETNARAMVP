@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { FilePlus2, RefreshCcw } from "lucide-react";
+import { FilePlus2, Paperclip, RefreshCcw } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { PRACTICE_STATUS_LABEL, PRACTICE_STATUS_TONE, practiceApi, type PracticeDocument, type PracticeDocuments } from "@/api/practice";
 import { isIndependentOrganization } from "@/features/practice/modality";
+import { uploadMyCredentialDocument } from "@/api/credentials";
 
 /**
  * 161 (PR C): «Mis documentos» del cuidador independiente. Registra, corrige, renueva y retira SUS documentos
@@ -22,6 +23,8 @@ export function PracticeDocumentsPage() {
   const [form, setForm] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingRequirements, setEditingRequirements] = useState<string[] | null>(null);
+  const [name, setName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -74,6 +77,27 @@ export function PracticeDocumentsPage() {
     catch { toast.show("No pudimos retirar el documento.", "danger"); }
   }
 
+  // 161: el archivo va al almacenamiento seguro existente (mismo flujo que «Mis credenciales» de la cuidadora).
+  async function attach(doc: PracticeDocument, file: File | undefined) {
+    const token = getToken();
+    if (!organizationId || !token || !file) return;
+    if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type)) { toast.show("Usa un PDF, JPG o PNG.", "warning"); return; }
+    setUploading(doc.id);
+    try { await uploadMyCredentialDocument(organizationId, doc.id, file, token); toast.show("Archivo adjuntado.", "success"); await load(); }
+    catch { toast.show("No pudimos adjuntar el archivo.", "danger"); }
+    finally { setUploading(null); }
+  }
+
+  async function saveName() {
+    const token = getToken();
+    const value = (name ?? "").trim();
+    if (!organizationId || !token || value.length < 2) return;
+    setSaving(true);
+    try { await practiceApi.saveProfile(organizationId, value, token); toast.show("Nombre profesional guardado.", "success"); setName(null); await load(); }
+    catch { toast.show("No pudimos guardar tu nombre profesional.", "danger"); }
+    finally { setSaving(false); }
+  }
+
   async function saveRequirements() {
     const token = getToken();
     if (!organizationId || !token || !editingRequirements || editingRequirements.length === 0) return;
@@ -91,6 +115,18 @@ export function PracticeDocumentsPage() {
 
       {data === null && !error ? <Skeleton className="h-40" /> : error || !data ? <ErrorState kind="server" onRetry={() => void load()} /> : (
         <>
+          <Card className="flex flex-col gap-2" data-testid="practice-professional-name">
+            <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Nombre profesional</h2>
+            <p className="text-[length:var(--text-small)] text-[var(--color-text-secondary)]">Es el nombre que verán tus clientes y sus familias en tus informes de visita.</p>
+            {name === null && data.professionalName
+              ? <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-medium text-[var(--color-text-primary)]">{data.professionalName}</span><Button size="sm" variant="ghost" onClick={() => setName(data.professionalName ?? "")}>Cambiar</Button></div>
+              : <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  {!data.professionalName && <p className="text-[length:var(--text-small)] text-[var(--color-warning-700)]">Sin nombre profesional no podrás publicar informes a las familias.</p>}
+                  <Input label="Tu nombre profesional" value={name ?? ""} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder="Ej.: María Rivera, CNA" />
+                  <Button loading={saving} disabled={(name ?? "").trim().length < 2} onClick={() => void saveName()} data-testid="practice-professional-name-save">Guardar</Button>
+                </div>}
+          </Card>
+
           <Card className="flex flex-col gap-2" data-testid="practice-requirements">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Requisitos de mi práctica</h2>
@@ -112,12 +148,17 @@ export function PracticeDocumentsPage() {
                 <div className="min-w-0">
                   <p className="font-medium text-[var(--color-text-primary)]">{d.name}</p>
                   <p className="text-[length:var(--text-small)] text-[var(--color-text-secondary)]">
-                    {d.selfDeclared ? "Autodeclarado" : "Registrado por una agencia"}{d.issuingEntityName ? ` · ${d.issuingEntityName}` : ""}{d.expiresAt ? ` · vence ${d.expiresAt}` : " · sin vencimiento"}
+                    {d.selfDeclared ? "Autodeclarado" : "Registrado por una agencia"}{d.issuingEntityName ? ` · ${d.issuingEntityName}` : ""}{d.expiresAt ? ` · vence ${d.expiresAt}` : " · sin vencimiento"}{d.hasFile ? " · archivo adjunto" : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone={PRACTICE_STATUS_TONE[d.status]}>{PRACTICE_STATUS_LABEL[d.status]}</Badge>
                   {d.selfDeclared && d.status !== "RETIRED" && <>
+                    <label className={`inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 text-[length:var(--text-small)] text-[var(--color-text-primary)] ${uploading === d.id ? "opacity-60" : ""}`}>
+                      <Paperclip size={16} aria-hidden />{d.hasFile ? "Reemplazar archivo" : "Adjuntar archivo"}
+                      <input type="file" className="sr-only" accept="application/pdf,image/jpeg,image/png" disabled={uploading !== null} data-testid={`practice-attach-${d.id}`}
+                        onChange={(e) => { void attach(d, e.target.files?.[0]); e.target.value = ""; }} />
+                    </label>
                     <Button size="sm" variant="secondary" icon={<RefreshCcw size={16} />} onClick={() => open("renew", d)}>Renovar</Button>
                     <Button size="sm" variant="ghost" onClick={() => open("edit", d)}>Corregir</Button>
                     <Button size="sm" variant="ghost" onClick={() => void retire(d)}>Retirar</Button>
