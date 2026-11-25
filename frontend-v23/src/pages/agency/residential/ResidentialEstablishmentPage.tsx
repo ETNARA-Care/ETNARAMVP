@@ -207,14 +207,15 @@ function RoomDialog({ unit, room, units, onClose, onSave }: { unit: ResidentialU
   const [unitId, setUnitId] = useState(unit.id);
   const [busy, setBusy] = useState(false);
   const bedValue = beds.trim() === "" ? null : Number(beds);
-  const bedsValid = bedValue === null || (Number.isInteger(bedValue) && bedValue >= 1 && bedValue <= 20);
+  // Sin tope de negocio: solo un número entero positivo (el máximo es el de un entero de la base de datos).
+  const bedsValid = bedValue === null || (Number.isInteger(bedValue) && bedValue >= 1 && bedValue <= 2147483647);
   const save = async (body: Parameters<typeof onSave>[0]) => { setBusy(true); await onSave(body); setBusy(false); };
   return (
     <Modal open onClose={onClose} title={room ? `Editar habitación ${room.name}` : `Añadir habitación en ${unit.name}`} sheetOnMobile
       footer={<Footer onClose={onClose}><Button disabled={busy || name.trim().length === 0 || !bedsValid} onClick={() => void save({ name: name.trim(), bedCapacity: bedValue, ...(room && unitId !== unit.id ? { unitId } : {}) })}>Guardar</Button></Footer>}>
       <div className="flex flex-col gap-3">
         <Input label="Nombre o número" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
-        <Input label="Camas registradas (opcional)" inputMode="numeric" value={beds} onChange={(e) => setBeds(e.target.value)} error={bedsValid ? undefined : "Entre 1 y 20, o vacío."} hint={BEDS_DISCLAIMER} />
+        <Input label="Camas registradas (opcional)" inputMode="numeric" value={beds} onChange={(e) => setBeds(e.target.value)} error={bedsValid ? undefined : "Un número entero mayor que 0, o vacío."} hint={BEDS_DISCLAIMER} />
         {room && units.length > 1 && (
           <Select label="Unidad" value={unitId} onChange={(e) => setUnitId(e.target.value)}>
             {units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}

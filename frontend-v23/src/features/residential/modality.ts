@@ -31,3 +31,7 @@ export const DEMO_ENVIRONMENT_NOTICE = "Entorno de demostración — Datos ficti
 export function isDemoEnvironment(features: readonly string[] | undefined | null): boolean {
   return Array.isArray(features) && features.includes("DEMO_ENVIRONMENT");
 }
+
+/** 171: mensaje cuando se intenta archivar un establecimiento de hogar por la vía ordinaria (Configuración). */
+export const RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE =
+  "Los establecimientos de un hogar no se archivan desde aquí. Usa Hogar → Establecimientos y habitaciones → «Cerrar establecimiento», que comprueba residentes, turnos y asignaciones antes de cerrarlo.";

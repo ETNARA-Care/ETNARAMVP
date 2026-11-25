@@ -60,3 +60,21 @@ test("nunca muestra piezas técnicas ni datos clínicos", () => {
 test("errores de las reglas del backend con mensajes claros", () => {
   for (const code of ["RESIDENTIAL_NAME_TAKEN", "RESIDENTIAL_UNIT_HAS_ACTIVE_ROOMS", "RESIDENTIAL_ROOM_HAS_RESIDENTS", "RESIDENTIAL_CLOSURE_FUTURE_SHIFTS", "RESIDENTIAL_CLOSURE_ACTIVE_RESIDENTS", "RESIDENTIAL_CLOSURE_REQUIRED"]) assert.match(api, new RegExp(`${code}: "`));
 });
+
+test("F1 171: Configuración (pantalla antigua) remite al cierre del hogar con un mensaje claro", () => {
+  const page = read("src/pages/agency/AgencyOrganizationSettingsPage.tsx");
+  const modality = read("src/features/residential/modality.ts");
+  assert.match(page, /isResidentialOrganization\(activeOrganization\)/);
+  assert.match(page, /RESIDENTIAL_CLOSURE_REQUIRED" \? RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE/);
+  assert.match(page, /residential\s*\?[\s\S]*RESIDENTIAL_ESTABLISHMENTS_PATH[\s\S]*Cerrar establecimiento[\s\S]*: <Button[^>]*>[\s\S]*Archivar/);
+  assert.match(modality, /RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE =[\s\S]*Cerrar establecimiento/);
+});
+
+test("F1 171: sin tope de camas por habitación en el portal; mensaje de traslado con turnos", () => {
+  const page = read("src/pages/agency/residential/ResidentialEstablishmentPage.tsx");
+  const api = read("src/api/residential.ts");
+  assert.doesNotMatch(page, /bedValue <= 20\b/);
+  assert.doesNotMatch(page, /Entre 1 y 20/);
+  assert.match(page, /bedValue >= 1/);
+  assert.match(api, /RESIDENTIAL_TRANSFER_ACTIVE_SHIFTS: "/);
+});
