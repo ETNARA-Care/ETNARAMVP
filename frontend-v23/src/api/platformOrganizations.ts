@@ -216,9 +216,12 @@ export function acceptOrganizationAdminInvitation(token: string, sessionToken: s
 
 /** SmartMatch pilot switches per agency (backend migration 108). ETNARA central only. */
 export type PilotFeatureCode = "SMARTMATCH" | "EN_CAMINO" | "FINANZAS" | "FACTURACION" | "SHIFT_REPORTS" | "PUSH_NOTIFICATIONS" | "ACTIVITY_PHOTOS" | "CONTRACTS";
+/** 170 (hogares F0): el backend solo los envía para organizaciones RESIDENTIAL_CARE_HOME; nacen apagados. */
+export type ResidentialFeatureCode = "HOGAR_CALENDARIO" | "HOGAR_ASIGNACIONES" | "HOGAR_PONCHES" | "DEMO_ENVIRONMENT";
+export type CentralFeatureCode = PilotFeatureCode | ResidentialFeatureCode;
 export interface OrganizationFeatures {
-  features: { code: PilotFeatureCode; enabled: boolean; updatedAt: string | null }[];
-  history: { code: PilotFeatureCode; enabled: boolean; reason: string; occurredAt: string; actorEmail: string | null }[];
+  features: { code: CentralFeatureCode; enabled: boolean; updatedAt: string | null }[];
+  history: { code: CentralFeatureCode; enabled: boolean; reason: string; occurredAt: string; actorEmail: string | null }[];
 }
 /**
  * 145 (§5): solo al ir a apagar Fotos: ¿tiene la agencia ALGUNA foto con retención legal? (sí/no; nunca
@@ -231,8 +234,8 @@ export async function checkActivityPhotosLegalHolds(organizationId: string, toke
 export function getOrganizationFeatures(organizationId: string, token: string) {
   return apiClient.get<OrganizationFeatures>(`/platform/organizations/${encodeURIComponent(organizationId)}/features`, token);
 }
-export function setOrganizationFeature(organizationId: string, code: PilotFeatureCode, enabled: boolean, reason: string, token: string) {
-  return apiClient.put<{ feature: { code: PilotFeatureCode; enabled: boolean; changed: boolean; legalHoldsKept?: boolean } }>(
+export function setOrganizationFeature(organizationId: string, code: CentralFeatureCode, enabled: boolean, reason: string, token: string) {
+  return apiClient.put<{ feature: { code: CentralFeatureCode; enabled: boolean; changed: boolean; legalHoldsKept?: boolean } }>(
     `/platform/organizations/${encodeURIComponent(organizationId)}/features/${code}`, { enabled, reason }, token);
 }
 

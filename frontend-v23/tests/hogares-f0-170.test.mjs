@@ -61,3 +61,16 @@ test("franja de demostración: solo con DEMO_ENVIRONMENT, en los tres portales d
   assert.match(banner, /if \(!isDemoEnvironment\(activeOrganization\?\.features\)\) return null;/);
   for (const l of ["AgencyLayout", "CaregiverLayout", "FamilyLayout"]) assert.match(read(`src/layouts/${l}.tsx`), /<DemoEnvironmentBanner \/>/, l);
 });
+
+test("ETNARA Central muestra los interruptores de hogar (apagados por defecto; mostrar no activa)", () => {
+  const card = read("src/features/platform/OrganizationFeaturesCard.tsx");
+  const api = read("src/api/platformOrganizations.ts");
+  assert.match(api, /export type ResidentialFeatureCode = "HOGAR_CALENDARIO" \| "HOGAR_ASIGNACIONES" \| "HOGAR_PONCHES" \| "DEMO_ENVIRONMENT";/);
+  assert.match(api, /setOrganizationFeature\(organizationId: string, code: CentralFeatureCode,/);
+  for (const code of ["HOGAR_CALENDARIO", "HOGAR_ASIGNACIONES", "HOGAR_PONCHES", "DEMO_ENVIRONMENT"]) assert.match(card, new RegExp(`${code}: \\{ title: "`));
+  assert.match(card, /data\.features\.filter\(\(f\) => f\.code in LABELS\)/);
+  assert.match(card, /FEATURE_NOT_AVAILABLE_FOR_MODALITY/);
+  // Sigue habiendo un solo punto de escritura, con motivo obligatorio (mismo flujo que los demás interruptores).
+  assert.equal((card.match(/setOrganizationFeature\(/g) ?? []).length, 1);
+  assert.match(card, /reason\.trim\(\)\.length < 3/);
+});

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlaskConical, History } from "lucide-react";
 import { getToken } from "@/auth/token";
-import { checkActivityPhotosLegalHolds, getOrganizationFeatures, setOrganizationFeature, type OrganizationFeatures, type PilotFeatureCode } from "@/api/platformOrganizations";
+import { checkActivityPhotosLegalHolds, getOrganizationFeatures, setOrganizationFeature, type CentralFeatureCode, type OrganizationFeatures, type PilotFeatureCode, type ResidentialFeatureCode } from "@/api/platformOrganizations";
 import { Button, Input, Skeleton, useToast } from "@/components/ui";
 import { BillingManagerPanel } from "./BillingManagerPanel";
 
-const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
+const PILOT_LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   SMARTMATCH: { title: "SmartMatch", detail: "Oportunidades, postulaciones y turnos desde SmartMatch." },
   EN_CAMINO: { title: "En camino y «Llegué»", detail: "Aviso de salida, retrasos declarados y llegada con ubicación." },
   FINANZAS: { title: "Finanzas", detail: "Servicios y tarifas de la agencia. ETNARA central solo enciende o apaga: no ve importes ni datos financieros." },
@@ -16,6 +16,20 @@ const LABELS: Record<PilotFeatureCode, { title: string; detail: string }> = {
   ACTIVITY_PHOTOS: { title: "Fotos de actividades", detail: "Fotos de los cuidadores, revisadas por la agencia antes de que las vea la familia, con consentimiento. ETNARA central solo enciende o apaga: no ve las fotos ni los consentimientos." },
 };
 const ORDER: PilotFeatureCode[] = ["SMARTMATCH", "EN_CAMINO", "FINANZAS", "FACTURACION", "SHIFT_REPORTS", "PUSH_NOTIFICATIONS", "ACTIVITY_PHOTOS", "CONTRACTS"];
+/*
+ * 170 (hogares F0): interruptores de hogar. El backend solo los envía para un RESIDENTIAL_CARE_HOME (agencias e
+ * independientes nunca los reciben) y rechaza encenderlos en otra modalidad. Mostrarlos no los activa: nacen
+ * apagados y cada cambio sigue pidiendo motivo y queda en el historial.
+ */
+const RESIDENTIAL_LABELS: Record<ResidentialFeatureCode, { title: string; detail: string }> = {
+  HOGAR_CALENDARIO: { title: "Hogar · Calendario", detail: "Calendario administrativo del hogar. Sin funciones clínicas." },
+  HOGAR_ASIGNACIONES: { title: "Hogar · Asignación de residentes", detail: "Asignación administrativa de residentes al personal del hogar." },
+  HOGAR_PONCHES: { title: "Hogar · Ponches", detail: "Entrada y salida del personal con el código semanal del establecimiento." },
+  DEMO_ENVIRONMENT: { title: "Entorno de demostración", detail: "Muestra la franja «Entorno de demostración — Datos ficticios» en todo el portal del hogar. Solo para hogares de demostración." },
+};
+const RESIDENTIAL_ORDER: ResidentialFeatureCode[] = ["HOGAR_CALENDARIO", "HOGAR_ASIGNACIONES", "HOGAR_PONCHES", "DEMO_ENVIRONMENT"];
+const LABELS: Record<CentralFeatureCode, { title: string; detail: string }> = { ...PILOT_LABELS, ...RESIDENTIAL_LABELS };
+const ALL_ORDER: CentralFeatureCode[] = [...ORDER, ...RESIDENTIAL_ORDER];
 
 /**
  * ETNARA central: turn the SmartMatch pilot on or off for one agency.
@@ -26,7 +40,7 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
   const toast = useToast();
   const [data, setData] = useState<OrganizationFeatures | null>(null);
   const [failed, setFailed] = useState(false);
-  const [editing, setEditing] = useState<{ code: PilotFeatureCode; enabled: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ code: CentralFeatureCode; enabled: boolean } | null>(null);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   // 145 (§5): solo se pregunta al abrir el apagado de Fotos (auditado en el backend).
@@ -54,13 +68,14 @@ export function OrganizationFeaturesCard({ organizationId }: { organizationId: s
         ? "Función desactivada. Las fotografías con retención legal se conservan y la administración de la agencia puede seguir revisándolas." : "Función desactivada.", "success");
       setEditing(null); setReason(""); await load();
     } catch (e) {
-      toast.show((e as { code?: string })?.code === "FEATURE_REQUIRES_FINANZAS" ? "Facturación requiere Finanzas activo." : "No se pudo guardar el cambio.", "danger");
+      const code = (e as { code?: string })?.code;
+      toast.show(code === "FEATURE_REQUIRES_FINANZAS" ? "Facturación requiere Finanzas activo." : code === "FEATURE_NOT_AVAILABLE_FOR_MODALITY" ? "Esta función no existe para este tipo de organización." : "No se pudo guardar el cambio.", "danger");
     } finally { setSaving(false); }
   }
 
   // Only switches this screen knows how to describe: a code added by a newer backend
   // is skipped instead of breaking the whole card.
-  const features = data ? data.features.filter((f) => f.code in LABELS).sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)) : [];
+  const features = data ? data.features.filter((f) => f.code in LABELS).sort((a, b) => ALL_ORDER.indexOf(a.code) - ALL_ORDER.indexOf(b.code)) : [];
   const history = data ? data.history.filter((h) => h.code in LABELS) : [];
   const activeCount = features.filter((f) => f.enabled).length;
   const finanzasOn = features.some((f) => f.code === "FINANZAS" && f.enabled);
