@@ -24,6 +24,7 @@ export function OrganizationAdminInvitationPage() {
   const token = useMemo(() => new URLSearchParams(window.location.search).get("token") ?? "", []);
   const [invitation, setInvitation] = useState<OrganizationAdminInvitationInspection | null | undefined>(token ? undefined : null);
   const [password, setPassword] = useState("");
+  const [professionalName, setProfessionalName] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -45,9 +46,10 @@ export function OrganizationAdminInvitationPage() {
     if (!invitation) return;
     setError(null);
     if (password !== confirmation) { setError("Las contraseñas no coinciden."); return; }
+    if (invitation.independent && professionalName.trim().length < 2) { setError("Escribe tu nombre profesional."); return; }
     setSubmitting(true);
     try {
-      await activateOrganizationAdminInvitation(token, password);
+      await activateOrganizationAdminInvitation(token, password, invitation.independent ? professionalName.trim() : undefined);
       setDone("created");
       window.history.replaceState(null, "", window.location.pathname);
     } catch {
@@ -131,6 +133,7 @@ export function OrganizationAdminInvitationPage() {
               )
             ) : (
               <>
+                {invitation.independent && <Input label="Tu nombre profesional" hint="Así te verán tus clientes y sus familias (por ejemplo, «Lucía Rivera, CNA»)." autoComplete="name" minLength={2} maxLength={120} value={professionalName} onChange={(e) => setProfessionalName(e.target.value)} required data-testid="invite-professional-name" />}
                 <Input label="Crea una contraseña" type="password" autoComplete="new-password" hint="Usa al menos 12 caracteres." minLength={12} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} required />
                 <Input label="Confirma la contraseña" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmation} onChange={(e) => setConfirmation(e.target.value)} required />
               </>
