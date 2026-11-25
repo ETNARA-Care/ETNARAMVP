@@ -48,6 +48,8 @@ export interface ShiftReport {
   reviewDeadlineAt?: string | null; caregiverNote?: string | null; caregiverNoteAt?: string | null; submittedAt?: string | null;
   /** DRAFT never sent before the caregiver's 24 h ended: unchanged, the agency reviews it. */
   caregiverWindowExpired?: boolean;
+  /** 161: publicado por el propio cuidador independiente («Informe del proveedor»). */
+  publishedByProvider?: boolean;
 }
 export interface ShiftReportListItem {
   id: string; shiftId: string; status: ShiftReportStatus; version: number; generatedAt: string; approvedAt: string | null;
@@ -86,6 +88,9 @@ export const shiftReportsApi = {
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/refresh`, {}, token),
   approve: (org: string, reportId: string, body: { expectedGeneratedAt: string; familySections: Partial<FamilySections>; agencySummary?: string }, token: string) =>
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/approve`, body, token),
+  /** 161: el cuidador independiente publica SU informe como «Informe del proveedor» (sin revisión de terceros). */
+  publishAsProvider: (org: string, reportId: string, body: { expectedGeneratedAt: string; familySections: Partial<FamilySections>; agencySummary?: string }, token: string) =>
+    apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/publish-as-provider`, body, token),
   returnToCaregiver: (org: string, reportId: string, note: string, token: string) =>
     apiClient.post<{ report: ShiftReport }>(`${O(org)}/shift-reports/${reportId}/return`, { note }, token),
   // F2 (128): the caregiver's own reports.
@@ -108,6 +113,8 @@ export interface FamilyShiftReport {
   id: string; version: number; status: "APPROVED"; approvedAt: string; serviceDate: string;
   organization: { name: string | null }; recipient: { name: string | null }; caregiver: { name: string | null };
   agencySummary: string | null; shown: string[];
+  /** 161: «Informe del proveedor» (cuidador independiente); nunca «aprobado por la agencia». */
+  publishedByProvider?: boolean;
   sections: {
     schedule?: { scheduledStart: string; scheduledEnd: string; arrivalAt: string | null; startAt: string | null; endAt: string | null };
     meals?: FamilyReportItem[]; hydration?: FamilyReportItem[]; activities?: FamilyReportItem[]; mobility?: FamilyReportItem[];
@@ -116,7 +123,7 @@ export interface FamilyShiftReport {
     incidents?: Array<{ at: string; severity: string | null; description: string | null }>;
   };
 }
-export interface FamilyShiftReportListItem { id: string; approvedAt: string; serviceDate: string; scheduledStart: string | null; scheduledEnd: string | null; caregiverName: string | null }
+export interface FamilyShiftReportListItem { id: string; approvedAt: string; serviceDate: string; scheduledStart: string | null; scheduledEnd: string | null; caregiverName: string | null; publishedByProvider?: boolean }
 const FR = (org: string, recipient: string) => `/organizations/${org}/care-recipients/${recipient}/shift-reports`;
 export const familyShiftReportsApi = {
   list: (org: string, recipient: string, token: string) => apiClient.get<{ reports: FamilyShiftReportListItem[] }>(FR(org, recipient), token),

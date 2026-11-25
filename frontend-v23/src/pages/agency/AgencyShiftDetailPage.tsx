@@ -23,6 +23,7 @@ import { ShiftVisitPanel } from "@/features/serviceLocation/ShiftVisitPanel";
 import { ShiftJourneyHistory } from "@/features/journey/ShiftJourneyHistory";
 import { ShiftFinancePanel } from "@/features/finance/ShiftFinancePanel";
 import { ShiftReportPanel } from "@/features/shiftReports/ShiftReportPanel";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { ShiftAttentionPanel } from "@/features/shifts/ShiftAttentionPanel";
 import { ClosedWithoutServiceBadge } from "@/features/shifts/ClosedWithoutServiceBadge";
 
@@ -160,7 +161,7 @@ export function AgencyShiftDetailPage() {
 
       {enCamino && organizationId && shiftId && <ShiftJourneyHistory organizationId={organizationId} shiftId={shiftId} />}
 
-      {shiftReports && organizationId && shiftId && shift.care_recipient_id && <ShiftReportPanel organizationId={organizationId} shiftId={shiftId} />}
+      {shiftReports && organizationId && shiftId && shift.care_recipient_id && <ShiftReportPanel organizationId={organizationId} shiftId={shiftId} providerMode={isIndependentOrganization(activeOrganization)} />}
 
       {finance && organizationId && shiftId && <ShiftFinancePanel organizationId={organizationId} shiftId={shiftId} />}
 

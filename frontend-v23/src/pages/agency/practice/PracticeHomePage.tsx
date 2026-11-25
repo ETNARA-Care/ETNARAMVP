@@ -5,20 +5,19 @@ import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { Button, Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { listCareRecipients, listShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
-import { getWorkerCompliance, type ComplianceSummary } from "@/api/compliance";
-import { practicePendingItems } from "@/features/practice/selfAssign";
+import { PRACTICE_STATUS_LABEL, practiceApi, type PracticeDocuments } from "@/api/practice";
 
 /**
  * 160 (PR B): inicio de «Mi práctica». Solo datos propios de la organización independiente (clientes, turnos y el
  * resumen de requisitos de su propia ficha). Nada del centro operacional, cobertura ni personal (cerrados en el backend).
  */
 export function PracticeHomePage() {
-  const { activeOrganization, activeWorkerProfile } = useAuth();
+  const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
   const navigate = useNavigate();
   const [shifts, setShifts] = useState<Shift[] | null>(null);
   const [clients, setClients] = useState<CareRecipient[]>([]);
-  const [summary, setSummary] = useState<ComplianceSummary | null>(null);
+  const [docs, setDocs] = useState<PracticeDocuments | null>(null);
   const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
@@ -33,17 +32,15 @@ export function PracticeHomePage() {
       setError(true);
       setShifts([]);
     }
-    if (activeWorkerProfile?.membershipId) {
-      getWorkerCompliance(organizationId, activeWorkerProfile.membershipId, token).then(setSummary).catch(() => setSummary(null));
-    }
-  }, [organizationId, activeWorkerProfile]);
+    practiceApi.documents(organizationId, token).then(setDocs).catch(() => setDocs(null));
+  }, [organizationId]);
   useEffect(() => { void load(); }, [load]);
 
   const clientById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c])), [clients]);
   const today = new Date().toDateString();
   const todays = (shifts ?? []).filter((s) => s.status !== "cancelled" && new Date(s.scheduled_start).toDateString() === today);
   const unassigned = (shifts ?? []).filter((s) => s.status === "unassigned" && new Date(s.scheduled_end).getTime() > Date.now());
-  const pending = practicePendingItems(summary);
+  const attention = (docs?.requirements ?? []).filter((r) => r.status !== "REGISTERED");
 
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]" data-testid="practice-home">
@@ -71,9 +68,11 @@ export function PracticeHomePage() {
           </div>
           <Card data-testid="practice-documents-card" className="flex flex-col gap-1">
             <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">Tus documentos de práctica</h2>
-            {pending.length === 0 && summary?.eligibility === "eligible"
-              ? <p className="text-[var(--color-text-secondary)]">Sin pendientes registrados.</p>
-              : <ul className="list-disc pl-5 text-[var(--color-text-secondary)]">{(pending.length ? pending : ["Documentos de práctica sin configurar"]).map((p) => <li key={p}>{p}</li>)}</ul>}
+            {!docs ? <p className="text-[var(--color-text-secondary)]">—</p>
+              : !docs.policyConfigured ? <p className="text-[var(--color-text-secondary)]">No has definido requisitos para tu práctica.</p>
+              : attention.length === 0 ? <p className="text-[var(--color-text-secondary)]">Todos tus requisitos están registrados y vigentes.</p>
+              : <ul className="list-disc pl-5 text-[var(--color-text-secondary)]">{attention.map((r) => <li key={r.credentialTypeCode}>{r.name}: {PRACTICE_STATUS_LABEL[r.status]}</li>)}</ul>}
+            <Button size="sm" variant="secondary" onClick={() => navigate("/agency/documents")}>Mis documentos</Button>
             <p className="text-[length:var(--text-small)] text-[var(--color-text-muted)]">Cumplir los requisitos legales y profesionales de tu práctica es tu responsabilidad. ETNARA Care no verifica ni certifica documentos.</p>
           </Card>
         </>
