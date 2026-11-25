@@ -25,7 +25,8 @@
       "operation": "Operación",
       "care": "Cuidado",
       "administration": "Administración",
-      "practice": "Mi práctica"
+      "practice": "Mi práctica",
+      "residential": "Hogar"
     },
     "items": {
       "overview": "Resumen",
@@ -47,7 +48,8 @@
       "photos": "Fotos de actividades",
       "contracts": "Contratos",
       "practiceHome": "Inicio",
-      "clients": "Clientes"
+      "clients": "Clientes",
+      "residentialPanel": "Panel del hogar"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",
