@@ -20,4 +20,17 @@ ck("P5 iPhone: el portal habla con el backend de la demo (contraseña incorrecta
 const prod = await (await fetch("https://app.etnaracare.com/")).text();
 ck("P6 producción intacta: app.etnaracare.com no tiene nada de la demo", !/etnara-demo-banner|DEMO · ETNARA/.test(prod), null);
 ck("P7 sin errores de página", errs.length === 0, errs);
+
+// P8/P9: la versión publicada contiene los textos finales de la Fase 1 (#294 y #290), en la demo y en producción.
+async function bundleText(base) {
+  const html = await (await fetch(base + "/")).text(); const seen = new Set(); const queue = [...html.matchAll(/\/?assets\/[A-Za-z0-9_.-]+\.js/g)].map((m) => m[0].replace(/^\//, ""));
+  let all = "";
+  while (queue.length && seen.size < 400) { const a = queue.shift(); if (seen.has(a)) continue; seen.add(a); const t = await (await fetch(`${base}/${a}`)).text(); all += t; for (const m of t.matchAll(/assets\/[A-Za-z0-9_.-]+\.js/g)) if (!seen.has(m[0])) queue.push(m[0]); }
+  return { all, n: seen.size };
+}
+const FINAL = ["Tu nombre profesional", "no requiere revisión de otra persona", "Aprobada por tu agencia", "requisitos revisados por la agencia"];
+for (const [id, base] of [["P8 demo", PORTAL], ["P9 producción", "https://app.etnaracare.com"]]) {
+  const { all, n } = await bundleText(base); const missing = FINAL.filter((t) => !all.includes(t));
+  ck(`${id}: la versión publicada contiene los textos finales de #294 y #290`, missing.length === 0 && !all.includes("Cumple todos los requisitos verificados"), { n, missing });
+}
 await b.close(); const f = out.filter((x) => !x).length; console.log(`RESULTADO ${out.length - f}/${out.length}`); process.exit(f ? 1 : 0);
