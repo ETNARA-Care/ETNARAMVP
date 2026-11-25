@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
@@ -7,6 +7,7 @@ import {
   residentialApi, residentialErrorMessage, type ResidentialEstablishmentDetail, type ResidentialEstablishmentSummary,
   type ResidentialGeofenceEvent, type ResidentialPerson, type ResidentialPlacementEvent, type ResidentialRoom, type ResidentialUnit,
 } from "@/api/residential";
+import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
 import { isResidentialOrganization, RESIDENTIAL_ESTABLISHMENTS_PATH } from "@/features/residential/modality";
 import { BEDS_DISCLAIMER, OccupancySummary } from "./OccupancySummary";
 
@@ -29,24 +30,38 @@ export function ResidentialEstablishmentPage() {
   const organizationId = activeOrganization?.id ?? "";
   const residential = isResidentialOrganization(activeOrganization);
   const toast = useToast();
-  const [data, setData] = useState<ResidentialEstablishmentDetail | null>(null);
-  const [all, setAll] = useState<ResidentialEstablishmentSummary[]>([]);
-  const [error, setError] = useState(false);
-  const [dialog, setDialog] = useState<Dialog | null>(null);
+  // Protección de cambio de organización (como el panel, A4): el detalle va ligado a la organización y al
+  // establecimiento que lo pidieron; una respuesta atrasada se descarta y nunca se muestran datos de otra organización.
+  const [state, setState] = useState<OrganizationScoped<{ detail: ResidentialEstablishmentDetail; all: ResidentialEstablishmentSummary[] }> | null>(null);
+  const [dialogState, setDialogState] = useState<{ organizationId: string; dialog: Dialog } | null>(null);
+  const latest = useRef(createLatestRequest());
 
   const load = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !token || !residential) return;
-    setError(false);
+    const request = latest.current.begin();
     try {
       const [detail, list] = await Promise.all([
         residentialApi.getEstablishment(organizationId, establishmentId, token),
         residentialApi.listEstablishments(organizationId, token),
       ]);
-      setData(detail.establishment); setAll(list.establishments);
-    } catch { setError(true); }
+      if (request.isCurrent()) setState({ organizationId, key: establishmentId, data: { detail: detail.establishment, all: list.establishments }, error: false });
+    } catch {
+      if (request.isCurrent()) setState({ organizationId, key: establishmentId, data: null, error: true });
+    }
   }, [organizationId, establishmentId, residential]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const tracker = latest.current;
+    void load();
+    return () => tracker.invalidate();
+  }, [load]);
+  const current = scopedTo(state, organizationId, establishmentId);
+  const data = current?.data?.detail ?? null;
+  const all = current?.data?.all ?? [];
+  const error = current?.error === true;
+  // Un diálogo abierto pertenece a la organización en la que se abrió: al cambiar de organización desaparece.
+  const dialog = dialogState && dialogState.organizationId === organizationId ? dialogState.dialog : null;
+  const setDialog = (d: Dialog | null) => setDialogState(d ? { organizationId, dialog: d } : null);
 
   /** Ejecuta un cambio, avisa y vuelve a leer del servidor (fuente de verdad). */
   const run = async (fn: (token: string) => Promise<unknown>, ok: string): Promise<boolean> => {
@@ -56,7 +71,7 @@ export function ResidentialEstablishmentPage() {
   };
 
   if (!residential) return <Navigate to="/agency" replace />;
-  if (error) return <ErrorState kind="server" onRetry={() => void load()} />;
+  if (error) return <ErrorState kind="server" onRetry={() => { setState(null); void load(); }} />;
   if (!data) return <Skeleton className="h-64" />;
   const closed = data.establishment.status === "closed";
   const activeUnits = data.units.filter((u) => u.status === "active");
@@ -244,10 +259,13 @@ function PlaceDialog({ person, currentRoomId, establishmentId, organizationId, e
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     const token = getToken(); if (!token) return;
+    let active = true; // una respuesta de otro establecimiento u organización ya no se aplica
     void residentialApi.getEstablishment(organizationId, target, token).then((r) => {
+      if (!active) return;
       setRooms(r.establishment.units.filter((u) => u.status === "active").flatMap((u) => u.rooms.filter((x) => x.status === "active")
         .map((x) => ({ id: x.id, label: `${u.name} · ${x.name}${x.bedCapacity === null ? "" : ` (${x.occupants.length}/${x.bedCapacity} camas)`}`, full: x.bedCapacity !== null && x.occupants.length >= x.bedCapacity }))));
-    }).catch(() => setRooms([]));
+    }).catch(() => { if (active) setRooms([]); });
+    return () => { active = false; };
   }, [organizationId, target]);
   const transfer = target !== establishmentId;
   return (
@@ -272,7 +290,9 @@ function PlaceDialog({ person, currentRoomId, establishmentId, organizationId, e
 
 function HistoryDialog({ organizationId, person, onClose }: { organizationId: string; person: ResidentialPerson; onClose: () => void }) {
   const [items, setItems] = useState<ResidentialPlacementEvent[] | null>(null);
-  useEffect(() => { const t = getToken(); if (t) void residentialApi.residentHistory(organizationId, person.id, t).then((r) => setItems(r.history)).catch(() => setItems([])); }, [organizationId, person.id]);
+  useEffect(() => { const t = getToken(); if (!t) return; let active = true;
+    void residentialApi.residentHistory(organizationId, person.id, t).then((r) => { if (active) setItems(r.history); }).catch(() => { if (active) setItems([]); });
+    return () => { active = false; }; }, [organizationId, person.id]);
   return (
     <Modal open onClose={onClose} title={`Historial de ubicación · ${person.displayName}`} sheetOnMobile>
       {items === null ? <Skeleton className="h-24" /> : items.length === 0 ? <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Sin movimientos registrados.</p> : (
@@ -302,7 +322,9 @@ function GeofenceDialog({ organizationId, establishmentId, current, onClose, onS
   const [reason, setReason] = useState("");
   const [history, setHistory] = useState<ResidentialGeofenceEvent[]>([]);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { const t = getToken(); if (t) void residentialApi.geofenceHistory(organizationId, establishmentId, t).then((r) => setHistory(r.history)).catch(() => setHistory([])); }, [organizationId, establishmentId]);
+  useEffect(() => { const t = getToken(); if (!t) return; let active = true;
+    void residentialApi.geofenceHistory(organizationId, establishmentId, t).then((r) => { if (active) setHistory(r.history); }).catch(() => { if (active) setHistory([]); });
+    return () => { active = false; }; }, [organizationId, establishmentId]);
   const r = Number(radius), la = lat.trim() === "" ? null : Number(lat), lo = lng.trim() === "" ? null : Number(lng);
   const radiusOk = Number.isInteger(r) && r >= 50 && r <= 300;
   const centerOk = (la === null) === (lo === null) && (la === null || (la >= -90 && la <= 90 && lo !== null && lo >= -180 && lo <= 180));
@@ -337,7 +359,9 @@ function CloseDialog({ organizationId, establishmentId, name, onClose, onConfirm
   const [reason, setReason] = useState("");
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
-  useEffect(() => { const t = getToken(); if (t) void residentialApi.closureCheck(organizationId, establishmentId, t).then((r) => setCheck(r.closure)).catch(() => setCheck(null)); }, [organizationId, establishmentId]);
+  useEffect(() => { const t = getToken(); if (!t) return; let active = true;
+    void residentialApi.closureCheck(organizationId, establishmentId, t).then((r) => { if (active) setCheck(r.closure); }).catch(() => { if (active) setCheck(null); });
+    return () => { active = false; }; }, [organizationId, establishmentId]);
   const ready = check?.canClose === true && reason.trim().length >= 3 && typed.trim() === name.trim();
   return (
     <Modal open onClose={onClose} title={`Cerrar ${name}`} sheetOnMobile

@@ -7,6 +7,8 @@
  */
 export interface OrganizationScoped<T> {
   organizationId: string;
+  /** 171: además de la organización, lo que identifica la pantalla (p. ej. el establecimiento). */
+  key?: string;
   data: T | null;
   error: boolean;
 }
@@ -21,7 +23,7 @@ export function createLatestRequest() {
   };
 }
 
-/** El estado solo es visible si pertenece a la organización activa. */
-export function scopedTo<T>(state: OrganizationScoped<T> | null, organizationId: string | null | undefined): OrganizationScoped<T> | null {
-  return state && organizationId && state.organizationId === organizationId ? state : null;
+/** El estado solo es visible si pertenece a la organización activa (y, si se indica, a la misma pantalla). */
+export function scopedTo<T>(state: OrganizationScoped<T> | null, organizationId: string | null | undefined, key?: string): OrganizationScoped<T> | null {
+  return state && organizationId && state.organizationId === organizationId && (key === undefined || state.key === key) ? state : null;
 }
