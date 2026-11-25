@@ -1,0 +1,21 @@
+# SOLO DEMO (rama demo/independientes-25nov, nunca se fusiona con main). Verificación pública, sin credenciales.
+name: Verificar demo de independientes (DEMO)
+on:
+  push:
+    branches: ["demo/independientes-25nov"]
+    paths: [".github/workflows/demo-verify.yml", "frontend-v23/demo-verify.mjs"]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm i --no-save playwright@1 && npx playwright install --with-deps chromium
+      - run: node frontend-v23/demo-verify.mjs
+        env:
+          PORTAL: https://demo-portal-demo.up.railway.app
+          API: https://demo-backend-demo-b0cfe800.up.railway.app
