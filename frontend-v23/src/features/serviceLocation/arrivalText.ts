@@ -9,12 +9,12 @@ export const PROXIMITY_TEXT: Record<ShiftArrival["proximity"], string> = {
   NO_REFERENCE: "Registrada (el lugar aún no tiene punto GPS confirmado)",
 };
 
-/** Fase 1: en una práctica independiente nadie más revisa la llegada; el dato queda registrado tal cual. */
+/** Fase 1: en una práctica independiente nadie revisa (ni «aprueba») la llegada; queda registrada tal cual y NUNCA como verificada. */
 export const PRACTICE_PROXIMITY_TEXT: Record<ShiftArrival["proximity"], string> = {
   ...PROXIMITY_TEXT,
-  FAR: "Lejos del lugar del servicio (queda registrado)",
-  NO_CONSENT: "Sin verificación de ubicación (queda registrado)",
-  UNAVAILABLE: "Ubicación no disponible (queda registrado)",
+  FAR: "Lejos del lugar del servicio: ubicación no verificada (queda registrado)",
+  NO_CONSENT: "Sin verificación de ubicación: ubicación no verificada (queda registrado)",
+  UNAVAILABLE: "Ubicación no disponible: ubicación no verificada (queda registrado)",
 };
 
 export function proximityText(proximity: ShiftArrival["proximity"], independent: boolean): string {

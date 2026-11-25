@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { History } from "lucide-react";
 import { getShiftJourney, type DelayReason, type Journey, type JourneyHistoryItem } from "@/api/journey";
+import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { Badge, Card } from "@/components/ui";
 import { DELAY_REASON_TEXT, STATE_TEXT, time } from "./journeyText";
 
@@ -14,11 +16,12 @@ const day = (v: string) => new Date(v).toLocaleDateString("es-PR", { day: "numer
 // Migration 113: a record made without signal keeps the phone's time; the agency sees it was sent later.
 const OFFLINE_TEXT = "Registrado sin señal (hora del teléfono)";
 
-function detailText(item: JourneyHistoryItem): string | null {
+/** Fase 1: en una práctica nadie revisa la llegada; se dice tal cual («no verificada»), nunca «pendiente de revisión». */
+function detailText(item: JourneyHistoryItem, independent = false): string | null {
   const d = item.detail ?? {};
   const offline = d.offline === true ? ` · ${OFFLINE_TEXT}` : "";
   if (item.kind === "DELAY_REPORTED") return `Unos ${d.minutes} min · ${DELAY_REASON_TEXT[d.reason as DelayReason] ?? ""}${offline}`;
-  if (item.kind === "ARRIVED") return (d.needsReview ? (d.reviewed ? "Revisada por la agencia" : "Pendiente de revisión") : "Cerca del lugar") + offline;
+  if (item.kind === "ARRIVED") return (d.needsReview ? (independent ? "Ubicación no verificada" : d.reviewed ? "Revisada por la agencia" : "Pendiente de revisión") : "Cerca del lugar") + offline;
   if (item.kind === "EN_ROUTE" && d.offline === true) return OFFLINE_TEXT;
   if (["ASSIGNED", "ACCEPTED", "DECLINED", "UNASSIGNED"].includes(item.kind) && d.caregiver) return String(d.caregiver);
   return null;
@@ -27,6 +30,7 @@ function detailText(item: JourneyHistoryItem): string | null {
 /** «Historial operativo» of one visit (Gate 7, agency only): every step with its time. */
 export function ShiftJourneyHistory({ organizationId, shiftId }: { organizationId: string; shiftId: string }) {
   const [data, setData] = useState<{ journey: Journey; history?: JourneyHistoryItem[] } | null>(null);
+  const independent = isIndependentOrganization(useAuth().activeOrganization);
   useEffect(() => {
     const token = getToken();
     if (!token) return;
@@ -45,7 +49,7 @@ export function ShiftJourneyHistory({ organizationId, shiftId }: { organizationI
             <li key={`${h.kind}-${h.at}-${i}`} className="flex gap-3 text-[var(--text-small)]">
               <span className="w-24 shrink-0 text-[var(--color-text-muted)]">{day(h.at)} · {time(h.at)}</span>
               <span className="min-w-0"><span className="font-medium text-[var(--color-text-primary)]">{KIND_TEXT[h.kind] ?? h.kind}</span>
-                {detailText(h) && <span className="text-[var(--color-text-secondary)]"> · {detailText(h)}</span>}</span>
+                {detailText(h, independent) && <span className="text-[var(--color-text-secondary)]"> · {detailText(h, independent)}</span>}</span>
             </li>
           ))}
         </ol>)}

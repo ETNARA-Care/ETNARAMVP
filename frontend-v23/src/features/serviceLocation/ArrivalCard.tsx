@@ -59,7 +59,7 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
     try {
       const reading = withReading ? await oneReading() : null;
       const result = await recordArrival(organizationId, shiftId, reading, token);
-      show(result.needsReview ? `Llegada registrada. ${proximityText(result.proximity, independent)}.` : "Llegada registrada.", result.needsReview && !independent ? "warning" : "success");
+      show(result.needsReview ? `Llegada registrada. ${proximityText(result.proximity, independent)}.` : "Llegada registrada.", result.needsReview ? "warning" : "success");
       onRecorded();
     } catch (e) {
       const err = e as ApiError;

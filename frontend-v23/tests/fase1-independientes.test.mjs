@@ -39,10 +39,16 @@ test("llegada: en una práctica queda registrada sin «la agencia lo revisará»
     assert.match(m.proximityText(p, false), /la agencia lo revisará/);
   }
   assert.equal(m.proximityText("NEAR", true), m.proximityText("NEAR", false));
+  // Nunca como verificada: la advertencia se mantiene y nadie la «aprueba» (backend 164: ARRIVAL_REVIEW_NOT_APPLICABLE).
+  for (const p of ["FAR", "NO_CONSENT", "UNAVAILABLE"]) assert.match(m.proximityText(p, true), /no verificada/);
   const panel = read("src/features/serviceLocation/ShiftVisitPanel.tsx");
-  assert.match(panel, /independent \? "No requiere revisión de otra persona\."/);
+  assert.match(panel, /a\.needsReview && !a\.reviewedAt && independent && <div[^>]*data-testid="practice-arrival-unverified"/);
+  assert.match(panel, /<Badge tone="warning">Ubicación no verificada<\/Badge>/);
+  assert.match(panel, /a\.needsReview && !a\.reviewedAt && !independent && /);
   const card = read("src/features/serviceLocation/ArrivalCard.tsx");
-  assert.match(card, /result\.needsReview && !independent \? "warning" : "success"/);
+  assert.match(card, /result\.needsReview \? "warning" : "success"/);
+  const hist = read("src/features/journey/ShiftJourneyHistory.tsx");
+  assert.match(hist, /d\.needsReview \? \(independent \? "Ubicación no verificada" : d\.reviewed \? "Revisada por la agencia" : "Pendiente de revisión"\)/);
 });
 
 test("las pantallas usan los textos según el tipo de organización", () => {
