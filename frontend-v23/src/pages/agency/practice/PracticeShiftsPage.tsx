@@ -3,9 +3,10 @@ import { CalendarPlus, HeartHandshake } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
-import { Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
+import { PRACTICE_STATUS_LABEL, practiceApi, type PracticeRequirement } from "@/api/practice";
 import { createShift, listCareRecipients, listShifts, recipientName, type CareRecipient, type Shift } from "@/api/shifts";
-import { selfAssignMessage, selfAssignShift, type SelfAssignResult } from "@/features/practice/selfAssign";
+import { SELF_DECLARATION_NOTICE, SELF_DECLARATION_STATEMENT, selfAssignMessage, selfAssignShift, type SelfAssignResult } from "@/features/practice/selfAssign";
 
 /**
  * 160 (PR B): Turnos de «Mi práctica». El cuidador independiente crea sus turnos y se los asigna con «Asignármelo»
@@ -52,6 +53,9 @@ export function PracticeShiftsPage() {
   const [saving, setSaving] = useState(false);
   const [busyShift, setBusyShift] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SelfAssignResult | null>(null);
+  // 161: advertencia y confirmación expresa (auditada) cuando faltan o vencieron documentos de su práctica.
+  const [confirming, setConfirming] = useState<{ shiftId: string; pending: PracticeRequirement[] } | null>(null);
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -73,8 +77,15 @@ export function PracticeShiftsPage() {
     .filter((s) => s.status !== "cancelled" && new Date(s.scheduled_end).getTime() > Date.now() - 12 * 60 * 60_000)
     .sort((a, b) => a.scheduled_start.localeCompare(b.scheduled_start)), [shifts]);
 
-  function report(result: SelfAssignResult) {
+  async function report(result: SelfAssignResult, shiftId?: string) {
     setLastResult(result);
+    if (result.kind === "confirmation_required" && shiftId && organizationId) {
+      const token = getToken();
+      const docs = token ? await practiceApi.documents(organizationId, token).catch(() => null) : null;
+      setConfirmChecked(false);
+      setConfirming({ shiftId, pending: (docs?.requirements ?? []).filter((r) => r.isMandatory && (r.status === "MISSING" || r.status === "EXPIRED")) });
+      return;
+    }
     toast.show(selfAssignMessage(result), result.kind === "assigned" ? "success" : result.kind === "error" ? "danger" : "warning");
   }
 
@@ -82,7 +93,19 @@ export function PracticeShiftsPage() {
     const token = getToken();
     if (!organizationId || !token) return;
     setBusyShift(shiftId);
-    try { report(await selfAssignShift(organizationId, shiftId, token)); await load(); } finally { setBusyShift(null); }
+    try { await report(await selfAssignShift(organizationId, shiftId, token), shiftId); await load(); } finally { setBusyShift(null); }
+  }
+
+  async function confirmAndAssign() {
+    const token = getToken();
+    if (!organizationId || !token || !confirming || !confirmChecked) return;
+    setBusyShift(confirming.shiftId);
+    try {
+      const result = await selfAssignShift(organizationId, confirming.shiftId, token, { confirmSelfDeclaration: true });
+      setConfirming(null);
+      await report(result);
+      await load();
+    } finally { setBusyShift(null); }
   }
 
   async function save() {
@@ -100,7 +123,7 @@ export function PracticeShiftsPage() {
       }, token);
       setCreating(false);
       if (searchParams.get("create")) setSearchParams({}, { replace: true });
-      if (assignToMe) report(await selfAssignShift(organizationId, shift.id, token));
+      if (assignToMe) await report(await selfAssignShift(organizationId, shift.id, token), shift.id);
       else toast.show("Turno creado.", "success");
       await load();
     } catch {
@@ -174,6 +197,23 @@ export function PracticeShiftsPage() {
           })}
         </ul>
       )}
+      <Modal open={confirming !== null} onClose={() => busyShift === null && setConfirming(null)} sheetOnMobile title="Documentos pendientes"
+        footer={<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="ghost" disabled={busyShift !== null} onClick={() => setConfirming(null)}>Volver</Button>
+          <Button disabled={!confirmChecked} loading={busyShift !== null} data-testid="practice-confirm-assign" onClick={() => void confirmAndAssign()}>Confirmar y asignármelo</Button>
+        </div>}>
+        <div className="flex flex-col gap-3" data-testid="practice-self-declaration">
+          <p className="text-[var(--color-text-primary)]">Según lo que registraste, a tu práctica le falta o se le venció:</p>
+          <ul className="list-disc pl-5 text-[var(--color-text-secondary)]">{(confirming?.pending.length ? confirming.pending : [{ credentialTypeCode: "?", name: "Requisitos de tu práctica", status: "MISSING" } as PracticeRequirement]).map((r) => (
+            <li key={r.credentialTypeCode}>{r.name}: {PRACTICE_STATUS_LABEL[r.status]}</li>))}</ul>
+          <label className="flex min-h-11 items-start gap-2 text-[var(--color-text-primary)]">
+            <input type="checkbox" className="mt-1 h-5 w-5" checked={confirmChecked} onChange={(e) => setConfirmChecked(e.target.checked)} data-testid="practice-self-declaration-check" />
+            {SELF_DECLARATION_STATEMENT}
+          </label>
+          <p className="text-[length:var(--text-small)] text-[var(--color-text-muted)]">{SELF_DECLARATION_NOTICE} Tu confirmación queda registrada.</p>
+          <p className="text-[length:var(--text-small)]"><Link className="underline" to="/agency/documents">Ir a «Mis documentos»</Link></p>
+        </div>
+      </Modal>
     </div>
   );
 }
