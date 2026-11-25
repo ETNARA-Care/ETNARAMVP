@@ -25,7 +25,8 @@
       "operation": "Operación",
       "care": "Cuidado",
       "administration": "Administración",
-      "practice": "Mi práctica"
+      "practice": "Mi práctica",
+      "residential": "Hogar"
     },
     "items": {
       "overview": "Resumen",
@@ -48,7 +49,8 @@
       "contracts": "Contratos",
       "practiceHome": "Inicio",
       "clients": "Clientes",
-      "documents": "Mis documentos"
+      "documents": "Mis documentos",
+      "residentialPanel": "Panel del hogar"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",

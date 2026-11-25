@@ -25,7 +25,8 @@
       "operation": "Operations",
       "care": "Care",
       "administration": "Administration",
-      "practice": "My practice"
+      "practice": "My practice",
+      "residential": "Care home"
     },
     "items": {
       "overview": "Overview",
@@ -48,7 +49,8 @@
       "contracts": "Contracts",
       "practiceHome": "Home",
       "clients": "Clients",
-      "documents": "My documents"
+      "documents": "My documents",
+      "residentialPanel": "Care home panel"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",

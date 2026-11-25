@@ -14,6 +14,7 @@ import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
+import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
 
 /**
  * Menú de la cuenta: si hay registros sin enviar, avisa antes de cerrar sesión. Por defecto
@@ -50,7 +51,7 @@ export function CaregiverLayout() {
       .catch(() => setAdminEstablishments([]));
   }, [activeOrganization]);
 
-  return <CareEventQueueProvider><AppLockGate><div data-portal="caregiver" className="min-h-dvh bg-[var(--color-ivory-50)] text-[var(--color-text-primary)]">
+  return <CareEventQueueProvider><AppLockGate><div data-portal="caregiver" className="min-h-dvh bg-[var(--color-ivory-50)] text-[var(--color-text-primary)]"><DemoEnvironmentBanner />
     <header className="sticky top-0 z-30 border-b border-[var(--color-border)]/70 bg-[var(--color-ivory-50)]/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-[760px] items-center gap-3 px-4 sm:px-6">
         <img src="/etnara-mark.svg" alt="" className="h-9 w-9 rounded-lg" />

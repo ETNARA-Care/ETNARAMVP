@@ -7,7 +7,9 @@ import { useAuth } from "./AuthProvider";
  * agency. Off by default; when off the screens and links are not shown at all
  * (the backend also answers 404 FEATURE_NOT_ENABLED).
  */
-export type OrgFeature = "SMARTMATCH" | "EN_CAMINO" | "FINANZAS" | "FACTURACION" | "SHIFT_REPORTS" | "ACTIVITY_PHOTOS" | "CONTRACTS";
+export type OrgFeature = "SMARTMATCH" | "EN_CAMINO" | "FINANZAS" | "FACTURACION" | "SHIFT_REPORTS" | "ACTIVITY_PHOTOS" | "CONTRACTS"
+  // 170 (hogares F0): solo RESIDENTIAL_CARE_HOME, apagados por defecto.
+  | "HOGAR_CALENDARIO" | "HOGAR_ASIGNACIONES" | "HOGAR_PONCHES" | "DEMO_ENVIRONMENT";
 
 export function hasOrgFeature(features: readonly string[] | undefined | null, feature: OrgFeature): boolean {
   return Array.isArray(features) && features.includes(feature);
