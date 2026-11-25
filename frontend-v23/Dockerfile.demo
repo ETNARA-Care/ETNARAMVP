@@ -1,0 +1,14 @@
+# SOLO DEMO (rama demo/independientes-25nov, nunca se fusiona con main).
+# Compila el portal actual apuntando al backend de la demo y lo sirve con Caddy (SPA, noindex).
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+ARG VITE_API_URL
+RUN test -n "$VITE_API_URL" && case "$VITE_API_URL" in *etnara-care-backend-staging*) echo "VITE_API_URL apunta a producción" && exit 1;; esac
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY --from=build /app/dist /srv
+COPY Caddyfile.demo /etc/caddy/Caddyfile

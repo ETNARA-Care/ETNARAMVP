@@ -1,0 +1,18 @@
+# SOLO DEMO
+{
+	admin off
+}
+:{$PORT:8080} {
+	root * /srv
+	encode gzip
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+	@html path / /index.html
+	header @html Cache-Control "no-store"
+	try_files {path} /index.html
+	file_server
+}
