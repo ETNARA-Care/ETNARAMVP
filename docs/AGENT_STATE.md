@@ -2,6 +2,11 @@
 
 ## Current Status
 
+## 2026-11-25 — 171 Hogares F1 (portal) — rama claude/171-hogares-f1 (apilada sobre claude/170-hogares-f0; local, sin PR)
+- Menú «Hogar» → «Establecimientos y habitaciones» (/agency/hogar/establecimientos y /:id), solo hogares. Unidades (con «General»), habitaciones, camas registradas (aviso: no es capacidad autorizada por el Departamento de la Familia), ocupación con «Sin configurar», ubicar y trasladar residentes con historial, geocerca (50–300 m, motivo, historial), comprobación y cierre con confirmación escrita.
+- Solo backend real (/residential/* de la 171); tras cada cambio se vuelve a leer del servidor. Sin piezas técnicas ni datos clínicos.
+- Pruebas: npm test 470/470, tsc, build, lint sin errores; prueba real en navegador (390 px y escritorio) con backend local y datos ficticios: traslado y cierre por la interfaz verificados en la base.
+
 ## 2026-11-23 — 160 PR B «Mi práctica» (portal) — rama claude/160b-mi-practica (apilada sobre claude/160-central-cuidador-independiente), PR borrador
 - features/practice/modality.ts (puro): isIndependentOrganization, secciones de agencia ocultas y redirigidas a /agency.
 - AgencyLayout: menú «Mi práctica» (Inicio, Turnos, Clientes, Incidentes, Mensajes + Configuración, Contratos) y pestañas móviles; «Mi día de cuidador» se mantiene.

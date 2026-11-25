@@ -1,13 +1,13 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { useTranslation } from "react-i18next";
-import { Camera, HeartHandshake, Home, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
+import { BedDouble, Camera, HeartHandshake, Home, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
 import { isHiddenForIndependent, isIndependentOrganization } from "@/features/practice/modality";
-import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
+import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_ESTABLISHMENTS_PATH, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
 import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
@@ -15,7 +15,7 @@ import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "residentialEstablishments" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -69,7 +69,8 @@ const PRACTICE_MOBILE_TABS: NavKey[] = [
 ];
 /* 170 (hogares F0): mismo portal de agencia con un grupo «Hogar» al inicio. Los módulos denegados se filtran abajo. */
 const RESIDENTIAL: NavKey[] = [
- { to: RESIDENTIAL_PANEL_PATH, icon: Home, k: "residentialPanel" },
+ { to: RESIDENTIAL_PANEL_PATH, end: true, icon: Home, k: "residentialPanel" },
+ { to: RESIDENTIAL_ESTABLISHMENTS_PATH, icon: BedDouble, k: "residentialEstablishments" },
 ];
 const RESIDENTIAL_GROUPS: Array<{ k: "residential" | "operation" | "care" | "administration"; items: NavKey[] }> = [
  { k: "residential", items: RESIDENTIAL },
