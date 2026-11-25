@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { MapPin, Send } from "lucide-react";
 import type { ApiError } from "@/api/client";
+import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { serviceLocationText } from "@/features/practice/practiceText";
 import { createChangeRequest, getFamilyServiceLocation, listMyChangeRequests, type ChangeRequest, type FamilyServiceLocation } from "@/api/serviceLocations";
 import { Badge, Button, Card, Input, Modal, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { PUERTO_RICO_MUNICIPALITIES } from "@/features/smartmatch/municipalities";
@@ -24,6 +27,7 @@ const day = (v: string) => new Date(v).toLocaleDateString("es-PR", { day: "numer
  */
 export function FamilyServiceLocationCard({ recipientId }: { recipientId: string }) {
   const { show } = useToast();
+  const tx = serviceLocationText(isIndependentOrganization(useAuth().activeOrganization));
   const [data, setData] = useState<FamilyServiceLocation | null>(null);
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
   const [open, setOpen] = useState(false);
@@ -54,13 +58,13 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
     if (!token) return;
     const text = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v)) as Record<string, string>;
     const body = point ? { ...text, latitude: point.latitude, longitude: point.longitude } : text;
-    if (!Object.keys(body).length) { setFormError("Escribe la corrección o un mensaje para la agencia."); return; }
+    if (!Object.keys(body).length) { setFormError(tx.formError); return; }
     if (point && !inPuertoRico(point)) { setFormError("El PIN está fuera de Puerto Rico. Muévelo con «Ajustar PIN»."); return; }
     if (text.postalCode && !/^\d{5}(-\d{4})?$/.test(text.postalCode)) { setFormError("El código postal debe tener 5 dígitos."); return; }
     setBusy(true); setFormError("");
     try {
       await createChangeRequest(recipientId, body, token);
-      show("Solicitud enviada. La agencia la revisará y te avisaremos.", "success");
+      show(tx.sent, "success");
       setOpen(false); setPoint(null); setForm({ addressLine: "", municipality: "", postalCode: "", accessNotes: "", message: "" });
     } catch (e) {
       const err = e as ApiError;
@@ -83,15 +87,15 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
             <div className="min-w-0">
               {data.canView && data.location ? <>
                 <p className="font-medium text-[#173154]">{data.location.label}</p>
-                <p className="text-sm text-[#475467]">{address || "Ubicación marcada por la agencia"}</p>
-                {data.location.verified && <p className="mt-1 text-xs text-[#66845f]">Verificada por la agencia</p>}
-              </> : <p className="text-sm text-[#667085]">{data.canView ? "La agencia aún no ha registrado la dirección." : "La agencia mantiene la dirección del servicio. Si ves un error, puedes pedir una corrección."}</p>}
+                <p className="text-sm text-[#475467]">{address || tx.marked}</p>
+                {data.location.verified && <p className="mt-1 text-xs text-[#66845f]">{tx.verified}</p>}
+              </> : <p className="text-sm text-[#667085]">{data.canView ? tx.notYet : tx.keeps}</p>}
             </div>
           </div>
           {requests.length > 0 && <ul className="mt-4 space-y-2 border-t border-[#102b57]/10 pt-3">
             {requests.slice(0, 3).map((r) => (
               <li key={r.id} className="text-sm">
-                <div className="flex items-center justify-between gap-2"><span className="text-[#173154]">Corrección del {day(r.created_at)}</span><Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Badge></div>
+                <div className="flex items-center justify-between gap-2"><span className="text-[#173154]">Corrección del {day(r.created_at)}</span><Badge tone={STATUS[r.status].tone}>{r.status === "APPROVED" ? tx.approved : STATUS[r.status].label}</Badge></div>
                 {r.resolution_note && <p className="mt-0.5 text-xs text-[#667085]">Agencia: {r.resolution_note}</p>}
               </li>
             ))}
@@ -106,10 +110,10 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
       <Modal open={open} onClose={() => !busy && setOpen(false)} title="Solicitar corrección" fullScreenOnMobile
         footer={<div className="flex w-full items-center gap-2 sm:justify-end">
           <Button variant="ghost" disabled={busy} onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button className="flex-1 sm:flex-none" loading={busy} onClick={() => void submit()}>Enviar a la agencia</Button>
+          <Button className="flex-1 sm:flex-none" loading={busy} onClick={() => void submit()}>{tx.send}</Button>
         </div>}>
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-[#475467]">La agencia revisará tu solicitud antes de cambiar la dirección oficial. Completa solo lo que haya que corregir.</p>
+          <p className="text-sm text-[#475467]">{tx.review} Completa solo lo que haya que corregir.</p>
           <PasteLocation label="Pega la ubicación (opcional)" onAddress={applyHint} onPoint={setPoint} />
           <PinPreview point={point} municipality={form.municipality} onChange={setPoint} onClear={() => setPoint(null)} className="h-44" />
           <Input label="Dirección correcta" maxLength={200} value={form.addressLine} onChange={(e) => setForm({ ...form, addressLine: e.target.value })} autoComplete="off" />
@@ -121,7 +125,7 @@ export function FamilyServiceLocationCard({ recipientId }: { recipientId: string
             <Input label="Código postal" inputMode="numeric" maxLength={10} value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} />
           </div>
           <Textarea label="Cómo llegar / acceso" rows={2} maxLength={500} value={form.accessNotes} onChange={(e) => setForm({ ...form, accessNotes: e.target.value })} />
-          <Textarea label="Mensaje para la agencia" rows={2} maxLength={500} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
+          <Textarea label={tx.messageLabel} rows={2} maxLength={500} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
           {formError && <p role="alert" className="text-sm text-[var(--color-danger-700)]">{formError}</p>}
         </div>
       </Modal>

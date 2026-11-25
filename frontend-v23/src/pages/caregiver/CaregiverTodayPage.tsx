@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, ChevronRight, Clock3 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, shiftRecipientName, type CareRecipient, type Shift } from "@/api/shifts";
 import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
@@ -60,7 +61,8 @@ export function CaregiverTodayPage() {
     }
     // Open shift offers are secondary: a failure here must not hide the caregiver's own shifts.
     try {
-      setOffers(await listMyCoverageOffers(organizationId, token));
+      // 160 (PR B): sin ofertas de cobertura en «Mi práctica» (no hay agencia que las publique).
+      setOffers(isIndependentOrganization(activeOrganization) ? [] : await listMyCoverageOffers(organizationId, token));
     } catch {
       setOffers([]);
     }

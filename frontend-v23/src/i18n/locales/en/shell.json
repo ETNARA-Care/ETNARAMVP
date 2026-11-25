@@ -24,7 +24,8 @@
     "groups": {
       "operation": "Operations",
       "care": "Care",
-      "administration": "Administration"
+      "administration": "Administration",
+      "practice": "My practice"
     },
     "items": {
       "overview": "Overview",
@@ -44,7 +45,10 @@
       "agents": "Agent center",
       "settings": "Settings",
       "photos": "Activity photos",
-      "contracts": "Contracts"
+      "contracts": "Contracts",
+      "practiceHome": "Home",
+      "clients": "Clients",
+      "documents": "My documents"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",
@@ -66,6 +70,8 @@
       "more": "More"
     },
     "goToAgency": "Go to the agency",
+    "goToPractice": "Go to My practice",
+    "alsoPracticeAdmin": "Manage {{organization}} here: clients, shifts and documents",
     "alsoAdmin": "You're also an administrator of {{organization}}",
     "alsoSupervisor": "You're also a supervisor of {{organization}}",
     "theAgency": "the agency",

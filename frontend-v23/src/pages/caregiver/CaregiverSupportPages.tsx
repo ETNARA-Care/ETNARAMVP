@@ -8,6 +8,7 @@ import { RealMessagingPanel } from "@/features/messaging/ConversationUI";
 import { useMessagingRecipients } from "@/features/messaging/useMessagingRecipients";
 import { useAuth } from "@/auth/AuthProvider";
 import { hasOrgFeature } from "@/auth/orgFeatures";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { getToken } from "@/auth/token";
 import { listMyCredentials, uploadMyCredentialDocument, type CredentialSummary } from "@/api/credentials";
 import { getMyAvailability, saveMyAvailability, type MyAvailability } from "@/api/availability";
@@ -58,6 +59,8 @@ function credentialState(credential: CredentialSummary): { tone: "success" | "wa
 
 export function CaregiverMessagesPage() {
   const recipients = useMessagingRecipients();
+  // 160 (PR B): en «Mi práctica» no existe «Escribir a mi agencia» (sería a sí misma; el backend también lo cierra).
+  const { activeOrganization } = useAuth();
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-navy-900)] p-5 text-white">
@@ -65,7 +68,7 @@ export function CaregiverMessagesPage() {
         <h1 className="mt-1 font-[var(--font-serif)] text-2xl">Mensajes</h1>
         <p className="mt-2 text-sm text-white/70">Coordina con tu equipo desde las conversaciones disponibles para tu cuenta.</p>
       </div>
-      <RealMessagingPanel recipients={recipients} directTitle="agency" canWriteAgency />
+      {isIndependentOrganization(activeOrganization) ? <RealMessagingPanel recipients={recipients} directTitle="agency" /> : <RealMessagingPanel recipients={recipients} directTitle="agency" canWriteAgency />}
     </div>
   );
 }

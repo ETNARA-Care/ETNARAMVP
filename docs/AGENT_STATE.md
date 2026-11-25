@@ -1,6 +1,30 @@
 # ETNARA Frontend Agent State
 
+## 2026-11-25 — Fase 1 independientes, portal (rama claude/fase1-independientes, PR borrador; backend ETNARA-Backend #284, migración 164)
+- Textos según el tipo de organización (features/practice/practiceText.ts, arrivalText.proximityText): en una práctica no hay «agencia» en la familia (inicio y lugar del servicio), en «Mi día» («Ir a Mi práctica»), en el detalle del turno ni en la llegada («queda registrado»; «No requiere revisión de otra persona» en la administración). Agencias y hogares sin cambios.
+- Activación: «Tu nombre profesional» obligatorio solo al crear la cuenta de una práctica (invitation.independent).
+- Pruebas: 472/472 (nuevo tests/fase1-independientes.test.mjs; 3 pruebas existentes ajustadas sin perder su intención), build, lint igual que main; E2E aislado con el backend 164: Fase 1 9/9 y regresiones 9/17/15/13/5/15.
+- Pendiente: texto de «Informe de turno» en la tarjeta de Central para prácticas (choca con #291 hogares; después de fusionar hogares).
+
 ## Current Status
+
+## 2026-11-23 — 161 PR C (portal): «Mis documentos», confirmación e «Informe del proveedor» — rama claude/161-mis-documentos-informe-proveedor (apilada sobre claude/160b-mi-practica), PR borrador
+- api/practice.ts; /agency/documents (PracticeDocumentsPage): requisitos propios, registrar/corregir/renovar/retirar; estados Registrado · Vence pronto · Vencido · Falta · Retirado; «Autodeclarado»; nunca Verificado/Aprobado.
+- Mis turnos: advertencia con lo que falta, casilla «Confirmo que cumplo…» y aviso legal fijo antes de enviar confirmSelfDeclaration.
+- ShiftReportPanel providerMode: «Publicar a la familia» como «Informe del proveedor»; familia: etiquetas del proveedor (lista, detalle); agencia: «Registrado por la cuidadora · pendiente de revisión de la agencia».
+- Pruebas: 461/461 (mis-documentos-161), typecheck, build; E2E local iPhone 14 + escritorio 11/11. Requiere backend PR C.
+
+## 2026-11-23 — 160 PR B «Mi práctica» (portal) — rama claude/160b-mi-practica (apilada sobre claude/160-central-cuidador-independiente), PR borrador
+- features/practice/modality.ts (puro): isIndependentOrganization, secciones de agencia ocultas y redirigidas a /agency.
+- AgencyLayout: menú «Mi práctica» (Inicio, Turnos, Clientes, Incidentes, Mensajes + Configuración, Contratos) y pestañas móviles; «Mi día de cuidador» se mantiene.
+- PracticeHomePage y PracticeShiftsPage (crear turno + «Asignármelo» vía /me/shifts/:id/self-assign; mensajes sin aprobación ni certificación; caso confirmation_required preparado para el PR C).
+- Configuración sin equipo ni establecimientos; portal de cuidadora sin «Escribir a mi agencia», ofertas de cobertura ni establecimientos en independientes.
+- Pruebas: 455/455 (mi-practica-160b), typecheck, build; E2E local iPhone 14 + escritorio 17/17 (incluye persona que también trabaja en una agencia y 0 llamadas a rutas cerradas). Requiere backend PR B.
+
+## 2026-11-23 — 160 en Central: «Cuidador independiente» (PR A) — rama claude/160-central-cuidador-independiente, PR borrador
+- api/platformOrganizations: tres tipos con tablas de traducción (antes todo lo que no era agencia se mostraba como hogar) y listAvailableOrganizationTypes (GET /platform/organization-types).
+- Central: la opción aparece solo si el backend la declara disponible; aviso de una sola persona y sin verificación de ETNARA; errores INDEPENDENT_MODALITY_DISABLED e INDEPENDENT_SINGLE_OPERATOR. SelectOrganizationPage con la etiqueta.
+- Pruebas: 449/449 (incluye central-cuidador-independiente-160), typecheck, build; E2E local iPhone 14 + escritorio 8/8. Requiere backend 160.
 
 ## 2026-11-23 — 159 en el portal: mensajes de activación y aviso de documentos profesionales — rama claude/159-mensajes-activacion, PR borrador
 - ActivateInvitationPage: mensaje claro por código (WORKER_ALREADY_IN_ORGANIZATION, WORKER_PROFILE_CONFLICT, WORKER_ALREADY_LINKED, WORKER_NOT_ACTIVE, ACCOUNT_DISABLED, vencida); aviso en invitaciones de cuidador: la organización podrá ver credenciales y documentos profesionales mientras trabaje con ella.

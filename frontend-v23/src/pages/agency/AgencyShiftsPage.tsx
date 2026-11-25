@@ -3,6 +3,8 @@ import { Bot, ChevronRight, FileText, Lock, Plus, Sparkles } from "lucide-react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { PracticeShiftsPage } from "./practice/PracticeShiftsPage";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { financeApi, type FinanceService } from "@/api/finance";
 import type { ApiError } from "@/api/client";
@@ -81,7 +83,13 @@ function firstBlockingReason(worker: AssignableWorker): string | null {
   return `${labels[requirement.status]}: ${requirement.requirement.replaceAll("_", " ")}`;
 }
 
+/** 160 (PR B): un cuidador independiente ve «Mis turnos» (autoasignación); agencias y hogares, Turnos de siempre. */
 export function AgencyShiftsPage() {
+  const { activeOrganization } = useAuth();
+  return isIndependentOrganization(activeOrganization) ? <PracticeShiftsPage /> : <AgencyShiftsContent />;
+}
+
+function AgencyShiftsContent() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activeOrganization, roles } = useAuth();

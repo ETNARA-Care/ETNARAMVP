@@ -32,6 +32,6 @@ test("Central sees invitation status and can resend (new link by email) or revok
 
 test("the invitee's activation page is unchanged (existing flow)", () => {
   const invitePage = read("src/pages/OrganizationAdminInvitationPage.tsx");
-  assert.match(invitePage, /activateOrganizationAdminInvitation\(token, password\)/);
+  assert.match(invitePage, /activateOrganizationAdminInvitation\(token, password(\)|, invitation\.independent \? professionalName\.trim\(\) : undefined\))/); // 164: nombre profesional solo para prácticas
   assert.match(invitePage, /acceptOrganizationAdminInvitation/);
 });

@@ -6,13 +6,14 @@ import { useAuth } from "@/auth/AuthProvider";
 import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
+import { isHiddenForIndependent, isIndependentOrganization } from "@/features/practice/modality";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
 import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -42,6 +43,29 @@ const GROUPS: Array<{ k: "operation" | "care" | "administration"; items: NavKey[
  { k: "care", items: CARE },
  { k: "administration", items: ADMINISTRATION },
 ];
+/* 160 (PR B): «Mi práctica» del cuidador independiente. Mismas pantallas; sin secciones de agencia. */
+const PRACTICE: NavKey[] = [
+ { to: "/agency", end: true, icon: LayoutDashboard, k: "practiceHome" },
+ { to: "/agency/shifts", icon: CalendarRange, k: "shifts" },
+ { to: "/agency/residents", icon: Users, k: "clients" },
+ { to: "/agency/documents", icon: ShieldCheck, k: "documents" },
+ { to: "/agency/incidents", icon: AlertTriangle, k: "incidents" },
+ { to: "/agency/messages", icon: MessageCircle, k: "messages" },
+];
+const PRACTICE_ADMINISTRATION: NavKey[] = [
+ { to: "/agency/settings", icon: Settings, k: "settings" },
+ { to: "/agency/contracts", icon: FileSignature, k: "contracts" },
+];
+const PRACTICE_GROUPS: Array<{ k: "practice" | "administration"; items: NavKey[] }> = [
+ { k: "practice", items: PRACTICE },
+ { k: "administration", items: PRACTICE_ADMINISTRATION },
+];
+const PRACTICE_MOBILE_TABS: NavKey[] = [
+ { to: "/agency", end: true, icon: LayoutDashboard, k: "home" },
+ { to: "/agency/shifts", icon: CalendarRange, k: "shifts" },
+ { to: "/agency/residents", icon: Users, k: "clients" },
+ { to: "/agency/messages", icon: MessageCircle, k: "messages" },
+];
 /** Pestañas fijas en móvil; el resto vive en la hoja “Más”. */
 const MOBILE_TABS: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "home" },
@@ -67,7 +91,8 @@ export function AgencyLayout() {
  const contractsOn = hasOrgFeature(activeOrganization?.features, "CONTRACTS");
  const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"), contractsOn);
  const location = useLocation();
- const groups: AdminNavGroup[] = GROUPS.map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
+ const independent = isIndependentOrganization(activeOrganization);
+ const groups: AdminNavGroup[] = (independent ? PRACTICE_GROUPS : GROUPS).map((group) => ({ label: t(`agency.groups.${group.k}`), items: group.items.filter((item) =>
    (roles.includes("ORGANIZATION_ADMIN") || (item.to !== "/agency/timesheets" && item.to !== "/agency/smartmatch" && item.to !== "/agency/finance"))
    && (smartMatch || item.to !== "/agency/smartmatch")
    && (finance || item.to !== "/agency/finance")
@@ -97,10 +122,10 @@ export function AgencyLayout() {
      {t("agency.contractsPendingNotice")}
    </Link>
  )}
- <RoleTermsGate organizationId={activeOrganization?.id} />{contractOnlyRedirect(contracts.status, location.pathname) ? <Navigate to="/agency/contracts" replace /> : <Outlet />}
+ <RoleTermsGate organizationId={activeOrganization?.id} />{contractOnlyRedirect(contracts.status, location.pathname) ? <Navigate to="/agency/contracts" replace /> : independent && isHiddenForIndependent(location.pathname) ? <Navigate to="/agency" replace /> : <Outlet />}
  </main>
  </div>
- <AdminMobileNav tabs={MOBILE_TABS.map(toNav)} groups={groups} platformLink={platformLink} />
+ <AdminMobileNav tabs={(independent ? PRACTICE_MOBILE_TABS : MOBILE_TABS).map(toNav)} groups={groups} platformLink={platformLink} />
  </div>
  );
 }

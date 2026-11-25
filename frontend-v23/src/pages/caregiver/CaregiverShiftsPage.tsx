@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, ChevronRight, Clock3, FileText, ShieldCheck } from "lucide-react";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { useAuth } from "@/auth/AuthProvider";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { getToken } from "@/auth/token";
 import { listCareRecipients, listMyShifts, shiftRecipientName, type CareRecipient, type Shift } from "@/api/shifts";
 import { OfflineReadyMark } from "@/features/caregiver/OfflineReady";
@@ -43,7 +44,7 @@ export function CaregiverShiftsPage() {
         listMyShifts(organizationId, token),
         listCareRecipients(organizationId, token),
         // Las ofertas de turnos abiertos son secundarias: sin señal no ocultan los turnos propios.
-        listMyCoverageOffers(organizationId, token).catch(() => []),
+        isIndependentOrganization(activeOrganization) ? Promise.resolve([]) : listMyCoverageOffers(organizationId, token).catch(() => []),
       ]);
       setShifts(shiftRows);
       prefetchUpcomingShifts(organizationId, shiftRows, token); setRecipients(recipientRows); setOffers(offerRows);

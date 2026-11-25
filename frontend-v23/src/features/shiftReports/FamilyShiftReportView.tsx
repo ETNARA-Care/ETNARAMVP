@@ -23,13 +23,15 @@ export function FamilyShiftReportView({ report }: { report: FamilyShiftReport })
   const o = s.observations;
   const refDay = report.serviceDate; // PR calendar day of the shift: a time on another day shows its date
   const when = (at: string | null) => (at ? `${reportTime(at)}${otherDay(at, refDay) ? ` · ${otherDay(at, refDay)}` : ""}` : null);
+  // 161: «Informe del proveedor» (cuidador independiente): nunca «aprobado por la agencia».
+  const provider = report.publishedByProvider === true;
   return (
     <div className="flex flex-col gap-3" data-testid="family-report-view">
       <div className="grid grid-cols-2 gap-3 text-[var(--text-small)]">
-        <div><p className="text-[var(--color-text-muted)]">Agencia</p><p className="font-medium">{report.organization.name ?? "—"}</p></div>
+        <div><p className="text-[var(--color-text-muted)]">{provider ? "Proveedor" : "Agencia"}</p><p className="font-medium">{report.organization.name ?? "—"}</p></div>
         <div><p className="text-[var(--color-text-muted)]">Cuidador</p><p className="font-medium">{report.caregiver.name ?? "—"}</p></div>
         <div><p className="text-[var(--color-text-muted)]">Fecha</p><p className="font-medium first-letter:uppercase">{reportShortDate(`${report.serviceDate}T16:00:00Z`)}</p></div>
-        <div><p className="text-[var(--color-text-muted)]">Aprobado</p><p className="font-medium">{reportShortDate(report.approvedAt)}, {reportTime(report.approvedAt)}</p></div>
+        <div><p className="text-[var(--color-text-muted)]">{provider ? "Publicado" : "Aprobado"}</p><p className="font-medium">{reportShortDate(report.approvedAt)}, {reportTime(report.approvedAt)}</p></div>
       </div>
       {s.schedule && (
         <dl className="flex flex-col divide-y divide-[var(--color-border)] rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] px-3 text-[var(--text-small)]" aria-label="Horarios">
@@ -57,11 +59,13 @@ export function FamilyShiftReportView({ report }: { report: FamilyShiftReport })
       )}
       {report.agencySummary && (
         <div className="rounded-[var(--radius-md)] border border-[var(--color-sage-300)] bg-[var(--color-sage-50)] p-3 text-[var(--text-small)]" data-testid="family-agency-summary">
-          <p className="font-medium text-[var(--color-text-primary)]">Resumen de la agencia</p>
+          <p className="font-medium text-[var(--color-text-primary)]">{provider ? "Resumen del proveedor" : "Resumen de la agencia"}</p>
           <p className="mt-1 whitespace-pre-line text-[var(--color-text-secondary)]">{report.agencySummary}</p>
         </div>
       )}
-      <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Aprobado por la agencia a partir de los registros del turno. Solo ves las secciones que la agencia compartió contigo.</p>
+      {provider
+        ? <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]" data-testid="family-provider-report-note">Informe del proveedor: lo publicó el propio proveedor a partir de los registros del turno, sin revisión de terceros. ETNARA Care no lo revisa ni lo aprueba.</p>
+        : <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Aprobado por la agencia a partir de los registros del turno. Solo ves las secciones que la agencia compartió contigo.</p>}
     </div>
   );
 }

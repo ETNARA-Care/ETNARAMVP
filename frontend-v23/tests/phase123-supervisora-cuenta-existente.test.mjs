@@ -12,7 +12,7 @@ test("staff who also work shifts can open both portals", () => {
   const guard = read("src/auth/RoleGuard.tsx");
   assert.match(guard, /allowedExperiences\(roles\)\.includes\(experience\)/);
   assert.match(read("src/layouts/AgencyLayout.tsx"), /t\("agency\.myCaregiverDay"\)/); assert.equal(shellEs("agency.myCaregiverDay"), "Mi día como cuidador/a");
-  assert.match(read("src/layouts/CaregiverLayout.tsx"), /t\("caregiver\.goToAgency"\)/); assert.equal(shellEs("caregiver.goToAgency"), "Ir a la agencia");
+  assert.match(read("src/layouts/CaregiverLayout.tsx"), /"caregiver\.goToAgency"/); // 164: en una práctica, «Ir a Mi práctica» assert.equal(shellEs("caregiver.goToAgency"), "Ir a la agencia");
 });
 
 test("administrators make a caregiver a supervisor from her profile", () => {

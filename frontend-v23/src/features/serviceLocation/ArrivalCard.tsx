@@ -6,7 +6,9 @@ import { getLocationConsent, grantLocationConsent, recordArrival, type Arrival }
 import { getToken } from "@/auth/token";
 import { Button, Card, Modal, useToast } from "@/components/ui";
 import { isConnectivityError, queuedJourneyState, useCareEventQueue } from "@/features/caregiver/careEventQueue";
-import { PROXIMITY_TEXT } from "./arrivalText";
+import { useAuth } from "@/auth/AuthProvider";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { proximityText } from "./arrivalText";
 
 const time = (v: string) => new Date(v).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" });
 
@@ -32,6 +34,7 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
   organizationId: string; shiftId: string; arrival: ShiftArrival | Arrival | null; onRecorded: () => void;
 }) {
   const { show } = useToast();
+  const independent = isIndependentOrganization(useAuth().activeOrganization);
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const queue = useCareEventQueue();
@@ -56,7 +59,7 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
     try {
       const reading = withReading ? await oneReading() : null;
       const result = await recordArrival(organizationId, shiftId, reading, token);
-      show(result.needsReview ? `Llegada registrada. ${PROXIMITY_TEXT[result.proximity]}.` : "Llegada registrada.", result.needsReview ? "warning" : "success");
+      show(result.needsReview ? `Llegada registrada. ${proximityText(result.proximity, independent)}.` : "Llegada registrada.", result.needsReview ? "warning" : "success");
       onRecorded();
     } catch (e) {
       const err = e as ApiError;
@@ -109,7 +112,7 @@ export function ArrivalCard({ organizationId, shiftId, arrival, onRecorded }: {
         <MapPinCheck size={22} className="mt-0.5 shrink-0 text-[var(--color-success-700)]" aria-hidden />
         <div>
           <p className="font-medium text-[var(--color-text-primary)]">Llegada registrada · {time(arrival.occurredAt)}</p>
-          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{PROXIMITY_TEXT[arrival.proximity]}</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{proximityText(arrival.proximity, independent)}</p>
         </div>
       </Card>
     );
