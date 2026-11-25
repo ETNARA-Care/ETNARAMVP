@@ -33,6 +33,7 @@ test("family home stays calm when there is no shift today", () => {
   const today = read("src/pages/family/FamilyTodayPage.tsx");
   assert.match(today, /if \(!shift\) return \{ tone: "neutral" as const, label: "Sin turno hoy" \}/);
   assert.doesNotMatch(today, /Aún sin cuidador asignado/);
-  assert.match(today, /Escríbele a la agencia/);
+  assert.match(today, /familyWriteText\(independent\)/); // 164: en una agencia sigue «Escríbele a la agencia»
+  assert.match(read("src/features/practice/practiceText.ts"), /"Escríbele a la agencia"/);
   assert.match(today, /listFamilyShifts/);
 });
