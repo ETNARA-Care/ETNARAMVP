@@ -74,3 +74,66 @@ test("ETNARA Central muestra los interruptores de hogar (apagados por defecto; m
   assert.equal((card.match(/setOrganizationFeature\(/g) ?? []).length, 1);
   assert.match(card, /reason\.trim\(\)\.length < 3/);
 });
+
+// Revisión independiente 25-nov (A4): cambio rápido de organización sin datos del hogar anterior.
+const latestReq = await load("src/features/residential/latestRequest.ts");
+const deferred = () => { let resolve; let reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; };
+
+/** Reproduce el flujo del panel: cada cambio de organización invalida la carga anterior y empieza otra. */
+function simulatePanel() {
+  const latest = latestReq.createLatestRequest();
+  let state = null; let active = null; const seen = [];
+  const record = () => { const v = latestReq.scopedTo(state, active); seen.push({ active, shown: v ? v.organizationId : null }); };
+  return {
+    switchTo(org, residential, response) {
+      latest.invalidate(); active = org; record();
+      if (!residential) return Promise.resolve();
+      const request = latest.begin();
+      return response.then((data) => { if (request.isCurrent()) state = { organizationId: org, data, error: false }; record(); },
+        () => { if (request.isCurrent()) state = { organizationId: org, data: null, error: true }; record(); });
+    },
+    visible: () => latestReq.scopedTo(state, active), seen,
+  };
+}
+
+test("A4: entre dos hogares, la respuesta atrasada del primero nunca sobrescribe ni se muestra en el segundo", async () => {
+  const p = simulatePanel(); const h1 = deferred(), h2 = deferred();
+  const a = p.switchTo("H1", true, h1.promise);
+  const b = p.switchTo("H2", true, h2.promise);
+  h2.resolve({ activeResidents: 2 }); await b;
+  h1.resolve({ activeResidents: 9 }); await a;
+  assert.equal(p.visible().organizationId, "H2");
+  assert.equal(p.visible().data.activeResidents, 2);
+  for (const s of p.seen) assert.ok(s.shown === null || s.shown === s.active, JSON.stringify(s));
+});
+
+test("A4: cambios muy rápidos H1 → H2 → H1 → H2 y fallos atrasados: solo cuenta la última carga", async () => {
+  const p = simulatePanel(); const r = [deferred(), deferred(), deferred(), deferred()];
+  const runs = ["H1", "H2", "H1", "H2"].map((o, i) => p.switchTo(o, true, r[i].promise));
+  r[3].resolve({ activeResidents: 4 }); r[0].reject(new Error("tarde")); r[2].resolve({ activeResidents: 1 }); r[1].resolve({ activeResidents: 7 });
+  await Promise.all(runs);
+  assert.deepEqual([p.visible().organizationId, p.visible().data.activeResidents, p.visible().error], ["H2", 4, false]);
+  for (const s of p.seen) assert.ok(s.shown === null || s.shown === s.active, JSON.stringify(s));
+});
+
+test("A4: entre las tres modalidades, al salir del hogar no queda nada visible y al volver se carga de nuevo", async () => {
+  const p = simulatePanel(); const h = deferred(), late = deferred();
+  const first = p.switchTo("H1", true, late.promise);
+  await p.switchTo("AGENCIA", false); assert.equal(p.visible(), null);
+  await p.switchTo("INDEPENDIENTE", false); assert.equal(p.visible(), null);
+  late.resolve({ activeResidents: 9 }); await first;
+  assert.equal(p.visible(), null, "la respuesta atrasada del hogar no aparece en otra modalidad");
+  const back = p.switchTo("H1", true, h.promise); assert.equal(p.visible(), null, "al volver no se reutilizan datos viejos");
+  h.resolve({ activeResidents: 3 }); await back;
+  assert.equal(p.visible().data.activeResidents, 3);
+});
+
+test("A4: el panel usa la carga ligada a la organización (turno, descarte y filtro por organización activa)", () => {
+  const src = read("src/pages/agency/residential/ResidentialPanelPage.tsx");
+  assert.match(src, /const request = latest\.current\.begin\(\);/);
+  assert.match(src, /if \(request\.isCurrent\(\)\) setState\(\{ organizationId, data: overview, error: false \}\)/);
+  assert.match(src, /if \(request\.isCurrent\(\)\) setState\(\{ organizationId, data: null, error: true \}\)/);
+  assert.match(src, /return \(\) => tracker\.invalidate\(\);/);
+  assert.match(src, /const current = scopedTo\(state, organizationId\);/);
+  assert.doesNotMatch(src, /setOverview|setError/);
+});
