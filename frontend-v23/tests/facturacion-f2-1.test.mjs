@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const flatten = (obj, prefix = "") => Object.entries(obj).flatMap(([k, v]) => (v && typeof v === "object" ? flatten(v, `${prefix}${k}.`) : [[`${prefix}${k}`, v]]));
@@ -41,7 +42,7 @@ test("permission buttons only for managers while the module is on; the backend s
 
 test("ETNARA central: FACTURACION needs FINANZAS; the manager panel shows e-mails only and never finance data", () => {
   const card = read("src/features/platform/OrganizationFeaturesCard.tsx");
-  assert.match(card, /FACTURACION: \{ title: "Facturación Premium"/);
+  assert.match(centralEs, /"FACTURACION": \{\s*"title": "Facturación Premium"/);
   assert.match(card, /"FINANZAS", "FACTURACION"[,\]]/);
   assert.match(card, /const blocked = f\.code === "FACTURACION" && !f\.enabled && !finanzasOn;/);
   assert.match(card, /disabled=\{saving \|\| blocked\}/);

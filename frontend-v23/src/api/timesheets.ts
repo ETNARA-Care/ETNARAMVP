@@ -12,3 +12,5 @@ export async function reviewTimesheet(org:string,id:string,decision:"approved"|"
 export async function previewPayPeriod(org:string,from:string,to:string,cadence:string,token:string){const q=new URLSearchParams({dateFrom:from,dateTo:to,cadence});return apiClient.get<PayPeriodPreview>(`/organizations/${org}/pay-periods/preview?${q}`,token)}
 export async function listPayPeriods(org:string,token:string){return (await apiClient.get<{periods:PayPeriod[]}>(`/organizations/${org}/pay-periods`,token)).periods}
 export async function closePayPeriod(org:string,from:string,to:string,cadence:string,token:string){return apiClient.post<{period:unknown}>(`/organizations/${org}/pay-periods/close`,{dateFrom:from,dateTo:to,cadence},token)}
+/** F0.1 (hogares): solo la tarifa de pago. No envía tarifa de facturación; el backend la rechaza en un hogar (409). */
+export async function saveStaffPayRate(org:string,id:string,payRateCents:number,token:string){return apiClient.put(`/organizations/${org}/financial-rates/${id}`,{payRateCents,currency:"USD"},token)}
