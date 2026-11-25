@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { getResidentialOverview, type ResidentialOverview } from "@/api/residential";
 import { isResidentialOrganization } from "@/features/residential/modality";
+import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
 
 const MODULE_LABELS: Record<ResidentialOverview["features"][number]["code"], string> = {
   HOGAR_CALENDARIO: "Calendario del hogar",
@@ -21,23 +22,36 @@ export function ResidentialPanelPage() {
   const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
   const residential = isResidentialOrganization(activeOrganization);
-  const [overview, setOverview] = useState<ResidentialOverview | null>(null);
-  const [error, setError] = useState(false);
+  // A4 (25-nov): los recuentos van ligados a la organización que los pidió; una respuesta atrasada de otra
+  // organización se descarta y, al cambiar de organización, nunca se muestran los del hogar anterior.
+  const [state, setState] = useState<OrganizationScoped<ResidentialOverview> | null>(null);
+  const latest = useRef(createLatestRequest());
 
   const load = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !token || !residential) return;
-    setError(false);
-    try { setOverview((await getResidentialOverview(organizationId, token)).overview); }
-    catch { setError(true); }
+    const request = latest.current.begin();
+    try {
+      const { overview } = await getResidentialOverview(organizationId, token);
+      if (request.isCurrent()) setState({ organizationId, data: overview, error: false });
+    } catch {
+      if (request.isCurrent()) setState({ organizationId, data: null, error: true });
+    }
   }, [organizationId, residential]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const tracker = latest.current;
+    void load();
+    return () => tracker.invalidate();
+  }, [load]);
+  const current = scopedTo(state, organizationId);
+  const overview = current?.data ?? null;
+  const error = current?.error === true;
 
   if (!residential) return <Navigate to="/agency" replace />;
   return (
     <div className="flex flex-col gap-6" data-testid="residential-panel">
       <PageHeader title="Panel del hogar" description={`Administración de ${activeOrganization?.name ?? "tu hogar"}.`} />
-      {error ? <ErrorState kind="server" onRetry={() => void load()} /> : overview === null ? <Skeleton className="h-32" /> : (
+      {error ? <ErrorState kind="server" onRetry={() => { setState(null); void load(); }} /> : overview === null ? <Skeleton className="h-32" /> : (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
             <Card><p className="text-[length:var(--text-small)] text-[var(--color-text-secondary)]">Residentes activos</p><p className="font-display text-[var(--text-h2)] text-[var(--color-text-primary)]">{overview.activeResidents}</p></Card>
