@@ -1,5 +1,11 @@
 # ETNARA Frontend Agent State
 
+## 2026-11-25 — Fase 1 independientes, portal (rama claude/fase1-independientes, PR borrador; backend ETNARA-Backend #284, migración 164)
+- Textos según el tipo de organización (features/practice/practiceText.ts, arrivalText.proximityText): en una práctica no hay «agencia» en la familia (inicio y lugar del servicio), en «Mi día» («Ir a Mi práctica»), en el detalle del turno ni en la llegada («queda registrado»; «No requiere revisión de otra persona» en la administración). Agencias y hogares sin cambios.
+- Activación: «Tu nombre profesional» obligatorio solo al crear la cuenta de una práctica (invitation.independent).
+- Pruebas: 472/472 (nuevo tests/fase1-independientes.test.mjs; 3 pruebas existentes ajustadas sin perder su intención), build, lint igual que main; E2E aislado con el backend 164: Fase 1 9/9 y regresiones 9/17/15/13/5/15.
+- Pendiente: texto de «Informe de turno» en la tarjeta de Central para prácticas (choca con #291 hogares; después de fusionar hogares).
+
 ## Current Status
 
 ## 2026-11-25 — 171 Hogares F1 (portal) — rama claude/171-hogares-f1 (apilada sobre claude/170-hogares-f0; local, sin PR)

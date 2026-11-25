@@ -68,7 +68,7 @@ export function CaregiverLayout() {
 
     {alsoStaff && <div className="mx-auto w-full max-w-[760px] px-4 pt-4 sm:px-6">
       <button type="button" className="w-full rounded-2xl border border-[var(--color-border)] bg-white p-4 text-left shadow-sm" onClick={() => navigate("/agency")}>
-        <div className="flex items-center gap-3"><Building2 size={22}/><div><div className="font-semibold">{t("caregiver.goToAgency")}</div><div className="text-sm text-[var(--color-text-secondary)]">{t(roles.includes("ORGANIZATION_ADMIN") ? "caregiver.alsoAdmin" : "caregiver.alsoSupervisor", { organization: activeOrganization?.name ?? t("caregiver.theAgency") })}</div></div></div>
+        <div className="flex items-center gap-3"><Building2 size={22}/><div><div className="font-semibold">{t(isIndependentOrganization(activeOrganization) ? "caregiver.goToPractice" : "caregiver.goToAgency")}</div><div className="text-sm text-[var(--color-text-secondary)]">{t(isIndependentOrganization(activeOrganization) ? "caregiver.alsoPracticeAdmin" : roles.includes("ORGANIZATION_ADMIN") ? "caregiver.alsoAdmin" : "caregiver.alsoSupervisor", { organization: activeOrganization?.name ?? t("caregiver.theAgency") })}</div></div></div>
       </button>
     </div>}
 

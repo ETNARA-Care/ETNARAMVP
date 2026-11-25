@@ -68,6 +68,8 @@ export interface OrganizationAdminInvitationInspection {
   target_name: string;
   account_exists: boolean;
   expires_at: string;
+  /** 164: la invitación es de una práctica independiente (se pide el nombre profesional al crear la cuenta). Ausente en backends anteriores. */
+  independent?: boolean;
 }
 
 /** Etapa 0: what Central sees of an email delivery (fixed codes only, never the provider's message). */
@@ -182,10 +184,10 @@ export async function inspectOrganizationAdminInvitation(token: string): Promise
   return result.invitation;
 }
 
-export function activateOrganizationAdminInvitation(token: string, password: string) {
+export function activateOrganizationAdminInvitation(token: string, password: string, professionalName?: string) {
   return apiClient.post<{ activation: { user_id: string; organization_id: string; invitation_type: "organization_admin" } }>(
     "/platform/admin-invitations/activate",
-    { token, password },
+    { token, password, ...(professionalName ? { professionalName } : {}) },
   );
 }
 
