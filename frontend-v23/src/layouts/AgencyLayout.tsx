@@ -15,7 +15,7 @@ import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -50,6 +50,7 @@ const PRACTICE: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "practiceHome" },
  { to: "/agency/shifts", icon: CalendarRange, k: "shifts" },
  { to: "/agency/residents", icon: Users, k: "clients" },
+ { to: "/agency/documents", icon: ShieldCheck, k: "documents" },
  { to: "/agency/incidents", icon: AlertTriangle, k: "incidents" },
  { to: "/agency/messages", icon: MessageCircle, k: "messages" },
 ];

@@ -7,9 +7,8 @@ import type { ComplianceSummary } from "@/api/compliance";
  * transacción con las MISMAS reglas de Turnos: elegibilidad, turno abierto, su agenda en todas sus organizaciones.
  * El portal no decide la elegibilidad: solo explica la respuesta.
  *
- * PR C (documentos autodeclarados): el backend podrá responder que falta la confirmación registrada de la persona.
- * Ese caso ya tiene su forma aquí («confirmation_required») y su texto fijo; mientras el backend no lo envíe,
- * nunca aparece.
+ * 161 (documentos autodeclarados): con requisitos propios faltantes o vencidos el backend responde
+ * SELF_DECLARATION_CONFIRMATION_REQUIRED; la persona puede confirmar expresamente (auditado) y reintentar.
  */
 export type SelfAssignResult =
   | { kind: "assigned"; assignment: Assignment }
@@ -18,6 +17,7 @@ export type SelfAssignResult =
   | { kind: "confirmation_required" }
   | { kind: "error"; message: string };
 
+export const SELF_DECLARATION_STATEMENT = "Confirmo que cumplo los requisitos de este servicio.";
 export const SELF_DECLARATION_NOTICE =
   "ETNARA Care no verifica ni certifica documentos. Esta confirmación no sustituye los requisitos legales que te correspondan.";
 
@@ -36,9 +36,10 @@ export function interpretSelfAssignError(error: unknown): SelfAssignResult {
   return { kind: "error", message: "No pudimos asignarte el turno. Inténtalo de nuevo." };
 }
 
-export async function selfAssignShift(organizationId: string, shiftId: string, token: string): Promise<SelfAssignResult> {
+/** 161: con `confirmSelfDeclaration` la persona confirma expresamente (el backend lo audita). Solo tras su decisión. */
+export async function selfAssignShift(organizationId: string, shiftId: string, token: string, options: { confirmSelfDeclaration?: true } = {}): Promise<SelfAssignResult> {
   try {
-    const result = await apiClient.post<{ assignment: Assignment }>(selfAssignPath(organizationId, shiftId), {}, token);
+    const result = await apiClient.post<{ assignment: Assignment }>(selfAssignPath(organizationId, shiftId), options.confirmSelfDeclaration ? { confirmSelfDeclaration: true } : {}, token);
     return { kind: "assigned", assignment: result.assignment };
   } catch (error) {
     return interpretSelfAssignError(error);

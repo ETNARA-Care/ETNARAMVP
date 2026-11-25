@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, ChevronRight, MailPlus, MoreHorizontal, Plus, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { getToken } from "@/auth/token";
 import { OrganizationFeaturesCard } from "@/features/platform/OrganizationFeaturesCard";
+import { PlatformModalitiesCard } from "@/features/platform/PlatformModalitiesCard";
 import {
   createPlatformOrganization,
   listAvailableOrganizationTypes,
@@ -274,6 +275,8 @@ export function PlatformOrganizationsPage() {
           </div>
         </div>
       </section>
+
+      <PlatformModalitiesCard />
 
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-card)] md:p-[var(--spacing-md)]"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)] md:text-xs">Total</p><p className="mt-1 font-display text-2xl leading-none md:mt-2 md:text-3xl">{organizations?.length ?? "—"}</p></div>
