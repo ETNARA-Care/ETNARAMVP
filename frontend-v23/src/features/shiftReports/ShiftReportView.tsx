@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { ShiftReportContent } from "@/api/shiftReports";
-import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
+import { useAuth } from "@/auth/AuthProvider";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { PROXIMITY_TEXT, proximityText } from "@/features/serviceLocation/arrivalText";
 import { otherDay, reportDayKey, reportShortDate, reportTime } from "./reportFormat";
 
 /**
@@ -42,6 +44,7 @@ export function ShiftReportView({ content }: { content: ShiftReportContent }) {
   const s = content.sections;
   const t = content.times;
   const refDay = reportDayKey(content.shift.scheduledStart);
+  const independent = isIndependentOrganization(useAuth().activeOrganization);
   return (
     <div className="flex flex-col gap-3" data-testid="shift-report-view">
       <div className="grid grid-cols-2 gap-3 text-[var(--text-small)] sm:grid-cols-4">
@@ -53,7 +56,7 @@ export function ShiftReportView({ content }: { content: ShiftReportContent }) {
       <dl className="flex flex-col divide-y divide-[var(--color-border)] rounded-[var(--radius-md)] bg-[var(--color-ivory-100)] px-3 text-[var(--text-small)]" aria-label="Horas reales">
         <div className="py-2">
           <div className="flex items-baseline justify-between gap-3"><dt className="text-[var(--color-text-secondary)]">Llegada («Llegué»)</dt><dd className="text-right font-semibold tabular-nums">{t.arrival ? <Moment at={t.arrival.at} refDay={refDay} /> : "Sin registro"}</dd></div>
-          {t.arrival && <p className="mt-0.5 text-[var(--text-caption)] text-[var(--color-text-muted)]">{PROXIMITY_TEXT[t.arrival.proximity as keyof typeof PROXIMITY_TEXT] ?? t.arrival.proximity}</p>}
+          {t.arrival && <p className="mt-0.5 text-[var(--text-caption)] text-[var(--color-text-muted)]">{t.arrival.proximity in PROXIMITY_TEXT ? proximityText(t.arrival.proximity as keyof typeof PROXIMITY_TEXT, independent) : t.arrival.proximity}</p>}
         </div>
         <div className="flex items-baseline justify-between gap-3 py-2"><dt className="text-[var(--color-text-secondary)]">Inicio del turno</dt><dd className="text-right font-semibold tabular-nums"><Moment at={t.start.at} refDay={refDay} />{t.start.recordedOffline ? " · sin señal" : ""}</dd></div>
         <div className="flex items-baseline justify-between gap-3 py-2"><dt className="text-[var(--color-text-secondary)]">Final del turno</dt><dd className="text-right font-semibold tabular-nums"><Moment at={t.end.at} refDay={refDay} />{t.end.recordedOffline ? " · sin señal" : ""}</dd></div>

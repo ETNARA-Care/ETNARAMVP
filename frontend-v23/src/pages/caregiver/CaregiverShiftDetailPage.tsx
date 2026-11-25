@@ -25,7 +25,9 @@ import { getShiftServiceLocation, type ShiftServiceLocation } from "@/api/servic
 import { ServiceDirectionsCard } from "@/features/serviceLocation/ServiceDirectionsCard";
 import { ArrivalCard } from "@/features/serviceLocation/ArrivalCard";
 import { CaregiverJourneyCard } from "@/features/journey/CaregiverJourneyCard";
-import { PROXIMITY_TEXT } from "@/features/serviceLocation/arrivalText";
+import { proximityText } from "@/features/serviceLocation/arrivalText";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { caregiverShiftText } from "@/features/practice/practiceText";
 import { OfflineReadyCard } from "@/features/caregiver/OfflineReady";
 import { Badge, BottomSheet, Button, Card, ErrorState, Input, Select, Skeleton, StatusBadge, Textarea, Timeline, useToast } from "@/components/ui";
 import { ShiftPrivateInstructions } from "@/features/shifts/ShiftPrivateInstructions";
@@ -57,11 +59,11 @@ const ACTION_TITLE: Record<CareEventTypeCode, string> = Object.fromEntries(
   ACTIONS.map((action) => [action.code, "Registrar " + action.label.toLowerCase()]),
 ) as Record<CareEventTypeCode, string>;
 
-function actionError(error: unknown): string {
+function actionError(error: unknown, independent = false): string {
   const apiError = error as ApiError;
   if (apiError.status === 0) return "No hay conexión con el servidor.";
   if (apiError.code === "ALREADY_CHECKED_IN") return "Este turno ya fue iniciado.";
-  if (apiError.code === "CHECK_IN_OUTSIDE_WINDOW") return "Este turno ya terminó. No se puede comenzar; avísale a la agencia.";
+  if (apiError.code === "CHECK_IN_OUTSIDE_WINDOW") return caregiverShiftText(independent).outsideWindow;
   if (apiError.code === "ASSIGNMENT_NOT_ACCEPTED") return "Debes aceptar el turno antes de comenzarlo.";
   if (apiError.code === "NO_APPLICABLE_REQUIREMENT_SET") return "Tu agencia todavía no configuró los requisitos de tu puesto. Avísale para que pueda habilitar el turno.";
   if (apiError.code === "ASSIGNMENT_ALREADY_RESPONDED") return "Esta asignación ya fue respondida.";
@@ -109,6 +111,8 @@ export function CaregiverShiftDetailPage() {
   const { shiftId } = useParams();
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
+  const independent = isIndependentOrganization(activeOrganization);
+  const tx = caregiverShiftText(independent);
   // «En camino» y «Llegué»: solo agencias piloto (backend 108). Sin ellos, el turno sigue con Comenzar / Finalizar.
   const enCamino = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
@@ -267,7 +271,7 @@ export function CaregiverShiftDetailPage() {
         + (event.recordedOffline ? " · sin conexión" : ""),
     })),
     ...(verification?.arrivals ?? []).map((arrival) => ({
-      id: `arrival-${arrival.occurredAt}`, at: arrival.occurredAt, title: `Llegué · ${PROXIMITY_TEXT[arrival.proximity]}`,
+      id: `arrival-${arrival.occurredAt}`, at: arrival.occurredAt, title: `Llegué · ${proximityText(arrival.proximity, independent)}`,
     })),
     ...careEvents.map((event) => ({ id: event.id, at: event.occurred_at, title: careEventSummary(event) + (eventPhotos[event.id] ? ` · ${tp("caregiver.withPhoto")}` : "") })),
     ...queuedHere.map((item) => ({
@@ -289,7 +293,7 @@ export function CaregiverShiftDetailPage() {
       const outcome = await queue.checkIn(organizationId, shiftId);
       if (outcome === "queued") show("Sin señal. El inicio del turno quedó guardado con la hora real y se enviará solo.", "warning");
       else { show("Turno iniciado.", "success"); await load(); }
-    } catch (requestError) { show(actionError(requestError), "danger"); }
+    } catch (requestError) { show(actionError(requestError, independent), "danger"); }
     finally { setSaving(false); }
   }
 
@@ -301,7 +305,7 @@ export function CaregiverShiftDetailPage() {
       const outcome = await queue.checkOut(organizationId, shiftId);
       show(outcome === "queued" ? "Sin señal. El final del turno quedó guardado con la hora real y se enviará solo." : "Turno finalizado.", outcome === "queued" ? "warning" : "success");
       navigate("/caregiver/shifts");
-    } catch (requestError) { show(actionError(requestError), "danger"); }
+    } catch (requestError) { show(actionError(requestError, independent), "danger"); }
     finally { setSaving(false); }
   }
 
@@ -325,7 +329,7 @@ export function CaregiverShiftDetailPage() {
       show("Turno aceptado. Administración fue notificada.", "success");
       await load();
     } catch (requestError) {
-      show(actionError(requestError), "danger");
+      show(actionError(requestError, independent), "danger");
     } finally {
       setSaving(false);
       setRejectionOpen(false);
@@ -428,7 +432,7 @@ export function CaregiverShiftDetailPage() {
       setActivityLabel("");
       setActivityDuration("");
       if (outcome === "sent") await load();
-    } catch (requestError) { show(actionError(requestError), "danger"); }
+    } catch (requestError) { show(actionError(requestError, independent), "danger"); }
     finally { setSaving(false); }
   }
 
@@ -448,7 +452,7 @@ export function CaregiverShiftDetailPage() {
       setIncidentDescription("");
       setIncidentActions("");
     } catch (requestError) {
-      show(actionError(requestError), "danger");
+      show(actionError(requestError, independent), "danger");
     } finally {
       setSaving(false);
     }
@@ -458,8 +462,8 @@ export function CaregiverShiftDetailPage() {
     // After a cancellation the visit is no longer readable by the caregiver: say why instead of "not found".
     return (
       <Card className="flex flex-col gap-3" data-testid="shift-cancelled-notice" role="status">
-        <p className="font-medium text-[var(--color-text-primary)]">La agencia canceló esta visita</p>
-        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">No tienes que ir. Si ya estabas en camino, comunícate con la agencia.</p>
+        <p className="font-medium text-[var(--color-text-primary)]">{tx.cancelledTitle}</p>
+        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{tx.cancelledBody}</p>
         <Button variant="secondary" onClick={() => navigate("/caregiver/shifts")}>Ver mis turnos</Button>
       </Card>
     );
@@ -468,7 +472,7 @@ export function CaregiverShiftDetailPage() {
     return (
       <Card className="flex flex-col gap-3" data-testid="shift-unassigned-notice" role="status">
         <p className="font-medium text-[var(--color-text-primary)]">Ya no tienes asignado este turno</p>
-        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">La agencia cambió la persona asignada. No tienes que ir; si ya estabas en camino, comunícate con la agencia.</p>
+        <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{tx.unassignedBody}</p>
         <Button variant="secondary" onClick={() => navigate("/caregiver/shifts")}>Ver mis turnos</Button>
       </Card>
     );
@@ -539,7 +543,7 @@ export function CaregiverShiftDetailPage() {
         <CaregiverJourneyCard key={`journey-${verification.arrivals?.length ?? 0}`} organizationId={organizationId} shiftId={shiftId} scheduledStart={shift.scheduled_start}
           onGone={(reason) => {
             setGoneNotice(reason);
-            if (reason === "cancelled") show("La agencia canceló esta visita. No tienes que ir.", "warning");
+            if (reason === "cancelled") show(tx.cancelledToast, "warning");
             void load();
           }} />
       )}
@@ -547,7 +551,7 @@ export function CaregiverShiftDetailPage() {
       {overdue && (
         <Card className="flex flex-col gap-1" data-testid="overdue-notice">
           <p className="font-medium text-[var(--color-text-primary)]">Este turno terminó sin registro de inicio</p>
-          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">Ya no se puede comenzar ni registrar la llegada. La agencia lo revisará. Si hiciste la visita, avísale para que la registre.</p>
+          <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{tx.overdueBody}</p>
         </Card>
       )}
 
@@ -694,8 +698,8 @@ export function CaregiverShiftDetailPage() {
         footer={<><Button variant="secondary" fullWidth disabled={saving} data-testid="start-without-arrival" onClick={() => { setArrivalPromptOpen(false); void startShift(); }}>Comenzar sin «Llegué»</Button><Button fullWidth disabled={saving} data-testid="go-to-arrival" onClick={goToArrival}>Registrar «Llegué»</Button></>}
       >
         <div className="flex flex-col gap-2 text-sm text-[var(--color-text-secondary)]" data-testid="arrival-prompt">
-          <p>«Llegué» le confirma a la agencia que estás en el lugar del servicio. Es distinto de comenzar el turno.</p>
-          <p>Si no puedes registrarlo ahora, puedes comenzar igual. La agencia verá que el turno inició sin «Llegué».</p>
+          <p>{tx.arrivalWhat}</p>
+          <p>{tx.arrivalSkip}</p>
         </div>
       </BottomSheet>
 
