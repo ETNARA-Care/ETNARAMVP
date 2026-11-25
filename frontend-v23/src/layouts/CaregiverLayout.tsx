@@ -9,6 +9,7 @@ import { CareEventQueueBanner, CareEventQueueProvider } from "@/features/caregiv
 import { useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { AppLockGate } from "@/features/caregiver/AppLock";
 import { useAuth } from "@/auth/AuthProvider";
+import { isIndependentOrganization } from "@/features/practice/modality";
 import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
@@ -42,7 +43,8 @@ export function CaregiverLayout() {
 
   useEffect(() => {
     const token = getToken();
-    if (!token || !activeOrganization) return;
+    // 160 (PR B): un cuidador independiente no tiene establecimientos (ruta cerrada en el backend).
+    if (!token || !activeOrganization || isIndependentOrganization(activeOrganization)) return;
     listMyEstablishmentAdminAssignments(activeOrganization.id, token)
       .then((result) => setAdminEstablishments(result.establishments))
       .catch(() => setAdminEstablishments([]));
