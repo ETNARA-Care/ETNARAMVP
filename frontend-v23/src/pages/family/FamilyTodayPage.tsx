@@ -11,6 +11,8 @@ import { usePhotoReceipt } from "@/features/activityPhotos/usePhotoReceipt";
 import { ChevronRight, Clock3, MessageCircle, ShieldCheck } from "lucide-react";
 import { Avatar, ErrorState, Skeleton } from "@/components/ui";
 import { useAuth } from "@/auth/AuthProvider";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { familyPendingCaregiverText, familyWriteText } from "@/features/practice/practiceText";
 import { getToken } from "@/auth/token";
 import { getFamilyTimeline, listMyCareRecipients, type FamilyRecipient, type FamilyTimelineItem } from "@/api/familyTimeline";
 import { listFamilyShifts, type FamilyShiftSummary } from "@/api/familyShifts";
@@ -54,6 +56,7 @@ function time(iso: string) {
 export function FamilyTodayPage() {
   const navigate = useNavigate();
   const { activeOrganization } = useAuth();
+  const independent = isIndependentOrganization(activeOrganization);
   const { selectedKey } = useFamilyRecipient();
   const [recipient, setRecipient] = useState<FamilyRecipient | null>(null);
   const [shifts, setShifts] = useState<FamilyShiftSummary[] | null>(null);
@@ -119,9 +122,9 @@ export function FamilyTodayPage() {
           {caregiver ? <Avatar name={caregiver.displayName} size={44} />
             : <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/12 text-[#b8c9ad]"><MessageCircle size={20} aria-hidden /></span>}
           <div className="min-w-0 flex-1">
-            <p className="font-medium">{caregiver?.displayName ?? (shift ? "La agencia está confirmando quién le atenderá" : "¿Tienes alguna pregunta?")}</p>
+            <p className="font-medium">{caregiver?.displayName ?? (shift ? familyPendingCaregiverText(independent) : "¿Tienes alguna pregunta?")}</p>
             {shift ? <p className="mt-0.5 text-xs text-white/70">{time(shift.scheduledStart)} – {time(shift.scheduledEnd)}</p>
-              : <button type="button" onClick={() => navigate("/family/messages")} className="mt-0.5 text-left text-sm text-white/85 underline underline-offset-2">Escríbele a la agencia</button>}
+              : <button type="button" onClick={() => navigate("/family/messages")} className="mt-0.5 text-left text-sm text-white/85 underline underline-offset-2">{familyWriteText(independent)}</button>}
           </div>
           {caregiver?.credentials?.length ? <ShieldCheck size={18} className="text-[#b8c9ad]" aria-label="Credenciales verificadas por la agencia" /> : null}
         </div>

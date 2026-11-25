@@ -6,7 +6,8 @@ import { getToken } from "@/auth/token";
 import { getShiftServiceLocation, reviewArrival, type ShiftServiceLocation } from "@/api/serviceLocations";
 import { getVisitVerification, type VisitVerification } from "@/api/shifts";
 import { Badge, Button, Card, Modal, Textarea, useToast } from "@/components/ui";
-import { minutesLate, PROXIMITY_TEXT } from "./arrivalText";
+import { isIndependentOrganization } from "@/features/practice/modality";
+import { minutesLate, proximityText } from "./arrivalText";
 import { serviceAddressText } from "./navigation";
 
 const time = (v: string) => new Date(v).toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit", timeZone: "America/Puerto_Rico" });
@@ -22,6 +23,7 @@ export function ShiftVisitPanel({ organizationId, shiftId, scheduledStart, cance
   // «Llegué» is offered only with «En camino» (backend 108): without it, a start without arrival is normal.
   const { activeOrganization } = useAuth();
   const arrivalOffered = hasOrgFeature(activeOrganization?.features, "EN_CAMINO");
+  const independent = isIndependentOrganization(activeOrganization);
   const [location, setLocation] = useState<ShiftServiceLocation | null | undefined>(undefined);
   const [visit, setVisit] = useState<VisitVerification | null>(null);
   const [reviewing, setReviewing] = useState<string | null>(null);
@@ -85,12 +87,12 @@ export function ShiftVisitPanel({ organizationId, shiftId, scheduledStart, cance
           {arrivals.map((a) => (
             <li key={a.membershipId} className="rounded-[var(--radius-sm)] border border-[var(--color-border)] p-2">
               <p><strong>{workerName(a.membershipId)}</strong> · Llegué {time(a.occurredAt)}{a.recordedOffline ? " · sin conexión" : ""}</p>
-              <p className="text-[var(--color-text-secondary)]">{PROXIMITY_TEXT[a.proximity]}{a.distanceM != null ? ` (~${a.distanceM} m)` : ""}</p>
+              <p className="text-[var(--color-text-secondary)]">{proximityText(a.proximity, independent)}{a.distanceM != null ? ` (~${a.distanceM} m)` : ""}</p>
               {a.needsReview && !a.reviewedAt && <div className="mt-1 flex items-center justify-between gap-2">
                 <Badge tone="warning">Pendiente de revisión</Badge>
                 <Button size="md" variant="secondary" onClick={() => { setNote(""); setReviewing(a.membershipId); }}>Revisar</Button>
               </div>}
-              {a.reviewedAt && <p className="mt-1 text-[var(--text-caption)] text-[var(--color-text-muted)]">Revisada {time(a.reviewedAt)}: {a.reviewNote}</p>}
+              {a.reviewedAt && <p className="mt-1 text-[var(--text-caption)] text-[var(--color-text-muted)]">{independent ? "No requiere revisión de otra persona." : `Revisada ${time(a.reviewedAt)}: ${a.reviewNote ?? ""}`}</p>}
             </li>
           ))}
           {checkIns.map((e) => <li key={e.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">

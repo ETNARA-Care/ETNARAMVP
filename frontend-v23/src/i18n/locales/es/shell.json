@@ -70,6 +70,8 @@
       "more": "Más"
     },
     "goToAgency": "Ir a la agencia",
+    "goToPractice": "Ir a Mi práctica",
+    "alsoPracticeAdmin": "Aquí administras {{organization}}: clientes, turnos y documentos",
     "alsoAdmin": "También eres administrador/a de {{organization}}",
     "alsoSupervisor": "También eres supervisor/a de {{organization}}",
     "theAgency": "la agencia",
