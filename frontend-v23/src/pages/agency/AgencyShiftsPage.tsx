@@ -12,7 +12,7 @@ import { getWorkerCompliance, requirementsUnconfigured, UNCONFIGURED_REQUIREMENT
 import { generateCoverageAgentBriefing, type CoverageAgentBriefing } from "@/api/coverageAgent";
 import { listShiftCoverageOffers, openCoverageCampaign, type ShiftCoverageOffer } from "@/api/coverageOffers";
 import {
-  assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
+  assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName, shiftRecipientName,
   type Assignment, type CareRecipient, type CoverageCandidate, type Shift, type WorkerMembership,
 } from "@/api/shifts";
 import { createShiftFromOpportunity, getShiftDraft, type SmartMatchShiftDraft } from "@/api/smartmatch";
@@ -437,7 +437,7 @@ function AgencyShiftsContent() {
                 className="flex items-center justify-between gap-3 flex-wrap cursor-pointer hover:bg-[var(--color-ivory-100)] transition-colors"
               >
                 <div>
-                  <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
+                  <p className="font-medium text-[var(--color-text-primary)]">{shiftRecipientName(shift, recipientById[shift.care_recipient_id ?? ""])}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
                   {assignee && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidador: {assignee.display_name ?? assignee.internal_role}</p>}
                   {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ola {campaign.currentWave}: {plural(interestedNames.length,"disponible","disponibles")} · {plural(pendingCount,"pendiente","pendientes")} · {queuedCount} en espera</p>}
