@@ -646,5 +646,171 @@
       "FEATURE_NOT_ENABLED": "La asistencia no está activada para este hogar.",
       "INVALID_INPUT": "Revisa los datos: hay un valor no válido."
     }
+  },
+  "assignments": {
+    "title": "Asignaciones de residentes",
+    "description": "Quién atiende a cada residente en cada turno. El acceso del personal sale solo de estas asignaciones y cambia a la hora indicada.",
+    "establishment": "Establecimiento",
+    "date": "Día",
+    "noEstablishmentsTitle": "Sin establecimientos",
+    "noEstablishmentsDetail": "Crea primero un establecimiento del hogar.",
+    "noShiftsTitle": "Sin turnos ese día",
+    "noShiftsDetail": "Los turnos se crean en el calendario semanal.",
+    "tabs": {
+      "shifts": "Turnos",
+      "alerts": "Sin cobertura ({{count}})"
+    },
+    "totals": {
+      "covered_one": "{{count}} con cobertura",
+      "covered_other": "{{count}} con cobertura",
+      "uncovered_one": "{{count}} sin cobertura",
+      "uncovered_other": "{{count}} sin cobertura",
+      "shared_one": "{{count}} compartido",
+      "shared_other": "{{count}} compartidos"
+    },
+    "ended": "Turno terminado",
+    "staffTitle": "Personal del turno",
+    "residentsTitle": "Residentes",
+    "noStaff": "Nadie asignado a este turno.",
+    "noResidents": "No hay residentes activos en este establecimiento.",
+    "unnamed": "Sin nombre",
+    "coverage": "Cubre {{from}}–{{to}}",
+    "residentCount_one": "{{count}} residente",
+    "residentCount_other": "{{count}} residentes",
+    "notAccepted": "Sin aceptar",
+    "coveredBy": "Atiende: {{names}}",
+    "nobody": "Nadie lo atiende",
+    "uncoveredBadge": "Sin cobertura",
+    "sharedBadge": "Compartido",
+    "when": "Desde (opcional)",
+    "whenHint": "Vacío: desde ahora. Nunca hacia atrás.",
+    "cancel": "Cancelar",
+    "noHealthHint": "No escribas diagnósticos ni datos de salud.",
+    "assign": {
+      "open": "Asignar residentes",
+      "title": "Asignar residentes a {{name}}",
+      "body": "Desde la hora indicada, esta persona podrá ver y registrar el cuidado de los residentes elegidos durante su turno.",
+      "none": "Ya atiende a todos los residentes.",
+      "confirm_one": "Asignar {{count}}",
+      "confirm_other": "Asignar {{count}}"
+    },
+    "move": {
+      "open": "Mover",
+      "title": "Mover a {{name}}",
+      "body": "El acceso de una persona termina exactamente cuando empieza el de la otra.",
+      "from": "De",
+      "to": "A",
+      "nobody": "Nadie (sin cobertura)",
+      "confirm": "Mover"
+    },
+    "uncovered": {
+      "warning_one": "{{count}} residente quedará sin cobertura.",
+      "warning_other": "{{count}} residentes quedarán sin cobertura.",
+      "confirm": "Confirmo que quedará sin cobertura y se creará una alerta.",
+      "reason": "Motivo"
+    },
+    "substitution": {
+      "open": "Sustituir",
+      "title": "Sustituir a {{name}}",
+      "body": "La sustitución es administrativa y queda registrada. Los bloqueos no se pueden anular.",
+      "substitute": "Persona sustituta",
+      "choose": "Elige…",
+      "check": "Comprobar",
+      "blocked": "No se puede sustituir:",
+      "noOverride": "Estos bloqueos no se pueden anular. Elige otra persona u otra hora.",
+      "full": "Sustitución completa: el turno aún no empieza y la persona original dejará de estar asignada.",
+      "partial": "Sustitución parcial: la persona original conserva lo trabajado y sus ponches; la sustituta cubre desde la hora indicada.",
+      "availability": "Esta persona declaró no estar disponible en ese horario. Confirmo la sustitución de todos modos.",
+      "reason": "Motivo",
+      "note": "Nota (opcional)",
+      "transfers": "¿Quién atiende a cada residente desde ese momento?",
+      "punchesKept": "Los ponches originales no se modifican y las horas no se duplican: cada persona cuenta solo su parte.",
+      "confirm": "Sustituir"
+    },
+    "reasons": {
+      "unplanned_absence": "Ausencia imprevista",
+      "operational": "Necesidad operativa",
+      "schedule_change": "Cambio de horario",
+      "other": "Otro"
+    },
+    "blocks": {
+      "shift_cancelled": "El turno está cancelado.",
+      "shift_ended": "El turno ya terminó.",
+      "original_not_covering": "La persona original no cubre el turno a esa hora.",
+      "already_assigned": "La persona elegida ya está en este turno.",
+      "substitute_inactive": "La persona elegida no está activa.",
+      "not_eligible": "No es elegible: le faltan credenciales obligatorias o están vencidas.",
+      "role_mismatch": "No tiene el mismo puesto que la persona sustituida.",
+      "not_authorized_in_establishment": "No está autorizada en este establecimiento.",
+      "schedule_overlap": "Tiene otro turno que se solapa."
+    },
+    "origins": {
+      "assignment": "Asignación",
+      "redistribution": "Redistribución",
+      "substitution": "Sustitución"
+    },
+    "closeReasons": {
+      "ended": "Terminada",
+      "redistribution": "Redistribuida",
+      "substitution": "Por sustitución",
+      "transfer": "Traslado del residente",
+      "resident_inactive": "Residente inactivo"
+    },
+    "history": {
+      "open": "Historial",
+      "title": "Historial del turno",
+      "substitutions": "Sustituciones",
+      "periods": "Periodos de asignación",
+      "none": "Nada todavía.",
+      "open_": "abierta",
+      "full": "Completa",
+      "partial": "Parcial",
+      "substitutionLine": "{{substitute}} sustituye a {{original}} desde {{at}} · {{reason}}"
+    },
+    "alerts": {
+      "emptyTitle": "Sin alertas pendientes",
+      "emptyDetail": "Cuando un residente quede sin cobertura aparecerá aquí.",
+      "line": "{{resident}} · {{location}} · sin cobertura desde {{at}}",
+      "resolve": "Marcar resuelta",
+      "resolved": "Resuelta"
+    },
+    "mine": {
+      "title": "Mis residentes",
+      "description": "Los residentes que tienes asignados ahora. Solo puedes ver y registrar el cuidado de ellos.",
+      "emptyTitle": "Sin residentes asignados",
+      "emptyDetail": "Cuando la administración te asigne residentes aparecerán aquí.",
+      "until": "{{establishment}} · hasta las {{time}}"
+    },
+    "toasts": {
+      "assigned_one": "Residente asignado.",
+      "assigned_other": "{{count}} residentes asignados.",
+      "moved": "Cambio aplicado.",
+      "substituted": "Sustitución registrada. Se avisó a ambas personas.",
+      "resolved": "Alerta resuelta."
+    },
+    "errors": {
+      "fallback": "No se pudo completar. Vuelve a intentarlo.",
+      "network": "Sin conexión con el servidor.",
+      "RESIDENTIAL_ASSIGNMENT_DUPLICATE": "Esa persona ya atiende a ese residente.",
+      "RESIDENTIAL_ASSIGNMENT_IMMUTABLE": "Una asignación cerrada no se puede cambiar.",
+      "RESIDENTIAL_ASSIGNMENT_NOT_FOUND": "No se encontró la asignación.",
+      "RESIDENTIAL_ASSIGNMENT_OUTSIDE_COVERAGE": "Esa hora está fuera de lo que cubre esa persona en el turno.",
+      "RESIDENTIAL_ASSIGNMENT_RESIDENT_NOT_HERE": "El residente no está activo en este establecimiento.",
+      "RESIDENTIAL_ASSIGNMENT_RETROACTIVE": "No se puede asignar hacia atrás.",
+      "RESIDENTIAL_ASSIGNMENT_SHIFT_CANCELLED": "El turno está cancelado.",
+      "RESIDENTIAL_ASSIGNMENT_SHIFT_MISMATCH": "El turno no es de este establecimiento.",
+      "RESIDENTIAL_ASSIGNMENT_STAFF_NOT_ASSIGNED": "Esa persona no tiene una asignación aceptada en este turno.",
+      "RESIDENTIAL_UNCOVERED_CONFIRMATION_REQUIRED": "Hay residentes que quedarían sin cobertura: confirma y escribe el motivo.",
+      "RESIDENTIAL_SUBSTITUTION_AVAILABILITY_CONFIRMATION_REQUIRED": "La persona declaró no estar disponible: confirma para continuar.",
+      "RESIDENTIAL_SUBSTITUTION_BLOCKED": "La sustitución está bloqueada. Comprueba de nuevo.",
+      "RESIDENTIAL_SUBSTITUTION_NOT_AVAILABLE": "Las sustituciones requieren el calendario y las asignaciones activos.",
+      "RESIDENTIAL_SUBSTITUTION_RETROACTIVE": "No se puede sustituir hacia atrás.",
+      "RESIDENTIAL_SUBSTITUTION_SHIFT_MISMATCH": "El turno no es de este establecimiento.",
+      "RESIDENTIAL_MANAGER_REQUIRED": "Solo la administración puede hacer esto.",
+      "RESIDENTIAL_NOT_FOUND": "No se encontró.",
+      "FEATURE_NOT_ENABLED": "Esta función no está activa para tu organización.",
+      "INVALID_INPUT": "Revisa los datos e inténtalo otra vez."
+    },
+    "scheduleSubstitution": "Cubre {{name}} desde las {{time}}"
   }
 }

@@ -12,6 +12,8 @@ export interface ScheduleEntry {
   id: string; startsAt: string; endsAt: string; durationMinutes: number; requiredRole: string;
   membershipId: string | null; workerName: string | null; label: string | null;
   published: boolean; removed: boolean; shiftStatus: string | null; assignmentStatus: "pending" | "accepted" | null;
+  /** 176 (F3): sustitución registrada en el turno (hora local del establecimiento). Sin F3, ausente o null. */
+  substitution?: { substituteName: string | null; effectiveAt: string } | null;
 }
 export interface ScheduleStaff { membershipId: string; name: string | null; role: string | null; eligibility: string }
 export interface ScheduleWarning { type: "duplicate" | "overlap"; membershipId: string; entryIds: string[] }

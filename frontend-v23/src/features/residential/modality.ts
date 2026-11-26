@@ -30,6 +30,9 @@ export const RESIDENTIAL_SCHEDULE_PATH = "/agency/hogar/calendario";
 /** 173–175 (F4): asistencia del hogar (QR, revisión, correcciones, alertas) y «Ponchar» del personal (solo con HOGAR_PONCHES). */
 export const RESIDENTIAL_ATTENDANCE_PATH = "/agency/hogar/asistencia";
 export const CAREGIVER_PUNCH_PATH = "/caregiver/ponchar";
+/** 176 (F3): asignación de residentes y sustituciones (solo con HOGAR_ASIGNACIONES) y «Mis residentes» del personal. */
+export const RESIDENTIAL_ASSIGNMENTS_PATH = "/agency/hogar/asignaciones";
+export const CAREGIVER_RESIDENTS_PATH = "/caregiver/residentes";
 
 /** D9: franja visible solo cuando ETNARA central encendió DEMO_ENVIRONMENT para esa organización. */
 export const DEMO_ENVIRONMENT_NOTICE = "Entorno de demostración — Datos ficticios";

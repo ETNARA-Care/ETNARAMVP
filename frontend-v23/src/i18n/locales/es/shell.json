@@ -54,7 +54,8 @@
       "residentialPanel": "Panel del hogar",
       "residentialEstablishments": "Establecimientos y habitaciones",
       "residentialSchedule": "Calendario semanal",
-      "residentialAttendance": "Asistencia"
+      "residentialAttendance": "Asistencia",
+      "residentialAssignments": "Asignaciones"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",
@@ -74,7 +75,8 @@
       "offers": "Ofertas",
       "messages": "Mensajes",
       "more": "Más",
-      "punch": "Ponchar"
+      "punch": "Ponchar",
+      "residents": "Residentes"
     },
     "goToAgency": "Ir a la agencia",
     "goToPractice": "Ir a Mi práctica",

@@ -646,5 +646,171 @@
       "FEATURE_NOT_ENABLED": "Attendance is not enabled for this home.",
       "INVALID_INPUT": "Check the data: a value is not valid."
     }
+  },
+  "assignments": {
+    "title": "Resident assignments",
+    "description": "Who cares for each resident on each shift. Staff access comes only from these assignments and changes at the stated time.",
+    "establishment": "Establishment",
+    "date": "Day",
+    "noEstablishmentsTitle": "No establishments",
+    "noEstablishmentsDetail": "Create an establishment for the home first.",
+    "noShiftsTitle": "No shifts that day",
+    "noShiftsDetail": "Shifts are created in the weekly schedule.",
+    "tabs": {
+      "shifts": "Shifts",
+      "alerts": "Uncovered ({{count}})"
+    },
+    "totals": {
+      "covered_one": "{{count}} covered",
+      "covered_other": "{{count}} covered",
+      "uncovered_one": "{{count}} uncovered",
+      "uncovered_other": "{{count}} uncovered",
+      "shared_one": "{{count}} shared",
+      "shared_other": "{{count}} shared"
+    },
+    "ended": "Shift ended",
+    "staffTitle": "Shift staff",
+    "residentsTitle": "Residents",
+    "noStaff": "Nobody is assigned to this shift.",
+    "noResidents": "There are no active residents in this establishment.",
+    "unnamed": "No name",
+    "coverage": "Covers {{from}}–{{to}}",
+    "residentCount_one": "{{count}} resident",
+    "residentCount_other": "{{count}} residents",
+    "notAccepted": "Not accepted",
+    "coveredBy": "Cared for by: {{names}}",
+    "nobody": "Nobody is caring for them",
+    "uncoveredBadge": "Uncovered",
+    "sharedBadge": "Shared",
+    "when": "From (optional)",
+    "whenHint": "Empty: from now. Never backdated.",
+    "cancel": "Cancel",
+    "noHealthHint": "Do not write diagnoses or health information.",
+    "assign": {
+      "open": "Assign residents",
+      "title": "Assign residents to {{name}}",
+      "body": "From the stated time, this person can see and record care for the chosen residents during their shift.",
+      "none": "They already care for every resident.",
+      "confirm_one": "Assign {{count}}",
+      "confirm_other": "Assign {{count}}"
+    },
+    "move": {
+      "open": "Move",
+      "title": "Move {{name}}",
+      "body": "One person's access ends exactly when the other's begins.",
+      "from": "From",
+      "to": "To",
+      "nobody": "Nobody (uncovered)",
+      "confirm": "Move"
+    },
+    "uncovered": {
+      "warning_one": "{{count}} resident will be left uncovered.",
+      "warning_other": "{{count}} residents will be left uncovered.",
+      "confirm": "I confirm they will be uncovered and an alert will be created.",
+      "reason": "Reason"
+    },
+    "substitution": {
+      "open": "Substitute",
+      "title": "Substitute {{name}}",
+      "body": "The substitution is administrative and is recorded. Blocks cannot be overridden.",
+      "substitute": "Substitute",
+      "choose": "Choose…",
+      "check": "Check",
+      "blocked": "This substitution is not possible:",
+      "noOverride": "These blocks cannot be overridden. Choose another person or another time.",
+      "full": "Full substitution: the shift has not started and the original person will no longer be assigned.",
+      "partial": "Partial substitution: the original person keeps the time worked and their punches; the substitute covers from the stated time.",
+      "availability": "This person declared they are unavailable at that time. I confirm the substitution anyway.",
+      "reason": "Reason",
+      "note": "Note (optional)",
+      "transfers": "Who cares for each resident from that moment?",
+      "punchesKept": "Original punches are not changed and hours are not duplicated: each person counts only their part.",
+      "confirm": "Substitute"
+    },
+    "reasons": {
+      "unplanned_absence": "Unplanned absence",
+      "operational": "Operational need",
+      "schedule_change": "Schedule change",
+      "other": "Other"
+    },
+    "blocks": {
+      "shift_cancelled": "The shift is cancelled.",
+      "shift_ended": "The shift has already ended.",
+      "original_not_covering": "The original person is not covering the shift at that time.",
+      "already_assigned": "The chosen person is already on this shift.",
+      "substitute_inactive": "The chosen person is not active.",
+      "not_eligible": "Not eligible: mandatory credentials are missing or expired.",
+      "role_mismatch": "They do not hold the same position as the person being substituted.",
+      "not_authorized_in_establishment": "They are not authorized in this establishment.",
+      "schedule_overlap": "They have another overlapping shift."
+    },
+    "origins": {
+      "assignment": "Assignment",
+      "redistribution": "Redistribution",
+      "substitution": "Substitution"
+    },
+    "closeReasons": {
+      "ended": "Ended",
+      "redistribution": "Redistributed",
+      "substitution": "By substitution",
+      "transfer": "Resident transferred",
+      "resident_inactive": "Resident inactive"
+    },
+    "history": {
+      "open": "History",
+      "title": "Shift history",
+      "substitutions": "Substitutions",
+      "periods": "Assignment periods",
+      "none": "Nothing yet.",
+      "open_": "open",
+      "full": "Full",
+      "partial": "Partial",
+      "substitutionLine": "{{substitute}} substitutes {{original}} from {{at}} · {{reason}}"
+    },
+    "alerts": {
+      "emptyTitle": "No pending alerts",
+      "emptyDetail": "When a resident is left uncovered it will show here.",
+      "line": "{{resident}} · {{location}} · uncovered since {{at}}",
+      "resolve": "Mark resolved",
+      "resolved": "Resolved"
+    },
+    "mine": {
+      "title": "My residents",
+      "description": "The residents assigned to you right now. You can only see and record care for them.",
+      "emptyTitle": "No residents assigned",
+      "emptyDetail": "When the administration assigns you residents they will show here.",
+      "until": "{{establishment}} · until {{time}}"
+    },
+    "toasts": {
+      "assigned_one": "Resident assigned.",
+      "assigned_other": "{{count}} residents assigned.",
+      "moved": "Change applied.",
+      "substituted": "Substitution recorded. Both people were notified.",
+      "resolved": "Alert resolved."
+    },
+    "errors": {
+      "fallback": "Could not complete. Please try again.",
+      "network": "No connection to the server.",
+      "RESIDENTIAL_ASSIGNMENT_DUPLICATE": "That person already cares for that resident.",
+      "RESIDENTIAL_ASSIGNMENT_IMMUTABLE": "A closed assignment cannot be changed.",
+      "RESIDENTIAL_ASSIGNMENT_NOT_FOUND": "Assignment not found.",
+      "RESIDENTIAL_ASSIGNMENT_OUTSIDE_COVERAGE": "That time is outside what this person covers on the shift.",
+      "RESIDENTIAL_ASSIGNMENT_RESIDENT_NOT_HERE": "The resident is not active in this establishment.",
+      "RESIDENTIAL_ASSIGNMENT_RETROACTIVE": "Assignments cannot be backdated.",
+      "RESIDENTIAL_ASSIGNMENT_SHIFT_CANCELLED": "The shift is cancelled.",
+      "RESIDENTIAL_ASSIGNMENT_SHIFT_MISMATCH": "The shift does not belong to this establishment.",
+      "RESIDENTIAL_ASSIGNMENT_STAFF_NOT_ASSIGNED": "That person has no accepted assignment on this shift.",
+      "RESIDENTIAL_UNCOVERED_CONFIRMATION_REQUIRED": "Some residents would be left uncovered: confirm and write the reason.",
+      "RESIDENTIAL_SUBSTITUTION_AVAILABILITY_CONFIRMATION_REQUIRED": "The person declared they are unavailable: confirm to continue.",
+      "RESIDENTIAL_SUBSTITUTION_BLOCKED": "The substitution is blocked. Check again.",
+      "RESIDENTIAL_SUBSTITUTION_NOT_AVAILABLE": "Substitutions require the schedule and assignments to be active.",
+      "RESIDENTIAL_SUBSTITUTION_RETROACTIVE": "Substitutions cannot be backdated.",
+      "RESIDENTIAL_SUBSTITUTION_SHIFT_MISMATCH": "The shift does not belong to this establishment.",
+      "RESIDENTIAL_MANAGER_REQUIRED": "Only the administration can do this.",
+      "RESIDENTIAL_NOT_FOUND": "Not found.",
+      "FEATURE_NOT_ENABLED": "This feature is not active for your organization.",
+      "INVALID_INPUT": "Check the information and try again."
+    },
+    "scheduleSubstitution": "Covered by {{name}} from {{time}}"
   }
 }
