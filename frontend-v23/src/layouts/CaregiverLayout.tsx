@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useNavigate } from "react-router-dom";
-import { BriefcaseBusiness, Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
+import { BriefcaseBusiness, Building2, CalendarRange, Fingerprint, Home, MessageCircle, MoreHorizontal } from "lucide-react";
 import { PortalBottomNav } from "./PortalBottomNav";
 import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -15,6 +15,7 @@ import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
 import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
+import { CAREGIVER_PUNCH_PATH, isResidentialOrganization } from "@/features/residential/modality";
 
 /**
  * Menú de la cuenta: si hay registros sin enviar, avisa antes de cerrar sesión. Por defecto
@@ -36,6 +37,8 @@ function CaregiverAccountMenu({ userLabel }: { userLabel: string }) {
 export function CaregiverLayout() {
   const { activeOrganization, activeWorkerProfile, user, roles } = useAuth();
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
+  // 173–175 (F4): «Ponchar» solo en hogares con HOGAR_PONCHES encendido.
+  const punches = isResidentialOrganization(activeOrganization) && hasOrgFeature(activeOrganization?.features, "HOGAR_PONCHES");
   const alsoStaff = roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR");
   const { t } = useTranslation("shell");
   const caregiverName = activeWorkerProfile?.displayName ?? user?.email ?? t("caregiver.nameFallback");
@@ -82,6 +85,7 @@ export function CaregiverLayout() {
 
     <PortalBottomNav tabs={[
       { to: "/caregiver/today", icon: Home, label: t("caregiver.items.today") },
+      ...(punches ? [{ to: CAREGIVER_PUNCH_PATH, icon: Fingerprint, label: t("caregiver.items.punch") }] : []),
       { to: "/caregiver/shifts", icon: CalendarRange, label: t("caregiver.items.shifts") },
       ...(smartMatch ? [{ to: "/caregiver/smartmatch", icon: BriefcaseBusiness, label: t("caregiver.items.offers") }] : []),
       { to: "/caregiver/messages", icon: MessageCircle, label: t("caregiver.items.messages") },

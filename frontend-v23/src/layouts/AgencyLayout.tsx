@@ -7,7 +7,7 @@ import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
 import { isHiddenForIndependent, isIndependentOrganization } from "@/features/practice/modality";
-import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_ESTABLISHMENTS_PATH, RESIDENTIAL_SCHEDULE_PATH, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
+import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_ATTENDANCE_PATH, RESIDENTIAL_ESTABLISHMENTS_PATH, RESIDENTIAL_SCHEDULE_PATH, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
 import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
@@ -15,7 +15,7 @@ import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "residentialEstablishments" | "residentialSchedule" | "staffHours" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "residentialEstablishments" | "residentialSchedule" | "residentialAttendance" | "staffHours" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -73,6 +73,7 @@ const RESIDENTIAL: NavKey[] = [
  { to: RESIDENTIAL_PANEL_PATH, end: true, icon: Home, k: "residentialPanel" },
  { to: RESIDENTIAL_ESTABLISHMENTS_PATH, icon: BedDouble, k: "residentialEstablishments" },
  { to: RESIDENTIAL_SCHEDULE_PATH, icon: CalendarRange, k: "residentialSchedule" },
+ { to: RESIDENTIAL_ATTENDANCE_PATH, icon: ClipboardCheck, k: "residentialAttendance" },
 ];
 const RESIDENTIAL_GROUPS: Array<{ k: "residential" | "operation" | "care" | "administration"; items: NavKey[] }> = [
  { k: "residential", items: RESIDENTIAL },
@@ -104,6 +105,8 @@ export function AgencyLayout() {
  const contractsOn = hasOrgFeature(activeOrganization?.features, "CONTRACTS");
  // 172 (F2): el calendario semanal solo aparece con HOGAR_CALENDARIO encendido por ETNARA central.
  const residentialSchedule = hasOrgFeature(activeOrganization?.features, "HOGAR_CALENDARIO");
+ // 173–175 (F4): asistencia solo con HOGAR_PONCHES encendido por ETNARA central.
+ const residentialAttendance = hasOrgFeature(activeOrganization?.features, "HOGAR_PONCHES");
  const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"), contractsOn);
  const location = useLocation();
  const independent = isIndependentOrganization(activeOrganization);
@@ -115,6 +118,7 @@ export function AgencyLayout() {
    && (finance || item.to !== "/agency/finance")
    && (photos || item.to !== "/agency/photos")
    && (residentialSchedule || item.to !== RESIDENTIAL_SCHEDULE_PATH)
+   && (residentialAttendance || item.to !== RESIDENTIAL_ATTENDANCE_PATH)
    && (contracts.available || item.to !== "/agency/contracts")).map((item) => {
      const nav = toNav(item);
      return item.k === "contracts" && contracts.pending > 0 ? { ...nav, label: `${nav.label} (${contracts.pending})` } : nav;

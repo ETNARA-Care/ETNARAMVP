@@ -382,5 +382,269 @@
       "INVALID_INPUT": "Check the data: a value is not valid."
     },
     "establishmentShift": "Facility shift · {{name}}"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "description": "Weekly QR code, punch review, corrections and alerts. No irregularity removes hours or creates deductions.",
+    "noEstablishmentsTitle": "No open facilities",
+    "noEstablishmentsDetail": "Create a facility in Settings.",
+    "establishment": "Facility",
+    "unnamed": "No name",
+    "cancel": "Cancel",
+    "reason": "Reason",
+    "reasonHint": "Required. It is kept in the history.",
+    "yes": "Yes",
+    "no": "No",
+    "tabs": {
+      "codes": "QR code",
+      "review_one": "Review ({{count}})",
+      "review_other": "Review ({{count}})",
+      "corrections_one": "Corrections ({{count}})",
+      "corrections_other": "Corrections ({{count}})",
+      "alerts_one": "Alerts ({{count}})",
+      "alerts_other": "Alerts ({{count}})",
+      "week": "Weekly attendance",
+      "policy": "Policy"
+    },
+    "codes": {
+      "explain": "The QR applies every Monday at 00:00 and can be printed from 72 hours before. Neither the QR nor the 6-digit code is stored: they are generated when printing. Without a signed-in session they cannot be used to punch.",
+      "current": "This week's code",
+      "next": "Next week's code",
+      "none": "No code",
+      "validity": "Valid from {{from}} to {{until}}",
+      "versionLine": "Version {{version}} · {{hours}} h transition only to close sessions",
+      "availableFrom": "It can be printed from {{at}}",
+      "print": "Print or download",
+      "revoke": "Revoke and generate another",
+      "revokeTitle": "Revoke the code",
+      "revokeBody": "The current code stops working immediately (also during the transition) and a new one is generated that must be printed.",
+      "transitionTitle": "Transition",
+      "transitionActive": "Last week's code still closes sessions opened with it until {{until}}. It never opens a clock-in.",
+      "transitionNone": "No code is in transition.",
+      "history": "History",
+      "noHistory": "No activity yet.",
+      "event": {
+        "generated": "Generated",
+        "revoked": "Revoked",
+        "downloaded": "Downloaded"
+      },
+      "weekVersion": "week {{week}}, version {{version}}",
+      "system": "automatic"
+    },
+    "printSheet": {
+      "print": "Print",
+      "close": "Close",
+      "title": "Attendance · {{name}}",
+      "qrAlt": "Attendance QR code",
+      "pinLabel": "6-digit code",
+      "instructions": "Scan the QR with the phone camera or type the code in «Punch». You need to be signed in: the QR alone authorizes nothing.",
+      "version": "Version {{version}}. If it is revoked, this sheet stops working."
+    },
+    "punchType": {
+      "in": "Clock in",
+      "out": "Clock out",
+      "break_start": "Start break",
+      "break_end": "End break",
+      "meal_start": "Start meal",
+      "meal_end": "End meal"
+    },
+    "status": {
+      "validated": "Validated",
+      "pending_review": "Pending review",
+      "justified": "Justified",
+      "not_recognized": "Not recognized"
+    },
+    "location": {
+      "inside": "Inside the perimeter",
+      "outside": "Outside the perimeter",
+      "low_accuracy": "Low accuracy",
+      "unavailable": "Location unavailable"
+    },
+    "origin": {
+      "online": "Online",
+      "offline": "Offline",
+      "manual": "Manual by management"
+    },
+    "code": {
+      "current": "Current code",
+      "transition": "Code in transition",
+      "invalid": "Code not valid",
+      "none": "No code"
+    },
+    "flags": {
+      "declared_in_future": "Declared time in the future",
+      "before_code": "Before the code was valid",
+      "outside_shift_window": "Outside the shift window",
+      "clock_skew": "Phone clock off by more than 15 min",
+      "impossible_order": "Impossible order compared with other punches",
+      "received_after_72h": "Received after 72 h",
+      "code_invalid": "Code not valid",
+      "transition_not_for_entry": "The previous code cannot be used to clock in",
+      "no_consent": "No location consent",
+      "no_geofence_center": "The facility has no geofence centre",
+      "duplicate_open_session": "Session already open"
+    },
+    "review": {
+      "explain": "Validate, justify or mark as not recognized, always with a reason. The original punch does not change and nothing removes hours.",
+      "filter": "Show",
+      "onlyPending": "Pending only",
+      "all": "All",
+      "validate_one": "Validate ({{count}})",
+      "validate_other": "Validate ({{count}})",
+      "justify_one": "Justify ({{count}})",
+      "justify_other": "Justify ({{count}})",
+      "notRecognize_one": "Do not recognize ({{count}})",
+      "notRecognize_other": "Do not recognize ({{count}})",
+      "select": "Select punch",
+      "history": "History",
+      "emptyTitle": "Nothing to review",
+      "emptyDetail": "Pending punches will appear here.",
+      "decisionTitle": {
+        "validated_one": "Validate {{count}} punch",
+        "validated_other": "Validate {{count}} punches",
+        "justified_one": "Justify {{count}} punch",
+        "justified_other": "Justify {{count}} punches",
+        "not_recognized_one": "Do not recognize {{count}} punch",
+        "not_recognized_other": "Do not recognize {{count}} punches"
+      },
+      "reasonBody": "The decision is added to the history with your name. «Not recognized» keeps the punch and creates no deductions.",
+      "confirm": "Save decision",
+      "offlineTimes": "Time declared by the phone: {{declared}} · received: {{received}}",
+      "historyTitle": "Punch history",
+      "original": "Original status: {{status}}",
+      "noDecisions": "No decisions yet."
+    },
+    "corrections": {
+      "emptyTitle": "No corrections",
+      "emptyDetail": "Staff requests will appear here.",
+      "fixExisting": "Fixes a punch",
+      "missing": "A punch is missing",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approveTitle": "Approve the correction",
+      "rejectTitle": "Reject the correction",
+      "approveBody": "A justified manual punch is recorded with the requested time. If it fixed a punch, the original becomes «not recognized» and is kept.",
+      "rejectBody": "The person will see your reason.",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
+    },
+    "alerts": {
+      "explain": "Alerts flag something to review; they are not proof of fraud.",
+      "emptyTitle": "No alerts",
+      "emptyDetail": "Here you will see punches outside the perimeter, repeat cases, long sessions and blocked attempts.",
+      "kind": {
+        "outside_perimeter": "Punch outside the perimeter",
+        "recidivism": "3 or more punches outside the perimeter in 7 days",
+        "long_session": "Session open 16 hours or more (it does not close by itself)",
+        "attempts_blocked": "Code attempts blocked"
+      },
+      "seen": "Seen",
+      "acknowledge": "Mark as seen"
+    },
+    "week": {
+      "prev": "‹ Previous week",
+      "next": "Next week ›",
+      "export": "Export CSV",
+      "notice": "Administrative attendance data. It is not payroll: ETNARA does not calculate pay or deductions. Validated and pending hours are shown separately.",
+      "csvNotice": "Administrative attendance record. It is not payroll. Keeping employment records is the home's obligation.",
+      "emptyTitle": "No shifts this week",
+      "emptyDetail": "Published shifts with assigned people will appear here.",
+      "absent": "Absence",
+      "late_one": "{{count}} min late",
+      "late_other": "{{count}} min late",
+      "early_one": "Left {{count}} min early",
+      "early_other": "Left {{count}} min early",
+      "open": "Session open",
+      "hours": "Validated hours: {{validated}} · pending: {{pending}}",
+      "csv": {
+        "shift": "Shift",
+        "person": "Person",
+        "firstIn": "First clock-in",
+        "lastOut": "Last clock-out",
+        "late": "Late (min)",
+        "early": "Early leave (min)",
+        "absent": "Absence",
+        "validated": "Validated hours",
+        "pending": "Pending hours"
+      }
+    },
+    "policy": {
+      "explain": "Versioned policy (current version: {{version}}). Tolerances are administrative data and never deduct hours.",
+      "transition": "Code transition (hours, 0–12)",
+      "transitionHint": "Time during which the previous code still closes sessions opened with it.",
+      "late": "Late tolerance (min, 0–120)",
+      "early": "Early leave tolerance (min, 0–120)",
+      "absence": "Absence after (min, 15–720)",
+      "save": "Save new version"
+    },
+    "toasts": {
+      "revoked": "Code revoked. Print the new one.",
+      "reviewed_one": "{{count}} punch reviewed.",
+      "reviewed_other": "{{count}} punches reviewed.",
+      "decided": "Correction decided.",
+      "acknowledged": "Alert marked as seen.",
+      "policySaved": "Policy saved."
+    },
+    "consent": {
+      "title": "Location when punching",
+      "body": "If you accept, your location is read only once when you punch to know whether you are at the facility. There is no tracking and no coordinates are stored: only «inside», «outside» and the approximate distance. You can withdraw it at any time; without it you can still punch.",
+      "accepted": "Accepted",
+      "accept": "Accept",
+      "revoke": "Withdraw"
+    },
+    "punch": {
+      "title": "Punch",
+      "description": "Record your clock-in, clock-out, breaks and meals with the facility QR or its 6-digit code.",
+      "noShiftsTitle": "You have no shifts to punch now",
+      "noShiftsDetail": "Your accepted shifts for the next 24 hours appear here.",
+      "shift": "Shift",
+      "shiftLine": "{{name}} · {{start}} to {{end}}",
+      "sessionOpen": "You have an open session on this shift.",
+      "sessionClosed": "You have no open session.",
+      "qrReady": "Facility QR ready",
+      "pin": "6-digit code",
+      "pinHint": "It is printed next to the facility QR.",
+      "okValidated": "Punch recorded and validated.",
+      "okPending": "Punch recorded. It is pending review by the management.",
+      "pendingExplain": "No hours are lost: the management will review it.",
+      "queued": "Offline: the punch was saved on the phone (without location) and will be sent when the signal returns. It will be pending review.",
+      "queueTitle_one": "{{count}} punch not sent",
+      "queueTitle_other": "{{count}} punches not sent",
+      "queueDetail": "They will be sent automatically when the connection returns, with the time you punched.",
+      "sendNow": "Send now",
+      "recent": "Your recent punches",
+      "noRecent": "No punches yet."
+    },
+    "correction": {
+      "open": "Request a correction",
+      "title": "Request a correction",
+      "which": "What do you want to correct?",
+      "missing": "I missed a punch",
+      "type": "Type",
+      "time": "Correct time",
+      "send": "Send",
+      "sent": "Request sent to the management."
+    },
+    "errors": {
+      "fallback": "It could not be completed. Please try again.",
+      "network": "No connection to the server.",
+      "ATTENDANCE_UNAVAILABLE": "Attendance is not available right now. Use the contingency sheet and tell the management.",
+      "ATTENDANCE_NOT_AUTHORIZED": "That shift is not yours or is not accepted: you cannot punch on it.",
+      "ATTENDANCE_TOO_MANY_ATTEMPTS": "Too many failed attempts. Wait 15 minutes or ask the management for help.",
+      "ATTENDANCE_CODE_NOT_AVAILABLE": "That code is not available yet or is not for this week.",
+      "ATTENDANCE_CODE_KEY_RETIRED": "That code was issued with a retired key. Revoke it to generate a new one.",
+      "ATTENDANCE_DOWNLOAD_LIMIT": "Today's download limit for the code has been reached.",
+      "ATTENDANCE_SELF_REVIEW": "Nobody reviews, decides or records punches for themselves.",
+      "ATTENDANCE_ALREADY_DECIDED": "That correction has already been decided.",
+      "ATTENDANCE_IMMUTABLE": "That record cannot be changed.",
+      "RESIDENTIAL_ESTABLISHMENT_CLOSED": "The facility is closed.",
+      "RESIDENTIAL_MANAGER_REQUIRED": "Only the home's management can do this.",
+      "RESIDENTIAL_NOT_FOUND": "Not found.",
+      "FEATURE_NOT_ENABLED": "Attendance is not enabled for this home.",
+      "INVALID_INPUT": "Check the data: a value is not valid."
+    }
   }
 }
