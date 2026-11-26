@@ -3,15 +3,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("Central puede encender o apagar «Contratos» como los demás interruptores", () => {
   assert.match(read("src/api/platformOrganizations.ts"), /\| "CONTRACTS";/);
   const card = read("src/features/platform/OrganizationFeaturesCard.tsx");
-  assert.match(card, /CONTRACTS: \{ title: "Contratos"/);
+  assert.match(centralEs, /"CONTRACTS": \{\s*"title": "Contratos"/);
   assert.match(card, /const ORDER: PilotFeatureCode\[\] = \[[^\]]*"CONTRACTS"\]/);
-  assert.match(card, /no publica documentos ni salta la aprobación jurídica/);
+  assert.match(centralEs, /no publica documentos ni salta la aprobación jurídica/);
 });
 
 test("el menú «Contratos» solo se consulta en agencias con el interruptor", () => {

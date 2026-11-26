@@ -15,7 +15,7 @@ import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "staffHours" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -74,7 +74,8 @@ const RESIDENTIAL: NavKey[] = [
 ];
 const RESIDENTIAL_GROUPS: Array<{ k: "residential" | "operation" | "care" | "administration"; items: NavKey[] }> = [
  { k: "residential", items: RESIDENTIAL },
- ...GROUPS,
+ // F0.1 (25-nov): en un hogar la misma ruta de horas se llama «Horas del personal» (sin facturación).
+ ...GROUPS.map((group) => ({ ...group, items: group.items.map((item): NavKey => item.k === "timesheets" ? { ...item, k: "staffHours" } : item) })),
 ];
 /** Pestañas fijas en móvil; el resto vive en la hoja “Más”. */
 const MOBILE_TABS: NavKey[] = [

@@ -2,7 +2,8 @@ import { apiClient } from "@/api/client";
 export interface FinancialRate { membership_id:string; display_name:string|null; internal_role:string; membership_status:string; pay_rate_cents:number|null; bill_rate_cents:number|null; currency:string|null; updated_at:string|null }
 export interface Timesheet { id:string; worker_name:string|null; worker_role:string; recipient_name:string|null; recorded_minutes:number; approved_minutes:number|null; pay_amount_cents:number|null; bill_amount_cents:number|null; status:"pending"|"approved"|"disputed"; review_note:string|null; recorded_offline?:boolean }
 export interface TimesheetSummary { recordedMinutes:number; approvedMinutes:number; pendingCount:number; disputedCount:number; approvedPayCents:number; approvedBillCents:number }
-export interface PayPeriodWorker { workerName:string; approvedMinutes:number; payAmountCents:number; billAmountCents:number; timesheets:number }
+/** F0.1: `membershipId` identifica a la persona (el backend agrupa por membresía, no por nombre). */
+export interface PayPeriodWorker { membershipId?:string; workerName:string; approvedMinutes:number; payAmountCents:number; billAmountCents:number; timesheets:number }
 export interface PayPeriodPreview { dateFrom:string; dateTo:string; cadence:"weekly"|"biweekly"|"custom"; workers:PayPeriodWorker[]; exceptions:{pending:number;disputed:number}; summary:{approvedMinutes:number;payAmountCents:number;billAmountCents:number;approvedTimesheets:number} }
 export interface PayPeriod { id:string; date_from:string; date_to:string; cadence:string; status:string; approved_minutes:number; pay_amount_cents:number; bill_amount_cents:number; currency:string; closed_at:string|null }
 export async function listFinancialRates(org:string,token:string){return (await apiClient.get<{rates:FinancialRate[]}>(`/organizations/${org}/financial-rates`,token)).rates}
@@ -12,3 +13,5 @@ export async function reviewTimesheet(org:string,id:string,decision:"approved"|"
 export async function previewPayPeriod(org:string,from:string,to:string,cadence:string,token:string){const q=new URLSearchParams({dateFrom:from,dateTo:to,cadence});return apiClient.get<PayPeriodPreview>(`/organizations/${org}/pay-periods/preview?${q}`,token)}
 export async function listPayPeriods(org:string,token:string){return (await apiClient.get<{periods:PayPeriod[]}>(`/organizations/${org}/pay-periods`,token)).periods}
 export async function closePayPeriod(org:string,from:string,to:string,cadence:string,token:string){return apiClient.post<{period:unknown}>(`/organizations/${org}/pay-periods/close`,{dateFrom:from,dateTo:to,cadence},token)}
+/** F0.1 (hogares): solo la tarifa de pago. No envía tarifa de facturación; el backend la rechaza en un hogar (409). */
+export async function saveStaffPayRate(org:string,id:string,payRateCents:number,token:string){return apiClient.put(`/organizations/${org}/financial-rates/${id}`,{payRateCents,currency:"USD"},token)}

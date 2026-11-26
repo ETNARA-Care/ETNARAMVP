@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { agencyPhotoErrorKey } from "../src/features/activityPhotos/photoErrors.ts";
 import { canReviewPhotos } from "../src/features/activityPhotos/permissions.ts";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const code = (p) => read(p).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
@@ -110,7 +111,7 @@ test("E2.7 imágenes y formularios privados: nunca en el almacenamiento del nave
 
 test("E2.8 ETNARA central: el interruptor tiene nombre legible y deja claro que no ve fotos ni consentimientos", () => {
   const card = code("src/features/platform/OrganizationFeaturesCard.tsx");
-  assert.match(card, /ACTIVITY_PHOTOS: \{ title: "Fotos de actividades", detail: "[^"]*no ve las fotos ni los consentimientos\." \}/);
+  assert.match(centralEs, /"ACTIVITY_PHOTOS": \{\s*"title": "Fotos de actividades",\s*"detail": "[^"]*no ve las fotos ni los consentimientos\."\s*\}/);
   assert.match(card, /const ORDER: PilotFeatureCode\[\] = \[[^\]]*"ACTIVITY_PHOTOS"(, "CONTRACTS")?\]/);
   assert.match(read("src/api/platformOrganizations.ts"), /export type PilotFeatureCode = [^;]*"ACTIVITY_PHOTOS"( \| "CONTRACTS")?;/);
 });

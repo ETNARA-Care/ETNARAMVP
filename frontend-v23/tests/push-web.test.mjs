@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, statSync } from "node:fs";
 import test from "node:test";
 import { deviceLabel, isSafeInternalPath, parseOpenParam, pushAvailability, urlBase64ToUint8Array, validQuietRange } from "../src/features/push/pushSupport.ts";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const png = (path) => { const b = readFileSync(new URL(`../${path}`, import.meta.url)); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20), sig: b.subarray(1, 4).toString() }; };
@@ -111,7 +112,7 @@ test("textos es/en completos y sin promesas falsas de privacidad", () => {
 
 test("ETNARA central: interruptor «Notificaciones en el teléfono» por agencia (solo enciende o apaga)", () => {
   const card = read("src/features/platform/OrganizationFeaturesCard.tsx");
-  assert.match(card, /PUSH_NOTIFICATIONS: \{ title: "Notificaciones en el teléfono"/);
+  assert.match(centralEs, /"PUSH_NOTIFICATIONS": \{\s*"title": "Notificaciones en el teléfono"/);
   assert.match(card, /"SHIFT_REPORTS", "PUSH_NOTIFICATIONS", "ACTIVITY_PHOTOS"(, "CONTRACTS")?\]/);
   assert.match(read("src/api/platformOrganizations.ts"), /\| "PUSH_NOTIFICATIONS" \| "ACTIVITY_PHOTOS"( \| "CONTRACTS")?;/);
 });
