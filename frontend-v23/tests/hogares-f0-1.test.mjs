@@ -2,9 +2,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import ts from "typescript";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const json = (path) => JSON.parse(read(path));
+const load = async (path) => {
+  const js = ts.transpileModule(read(path), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+  return import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+};
 const code = (path) => read(path).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const fill = (text, values) => text.replace(/{{(\w+)}}/g, (_, k) => values[k]);
 
@@ -75,13 +80,13 @@ test("Horas del personal: el hogar ve otra página; la agencia conserva la suya 
 test("Horas del personal: sin facturación, sin Finanzas, sin nómina; solo pago estimado con aviso", () => {
   const page = code("src/pages/agency/residential/StaffHoursPage.tsx");
   assert.doesNotMatch(page, /bill|Billing|factur|\/agency\/finance|deduction|payroll|nómina/i);
-  assert.match(page, /saveStaffPayRate\(organizationId, rate\.membership_id, Math\.round\(value \* 100\), token\)/);
+  assert.match(page, /saveStaffPayRate\(org, rate\.membership_id, Math\.round\(value \* 100\), token\)/);
   assert.doesNotMatch(page, /saveFinancialRate/);
   assert.match(page, /data-testid="staff-hours-estimate-notice"/);
   assert.match(page, /if \(!roles\.includes\("ORGANIZATION_ADMIN"\)\)/, "solo administración, como antes");
   assert.match(page, /r\.membership_status === "active" && r\.pay_rate_cents == null/, "solo falta la tarifa de pago");
   // Exportación de horas conservada, sin columna de facturación.
-  assert.match(page, /t\("staffHours\.csv\.worker"\), t\("staffHours\.csv\.approvedHours"\), t\("staffHours\.csv\.estimatedPay"\), t\("staffHours\.csv\.sheets"\)/);
+  assert.match(page, /csvLines\(\[\s*\[t\("staffHours\.csv\.worker"\), t\("staffHours\.csv\.approvedHours"\), t\("staffHours\.csv\.estimatedPay"\), t\("staffHours\.csv\.sheets"\)\]/);
   assert.match(resEs.staffHours.estimateNotice, /Los importes son estimados\. No constituyen nómina ni procesamiento de pagos/);
   assert.match(resEn.staffHours.estimateNotice, /Amounts are estimates\. They are not payroll or payment processing/);
   // Fuera del aviso (que dice lo que ETNARA NO hace), ningún texto habla de facturación, deducciones ni contribuciones.
@@ -92,4 +97,44 @@ test("Horas del personal: sin facturación, sin Finanzas, sin nómina; solo pago
   }
   const api = read("src/api/timesheets.ts");
   assert.match(api, /export async function saveStaffPayRate\(org:string,id:string,payRateCents:number,token:string\)\{return apiClient\.put\(`\/organizations\/\$\{org\}\/financial-rates\/\$\{id\}`,\{payRateCents,currency:"USD"\},token\)\}/);
+});
+
+// ---- Revisión GPT (25-nov) ----------------------------------------------------------------------------------
+test("Horas del personal: datos, acciones y exportación ligados a la organización activa (como el panel de F0)", () => {
+  const page = code("src/pages/agency/residential/StaffHoursPage.tsx");
+  assert.match(page, /useState<OrganizationScoped<StaffHoursData> \| null>\(null\)/);
+  assert.match(page, /const request = latest\.current\.begin\(\);/);
+  assert.match(page, /if \(!request\.isCurrent\(\)\) return;/, "una respuesta atrasada no escribe el estado");
+  assert.match(page, /const current = scopedTo\(state, organizationId\);/);
+  assert.match(page, /return \(\) => tracker\.invalidate\(\);/);
+  // Las acciones usan la organización de los datos en pantalla y no recargan si cambió mientras tanto.
+  assert.match(page, /const org = current\?\.organizationId;\s*if \(!token \|\| !org \|\| org !== activeOrgRef\.current\) return;/);
+  assert.match(page, /if \(org === activeOrgRef\.current\) await load\(\);/);
+  for (const call of ["reviewTimesheet(org,", "saveStaffPayRate(org,", "closePayPeriod(org,"]) assert.ok(page.includes(call), call);
+  assert.doesNotMatch(page, /(reviewTimesheet|saveStaffPayRate|closePayPeriod)\(organizationId/);
+  assert.match(page, /if \(!preview \|\| current\?\.organizationId !== activeOrgRef\.current\) return;/, "la exportación solo usa la organización activa");
+  // Sin estados sueltos que puedan quedar de la organización anterior.
+  assert.doesNotMatch(page, /useState<Timesheet\[\]>|useState<FinancialRate\[\]>|useState<PayPeriodPreview/);
+});
+
+test("Resumen del periodo: una fila por persona (membresía), no por nombre", () => {
+  assert.match(read("src/api/timesheets.ts"), /export interface PayPeriodWorker \{ membershipId\?:string; workerName:string;/);
+  assert.match(code("src/pages/agency/residential/StaffHoursPage.tsx"), /key=\{w\.membershipId \?\? w\.workerName\}/);
+  assert.match(read("src/pages/agency/AgencyTimesheetsPage.tsx"), /key=\{w\.membershipId\?\?w\.workerName\}/);
+});
+
+test("CSV a salvo de fórmulas en las dos exportaciones de horas (hogar y agencia)", async () => {
+  const { csvCell, csvLines } = await load("src/features/export/csv.ts");
+  for (const evil of ["=HYPERLINK(\"http://x\",\"y\")", "+1+1", "-2+3", "@SUM(A1)", "\t=1", "\r=1", "  =1+1", "=cmd|' /C calc'!A0"]) {
+    const cell = csvCell(evil);
+    assert.ok(cell.startsWith(`"'`), `${JSON.stringify(evil)} → ${cell}`);
+  }
+  assert.equal(csvCell("Ana Ficticia"), `"Ana Ficticia"`);
+  assert.equal(csvCell("64.00"), `"64.00"`);
+  assert.equal(csvCell("-5.00"), `"-5.00"`, "un número negativo no se altera");
+  assert.equal(csvCell('Dice "hola"'), `"Dice ""hola"""`);
+  assert.equal(csvLines([["a", "=1"], ["2", "b"]]), `"a","'=1"\n"2","b"`);
+  assert.match(read("src/pages/agency/AgencyTimesheetsPage.tsx"), /new Blob\(\[csvLines\(lines\)\]/);
+  assert.doesNotMatch(read("src/pages/agency/AgencyTimesheetsPage.tsx"), /replaceAll\('"','""'\)/);
+  assert.doesNotMatch(code("src/pages/agency/residential/StaffHoursPage.tsx"), /replaceAll/);
 });

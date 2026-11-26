@@ -2,7 +2,8 @@ import { apiClient } from "@/api/client";
 export interface FinancialRate { membership_id:string; display_name:string|null; internal_role:string; membership_status:string; pay_rate_cents:number|null; bill_rate_cents:number|null; currency:string|null; updated_at:string|null }
 export interface Timesheet { id:string; worker_name:string|null; worker_role:string; recipient_name:string|null; recorded_minutes:number; approved_minutes:number|null; pay_amount_cents:number|null; bill_amount_cents:number|null; status:"pending"|"approved"|"disputed"; review_note:string|null; recorded_offline?:boolean }
 export interface TimesheetSummary { recordedMinutes:number; approvedMinutes:number; pendingCount:number; disputedCount:number; approvedPayCents:number; approvedBillCents:number }
-export interface PayPeriodWorker { workerName:string; approvedMinutes:number; payAmountCents:number; billAmountCents:number; timesheets:number }
+/** F0.1: `membershipId` identifica a la persona (el backend agrupa por membresía, no por nombre). */
+export interface PayPeriodWorker { membershipId?:string; workerName:string; approvedMinutes:number; payAmountCents:number; billAmountCents:number; timesheets:number }
 export interface PayPeriodPreview { dateFrom:string; dateTo:string; cadence:"weekly"|"biweekly"|"custom"; workers:PayPeriodWorker[]; exceptions:{pending:number;disputed:number}; summary:{approvedMinutes:number;payAmountCents:number;billAmountCents:number;approvedTimesheets:number} }
 export interface PayPeriod { id:string; date_from:string; date_to:string; cadence:string; status:string; approved_minutes:number; pay_amount_cents:number; bill_amount_cents:number; currency:string; closed_at:string|null }
 export async function listFinancialRates(org:string,token:string){return (await apiClient.get<{rates:FinancialRate[]}>(`/organizations/${org}/financial-rates`,token)).rates}

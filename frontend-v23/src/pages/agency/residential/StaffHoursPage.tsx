@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DollarSign, Info, LockKeyhole, RefreshCw } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
@@ -6,6 +6,8 @@ import { getToken } from "@/auth/token";
 import { closePayPeriod, listFinancialRates, listPayPeriods, listTimesheets, previewPayPeriod, reviewTimesheet, saveStaffPayRate, type FinancialRate, type PayPeriod, type PayPeriodPreview, type Timesheet, type TimesheetSummary } from "@/api/timesheets";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { formatMoney } from "@/i18n/format";
+import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
+import { csvLines } from "@/features/export/csv";
 
 /**
  * F0.1 (hogares, 25-nov-2026): «Horas del personal». Misma ruta y mismo backend que «Horas y facturación» de la
@@ -19,6 +21,7 @@ const toDateInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 
 const hours = (minutes: number) => (minutes / 60).toFixed(2);
 const STATUSES = ["pending", "approved", "disputed"] as const;
 const CADENCES = ["weekly", "biweekly", "custom"] as const;
+type StaffHoursData = { rows: Timesheet[]; summary: TimesheetSummary; rates: FinancialRate[]; preview: PayPeriodPreview | null; periods: PayPeriod[]; periodWarning: boolean };
 
 export function StaffHoursPage() {
   const { roles } = useAuth();
@@ -51,87 +54,112 @@ function StaffHoursContent() {
   const [to, setTo] = useState(toDateInput(now));
   const [status, setStatus] = useState("");
   const [cadence, setCadence] = useState("biweekly");
-  const [rows, setRows] = useState<Timesheet[]>([]);
-  const [rates, setRates] = useState<FinancialRate[]>([]);
-  const [summary, setSummary] = useState<TimesheetSummary | null>(null);
-  const [preview, setPreview] = useState<PayPeriodPreview | null>(null);
-  const [periods, setPeriods] = useState<PayPeriod[]>([]);
+  // Revisión GPT (25-nov): como el panel de F0 (A4), todo lo cargado va ligado a la organización que lo pidió.
+  // Solo la última carga escribe el estado; lo que se muestra, se exporta o se usa en una acción se filtra por la
+  // organización activa, así que al cambiar de organización nunca se ven ni se usan datos de la anterior.
+  const [state, setState] = useState<OrganizationScoped<StaffHoursData> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [periodWarning, setPeriodWarning] = useState(false);
+  const latest = useRef(createLatestRequest());
+  const activeOrgRef = useRef(organizationId);
+  useEffect(() => { activeOrgRef.current = organizationId; }, [organizationId]);
 
   const load = useCallback(async () => {
     const token = getToken();
     if (!token || !organizationId) return;
-    setLoading(true); setError(false); setPeriodWarning(false);
+    const request = latest.current.begin();
+    setLoading(true);
     try {
       const [sheets, staffRates] = await Promise.all([listTimesheets(organizationId, from, to, status, token), listFinancialRates(organizationId, token)]);
-      setRows(sheets.timesheets); setSummary(sheets.summary); setRates(staffRates); setPreview(null);
       const [p, h] = await Promise.allSettled([previewPayPeriod(organizationId, from, to, cadence, token), listPayPeriods(organizationId, token)]);
-      if (p.status === "fulfilled" && p.value) setPreview(p.value); else { setPreview(null); setPeriodWarning(true); }
-      if (h.status === "fulfilled") setPeriods(h.value); else setPeriodWarning(true);
+      if (!request.isCurrent()) return;
+      const preview = p.status === "fulfilled" && p.value ? p.value : null;
+      setState({ organizationId, error: false, data: {
+        rows: sheets.timesheets, summary: sheets.summary, rates: staffRates, preview,
+        periods: h.status === "fulfilled" ? h.value : [],
+        periodWarning: !preview || h.status !== "fulfilled",
+      } });
     } catch {
-      setError(true);
+      if (request.isCurrent()) setState({ organizationId, data: null, error: true });
     } finally {
-      setLoading(false);
+      if (request.isCurrent()) setLoading(false);
     }
   }, [organizationId, from, to, status, cadence]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const tracker = latest.current;
+    void load();
+    return () => tracker.invalidate();
+  }, [load]);
+
+  const current = scopedTo(state, organizationId);
+  const data = current?.data ?? null;
+  const error = current?.error === true;
+  const rows = data?.rows ?? [];
+  const rates = data?.rates ?? [];
+  const summary = data?.summary ?? null;
+  const preview = data?.preview ?? null;
+  const periods = data?.periods ?? [];
+  const periodWarning = data?.periodWarning ?? false;
+
+  /**
+   * Una acción usa la organización y los datos de la pantalla que el administrador tiene delante. Si mientras
+   * espera la respuesta cambia de organización, el resultado no recarga ni toca la pantalla de la nueva.
+   */
+  async function act(work: (org: string, token: string) => Promise<unknown>) {
+    const token = getToken();
+    const org = current?.organizationId;
+    if (!token || !org || org !== activeOrgRef.current) return;
+    await work(org, token);
+    if (org === activeOrgRef.current) await load();
+  }
 
   async function approve(sheet: Timesheet) {
-    const token = getToken();
-    if (!token || !organizationId) return;
     const raw = prompt(t("staffHours.promptMinutes"), String(sheet.recorded_minutes));
     if (raw === null) return;
     const minutes = Number(raw);
     let note: string | undefined;
     if (minutes !== sheet.recorded_minutes) { note = prompt(t("staffHours.promptAdjust")) || undefined; if (!note) return; }
-    await reviewTimesheet(organizationId, sheet.id, "approved", token, minutes, note);
-    await load();
+    await act((org, token) => reviewTimesheet(org, sheet.id, "approved", token, minutes, note));
   }
   async function dispute(sheet: Timesheet) {
-    const token = getToken();
-    if (!token || !organizationId) return;
     const note = prompt(t("staffHours.promptDispute"));
     if (!note) return;
-    await reviewTimesheet(organizationId, sheet.id, "disputed", token, undefined, note);
-    await load();
+    await act((org, token) => reviewTimesheet(org, sheet.id, "disputed", token, undefined, note));
   }
   // Solo la tarifa de pago: nunca se pide ni se envía una tarifa de facturación.
   async function editPayRate(rate: FinancialRate) {
-    const token = getToken();
-    if (!token || !organizationId) return;
     const raw = prompt(t("staffHours.promptPayRate"), rate.pay_rate_cents == null ? "" : String(rate.pay_rate_cents / 100));
     if (raw === null) return;
     const value = Number(raw.replace(",", "."));
     if (!Number.isFinite(value) || value < 0 || value > 1000) { alert(t("staffHours.invalidRate")); return; }
-    try { await saveStaffPayRate(organizationId, rate.membership_id, Math.round(value * 100), token); } catch { alert(t("staffHours.errorRate")); }
-    await load();
+    await act(async (org, token) => {
+      try { await saveStaffPayRate(org, rate.membership_id, Math.round(value * 100), token); } catch { alert(t("staffHours.errorRate")); }
+    });
   }
   async function closePeriod() {
-    const token = getToken();
-    if (!token || !organizationId || !preview) return;
-    if (preview.exceptions.pending || preview.exceptions.disputed) { alert(t("staffHours.resolveFirst")); return; }
-    if (!confirm(t("staffHours.confirmClose", { from, to }))) return;
-    try {
-      await closePayPeriod(organizationId, from, to, cadence, token);
-      await load();
-    } catch (e) {
-      const code = (e as { code?: string })?.code;
-      alert(code === "PAY_PERIOD_OVERLAP" ? t("staffHours.errorOverlap") : code === "PAY_PERIOD_ALREADY_EXISTS" ? t("staffHours.errorExists") : t("staffHours.errorClose"));
-    }
-  }
-  // Exportación de horas: persona, horas aprobadas, pago estimado y hojas. Sin columna de facturación.
-  function exportCsv() {
     if (!preview) return;
-    const lines = [
+    if (preview.exceptions.pending || preview.exceptions.disputed) { alert(t("staffHours.resolveFirst")); return; }
+    if (!confirm(t("staffHours.confirmClose", { from: preview.dateFrom, to: preview.dateTo }))) return;
+    await act(async (org, token) => {
+      try {
+        await closePayPeriod(org, preview.dateFrom, preview.dateTo, preview.cadence, token);
+      } catch (e) {
+        const code = (e as { code?: string })?.code;
+        alert(code === "PAY_PERIOD_OVERLAP" ? t("staffHours.errorOverlap") : code === "PAY_PERIOD_ALREADY_EXISTS" ? t("staffHours.errorExists") : t("staffHours.errorClose"));
+      }
+    });
+  }
+  // Exportación de horas: solo la organización activa, una fila por persona (membresía) y celdas a salvo de
+  // fórmulas. Persona, horas aprobadas, pago estimado y hojas; sin columna de facturación.
+  function exportCsv() {
+    if (!preview || current?.organizationId !== activeOrgRef.current) return;
+    const csv = csvLines([
       [t("staffHours.csv.worker"), t("staffHours.csv.approvedHours"), t("staffHours.csv.estimatedPay"), t("staffHours.csv.sheets")],
       ...preview.workers.map((w) => [w.workerName, hours(w.approvedMinutes), (w.payAmountCents / 100).toFixed(2), String(w.timesheets)]),
-    ];
-    const blob = new Blob([lines.map((line) => line.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
+    ]);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `etnara-horas-personal-${from}-${to}.csv`;
+    a.download = `etnara-horas-personal-${preview.dateFrom}-${preview.dateTo}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -196,7 +224,7 @@ function StaffHoursContent() {
             <div>{t("staffHours.exceptions")}<br /><b>{exceptions}</b></div>
           </div>
           {preview.workers.map((w) => (
-            <div key={w.workerName} className="border-t py-3"><b>{w.workerName}</b> · {t("staffHours.workerLine", { hours: hours(w.approvedMinutes), pay: money(w.payAmountCents) })}</div>
+            <div key={w.membershipId ?? w.workerName} className="border-t py-3"><b>{w.workerName}</b> · {t("staffHours.workerLine", { hours: hours(w.approvedMinutes), pay: money(w.payAmountCents) })}</div>
           ))}
           <div className="flex flex-wrap gap-2 mt-3">
             <Button icon={<LockKeyhole size={17} />} onClick={() => void closePeriod()} disabled={exceptions > 0}>{t("staffHours.closePeriod")}</Button>
