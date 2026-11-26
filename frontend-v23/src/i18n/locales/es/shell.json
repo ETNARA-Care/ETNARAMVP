@@ -56,7 +56,8 @@
       "residentialSchedule": "Calendario semanal",
       "residentialAttendance": "Asistencia",
       "residentialAssignments": "Asignaciones",
-      "residentialReports": "Informes"
+      "residentialReports": "Informes",
+      "residentialGuide": "Guía de uso"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",

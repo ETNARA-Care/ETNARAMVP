@@ -16,6 +16,8 @@ import { FamilyServiceLocationCard } from "@/features/family/FamilyServiceLocati
 import { useNotifications } from "@/features/notifications/useNotifications";
 import type { NotificationItem } from "@/api/notifications";
 import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCard";
+import { GuideLink } from "@/features/residential/GuideLink";
+import { FAMILY_GUIDE_PATH } from "@/features/residential/modality";
 
 function isToday(iso: string): boolean {
   const event = new Date(iso);
@@ -146,6 +148,7 @@ export function FamilyProfilePage() {
         <p className="text-sm font-medium text-[#66845f]">Más</p>
         <h1 className="mt-1 font-display text-[2rem] leading-tight text-[#102b57]">Perfil y equipo</h1>
         <p className="mt-1 text-sm text-[#667085]">Tu cuenta y la información autorizada del equipo de cuidado.</p>
+        <GuideLink to={FAMILY_GUIDE_PATH} className="mt-2" />
       </section>
 
       <NotificationSettingsCard />

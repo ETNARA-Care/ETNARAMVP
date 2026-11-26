@@ -1048,5 +1048,146 @@
     "messagesNote": "Only you and the home's administration see this conversation.",
     "messagesError": "The conversation could not be opened. Please try again.",
     "sendError": "The message could not be sent. Please try again."
+  },
+  "guides": {
+    "brand": "ETNARA Care · {{name}}",
+    "print": "Print",
+    "open": "User guide",
+    "footer": "ETNARA is not a clinical system: it does not store diagnoses or treatments. In an emergency, call 911.",
+    "admin": {
+      "title": "Home administration guide",
+      "intro": "The essentials for running the home. Some modules only appear if ETNARA turned them on.",
+      "sections": [
+        {
+          "title": "Facilities and residents",
+          "steps": [
+            "Create the rooms and, if you wish, the beds.",
+            "Place each resident; the history is kept."
+          ]
+        },
+        {
+          "title": "Weekly schedule",
+          "steps": [
+            "Create shifts or apply a day, evening and night template.",
+            "Review overlaps and publish: staff receive their week."
+          ]
+        },
+        {
+          "title": "Assignments and substitutions",
+          "steps": [
+            "In “Assignments”, distribute each shift's residents.",
+            "If someone is absent, use “Substitute”; blocks cannot be skipped."
+          ]
+        },
+        {
+          "title": "Attendance",
+          "steps": [
+            "Print the week's QR and place it at the entrance.",
+            "Review punches and corrections with a reason. Not payroll."
+          ]
+        },
+        {
+          "title": "Reports and panel",
+          "steps": [
+            "The panel shows staff present, residents without coverage and alerts.",
+            "In “Reports”, generate and export attendance, assignments and occupancy."
+          ]
+        },
+        {
+          "title": "Families",
+          "steps": [
+            "Invite each family member from the resident's profile.",
+            "Answer in “Messages”: families only talk with the administration."
+          ]
+        }
+      ],
+      "privacy": "Only the administration sees schedules, punches, credentials and reports; families never see staff data or other residents."
+    },
+    "caregiver": {
+      "title": "Caregiver guide",
+      "intro": "How to use ETNARA during your shift, from your phone.",
+      "sections": [
+        {
+          "title": "When you arrive: punch in",
+          "steps": [
+            "Open “Punch” and scan the QR at the entrance or type the 6-digit code.",
+            "Your location is read only at that moment and only if you gave consent.",
+            "Without signal, the punch stays on your phone and is sent when the signal returns."
+          ]
+        },
+        {
+          "title": "Your week",
+          "steps": [
+            "In “Shifts” you see your published week.",
+            "If you are substituted or assigned a substitution, you get a notice."
+          ]
+        },
+        {
+          "title": "Your residents",
+          "steps": [
+            "In “Residents” you only see the people assigned to you right now, and until when.",
+            "When your part of the shift ends, they no longer appear."
+          ]
+        },
+        {
+          "title": "Record activities",
+          "steps": [
+            "Tap “Record activity”: meal, hydration, hygiene, mobility, activity, mood or observation.",
+            "It is saved with the date, the time and your name; the family sees it.",
+            "Do not write diagnoses, medications or health information."
+          ]
+        },
+        {
+          "title": "When you leave",
+          "steps": [
+            "Punch out (and breaks or meals if your home uses them).",
+            "Forgot a punch? Request a correction with the reason; nothing is deleted."
+          ]
+        },
+        {
+          "title": "Help",
+          "steps": [
+            "For shift questions, write to the administration in “Messages”.",
+            "In an emergency, call 911 and tell the administration."
+          ]
+        }
+      ],
+      "privacy": "Your location is not stored: only whether you were inside or outside the perimeter. You only see the residents assigned to you."
+    },
+    "family": {
+      "title": "Family guide",
+      "intro": "How to follow your family member's care at the home.",
+      "sections": [
+        {
+          "title": "Home",
+          "steps": [
+            "You see your family member, their home and their room.",
+            "Today's activities appear below."
+          ]
+        },
+        {
+          "title": "Activities",
+          "steps": [
+            "In “Care” you see the history: what was done, when and who recorded it.",
+            "These are everyday activities (meals, mood, mobility…), not clinical information."
+          ]
+        },
+        {
+          "title": "Messages",
+          "steps": [
+            "In “Messages”, write to the home's administration.",
+            "Only you and the administration see the conversation."
+          ]
+        },
+        {
+          "title": "Your account",
+          "steps": [
+            "In “More” you review your account and notices.",
+            "If you have more than one family member, choose who to view at the top."
+          ]
+        }
+      ],
+      "privacy": "You only see your family member's information. Staff schedules, shifts and personal details are not shared."
+    }
   }
 }

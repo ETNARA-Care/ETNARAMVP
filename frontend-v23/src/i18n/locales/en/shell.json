@@ -56,7 +56,8 @@
       "residentialSchedule": "Weekly schedule",
       "residentialAttendance": "Attendance",
       "residentialAssignments": "Assignments",
-      "residentialReports": "Reports"
+      "residentialReports": "Reports",
+      "residentialGuide": "User guide"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",

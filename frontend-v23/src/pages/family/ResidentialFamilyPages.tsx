@@ -15,7 +15,8 @@ import { useFamilyPhotoViewer } from "@/features/activityPhotos/useFamilyPhotoVi
 import { useFamilyRefresh } from "@/features/activityPhotos/useFamilyRefresh";
 import { familyRecipientName, pickRecipient, useFamilyRecipient } from "@/features/family/familyRecipient";
 import { activityText, roleText } from "@/features/residential/familyActivity";
-import { isResidentialOrganization } from "@/features/residential/modality";
+import { FAMILY_GUIDE_PATH, isResidentialOrganization } from "@/features/residential/modality";
+import { GuideLink } from "@/features/residential/GuideLink";
 
 /**
  * 177 (hogares F5, D5): portal familiar de un hogar. Transparencia solo sobre su familiar:
@@ -115,6 +116,7 @@ export function ResidentialFamilyHome() {
           : <ActivityList items={today.slice(0, 5)} organizationId={r.organizationId} testId="residential-family-today" />}
       </section>
       <p className="px-1 text-xs leading-5 text-[#667085]">{t("family.privacyNote")}</p>
+      <GuideLink to={FAMILY_GUIDE_PATH} className="px-1" />
     </div>
   );
 }

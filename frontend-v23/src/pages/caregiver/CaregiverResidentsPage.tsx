@@ -10,7 +10,8 @@ import { useCareEventQueue } from "@/features/caregiver/careEventQueue";
 import { ACTIVITY_OPTIONS, ACTIVITY_TYPES, activityInput, TYPE_FIELDS, valueKey, type OptionField } from "@/features/residential/activities";
 import { assignmentsApi, type MyResident } from "@/api/residentialAssignments";
 import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
-import { isResidentialOrganization } from "@/features/residential/modality";
+import { CAREGIVER_GUIDE_PATH, isResidentialOrganization } from "@/features/residential/modality";
+import { GuideLink } from "@/features/residential/GuideLink";
 
 /**
  * 176 (hogares F3): «Mis residentes». Solo hogares y solo con HOGAR_ASIGNACIONES. Lista lo que el backend devuelve:
@@ -53,6 +54,7 @@ export function CaregiverResidentsPage() {
   return (
     <div className="flex flex-col gap-5" data-testid="caregiver-residents">
       <PageHeader title={t("assignments.mine.title")} description={t("assignments.mine.description")} />
+      <GuideLink to={CAREGIVER_GUIDE_PATH} />
       {current?.error ? <ErrorState kind="server" onRetry={() => { setState(null); void load(); }} /> : residents === null ? <Skeleton className="h-32" /> : residents.length === 0 ? (
         <EmptyState title={t("assignments.mine.emptyTitle")} description={t("assignments.mine.emptyDetail")} />
       ) : (

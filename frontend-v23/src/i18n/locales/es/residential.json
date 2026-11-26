@@ -1048,5 +1048,146 @@
     "messagesNote": "Solo tú y la administración del hogar ven esta conversación.",
     "messagesError": "No se pudo abrir la conversación. Vuelve a intentarlo.",
     "sendError": "No se pudo enviar el mensaje. Vuelve a intentarlo."
+  },
+  "guides": {
+    "brand": "ETNARA Care · {{name}}",
+    "print": "Imprimir",
+    "open": "Guía de uso",
+    "footer": "ETNARA no es un sistema clínico: no guarda diagnósticos ni tratamientos. Ante una emergencia, llama al 911.",
+    "admin": {
+      "title": "Guía de la administración del hogar",
+      "intro": "Lo esencial para operar el hogar. Algunos módulos aparecen solo si ETNARA los activó.",
+      "sections": [
+        {
+          "title": "Establecimientos y residentes",
+          "steps": [
+            "Crea las habitaciones y, si quieres, las camas.",
+            "Ubica a cada residente; queda el historial."
+          ]
+        },
+        {
+          "title": "Calendario semanal",
+          "steps": [
+            "Crea los turnos o aplica una plantilla de día, tarde y noche.",
+            "Revisa los solapes y publica: el personal recibe su semana."
+          ]
+        },
+        {
+          "title": "Asignaciones y sustituciones",
+          "steps": [
+            "En «Asignaciones» reparte los residentes de cada turno.",
+            "Si alguien falta, usa «Sustituir»; los bloqueos no se saltan."
+          ]
+        },
+        {
+          "title": "Asistencia",
+          "steps": [
+            "Imprime el QR de la semana y ponlo en la entrada.",
+            "Revisa ponches y correcciones con motivo. No es nómina."
+          ]
+        },
+        {
+          "title": "Informes y panel",
+          "steps": [
+            "El panel muestra presentes, residentes sin cobertura y alertas.",
+            "En «Informes» genera y exporta asistencia, asignaciones y ocupación."
+          ]
+        },
+        {
+          "title": "Familias",
+          "steps": [
+            "Invita a cada familiar desde la ficha del residente.",
+            "Responde en «Mensajes»: la familia solo conversa con la administración."
+          ]
+        }
+      ],
+      "privacy": "Solo la administración ve horarios, ponches, credenciales e informes; la familia nunca ve datos del personal ni de otros residentes."
+    },
+    "caregiver": {
+      "title": "Guía del cuidador",
+      "intro": "Cómo usar ETNARA en tu turno, desde el teléfono.",
+      "sections": [
+        {
+          "title": "Al llegar: ponchar",
+          "steps": [
+            "Abre «Ponchar» y escanea el QR de la entrada o escribe el código de 6 dígitos.",
+            "La ubicación se lee solo en ese momento y solo si diste tu consentimiento.",
+            "Sin señal, el ponche queda en el teléfono y se envía solo al volver."
+          ]
+        },
+        {
+          "title": "Tu semana",
+          "steps": [
+            "En «Turnos» ves tu semana publicada.",
+            "Si te sustituyen o te asignan una sustitución, recibes un aviso."
+          ]
+        },
+        {
+          "title": "Tus residentes",
+          "steps": [
+            "En «Residentes» ves solo a quienes tienes asignados ahora y hasta cuándo.",
+            "Al terminar tu parte del turno dejan de aparecer."
+          ]
+        },
+        {
+          "title": "Registrar actividades",
+          "steps": [
+            "Pulsa «Registrar actividad»: comida, hidratación, higiene, movilidad, actividad, ánimo u observación.",
+            "Queda con la fecha, la hora y tu nombre; la familia lo ve.",
+            "No escribas diagnósticos, medicamentos ni datos de salud."
+          ]
+        },
+        {
+          "title": "Al salir",
+          "steps": [
+            "Poncha la salida (y los descansos o comidas si tu hogar los usa).",
+            "¿Olvidaste un ponche? Pide una corrección con el motivo; no se borra nada."
+          ]
+        },
+        {
+          "title": "Ayuda",
+          "steps": [
+            "Para dudas del turno, escribe a la administración en «Mensajes».",
+            "Ante una emergencia, llama al 911 y avisa a la administración."
+          ]
+        }
+      ],
+      "privacy": "Tu ubicación no se guarda: solo si estabas dentro o fuera del perímetro. Solo ves a los residentes que tienes asignados."
+    },
+    "family": {
+      "title": "Guía para la familia",
+      "intro": "Cómo seguir el cuidado de tu familiar en el hogar.",
+      "sections": [
+        {
+          "title": "Inicio",
+          "steps": [
+            "Ves a tu familiar, su hogar y su habitación.",
+            "Abajo aparecen las actividades de hoy."
+          ]
+        },
+        {
+          "title": "Actividades",
+          "steps": [
+            "En «Cuidado» ves el historial: qué se hizo, cuándo y quién lo registró.",
+            "Son actividades del día a día (comidas, ánimo, movilidad…), no información clínica."
+          ]
+        },
+        {
+          "title": "Mensajes",
+          "steps": [
+            "En «Mensajes» escribe a la administración del hogar.",
+            "Solo tú y la administración ven la conversación."
+          ]
+        },
+        {
+          "title": "Tu cuenta",
+          "steps": [
+            "En «Más» revisas tu cuenta y tus avisos.",
+            "Si tienes más de un familiar, elige a quién ver arriba."
+          ]
+        }
+      ],
+      "privacy": "Solo ves la información de tu familiar. Los horarios, turnos y datos personales del personal no se comparten."
+    }
   }
 }
