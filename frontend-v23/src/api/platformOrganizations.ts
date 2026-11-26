@@ -14,12 +14,15 @@ const TO_BACKEND: Record<PlatformOrganizationType, BackendOrganizationType> = {
   independent_provider: "INDEPENDENT_PROVIDER",
 };
 
+/** 177 (hogares F5, D8): residentes activos únicos de un hogar (solo un número) y la alerta comercial al pasar de 10. */
+export interface ResidentialSubscription { activeResidents: number; limit: number; overLimit: boolean; demo: boolean }
 interface BackendPlatformOrganization {
   id: string;
   name: string;
   organization_type: BackendOrganizationType;
   status: string;
   created_at?: string;
+  residentialSubscription?: ResidentialSubscription;
 }
 
 export interface PlatformOrganization {
@@ -28,12 +31,14 @@ export interface PlatformOrganization {
   type: PlatformOrganizationType;
   status: string;
   created_at?: string;
+  residentialSubscription?: ResidentialSubscription;
 }
 
 export interface PlatformOrganizationOverview {
   organization: BackendPlatformOrganization;
   locations: { id: string; name: string }[];
   counts: { active_workers: number; residents: number };
+  residentialSubscription?: ResidentialSubscription;
 }
 
 export interface PlatformEstablishment {

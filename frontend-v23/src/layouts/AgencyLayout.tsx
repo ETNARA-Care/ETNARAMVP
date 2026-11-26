@@ -1,13 +1,13 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { useTranslation } from "react-i18next";
-import { BedDouble, Camera, HeartHandshake, Home, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, ClipboardList, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
+import { BedDouble, Camera, HeartHandshake, Home, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, ClipboardList, FileBarChart, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
 import { isHiddenForIndependent, isIndependentOrganization } from "@/features/practice/modality";
-import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_ASSIGNMENTS_PATH, RESIDENTIAL_ATTENDANCE_PATH, RESIDENTIAL_ESTABLISHMENTS_PATH, RESIDENTIAL_SCHEDULE_PATH, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
+import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_ASSIGNMENTS_PATH, RESIDENTIAL_ATTENDANCE_PATH, RESIDENTIAL_REPORTS_PATH, RESIDENTIAL_ESTABLISHMENTS_PATH, RESIDENTIAL_SCHEDULE_PATH, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
 import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
@@ -15,7 +15,7 @@ import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "residentialEstablishments" | "residentialSchedule" | "residentialAttendance" | "residentialAssignments" | "staffHours" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "residentialEstablishments" | "residentialSchedule" | "residentialAttendance" | "residentialAssignments" | "residentialReports" | "staffHours" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -75,6 +75,8 @@ const RESIDENTIAL: NavKey[] = [
  { to: RESIDENTIAL_SCHEDULE_PATH, icon: CalendarRange, k: "residentialSchedule" },
  { to: RESIDENTIAL_ATTENDANCE_PATH, icon: ClipboardCheck, k: "residentialAttendance" },
  { to: RESIDENTIAL_ASSIGNMENTS_PATH, icon: ClipboardList, k: "residentialAssignments" },
+ // 177 (F5): informes del hogar (cada pestaña aparece solo con su interruptor; la ocupación siempre).
+ { to: RESIDENTIAL_REPORTS_PATH, icon: FileBarChart, k: "residentialReports" },
 ];
 const RESIDENTIAL_GROUPS: Array<{ k: "residential" | "operation" | "care" | "administration"; items: NavKey[] }> = [
  { k: "residential", items: RESIDENTIAL },

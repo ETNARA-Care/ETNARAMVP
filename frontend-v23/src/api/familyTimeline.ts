@@ -6,6 +6,8 @@ export interface FamilyRecipient {
   firstName: string;
   lastName: string;
   preferredName: string | null;
+  /** 177 (hogares F5): hogar y habitación de su familiar. Solo llega en hogares. */
+  residence?: { establishment: string | null; room: string | null };
 }
 
 export interface FamilyTimelineItem {
@@ -22,6 +24,8 @@ export interface FamilyTimelineItem {
    */
   /** availableUntil (v2): fin del plazo de conservación; después nadie la ve. */
   photo?: { visible: boolean; reference?: string; availableUntil?: string };
+  /** 177 (hogares F5): campos de una lista cerrada para traducir el resumen (español e inglés). */
+  fields?: Record<string, string | number>;
 }
 
 export async function listMyCareRecipients(token: string): Promise<FamilyRecipient[]> {

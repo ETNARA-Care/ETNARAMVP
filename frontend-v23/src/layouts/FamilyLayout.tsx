@@ -1,3 +1,4 @@
+import { isResidentialOrganization } from "@/features/residential/modality";
 import { Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Home, HeartPulse, CalendarDays, MessageCircle, MoreHorizontal } from "lucide-react";
@@ -11,6 +12,7 @@ import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
 
 export function FamilyLayout() {
   const { user, organizations, logout, activeOrganization } = useAuth();
+  const residential = isResidentialOrganization(activeOrganization);
   const { t } = useTranslation("shell");
   return (
     <FamilyRecipientProvider>
@@ -39,7 +41,8 @@ export function FamilyLayout() {
       <PortalBottomNav tabs={[
         { to: "/family/today", icon: Home, label: t("family.items.home") },
         { to: "/family/activity", icon: HeartPulse, label: t("family.items.care") },
-        { to: "/family/history", icon: CalendarDays, label: t("family.items.calendar") },
+        // 177 (hogares F5, D5): en un hogar la familia no tiene calendario de visitas (sin turnos ni horarios del personal).
+        ...(residential ? [] : [{ to: "/family/history", icon: CalendarDays, label: t("family.items.calendar") }]),
         { to: "/family/messages", icon: MessageCircle, label: t("family.items.messages") },
         { to: "/family/profile", icon: MoreHorizontal, label: t("family.items.more") },
       ]} />

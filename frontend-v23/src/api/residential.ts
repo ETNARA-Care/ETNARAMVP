@@ -8,6 +8,13 @@ export interface ResidentialOverview {
   planResidentLimit: number;
   overPlanLimit: boolean;
   features: Array<{ code: "HOGAR_CALENDARIO" | "HOGAR_ASIGNACIONES" | "HOGAR_PONCHES" | "DEMO_ENVIRONMENT"; enabled: boolean }>;
+  /** 177 (F5): panel completo. Ocupación siempre; asistencia con HOGAR_PONCHES y asignaciones con HOGAR_ASIGNACIONES (si no, null). */
+  panel?: ResidentialPanel;
+}
+export interface ResidentialPanel {
+  occupancy: ResidentialOccupancy & { establishments: Array<{ id: string; name: string } & Partial<ResidentialOccupancy>> };
+  attendance: { present: Array<{ workerName: string | null; establishment: string; since: string }>; pendingReview: number; openAlerts: number } | null;
+  assignments: { ongoingShifts: number; uncovered: Array<{ careRecipientId: string; name: string; establishment: string }>; openCoverageAlerts: number } | null;
 }
 
 export function getResidentialOverview(organizationId: string, token: string): Promise<{ overview: ResidentialOverview }> {
