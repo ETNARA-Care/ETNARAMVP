@@ -1,0 +1,100 @@
+{
+  "org": {
+    "agency": {
+      "the": "the agency",
+      "this": "this agency",
+      "thisCap": "This agency",
+      "of": "of the agency"
+    },
+    "home": {
+      "the": "the care home",
+      "this": "this care home",
+      "thisCap": "This care home",
+      "of": "of the care home"
+    },
+    "practice": {
+      "the": "the practice",
+      "this": "this practice",
+      "thisCap": "This practice",
+      "of": "of the practice"
+    }
+  },
+  "features": {
+    "title": "Pilot features",
+    "activeCount": "{{active}} of {{total}} on",
+    "intro": "Off by default. Only {{orgThe}} in the pilot sees them. Every change asks for a reason and is kept in the history.",
+    "loadFailed": "Could not be loaded.",
+    "on": "On",
+    "off": "Off",
+    "stateOn": "on",
+    "stateOff": "off",
+    "activate": "Turn on",
+    "deactivate": "Turn off",
+    "requiresFinanzas": "Requires Finance to be on.",
+    "switchAria": "{{title}}: {{state}}. {{action}} (asks for a reason)",
+    "confirmTitle": "{{action}} {{title}} for {{orgThis}}",
+    "photosLegalHolds": "{{orgThisCap}} has photos under a legal retention obligation. Turning the module off keeps them, it does not delete them, and the administration {{orgOf}} can keep reviewing or releasing them.",
+    "finanzasOffWithBilling": "Premium Billing will become read-only: the history is kept, with no new invoices.",
+    "reason": "Reason (required)",
+    "cancel": "Cancel",
+    "history": "History ({{count}})",
+    "historyActivated": "{{title}} turned on",
+    "historyDeactivated": "{{title}} turned off",
+    "toastActivated": "Feature turned on.",
+    "toastDeactivatedHolds": "Feature turned off. Photos under legal retention are kept and the administration {{orgOf}} can keep reviewing them.",
+    "toastDeactivated": "Feature turned off.",
+    "errorRequiresFinanzas": "Billing requires Finance to be on.",
+    "errorNotForModality": "This feature does not exist for this type of organization.",
+    "errorSave": "The change could not be saved."
+  },
+  "labels": {
+    "SMARTMATCH": {
+      "title": "SmartMatch",
+      "detail": "Opportunities, applications and shifts from SmartMatch."
+    },
+    "EN_CAMINO": {
+      "title": "On the way and “I've arrived”",
+      "detail": "Departure notice, declared delays and arrival with location."
+    },
+    "FINANZAS": {
+      "title": "Finance",
+      "detail": "Services and rates {{orgOf}}. ETNARA Central only turns it on or off: it sees no amounts or financial data."
+    },
+    "FACTURACION": {
+      "title": "Premium Billing",
+      "detail": "Invoices {{orgOf}} to its clients. Requires Finance. ETNARA Central only turns it on or off and designates the permissions manager: it sees no invoices, rates or amounts."
+    },
+    "SHIFT_REPORTS": {
+      "title": "Shift report",
+      "detail": "A report for each visit with its real records, reviewed and approved by {{orgThe}}. ETNARA Central only turns it on or off: it does not see report content."
+    },
+    "PUSH_NOTIFICATIONS": {
+      "title": "Phone notifications",
+      "detail": "Push notices {{orgOf}} to people who turn them on in their phone (general text, no names or health data). ETNARA Central only turns it on or off: it sees neither the notices nor the phones."
+    },
+    "CONTRACTS": {
+      "title": "Contracts",
+      "detail": "Contract with ETNARA, electronic signature by the designated representative and terms by role, only in {{orgThis}}. Also needs the contracts module on in the server; it does not publish documents or skip legal approval. Turning it off prevents new acceptances and does not delete contracts or records."
+    },
+    "ACTIVITY_PHOTOS": {
+      "title": "Activity photos",
+      "detail": "Caregivers' photos, reviewed by {{orgThe}} before the family sees them, with consent. ETNARA Central only turns it on or off: it sees neither the photos nor the consents."
+    },
+    "HOGAR_CALENDARIO": {
+      "title": "Care home · Calendar",
+      "detail": "Administrative calendar of the care home. No clinical features."
+    },
+    "HOGAR_ASIGNACIONES": {
+      "title": "Care home · Resident assignment",
+      "detail": "Administrative assignment of residents to the care home staff."
+    },
+    "HOGAR_PONCHES": {
+      "title": "Care home · Time clock",
+      "detail": "Staff clock-in and clock-out with the facility's weekly code."
+    },
+    "DEMO_ENVIRONMENT": {
+      "title": "Demo environment",
+      "detail": "Shows the “Demo environment — Fictitious data” banner across the care home portal. Only for demo care homes."
+    }
+  }
+}

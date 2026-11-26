@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import ts from "typescript";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 async function load(path) {
@@ -51,7 +52,7 @@ test("panel base: solo hogares, solo recuentos y estado de módulos; sin datos c
   assert.match(panel, /if \(!residential\) return <Navigate to="\/agency" replace \/>/);
   assert.match(panel, /getResidentialOverview/);
   assert.doesNotMatch(panel, /diagn|medic|clínic|first_name|last_name/i);
-  assert.match(panel, /Nada se bloquea/);
+  assert.match(read("src/i18n/locales/es/residential.json"), /Nada se bloquea/); // F0.1: texto en el catálogo
 });
 
 test("franja de demostración: solo con DEMO_ENVIRONMENT, en los tres portales de la organización", () => {
@@ -67,8 +68,8 @@ test("ETNARA Central muestra los interruptores de hogar (apagados por defecto; m
   const api = read("src/api/platformOrganizations.ts");
   assert.match(api, /export type ResidentialFeatureCode = "HOGAR_CALENDARIO" \| "HOGAR_ASIGNACIONES" \| "HOGAR_PONCHES" \| "DEMO_ENVIRONMENT";/);
   assert.match(api, /setOrganizationFeature\(organizationId: string, code: CentralFeatureCode,/);
-  for (const code of ["HOGAR_CALENDARIO", "HOGAR_ASIGNACIONES", "HOGAR_PONCHES", "DEMO_ENVIRONMENT"]) assert.match(card, new RegExp(`${code}: \\{ title: "`));
-  assert.match(card, /data\.features\.filter\(\(f\) => f\.code in LABELS\)/);
+  for (const code of ["HOGAR_CALENDARIO", "HOGAR_ASIGNACIONES", "HOGAR_PONCHES", "DEMO_ENVIRONMENT"]) assert.match(centralEs, new RegExp(`"${code}": \\{\\s*"title": "`));
+  assert.match(card, /data\.features\.filter\(\(f\) => isKnownFeature\(f\.code\)\)/);
   assert.match(card, /FEATURE_NOT_AVAILABLE_FOR_MODALITY/);
   // Sigue habiendo un solo punto de escritura, con motivo obligatorio (mismo flujo que los demás interruptores).
   assert.equal((card.match(/setOrganizationFeature\(/g) ?? []).length, 1);

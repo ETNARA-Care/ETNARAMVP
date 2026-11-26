@@ -1,0 +1,100 @@
+{
+  "org": {
+    "agency": {
+      "the": "la agencia",
+      "this": "esta agencia",
+      "thisCap": "Esta agencia",
+      "of": "de la agencia"
+    },
+    "home": {
+      "the": "el hogar",
+      "this": "este hogar",
+      "thisCap": "Este hogar",
+      "of": "del hogar"
+    },
+    "practice": {
+      "the": "la práctica",
+      "this": "esta práctica",
+      "thisCap": "Esta práctica",
+      "of": "de la práctica"
+    }
+  },
+  "features": {
+    "title": "Funciones piloto",
+    "activeCount": "{{active}} de {{total}} activas",
+    "intro": "Apagadas por defecto. Solo {{orgThe}} piloto las ve. Cada cambio pide un motivo y queda en el historial.",
+    "loadFailed": "No se pudieron cargar.",
+    "on": "Activa",
+    "off": "Apagada",
+    "stateOn": "activa",
+    "stateOff": "apagada",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "requiresFinanzas": "Requiere Finanzas activo.",
+    "switchAria": "{{title}}: {{state}}. {{action}} (pide motivo)",
+    "confirmTitle": "{{action}} {{title}} para {{orgThis}}",
+    "photosLegalHolds": "{{orgThisCap}} tiene fotografías sujetas a una obligación legal de conservación. Al apagar el módulo se conservan, no se eliminan, y la administración {{orgOf}} podrá seguir revisándolas o levantándolas.",
+    "finanzasOffWithBilling": "Facturación Premium quedará en modo consulta: el historial se conserva, sin nuevas facturas.",
+    "reason": "Motivo (obligatorio)",
+    "cancel": "Cancelar",
+    "history": "Historial ({{count}})",
+    "historyActivated": "{{title}} activada",
+    "historyDeactivated": "{{title}} desactivada",
+    "toastActivated": "Función activada.",
+    "toastDeactivatedHolds": "Función desactivada. Las fotografías con retención legal se conservan y la administración {{orgOf}} puede seguir revisándolas.",
+    "toastDeactivated": "Función desactivada.",
+    "errorRequiresFinanzas": "Facturación requiere Finanzas activo.",
+    "errorNotForModality": "Esta función no existe para este tipo de organización.",
+    "errorSave": "No se pudo guardar el cambio."
+  },
+  "labels": {
+    "SMARTMATCH": {
+      "title": "SmartMatch",
+      "detail": "Oportunidades, postulaciones y turnos desde SmartMatch."
+    },
+    "EN_CAMINO": {
+      "title": "En camino y «Llegué»",
+      "detail": "Aviso de salida, retrasos declarados y llegada con ubicación."
+    },
+    "FINANZAS": {
+      "title": "Finanzas",
+      "detail": "Servicios y tarifas {{orgOf}}. ETNARA central solo enciende o apaga: no ve importes ni datos financieros."
+    },
+    "FACTURACION": {
+      "title": "Facturación Premium",
+      "detail": "Facturas {{orgOf}} a sus clientes. Requiere Finanzas. ETNARA central solo enciende, apaga y designa al gestor de permisos: no ve facturas, tarifas ni importes."
+    },
+    "SHIFT_REPORTS": {
+      "title": "Informe de turno",
+      "detail": "Informe de cada visita con sus registros reales, revisado y aprobado por {{orgThe}}. ETNARA central solo enciende o apaga: no ve el contenido de los informes."
+    },
+    "PUSH_NOTIFICATIONS": {
+      "title": "Notificaciones en el teléfono",
+      "detail": "Avisos push {{orgOf}} a las personas que los activen en su teléfono (texto general, sin nombres ni datos de salud). ETNARA central solo enciende o apaga: no ve los avisos ni los teléfonos."
+    },
+    "CONTRACTS": {
+      "title": "Contratos",
+      "detail": "Contrato con ETNARA, firma electrónica de la representante designada y términos por función, solo en {{orgThis}}. Necesita además el módulo de contratos encendido en el servidor; no publica documentos ni salta la aprobación jurídica. Apagarlo impide nuevas aceptaciones y no borra contratos ni constancias."
+    },
+    "ACTIVITY_PHOTOS": {
+      "title": "Fotos de actividades",
+      "detail": "Fotos de los cuidadores, revisadas por {{orgThe}} antes de que las vea la familia, con consentimiento. ETNARA central solo enciende o apaga: no ve las fotos ni los consentimientos."
+    },
+    "HOGAR_CALENDARIO": {
+      "title": "Hogar · Calendario",
+      "detail": "Calendario administrativo del hogar. Sin funciones clínicas."
+    },
+    "HOGAR_ASIGNACIONES": {
+      "title": "Hogar · Asignación de residentes",
+      "detail": "Asignación administrativa de residentes al personal del hogar."
+    },
+    "HOGAR_PONCHES": {
+      "title": "Hogar · Ponches",
+      "detail": "Entrada y salida del personal con el código semanal del establecimiento."
+    },
+    "DEMO_ENVIRONMENT": {
+      "title": "Entorno de demostración",
+      "detail": "Muestra la franja «Entorno de demostración — Datos ficticios» en todo el portal del hogar. Solo para hogares de demostración."
+    }
+  }
+}

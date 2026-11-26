@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { photoErrorKey } from "../src/features/activityPhotos/photoErrors.ts";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const code = (p) => read(p).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
@@ -66,7 +67,7 @@ test("§5 Central: advertencia (sí/no) al apagar fotos con retenciones legales;
   assert.match(card, /editing\.code === "ACTIVITY_PHOTOS" && !editing\.enabled && legalHolds\?\.org === organizationId && legalHolds\.value && \(/);
   assert.match(card, /if \(!editing \|\| editing\.code !== "ACTIVITY_PHOTOS" \|\| editing\.enabled\) return;[\s\S]{0,200}checkActivityPhotosLegalHolds\(organizationId, token\)/, "solo se pregunta al ir a apagar");
   assert.match(card, /photos-legal-holds-warning/);
-  assert.match(card, /se conservan, no se eliminan/);
+  assert.match(centralEs, /se conservan, no se eliminan/);
   assert.doesNotMatch(card, /blocked = f\.code === "ACTIVITY_PHOTOS"/, "el interruptor de fotos no se deshabilita");
   assert.match(code("src/api/platformOrganizations.ts"), /\/features\/ACTIVITY_PHOTOS\/legal-hold-check`/);
 });

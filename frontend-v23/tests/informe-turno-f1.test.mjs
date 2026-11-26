@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const app = read("src/App.tsx");
@@ -16,7 +17,7 @@ test("Informe de Turno F1 only where ETNARA central turned SHIFT_REPORTS on (age
   assert.match(detail, /\{shiftReports && organizationId && shiftId && shift\.care_recipient_id && <ShiftReportPanel/);
   assert.match(shifts, /\{shiftReports && \(\s*<Link to="\/agency\/shift-reports"/);
   assert.doesNotMatch(app, /family\/[^"]*shift-report/); // F3 not built here
-  assert.match(read("src/features/platform/OrganizationFeaturesCard.tsx"), /SHIFT_REPORTS: \{ title: "Informe de turno"/);
+  assert.match(centralEs, /"SHIFT_REPORTS": \{\s*"title": "Informe de turno"/);
 });
 
 test("the report shows records only; empty sections say so; free text untouched", () => {

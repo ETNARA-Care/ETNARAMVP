@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
+const centralEs = readFileSync(new URL("../src/i18n/locales/es/central.json", import.meta.url), "utf8"); // F0.1: textos de Central en el catálogo
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -69,8 +70,8 @@ test("«Tarifas del equipo» stays and points to Finanzas; overlapping periods g
 
 test("ETNARA central can switch FINANZAS, and unknown switches no longer break its card", () => {
   const card = read("src/features/platform/OrganizationFeaturesCard.tsx");
-  assert.match(card, /FINANZAS: \{ title: "Finanzas"/);
-  assert.match(card, /no ve importes ni datos financieros/);
-  assert.match(card, /data\.features\.filter\(\(f\) => f\.code in LABELS\)/);
-  assert.match(card, /data\.history\.filter\(\(h\) => h\.code in LABELS\)/);
+  assert.match(centralEs, /"FINANZAS": \{\s*"title": "Finanzas"/);
+  assert.match(centralEs, /no ve importes ni datos financieros/);
+  assert.match(card, /data\.features\.filter\(\(f\) => isKnownFeature\(f\.code\)\)/);
+  assert.match(card, /data\.history\.filter\(\(h\) => isKnownFeature\(h\.code\)\)/);
 });

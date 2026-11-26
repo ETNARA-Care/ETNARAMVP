@@ -359,7 +359,7 @@ export function PlatformOrganizationsPage() {
                 </div>
               ))}
             </div>
-            {selectedOrg && <OrganizationFeaturesCard organizationId={selectedOrg.id}/>}
+            {selectedOrg && <OrganizationFeaturesCard organizationId={selectedOrg.id} organizationType={selectedOrg.type}/>}
             <section className="rounded-[1.25rem] border border-[var(--color-border)] bg-white p-4">
               <h3 className="mb-1 font-sans text-[length:0.9375rem] font-semibold">Establecimientos</h3>
               {overview.locations.length ? overview.locations.map((location) => (
