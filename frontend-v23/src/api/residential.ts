@@ -1,3 +1,4 @@
+import i18n from "@/i18n";
 import { apiClient } from "./client";
 
 /** 170 · Panel base del hogar: solo recuentos administrativos y el estado de los interruptores de hogar. */
@@ -64,27 +65,30 @@ export const residentialApi = {
   close: (o: string, id: string, reason: string, t: string) => apiClient.post<{ closure: { closed: boolean; roomsArchived: number; unitsArchived: number; staffLinksArchived: number } }>(`${base(o)}/establishments/${id}/close`, { reason }, t),
 };
 
-/** Mensajes para los códigos de las reglas de la base de datos (171). */
-export const RESIDENTIAL_ERROR_MESSAGES: Record<string, string> = {
-  RESIDENTIAL_NAME_TAKEN: "Ya existe una unidad o habitación activa con ese nombre en este establecimiento.",
-  RESIDENTIAL_UNIT_HAS_ACTIVE_ROOMS: "Archiva o mueve primero las habitaciones activas de esta unidad.",
-  RESIDENTIAL_ROOM_HAS_RESIDENTS: "La habitación tiene residentes activos. Muévelos antes de archivarla.",
-  RESIDENTIAL_ROOM_LOCATION_IMMUTABLE: "Una habitación no puede pasar a otro establecimiento.",
-  RESIDENTIAL_UNIT_ARCHIVED: "La unidad está archivada.",
-  RESIDENTIAL_ROOM_ARCHIVED: "La habitación está archivada.",
-  RESIDENTIAL_ROOM_LOCATION_MISMATCH: "La habitación pertenece a otro establecimiento.",
-  RESIDENTIAL_ESTABLISHMENT_CLOSED: "El establecimiento está cerrado.",
-  RESIDENTIAL_ESTABLISHMENT_REQUIRED: "Indica el establecimiento del residente.",
-  RESIDENTIAL_CLOSURE_REQUIRED: "Los establecimientos de un hogar se cierran con «Cerrar establecimiento» (Hogar → Establecimientos y habitaciones).",
-  RESIDENTIAL_TRANSFER_ACTIVE_SHIFTS: "El residente tiene turnos vigentes o futuros en su establecimiento actual. Cancélalos o reasígnalos antes de trasladarlo a otro establecimiento.",
-  RESIDENTIAL_CLOSURE_FUTURE_SHIFTS: "Hay turnos vigentes o futuros en este establecimiento. Cancélalos antes de cerrarlo.",
-  RESIDENTIAL_CLOSURE_ACTIVE_ASSIGNMENTS: "Hay asignaciones activas en este establecimiento.",
-  RESIDENTIAL_CLOSURE_ACTIVE_RESIDENTS: "Hay residentes activos en este establecimiento. Trasládalos o dalos de baja antes de cerrarlo.",
-  RESIDENTIAL_REASON_REQUIRED: "Escribe el motivo del cambio.",
-  RESIDENTIAL_MANAGER_REQUIRED: "Solo la administración del hogar puede hacer este cambio.",
-  INVALID_INPUT: "Revisa los datos: hay un valor no válido.",
-};
+/** Códigos de las reglas de la base de datos (171) con mensaje propio; los textos están en el catálogo «residential» (es/en). */
+export const RESIDENTIAL_ERROR_CODES = [
+  "RESIDENTIAL_NAME_TAKEN",
+  "RESIDENTIAL_UNIT_HAS_ACTIVE_ROOMS",
+  "RESIDENTIAL_ROOM_HAS_RESIDENTS",
+  "RESIDENTIAL_ROOM_LOCATION_IMMUTABLE",
+  "RESIDENTIAL_UNIT_ARCHIVED",
+  "RESIDENTIAL_ROOM_ARCHIVED",
+  "RESIDENTIAL_ROOM_LOCATION_MISMATCH",
+  "RESIDENTIAL_ESTABLISHMENT_CLOSED",
+  "RESIDENTIAL_ESTABLISHMENT_REQUIRED",
+  "RESIDENTIAL_CLOSURE_REQUIRED",
+  "RESIDENTIAL_TRANSFER_ACTIVE_SHIFTS",
+  "RESIDENTIAL_CLOSURE_FUTURE_SHIFTS",
+  "RESIDENTIAL_CLOSURE_ACTIVE_ASSIGNMENTS",
+  "RESIDENTIAL_CLOSURE_ACTIVE_RESIDENTS",
+  "RESIDENTIAL_REASON_REQUIRED",
+  "RESIDENTIAL_MANAGER_REQUIRED",
+  "INVALID_INPUT",
+] as const;
+export type ResidentialErrorCode = (typeof RESIDENTIAL_ERROR_CODES)[number];
 export function residentialErrorMessage(error: unknown): string {
   const code = (error as { code?: string } | null)?.code;
-  return (code && RESIDENTIAL_ERROR_MESSAGES[code]) || "No se pudo guardar el cambio.";
+  return code && (RESIDENTIAL_ERROR_CODES as readonly string[]).includes(code)
+    ? i18n.t(`residential:establishments.errors.${code as ResidentialErrorCode}`)
+    : i18n.t("residential:establishments.errors.fallback");
 }

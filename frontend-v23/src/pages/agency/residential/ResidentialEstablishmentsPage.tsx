@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
@@ -17,6 +18,7 @@ export function ResidentialEstablishmentsPage() {
   const { activeOrganization } = useAuth();
   const organizationId = activeOrganization?.id;
   const residential = isResidentialOrganization(activeOrganization);
+  const { t } = useTranslation("residential");
   // Protección de cambio de organización (como el panel, A4): la lista va ligada a la organización que la pidió.
   const [state, setState] = useState<OrganizationScoped<ResidentialEstablishmentSummary[]> | null>(null);
   const latest = useRef(createLatestRequest());
@@ -44,9 +46,9 @@ export function ResidentialEstablishmentsPage() {
   if (!residential) return <Navigate to="/agency" replace />;
   return (
     <div className="flex flex-col gap-6" data-testid="residential-establishments">
-      <PageHeader title="Establecimientos y habitaciones" description="Unidades, habitaciones, camas y ubicación de residentes de cada establecimiento." />
+      <PageHeader title={t("establishments.title")} description={t("establishments.description")} />
       {error ? <ErrorState kind="server" onRetry={() => { setState(null); void load(); }} /> : items === null ? <Skeleton className="h-32" /> : items.length === 0 ? (
-        <EmptyState title="Todavía no hay establecimientos" description="Créalos en Configuración → Establecimientos. La unidad «General» se crea sola." />
+        <EmptyState title={t("establishments.emptyTitle")} description={t("establishments.emptyDetail")} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {items.map((e) => (
@@ -57,7 +59,7 @@ export function ResidentialEstablishmentsPage() {
                     <h2 className="font-display text-[var(--text-h3)] text-[var(--color-text-primary)]">{e.name}</h2>
                     {e.address && <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{e.address}</p>}
                   </div>
-                  {e.status === "closed" ? <Badge tone="neutral">Cerrado</Badge> : e.occupancy.overCapacity ? <Badge tone="warning">Supera las camas</Badge> : null}
+                  {e.status === "closed" ? <Badge tone="neutral">{t("establishments.closed")}</Badge> : e.occupancy.overCapacity ? <Badge tone="warning">{t("establishments.overCapacityBadge")}</Badge> : null}
                 </div>
                 <OccupancySummary occupancy={e.occupancy} compact />
               </Card>

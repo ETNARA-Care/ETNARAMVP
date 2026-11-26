@@ -12,6 +12,10 @@ const list = read("src/pages/agency/residential/ResidentialEstablishmentsPage.ts
 const detail = read("src/pages/agency/residential/ResidentialEstablishmentPage.tsx");
 const occ = read("src/pages/agency/residential/OccupancySummary.tsx");
 const pages = list + detail + occ;
+// F0.1/F1 (26-nov): los textos viven en el catálogo «residential» (es/en).
+const esCat = JSON.parse(read("src/i18n/locales/es/residential.json")).establishments;
+const enCat = JSON.parse(read("src/i18n/locales/en/residential.json")).establishments;
+const esText = JSON.stringify(esCat);
 
 test("rutas y menú de F1 solo para hogares", () => {
   assert.match(modality, /RESIDENTIAL_ESTABLISHMENTS_PATH = "\/agency\/hogar\/establecimientos"/);
@@ -32,24 +36,30 @@ test("usa solo el backend real (cliente compartido, rutas /residential) y vuelve
 });
 
 test("camas: nunca se presentan como capacidad autorizada; superarlas solo avisa", () => {
-  assert.match(occ, /No equivale a la capacidad autorizada por el Departamento de la Familia/);
-  assert.doesNotMatch(pages.replace(/No equivale a la capacidad autorizada por el Departamento de la Familia/g, ""), /capacidad autorizada|autorizad[ao] por el Departamento/i);
-  assert.match(occ, /Es solo un aviso: no se bloquea nada/);
-  assert.match(detail, /Puedes guardar igualmente: es solo un aviso/);
-  assert.match(occ, /"Sin configurar"/);
+  assert.match(esCat.occupancy.disclaimer, /No equivale a la capacidad autorizada por el Departamento de la Familia/);
+  assert.match(enCat.occupancy.disclaimer, /not the capacity authorized by the Department of the Family/);
+  assert.doesNotMatch(esText.replace(/No equivale a la capacidad autorizada por el Departamento de la Familia/g, ""), /capacidad autorizada|autorizad[ao] por el Departamento/i);
+  assert.match(esCat.occupancy.overCapacity, /Es solo un aviso: no se bloquea nada/);
+  assert.match(esCat.dialogs.fullWarning, /Puedes guardar igualmente: es solo un aviso/);
+  assert.equal(esCat.occupancy.notConfigured, "Sin configurar");
+  assert.match(occ, /t\("establishments\.occupancy\.disclaimer"\)/);
+  assert.match(detail, /t\("establishments\.dialogs\.fullWarning"\)/);
 });
 
 test("geocerca: 50–300 m, motivo obligatorio, sin rastreo ni ubicaciones de personas", () => {
   assert.match(detail, /r >= 50 && r <= 300/);
   assert.match(detail, /reason\.trim\(\)\.length >= 3/);
-  assert.match(detail, /nunca impide un ponche, no rastrea y no guarda la ubicación de las personas/);
+  assert.match(esCat.geofence.explain, /nunca impide un ponche, no rastrea y no guarda la ubicación de las personas/);
+  assert.match(enCat.geofence.explain, /never blocks a clock-in, does not track and does not store people's location/);
+  assert.match(detail, /t\("establishments\.geofence\.explain"\)/);
   assert.doesNotMatch(detail, /navigator\.geolocation/);
 });
 
 test("cierre: comprobación previa, motivo y confirmación escrita; nada se borra", () => {
   assert.match(detail, /residentialApi\.closureCheck/);
   assert.match(detail, /check\?\.canClose === true && reason\.trim\(\)\.length >= 3 && typed\.trim\(\) === name\.trim\(\)/);
-  assert.match(detail, /No se borra nada/);
+  assert.match(esCat.closure.explain, /No se borra nada/);
+  assert.match(esCat.closure.willArchive, /No se borra nada/);
 });
 
 test("nunca muestra piezas técnicas ni datos clínicos", () => {
@@ -58,16 +68,22 @@ test("nunca muestra piezas técnicas ni datos clínicos", () => {
 });
 
 test("errores de las reglas del backend con mensajes claros", () => {
-  for (const code of ["RESIDENTIAL_NAME_TAKEN", "RESIDENTIAL_UNIT_HAS_ACTIVE_ROOMS", "RESIDENTIAL_ROOM_HAS_RESIDENTS", "RESIDENTIAL_CLOSURE_FUTURE_SHIFTS", "RESIDENTIAL_CLOSURE_ACTIVE_RESIDENTS", "RESIDENTIAL_CLOSURE_REQUIRED"]) assert.match(api, new RegExp(`${code}: "`));
+  for (const code of ["RESIDENTIAL_NAME_TAKEN", "RESIDENTIAL_UNIT_HAS_ACTIVE_ROOMS", "RESIDENTIAL_ROOM_HAS_RESIDENTS", "RESIDENTIAL_CLOSURE_FUTURE_SHIFTS", "RESIDENTIAL_CLOSURE_ACTIVE_RESIDENTS", "RESIDENTIAL_CLOSURE_REQUIRED"]) {
+    assert.match(api, new RegExp(`"${code}",`));
+    assert.ok(esCat.errors[code] && enCat.errors[code], code);
+  }
+  assert.match(api, /i18n\.t\(`residential:establishments\.errors\.\$\{code as ResidentialErrorCode\}`\)/);
 });
 
 test("F1 171: Configuración (pantalla antigua) remite al cierre del hogar con un mensaje claro", () => {
   const page = read("src/pages/agency/AgencyOrganizationSettingsPage.tsx");
   const modality = read("src/features/residential/modality.ts");
   assert.match(page, /isResidentialOrganization\(activeOrganization\)/);
-  assert.match(page, /RESIDENTIAL_CLOSURE_REQUIRED" \? RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE/);
-  assert.match(page, /residential\s*\?[\s\S]*RESIDENTIAL_ESTABLISHMENTS_PATH[\s\S]*Cerrar establecimiento[\s\S]*: <Button[^>]*>[\s\S]*Archivar/);
-  assert.match(modality, /RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE =[\s\S]*Cerrar establecimiento/);
+  assert.match(page, /RESIDENTIAL_CLOSURE_REQUIRED" \? i18n\.t\(RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE_KEY\)/);
+  assert.match(page, /residential\s*\?[\s\S]*RESIDENTIAL_ESTABLISHMENTS_PATH[\s\S]*establishments\.settings\.closeButton[\s\S]*: <Button[^>]*>[\s\S]*Archivar/);
+  assert.match(modality, /RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE_KEY = "residential:establishments\.settings\.closureRequired"/);
+  assert.match(esCat.settings.closureRequired, /Cerrar establecimiento/);
+  assert.match(enCat.settings.closureRequired, /Close facility/);
 });
 
 test("F1 171: sin tope de camas por habitación en el portal; mensaje de traslado con turnos", () => {
@@ -76,7 +92,8 @@ test("F1 171: sin tope de camas por habitación en el portal; mensaje de traslad
   assert.doesNotMatch(page, /bedValue <= 20\b/);
   assert.doesNotMatch(page, /Entre 1 y 20/);
   assert.match(page, /bedValue >= 1/);
-  assert.match(api, /RESIDENTIAL_TRANSFER_ACTIVE_SHIFTS: "/);
+  assert.match(api, /"RESIDENTIAL_TRANSFER_ACTIVE_SHIFTS",/);
+  assert.match(esCat.errors.RESIDENTIAL_TRANSFER_ACTIVE_SHIFTS, /turnos vigentes o futuros/);
 });
 
 // Protección de cambio de organización en las pantallas de establecimientos (25-nov, como A4 en el panel).
@@ -143,3 +160,26 @@ test("F1 171: sin tope de camas por habitación en el portal; mensaje de traslad
     assert.equal((detail.match(/return \(\) => \{ active = false; \};/g) ?? []).length, 4);
   });
 }
+
+// F1 (26-nov): traducción completa es/en de las pantallas de F1.
+test("F1: las pantallas de establecimientos no llevan textos visibles escritos en el código", () => {
+  const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  for (const [name, src] of [["lista", list], ["detalle", detail], ["ocupación", occ]]) {
+    const body = strip(src);
+    assert.doesNotMatch(body, /[^=]>[ \t]*[A-ZÁÉÍÓÚ¿«][a-záéíóúñ]+[^<{]*</, `${name}: texto entre etiquetas`); // «=>» (tipos) no cuenta
+    assert.doesNotMatch(body, /(label|title|hint|description|error)=\{?["`][A-ZÁÉÍÓÚ¿«]/, `${name}: atributo con texto`);
+    assert.doesNotMatch(body, /toast\.show\("[A-ZÁÉÍÓÚ]/, `${name}: aviso con texto`);
+    assert.match(body, /useTranslation\("residential"\)/);
+  }
+  assert.doesNotMatch(strip(detail), /toLocaleString\("es-PR"\)/, "fechas en el idioma activo");
+});
+
+test("F1: el catálogo inglés de establecimientos tiene las mismas claves y los mismos marcadores", () => {
+  const flat = (o, p = "") => Object.entries(o).flatMap(([k, v]) => (typeof v === "object" ? flat(v, `${p}${k}.`) : [[`${p}${k}`, v]]));
+  const es = new Map(flat(esCat)), en = new Map(flat(enCat));
+  assert.deepEqual([...en.keys()].sort(), [...es.keys()].sort());
+  const marks = (v) => (String(v).match(/{{\w+}}/g) ?? []).sort().join();
+  for (const [k, v] of es) assert.equal(marks(en.get(k)), marks(v), k);
+  for (const [k, v] of en) assert.doesNotMatch(String(v), /\b(habitación|establecimiento|residentes|camas|unidad)\b/i, `en.${k} en español`);
+  assert.equal(JSON.parse(read("src/i18n/locales/en/shell.json")).agency.items.residentialEstablishments, "Facilities and rooms");
+});

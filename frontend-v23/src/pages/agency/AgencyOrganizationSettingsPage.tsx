@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isIndependentOrganization } from "@/features/practice/modality";
-import { isResidentialOrganization, RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE, RESIDENTIAL_ESTABLISHMENTS_PATH } from "@/features/residential/modality";
+import { isResidentialOrganization, RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE_KEY, RESIDENTIAL_ESTABLISHMENTS_PATH } from "@/features/residential/modality";
+import i18n from "@/i18n";
 import { useNavigate } from "react-router-dom";
 import { Archive, Building2, LogOut, MapPin, Pencil, Plus, RefreshCcw, Settings2 } from "lucide-react";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Skeleton, useToast } from "@/components/ui";
@@ -70,7 +71,7 @@ export function AgencyOrganizationSettingsPage() {
       await updateEstablishment(organizationId, establishment.id, { status }, token);
       await load();
       toast.show(status === "archived" ? "Establecimiento archivado." : "Establecimiento reactivado.", "success");
-    } catch (e) { toast.show((e as { code?: string } | null)?.code === "RESIDENTIAL_CLOSURE_REQUIRED" ? RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE : "No pudimos cambiar el estado.", "danger"); }
+    } catch (e) { toast.show((e as { code?: string } | null)?.code === "RESIDENTIAL_CLOSURE_REQUIRED" ? i18n.t(RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE_KEY) : "No pudimos cambiar el estado.", "danger"); }
     finally { setSaving(false); }
   }
 
@@ -104,7 +105,7 @@ export function AgencyOrganizationSettingsPage() {
           {establishment.status === "active" && <Button icon={<Settings2 size={16} />} onClick={() => navigate(`/agency/settings/establishments/${establishment.id}`)}>Administrar</Button>}
           <Button variant="secondary" icon={<Pencil size={16} />} onClick={() => openEdit(establishment)}>Editar</Button>
           {residential
-            ? establishment.status === "active" && <Button variant="ghost" icon={<Archive size={16} />} onClick={() => navigate(`${RESIDENTIAL_ESTABLISHMENTS_PATH}/${establishment.id}`)}>Cerrar establecimiento</Button>
+            ? establishment.status === "active" && <Button variant="ghost" icon={<Archive size={16} />} onClick={() => navigate(`${RESIDENTIAL_ESTABLISHMENTS_PATH}/${establishment.id}`)}>{i18n.t("residential:establishments.settings.closeButton")}</Button>
             : <Button variant="ghost" icon={establishment.status === "active" ? <Archive size={16} /> : <RefreshCcw size={16} />} disabled={saving} onClick={() => void setEstablishmentStatus(establishment)}>{establishment.status === "active" ? "Archivar" : "Reactivar"}</Button>}
         </div>
       </Card>)}</div>}
