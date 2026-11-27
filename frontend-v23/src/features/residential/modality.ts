@@ -27,6 +27,9 @@ export const RESIDENTIAL_PANEL_PATH = "/agency/hogar";
 export const RESIDENTIAL_ESTABLISHMENTS_PATH = "/agency/hogar/establecimientos";
 /** 172 (F2): calendario semanal del establecimiento (solo hogares y solo con HOGAR_CALENDARIO). */
 export const RESIDENTIAL_SCHEDULE_PATH = "/agency/hogar/calendario";
+/** 173–175 (F4): asistencia del hogar (QR, revisión, correcciones, alertas) y «Ponchar» del personal (solo con HOGAR_PONCHES). */
+export const RESIDENTIAL_ATTENDANCE_PATH = "/agency/hogar/asistencia";
+export const CAREGIVER_PUNCH_PATH = "/caregiver/ponchar";
 
 /** D9: franja visible solo cuando ETNARA central encendió DEMO_ENVIRONMENT para esa organización. */
 export const DEMO_ENVIRONMENT_NOTICE = "Entorno de demostración — Datos ficticios";

@@ -53,7 +53,8 @@
       "documents": "Mis documentos",
       "residentialPanel": "Panel del hogar",
       "residentialEstablishments": "Establecimientos y habitaciones",
-      "residentialSchedule": "Calendario semanal"
+      "residentialSchedule": "Calendario semanal",
+      "residentialAttendance": "Asistencia"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",
@@ -73,7 +74,8 @@
       "offers": "Ofertas",
       "messages": "Mensajes",
       "more": "Más",
-      "mySchedule": "Mi horario"
+      "mySchedule": "Mi horario",
+      "punch": "Ponchar"
     },
     "goToAgency": "Ir a la agencia",
     "goToPractice": "Ir a Mi práctica",
