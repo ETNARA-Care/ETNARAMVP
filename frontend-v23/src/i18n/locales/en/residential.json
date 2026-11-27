@@ -666,6 +666,7 @@
       "network": "No connection to the server.",
       "ATTENDANCE_UNAVAILABLE": "Attendance is not available right now. Use the contingency sheet and tell the management.",
       "ATTENDANCE_NOT_AUTHORIZED": "That shift is not yours or is not accepted: you cannot punch on it.",
+      "ATTENDANCE_DUPLICATE_EVENT": "That punch was already recorded.",
       "ATTENDANCE_TOO_MANY_ATTEMPTS": "Too many failed attempts. Wait 15 minutes or ask the management for help.",
       "ATTENDANCE_CODE_NOT_AVAILABLE": "That code is not available yet or is not for this week.",
       "ATTENDANCE_CODE_KEY_RETIRED": "That code was issued with a retired key. Revoke it to generate a new one.",

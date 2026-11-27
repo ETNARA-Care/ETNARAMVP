@@ -666,6 +666,7 @@
       "network": "Sin conexión con el servidor.",
       "ATTENDANCE_UNAVAILABLE": "La asistencia no está disponible en este momento. Usa la hoja de contingencia y avisa a la administración.",
       "ATTENDANCE_NOT_AUTHORIZED": "Ese turno no es tuyo o no está aceptado: no puedes ponchar en él.",
+      "ATTENDANCE_DUPLICATE_EVENT": "Ese ponche ya se registró.",
       "ATTENDANCE_TOO_MANY_ATTEMPTS": "Demasiados intentos fallidos. Espera 15 minutos o pide ayuda a la administración.",
       "ATTENDANCE_CODE_NOT_AVAILABLE": "Ese código aún no está disponible o no es de esta semana.",
       "ATTENDANCE_CODE_KEY_RETIRED": "Ese código se emitió con una clave retirada. Revócalo para generar uno nuevo.",

@@ -31,6 +31,18 @@ export function parseQueue(raw: string | null): QueuedPunch[] {
     return Array.isArray(v) ? v.filter((x) => x && typeof x.clientEventId === "string" && typeof x.shiftId === "string" && !("location" in x)).slice(0, 50) : [];
   } catch { return []; }
 }
+/**
+ * 27-nov: ¿se quita de la cola un ponche que el servidor no aceptó? Solo con un rechazo definitivo (4xx salvo 408 y 429):
+ * reintentarlo daría el mismo resultado. Se conserva con un fallo de red, un bloqueo temporal (429), un tiempo agotado
+ * (408) o un error del servidor (5xx), para no perder nunca un ponche hecho sin conexión. La cola no se reintenta en
+ * bucle: solo al volver la señal o al abrir la pantalla.
+ */
+export function dropQueuedAfterError(error: unknown): boolean {
+  const e = error as { status?: number; isNetworkError?: boolean } | null;
+  if (!e || e.isNetworkError || typeof e.status !== "number" || e.status === 0) return false;
+  return e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429;
+}
+
 export function enqueue(queue: QueuedPunch[], item: QueuedPunch): QueuedPunch[] {
   return queue.some((q) => q.clientEventId === item.clientEventId) ? queue : [...queue, item].slice(-50);
 }

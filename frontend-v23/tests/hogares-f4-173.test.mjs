@@ -135,3 +135,15 @@ test("F4: catálogo inglés con las mismas claves y marcadores, sin español; to
   assert.equal(JSON.parse(read("src/i18n/locales/en/shell.json")).caregiver.items.punch, "Punch");
   assert.equal(JSON.parse(read("src/i18n/locales/es/shell.json")).agency.items.residentialAttendance, "Asistencia");
 });
+
+test("27-nov · la cola sin conexión nunca pierde un ponche por un error temporal del servidor", () => {
+  // Solo un rechazo definitivo (4xx salvo 408 y 429) lo quita; red, 5xx, 408 y 429 lo conservan.
+  assert.match(helpers, /export function dropQueuedAfterError\(error: unknown\): boolean \{/);
+  assert.match(helpers, /if \(!e \|\| e\.isNetworkError \|\| typeof e\.status !== "number" \|\| e\.status === 0\) return false;/);
+  assert.match(helpers, /return e\.status >= 400 && e\.status < 500 && e\.status !== 408 && e\.status !== 429;/);
+  // Al conservarlo se detiene el envío, para no mandar los siguientes antes que este; y ya no se quita sin preguntar.
+  assert.match(punch, /if \(\(e as \{ isNetworkError\?: boolean \}\)\.isNetworkError\) break;\s*\/\/[^\n]*\n\s*\/\/[^\n]*\n\s*if \(!dropQueuedAfterError\(e\)\) break;\s*rest = rest\.filter/);
+  assert.doesNotMatch(punch, /rechazado por el servidor: no se reintenta en bucle/);
+  // Sin reintentos en bucle: solo al volver la señal o al abrir la pantalla.
+  assert.doesNotMatch(punch, /setInterval\(/);
+});

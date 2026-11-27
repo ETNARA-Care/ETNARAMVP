@@ -6,7 +6,7 @@ import { getToken } from "@/auth/token";
 import { useOrgFeature } from "@/auth/orgFeatures";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { attendanceApi, attendanceErrorMessage, type MyAttendance, type Punch, type PunchInput, type PunchType } from "@/api/residentialAttendance";
-import { availablePunchTypes, enqueue, parseQueue, qrFromLink, QUEUE_KEY, type QueuedPunch } from "@/features/residential/attendance";
+import { availablePunchTypes, dropQueuedAfterError, enqueue, parseQueue, qrFromLink, QUEUE_KEY, type QueuedPunch } from "@/features/residential/attendance";
 import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
 import { isResidentialOrganization } from "@/features/residential/modality";
 
@@ -86,7 +86,10 @@ export function CaregiverPunchPage() {
         rest = rest.filter((q) => q.clientEventId !== item.clientEventId);
       } catch (e) {
         if ((e as { isNetworkError?: boolean }).isNetworkError) break;
-        rest = rest.filter((q) => q.clientEventId !== item.clientEventId); // rechazado por el servidor: no se reintenta en bucle
+        // Rechazo definitivo (4xx): se quita y no se reintenta en bucle. Un 5xx o un 429 no es un rechazo: se conserva y
+        // se detiene el envío, para no mandar los siguientes (p. ej. la salida) antes que este (la entrada).
+        if (!dropQueuedAfterError(e)) break;
+        rest = rest.filter((q) => q.clientEventId !== item.clientEventId);
       }
     }
     writeQueue(rest); setQueue(rest); await load();
