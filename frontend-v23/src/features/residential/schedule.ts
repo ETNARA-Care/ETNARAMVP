@@ -40,6 +40,19 @@ export function entriesByDay(weekStart: string, entries: readonly ScheduleEntry[
   return out;
 }
 
+/** Turnos individuales agrupados por el día local en que empiezan (solo lectura en la semana). */
+export function individualByDay<T extends { startsAt: string; shiftId: string }>(weekStart: string, shifts: readonly T[]): Map<string, T[]> {
+  const out = new Map(weekDays(weekStart).map((d) => [d, [] as T[]]));
+  for (const x of shifts) out.get(x.startsAt.slice(0, 10))?.push(x);
+  for (const list of out.values()) list.sort((a, b) => a.startsAt.localeCompare(b.startsAt) || a.shiftId.localeCompare(b.shiftId));
+  return out;
+}
+
+/** Turnos individuales implicados en algún aviso. */
+export function warnedShiftIds(warnings: ReadonlyArray<{ shiftIds?: string[] }>): Set<string> {
+  return new Set(warnings.flatMap((w) => w.shiftIds ?? []));
+}
+
 /** Minutos → «7.5 h» (hasta dos decimales, con el separador del idioma activo). */
 export function formatHours(minutes: number, language: string | undefined): string {
   const hours = Math.round((minutes / 60) * 100) / 100;

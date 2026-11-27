@@ -281,7 +281,8 @@
       "overlap": "{{name}} tiene dos turnos que se solapan.",
       "duplicate": "{{name}} aparece dos veces en el mismo turno.",
       "badge": "Revisar",
-      "publishBlocked": "Corrige los avisos antes de publicar: no se publica una semana con turnos solapados o duplicados."
+      "publishBlocked": "Corrige los avisos antes de publicar: no se publica una semana con turnos solapados o duplicados.",
+      "withIndividual": "(con un turno individual de «Turnos»)."
     },
     "summary": {
       "title": "Horas programadas",
@@ -291,7 +292,7 @@
       "byPerson": "Por persona",
       "byDay": "Por día",
       "none": "Nada programado",
-      "note": "Son horas planificadas, no horas trabajadas. Un turno nocturno reparte sus horas entre los dos días."
+      "note": "Son horas planificadas, no horas trabajadas. Un turno nocturno reparte sus horas entre los dos días. Incluye los turnos individuales del establecimiento creados desde «Turnos»."
     },
     "csv": {
       "date": "Fecha",
@@ -381,6 +382,38 @@
       "FEATURE_NOT_ENABLED": "El calendario semanal no está activado para este hogar.",
       "INVALID_INPUT": "Revisa los datos: hay un valor no válido."
     },
-    "establishmentShift": "Turno del establecimiento · {{name}}"
+    "establishmentShift": "Turno del establecimiento · {{name}}",
+    "individual": {
+      "badge": "Turno individual",
+      "establishment": "Todo el establecimiento",
+      "room": "Habitación {{name}}",
+      "resident": "Residente: {{name}}",
+      "open": "Ver en Turnos"
+    }
+  },
+  "mySchedule": {
+    "title": "Mi horario",
+    "description": "Tus turnos de la semana en este hogar, ya publicados.",
+    "weekNav": "Cambiar de semana",
+    "prev": "Semana anterior",
+    "next": "Semana siguiente",
+    "thisWeek": "Esta semana",
+    "total": "{{hours}} programadas esta semana",
+    "daysWithShifts_one": "{{count}} día con turnos",
+    "daysWithShifts_other": "{{count}} días con turnos",
+    "today": "Hoy",
+    "noShifts": "Sin turnos",
+    "fromPreviousDay": "Desde el día anterior",
+    "untilNextDay": "{{time}} del día siguiente",
+    "establishmentFallback": "Establecimiento",
+    "note": "Solo ves tus propios turnos publicados. Los cambios del horario que aún no se han publicado no aparecen aquí."
+  },
+  "shiftTarget": {
+    "legend": "¿Para quién es el turno?",
+    "resident": "Una persona residente",
+    "establishment": "Todo el establecimiento (sin residente concreto)",
+    "establishmentLabel": "Establecimiento",
+    "choose": "Selecciona un establecimiento",
+    "hint": "El turno aparecerá también en el calendario semanal de ese establecimiento."
   }
 }

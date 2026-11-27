@@ -185,3 +185,62 @@ test("el diálogo del calendario va ligado a organización, establecimiento y se
   assert.match(page, /if \(dialogScreen !== screenKey\) \{ setDialogScreen\(screenKey\); setDialogState\(null\); \}/);
   assert.doesNotMatch(page, /dialogState\.organizationId === organizationId \? dialogState\.dialog/);
 });
+
+// 27-nov (decisiones de Rafa): turnos individuales sincronizados con la semana, turnos del establecimiento sin residente
+// y «Mi horario» del cuidador.
+{
+  const myPage = read("src/pages/caregiver/CaregiverSchedulePage.tsx");
+  const caregiverLayout = read("src/layouts/CaregiverLayout.tsx");
+  const shiftsPage = read("src/pages/agency/AgencyShiftsPage.tsx");
+  const shiftsApi = read("src/api/shifts.ts");
+  const es = JSON.parse(read("src/i18n/locales/es/residential.json"));
+  const en = JSON.parse(read("src/i18n/locales/en/residential.json"));
+  const esShell = JSON.parse(read("src/i18n/locales/es/shell.json"));
+  const enShell = JSON.parse(read("src/i18n/locales/en/shell.json"));
+
+  test("la semana muestra los turnos individuales (solo lectura, enlazados a «Turnos») y los marca si entran en un aviso", () => {
+    assert.match(api, /individualShifts\?: ScheduleIndividualShift\[\]/);
+    assert.match(api, /shiftIds\?: string\[\]/);
+    assert.match(page, /individualByDay\(weekStart, schedule\.individualShifts \?\? \[\]\)/);
+    assert.match(page, /<IndividualCard key=\{x\.shiftId\} shift=\{x\} warned=\{warnedShifts\.has\(x\.shiftId\)\} \/>/);
+    assert.match(page, /to=\{`\/agency\/shifts\/\$\{shift\.shiftId\}`\}/);
+    // Solo lectura: la tarjeta individual no abre los diálogos de edición del calendario.
+    const card = page.slice(page.indexOf("function IndividualCard"), page.indexOf("function Summary"));
+    assert.doesNotMatch(card, /onEdit|onRemove|open\(/);
+  });
+
+  test("«Crear turno» en un hogar: para una persona residente o para todo el establecimiento; agencias sin cambios", () => {
+    assert.match(shiftsApi, /careRecipientId\?: string; establishmentId\?: string;/);
+    assert.match(shiftsPage, /const residentialHome = isResidentialOrganization\(activeOrganization\);/);
+    assert.match(shiftsPage, /const forEstablishment = residentialHome && target === "establishment";/);
+    assert.match(shiftsPage, /\{residentialHome && \(\s*<fieldset/);
+    assert.match(shiftsPage, /\.\.\.\(forEstablishment \? \{ establishmentId: effectiveEstablishmentId \} : \{ careRecipientId: effectiveRecipientId \}\)/);
+    assert.match(shiftsPage, /if \(!residentialHome \|\| !creating \|\| !organizationId \|\| !token\) return;/);
+    assert.match(shiftsPage, /e\.status === "active"/);
+  });
+
+  test("«Mi horario»: ruta y pestaña solo con HOGAR_CALENDARIO; solo su propia semana, ligada a la organización y la semana", () => {
+    assert.match(app, /<Route path="horario" element=\{<FeatureRoute feature="HOGAR_CALENDARIO" fallback="\/caregiver"><CaregiverSchedulePage\/><\/FeatureRoute>\}\/>/);
+    assert.match(caregiverLayout, /const mySchedule = hasOrgFeature\(activeOrganization\?\.features, "HOGAR_CALENDARIO"\);/);
+    assert.match(caregiverLayout, /\.\.\.\(mySchedule \? \[\{ to: "\/caregiver\/horario"/);
+    assert.match(api, /mine: \(o: string, w: string, t: string\) => apiClient\.get<\{ schedule: MyScheduleWeek \}>\(`\$\{base\(o\)\}\/me\/weeks\/\$\{w\}`, t\)/);
+    assert.match(myPage, /scheduleApi\.mine\(organizationId, weekStart, token\)/);
+    assert.match(myPage, /const current = scopedTo\(state, organizationId, key\);/);
+    // Nunca usa las rutas de administración del calendario.
+    assert.doesNotMatch(myPage, /scheduleApi\.(week|establishments|publish|createEntry|templates)\(/);
+    // Semanas anteriores y siguientes, días sin turnos y horas.
+    assert.match(myPage, /setWeekStart\(addDays\(weekStart, -7\)\)/);
+    assert.match(myPage, /setWeekStart\(addDays\(weekStart, 7\)\)/);
+    assert.match(myPage, /t\("mySchedule\.noShifts"\)/);
+    assert.match(myPage, /formatHours\(day\.minutes, lang\)/);
+  });
+
+  test("traducciones completas en español e inglés (mismas claves)", () => {
+    const keys = (o, p = "") => Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? keys(v, `${p}${k}.`) : [`${p}${k}`]));
+    for (const section of ["mySchedule", "shiftTarget"]) assert.deepEqual(keys(es[section]).sort(), keys(en[section]).sort(), section);
+    assert.deepEqual(keys(es.schedule.individual).sort(), keys(en.schedule.individual).sort());
+    assert.ok(es.schedule.warnings.withIndividual && en.schedule.warnings.withIndividual);
+    assert.equal(esShell.caregiver.items.mySchedule, "Mi horario");
+    assert.equal(enShell.caregiver.items.mySchedule, "My schedule");
+  });
+}

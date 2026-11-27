@@ -37,7 +37,8 @@ export async function listMyShifts(organizationId:string,token:string):Promise<S
 export async function getShift(organizationId:string,shiftId:string,token:string):Promise<Shift>{const r=await apiClient.get<{shift:Shift}>(`/organizations/${organizationId}/shifts/${shiftId}`,token);return r.shift;}
 export async function createShift(
   organizationId: string,
-  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string; serviceLocationId?: string },
+  // 27-nov (hogares): establishmentId = turno de todo el establecimiento, sin residente (el servidor lo resuelve).
+  input: { careRecipientId?: string; establishmentId?: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string; serviceLocationId?: string },
   token: string,
 ): Promise<Shift> {
   const r = await apiClient.post<{ shift: Shift }>(`/organizations/${organizationId}/shifts`, input, token);
