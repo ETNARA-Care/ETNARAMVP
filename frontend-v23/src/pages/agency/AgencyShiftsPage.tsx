@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bot, ChevronRight, FileText, Lock, Plus, Sparkles } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { noEligibleStaffReason } from "@/features/shifts/noEligibleStaff";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { isIndependentOrganization } from "@/features/practice/modality";
@@ -8,7 +10,7 @@ import { PracticeShiftsPage } from "./practice/PracticeShiftsPage";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { financeApi, type FinanceService } from "@/api/finance";
 import type { ApiError } from "@/api/client";
-import { getWorkerCompliance, requirementsUnconfigured, UNCONFIGURED_REQUIREMENTS_TITLE, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
+import { COMPLIANCE_POLICIES_PATH, getWorkerCompliance, requirementsUnconfigured, UNCONFIGURED_REQUIREMENTS_TITLE, type ComplianceRequirement, type ComplianceSummary } from "@/api/compliance";
 import { generateCoverageAgentBriefing, type CoverageAgentBriefing } from "@/api/coverageAgent";
 import { listShiftCoverageOffers, openCoverageCampaign, type ShiftCoverageOffer } from "@/api/coverageOffers";
 import {
@@ -215,6 +217,9 @@ function AgencyShiftsContent() {
   const recipientById = useMemo(() => Object.fromEntries(recipients.map((item) => [item.id, item])), [recipients]);
   const workerById = useMemo(() => Object.fromEntries(workers.map((item) => [item.id, item])), [workers]);
   const eligibleWorkers = useMemo(() => workers.filter((worker) => worker.compliance.eligibility === "eligible"), [workers]);
+  // Por qué «Crear turno» está deshabilitado (solo explica el cumplimiento ya calculado; las reglas no cambian).
+  const noEligibleReason = useMemo(() => noEligibleStaffReason(workers), [workers]);
+  const { t } = useTranslation("common");
   const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
   const effectiveRecipientId = recipientId || recipients[0]?.id || "";
   const genericLocations = useLocationOptions(organizationId, creating && !smartMatchId ? effectiveRecipientId : "");
@@ -348,6 +353,14 @@ function AgencyShiftsContent() {
   return (
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <PageHeader title="Turnos" description="Asignaciones reales de la organización." actions={<Button icon={<Plus size={18} />} onClick={openCreate} disabled={eligibleWorkers.length === 0}>Crear turno</Button>} />
+      {noEligibleReason && (
+        <Card role="status" data-testid="shifts-no-eligible-staff" className="flex flex-wrap items-center justify-between gap-3 border-[var(--color-warning-700)]/30 bg-[var(--color-warning-100)]">
+          <p className="min-w-0 flex-1 text-[var(--text-small)] font-medium text-[var(--color-warning-700)]">{t(`shifts.noEligible.${noEligibleReason}`)}</p>
+          <Link to={noEligibleReason === "noStaff" ? "/agency/workers" : noEligibleReason === "unconfigured" ? COMPLIANCE_POLICIES_PATH : "/agency/compliance"} className="inline-flex min-h-11 items-center font-medium text-[var(--color-primary-700)]">
+            {noEligibleReason === "noStaff" ? t("shifts.noEligible.toStaff") : t("shifts.noEligible.toCompliance")}
+          </Link>
+        </Card>
+      )}
       {shiftReports && (
         <Link to="/agency/shift-reports" className="block" data-testid="shift-reports-link">
           <Card className="flex min-h-11 items-center justify-between gap-3">

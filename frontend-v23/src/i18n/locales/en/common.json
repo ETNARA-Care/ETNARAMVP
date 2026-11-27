@@ -91,5 +91,14 @@
     "saved": "Preferences saved.",
     "privacyNote": "During quiet hours your phone stays silent; alerts remain in your ETNARA inbox.",
     "opening": "Opening the alert…"
+  },
+  "shifts": {
+    "noEligible": {
+      "noStaff": "There is no active staff. Add staff to be able to create shifts.",
+      "unconfigured": "No staff member is eligible because their role has no requirements configured. Set up the role's policy in Compliance to be able to create shifts.",
+      "notEligible": "No staff member is eligible yet: mandatory credentials are missing, expired or pending review. Check Compliance to be able to create shifts.",
+      "toStaff": "Go to Staff",
+      "toCompliance": "Go to Compliance"
+    }
   }
 }

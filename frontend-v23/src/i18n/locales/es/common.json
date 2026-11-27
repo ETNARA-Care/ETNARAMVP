@@ -91,5 +91,14 @@
     "saved": "Preferencias guardadas.",
     "privacyNote": "Durante el silencio el teléfono no suena; los avisos siguen en tu bandeja de ETNARA.",
     "opening": "Abriendo el aviso…"
+  },
+  "shifts": {
+    "noEligible": {
+      "noStaff": "No hay personal activo. Añade personal para poder crear turnos.",
+      "unconfigured": "Ninguna persona del personal está apta porque su puesto no tiene requisitos configurados. Configura la política del puesto en Cumplimiento para poder crear turnos.",
+      "notEligible": "Ninguna persona del personal está apta todavía: faltan credenciales obligatorias o alguna está vencida o pendiente de revisión. Revisa Cumplimiento para poder crear turnos.",
+      "toStaff": "Ir a Personal",
+      "toCompliance": "Ir a Cumplimiento"
+    }
   }
 }
