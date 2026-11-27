@@ -9,7 +9,7 @@ import {
   scheduleApi, scheduleErrorMessage, type ScheduleEntry, type ScheduleEstablishment, type SchedulePublication, type ScheduleTemplate, type ScheduleWeek,
 } from "@/api/residentialSchedule";
 import { csvLines } from "@/features/export/csv";
-import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
+import { createLatestRequest, scopedTo, scopedValue, type OrganizationScoped, type ScreenScoped } from "@/features/residential/latestRequest";
 import { isResidentialOrganization, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
 import {
   addDays, entriesByDay, formatHours, mondayOf, puertoRicoDate, scheduleCsvRows, slotsFromWeek, staffNeedsReview, timeOf, warnedEntryIds, weekDays,
@@ -48,7 +48,10 @@ export function ResidentialSchedulePage() {
   const [selected, setSelected] = useState<{ organizationId: string; locationId: string } | null>(null);
   const [weekStart, setWeekStart] = useState(() => mondayOf(puertoRicoDate()));
   const [state, setState] = useState<OrganizationScoped<ScheduleWeek> | null>(null);
-  const [dialogState, setDialogState] = useState<{ organizationId: string; dialog: Dialog } | null>(null);
+  // Auditoría 26-nov (como en la ficha de F1): el diálogo abierto pertenece a la organización, el establecimiento y la
+  // semana en que se abrió; si cualquiera cambia (también si la lista de establecimientos se recarga y cambia la
+  // selección), desaparece y no actúa sobre otro establecimiento ni otra semana.
+  const [dialogState, setDialogState] = useState<ScreenScoped<Dialog> | null>(null);
   const [busy, setBusy] = useState(false);
   const latestList = useRef(createLatestRequest());
   const latest = useRef(createLatestRequest());
@@ -96,8 +99,11 @@ export function ResidentialSchedulePage() {
   const current = scopedTo(state, organizationId, key);
   const schedule = current?.data ?? null;
   const error = current?.error === true;
-  const dialog = dialogState && dialogState.organizationId === organizationId ? dialogState.dialog : null;
-  const open = (d: Dialog) => organizationId && setDialogState({ organizationId, dialog: d });
+  const screenKey = `${organizationId ?? ""}|${key ?? ""}`;
+  const [dialogScreen, setDialogScreen] = useState(screenKey);
+  if (dialogScreen !== screenKey) { setDialogScreen(screenKey); setDialogState(null); }
+  const dialog = current ? scopedValue(dialogState, organizationId, key) : null;
+  const open = (d: Dialog) => organizationId && key && setDialogState({ organizationId, key, value: d });
   const close = () => setDialogState(null);
 
   /** Ejecuta un cambio, avisa y vuelve a leer la semana (el backend es la fuente de verdad). */

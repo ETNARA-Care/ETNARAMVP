@@ -143,7 +143,8 @@ test("F2: turnos del calendario se presentan «del establecimiento» (nunca la h
     assert.equal(lr.scopedTo(state, "H1", "E1|2026-12-07"), null);
     assert.equal(lr.scopedTo(state, "H2", "E9|2026-12-14"), null, "otra semana no reutiliza los datos");
     assert.match(page, /const current = scopedTo\(state, organizationId, key\);/);
-    assert.match(page, /const dialog = dialogState && dialogState\.organizationId === organizationId \? dialogState\.dialog : null;/);
+    // Auditoría 26-nov: ligado a organización, establecimiento y semana (más estricto que solo la organización).
+    assert.match(page, /const dialog = current \? scopedValue\(dialogState, organizationId, key\) : null;/);
     assert.match(page, /const chosen = selected && selected\.organizationId === organizationId \? selected\.locationId : null;/);
     assert.equal((page.match(/let active = true;/g) ?? []).length, 2);
     assert.equal((page.match(/return \(\) => \{ active = false; \};/g) ?? []).length, 2);
@@ -174,4 +175,13 @@ test("F2: catálogo inglés con las mismas claves, marcadores y sin español; to
   for (const k of keys) assert.ok(es.has(k) || es.has(`${k}_one`), `falta es.${k}`);
   assert.equal(JSON.parse(read("src/i18n/locales/en/shell.json")).agency.items.residentialSchedule, "Weekly schedule");
   assert.equal(JSON.parse(read("src/i18n/locales/es/shell.json")).agency.items.residentialSchedule, "Calendario semanal");
+});
+
+test("el diálogo del calendario va ligado a organización, establecimiento y semana y se descarta al cambiar", () => {
+  assert.match(page, /useState<ScreenScoped<Dialog> \| null>\(null\)/);
+  assert.match(page, /const key = locationId \? `\$\{locationId\}\|\$\{weekStart\}` : undefined;/);
+  assert.match(page, /setDialogState\(\{ organizationId, key, value: d \}\)/);
+  assert.match(page, /const screenKey = `\$\{organizationId \?\? ""\}\|\$\{key \?\? ""\}`;/);
+  assert.match(page, /if \(dialogScreen !== screenKey\) \{ setDialogScreen\(screenKey\); setDialogState\(null\); \}/);
+  assert.doesNotMatch(page, /dialogState\.organizationId === organizationId \? dialogState\.dialog/);
 });
