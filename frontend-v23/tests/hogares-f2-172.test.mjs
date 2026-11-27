@@ -209,13 +209,17 @@ test("el diálogo del calendario va ligado a organización, establecimiento y se
     assert.doesNotMatch(card, /onEdit|onRemove|open\(/);
   });
 
-  test("«Crear turno» en un hogar: para una persona residente o para todo el establecimiento; agencias sin cambios", () => {
+  test("«Crear turno» en un hogar: «Todo el establecimiento» solo con HOGAR_CALENDARIO; residente como siempre; agencias sin cambios", () => {
     assert.match(shiftsApi, /careRecipientId\?: string; establishmentId\?: string;/);
     assert.match(shiftsPage, /const residentialHome = isResidentialOrganization\(activeOrganization\);/);
-    assert.match(shiftsPage, /const forEstablishment = residentialHome && target === "establishment";/);
-    assert.match(shiftsPage, /\{residentialHome && \(\s*<fieldset/);
+    // Decisión B (27-nov): la opción depende del interruptor del hogar, no solo de la modalidad.
+    assert.match(shiftsPage, /const establishmentShifts = residentialHome && hasOrgFeature\(activeOrganization\?\.features, "HOGAR_CALENDARIO"\);/);
+    assert.match(shiftsPage, /const forEstablishment = establishmentShifts && target === "establishment";/);
+    assert.match(shiftsPage, /\{establishmentShifts && \(\s*<fieldset/);
+    assert.doesNotMatch(shiftsPage, /\{residentialHome && \(\s*<fieldset/);
     assert.match(shiftsPage, /\.\.\.\(forEstablishment \? \{ establishmentId: effectiveEstablishmentId \} : \{ careRecipientId: effectiveRecipientId \}\)/);
-    assert.match(shiftsPage, /if \(!residentialHome \|\| !creating \|\| !organizationId \|\| !token\) return;/);
+    // Sin el interruptor ni siquiera se piden los establecimientos.
+    assert.match(shiftsPage, /if \(!establishmentShifts \|\| !creating \|\| !organizationId \|\| !token\) return;/);
     assert.match(shiftsPage, /e\.status === "active"/);
   });
 

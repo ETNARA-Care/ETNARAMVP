@@ -225,16 +225,19 @@ function AgencyShiftsContent() {
   const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
   const { t: tr } = useTranslation("residential");
   const residentialHome = isResidentialOrganization(activeOrganization);
+  // 27-nov (decisión B de Rafa): «Todo el establecimiento» solo con HOGAR_CALENDARIO encendido en el hogar (el backend
+  // también lo exige). Apagado, «Crear turno» es el de siempre: para una persona residente.
+  const establishmentShifts = residentialHome && hasOrgFeature(activeOrganization?.features, "HOGAR_CALENDARIO");
   useEffect(() => {
     const token = getToken();
-    if (!residentialHome || !creating || !organizationId || !token) return;
+    if (!establishmentShifts || !creating || !organizationId || !token) return;
     let alive = true;
     residentialApi.listEstablishments(organizationId, token)
       .then((r) => { if (alive) setHomeEstablishments(r.establishments.filter((e) => e.status === "active")); })
       .catch(() => { if (alive) setHomeEstablishments([]); });
     return () => { alive = false; };
-  }, [residentialHome, creating, organizationId]);
-  const forEstablishment = residentialHome && target === "establishment";
+  }, [establishmentShifts, creating, organizationId]);
+  const forEstablishment = establishmentShifts && target === "establishment";
   const effectiveEstablishmentId = establishmentId || homeEstablishments[0]?.id || "";
   const effectiveRecipientId = recipientId || recipients[0]?.id || "";
   const genericLocations = useLocationOptions(organizationId, creating && !smartMatchId ? effectiveRecipientId : "");
@@ -520,7 +523,7 @@ function AgencyShiftsContent() {
 
       <Modal open={creating && !smartMatchId} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || coverageLoading || (forEstablishment ? !effectiveEstablishmentId : !effectiveRecipientId) || !effectiveWorkerId || !selectedWorkerAllowed}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
         <div className="flex flex-col gap-4">
-          {residentialHome && (
+          {establishmentShifts && (
             <fieldset className="flex flex-col gap-2" data-testid="shift-target">
               <legend className="mb-1 text-[var(--text-small)] font-medium text-[var(--color-text-primary)]">{tr("shiftTarget.legend")}</legend>
               <Radio name="shift-target" label={tr("shiftTarget.resident")} checked={target === "resident"} onChange={() => { setTarget("resident"); setCoverageCandidates(null); }} />
