@@ -27,22 +27,40 @@ export function CaregiverSchedulePage() {
   const latest = useRef(createLatestRequest());
   const key = weekStart;
 
+  // Carga en curso para esta organización y semana: al volver a la app no se lanza otra igual.
+  const inFlight = useRef<string | null>(null);
   const load = useCallback(async () => {
     const token = getToken();
     if (!organizationId || !token) return;
+    const scope = `${organizationId}|${key}`;
     const request = latest.current.begin();
+    inFlight.current = scope;
     try {
       const r = await scheduleApi.mine(organizationId, weekStart, token);
       if (request.isCurrent()) setState({ organizationId, key, data: r.schedule, error: false });
     } catch {
       if (request.isCurrent()) setState({ organizationId, key, data: null, error: true });
+    } finally {
+      if (request.isCurrent()) inFlight.current = null;
     }
   }, [organizationId, weekStart, key]);
   useEffect(() => {
     const tracker = latest.current;
     void load();
-    return () => tracker.invalidate();
+    return () => { tracker.invalidate(); inFlight.current = null; };
   }, [load]);
+  // 27-nov (autorizado por Rafa): al volver del segundo plano se vuelve a leer la misma semana, una sola vez y sin
+  // consultas periódicas. Mientras llega la respuesta se sigue viendo la semana actual de esta organización (la
+  // respuesta solo se aplica si sigue siendo la última petición y la misma organización y semana).
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || !organizationId) return;
+      if (inFlight.current === `${organizationId}|${key}`) return;
+      void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [load, organizationId, key]);
 
   const current = scopedTo(state, organizationId, key);
   const week = current?.data ?? null;

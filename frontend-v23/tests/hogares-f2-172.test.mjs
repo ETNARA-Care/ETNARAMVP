@@ -235,6 +235,22 @@ test("el diálogo del calendario va ligado a organización, establecimiento y se
     assert.match(myPage, /formatHours\(day\.minutes, lang\)/);
   });
 
+  test("«Mi horario» se actualiza al volver a la app: una vez, misma semana y organización, sin consultas periódicas", () => {
+    assert.match(myPage, /document\.addEventListener\("visibilitychange", onVisible\)/);
+    assert.match(myPage, /document\.removeEventListener\("visibilitychange", onVisible\)/);
+    assert.match(myPage, /if \(document\.visibilityState !== "visible" \|\| !organizationId\) return;/);
+    // Sin duplicados: si ya hay una carga de esta organización y semana, no lanza otra.
+    assert.match(myPage, /if \(inFlight\.current === `\$\{organizationId\}\|\$\{key\}`\) return;/);
+    // La respuesta solo se aplica si sigue siendo la última petición; lo visible sigue ligado a organización y semana.
+    assert.match(myPage, /if \(request\.isCurrent\(\)\) setState\(\{ organizationId, key, data: r\.schedule, error: false \}\);/);
+    assert.match(myPage, /const current = scopedTo\(state, organizationId, key\);/);
+    // La semana elegida no se reinicia al volver: la recarga no toca weekStart.
+    const onVisible = myPage.slice(myPage.indexOf("const onVisible"), myPage.indexOf("removeEventListener(\"visibilitychange\""));
+    assert.ok(onVisible.length > 0 && !/setWeekStart|setState/.test(onVisible));
+    // Nada de consultas periódicas ni de otros eventos que repitan la carga.
+    assert.doesNotMatch(myPage, /setInterval|setTimeout|addEventListener\("(focus|pageshow|online)"/);
+  });
+
   test("traducciones completas en español e inglés (mismas claves)", () => {
     const keys = (o, p = "") => Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? keys(v, `${p}${k}.`) : [`${p}${k}`]));
     for (const section of ["mySchedule", "shiftTarget"]) assert.deepEqual(keys(es[section]).sort(), keys(en[section]).sort(), section);
