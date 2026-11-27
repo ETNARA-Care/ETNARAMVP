@@ -4,6 +4,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { isIndependentOrganization } from "@/features/practice/modality";
+import { isResidentialOrganization } from "@/features/residential/modality";
+import { residentialApi, type ResidentialEstablishmentSummary } from "@/api/residential";
+import { useTranslation } from "react-i18next";
 import { PracticeShiftsPage } from "./practice/PracticeShiftsPage";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { financeApi, type FinanceService } from "@/api/finance";
@@ -12,7 +15,7 @@ import { getWorkerCompliance, requirementsUnconfigured, UNCONFIGURED_REQUIREMENT
 import { generateCoverageAgentBriefing, type CoverageAgentBriefing } from "@/api/coverageAgent";
 import { listShiftCoverageOffers, openCoverageCampaign, type ShiftCoverageOffer } from "@/api/coverageOffers";
 import {
-  assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName,
+  assignShift, createShift, getCoverageRecommendations, listAssignments, listCareRecipients, listShifts, listWorkers, recipientName, shiftRecipientName,
   type Assignment, type CareRecipient, type CoverageCandidate, type Shift, type WorkerMembership,
 } from "@/api/shifts";
 import { createShiftFromOpportunity, getShiftDraft, type SmartMatchShiftDraft } from "@/api/smartmatch";
@@ -109,6 +112,10 @@ function AgencyShiftsContent() {
   const [assigning, setAssigning] = useState<Shift | null>(null);
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
   const [recipientId, setRecipientId] = useState("");
+  // 27-nov (hogares): «Crear turno» para una persona residente o para todo el establecimiento (sin residente).
+  const [target, setTarget] = useState<"resident" | "establishment">("resident");
+  const [establishmentId, setEstablishmentId] = useState("");
+  const [homeEstablishments, setHomeEstablishments] = useState<ResidentialEstablishmentSummary[]>([]);
   const [times, setTimes] = useState(initialTimes);
   const [coverageCandidates, setCoverageCandidates] = useState<CoverageCandidate[] | null>(null);
   const [coverageLoading, setCoverageLoading] = useState(false);
@@ -216,6 +223,22 @@ function AgencyShiftsContent() {
   const workerById = useMemo(() => Object.fromEntries(workers.map((item) => [item.id, item])), [workers]);
   const eligibleWorkers = useMemo(() => workers.filter((worker) => worker.compliance.eligibility === "eligible"), [workers]);
   const orderedShifts = useMemo(() => [...(shifts ?? [])].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()), [shifts]);
+  const { t: tr } = useTranslation("residential");
+  const residentialHome = isResidentialOrganization(activeOrganization);
+  // 27-nov (decisión B de Rafa): «Todo el establecimiento» solo con HOGAR_CALENDARIO encendido en el hogar (el backend
+  // también lo exige). Apagado, «Crear turno» es el de siempre: para una persona residente.
+  const establishmentShifts = residentialHome && hasOrgFeature(activeOrganization?.features, "HOGAR_CALENDARIO");
+  useEffect(() => {
+    const token = getToken();
+    if (!establishmentShifts || !creating || !organizationId || !token) return;
+    let alive = true;
+    residentialApi.listEstablishments(organizationId, token)
+      .then((r) => { if (alive) setHomeEstablishments(r.establishments.filter((e) => e.status === "active")); })
+      .catch(() => { if (alive) setHomeEstablishments([]); });
+    return () => { alive = false; };
+  }, [establishmentShifts, creating, organizationId]);
+  const forEstablishment = establishmentShifts && target === "establishment";
+  const effectiveEstablishmentId = establishmentId || homeEstablishments[0]?.id || "";
   const effectiveRecipientId = recipientId || recipients[0]?.id || "";
   const genericLocations = useLocationOptions(organizationId, creating && !smartMatchId ? effectiveRecipientId : "");
   const smartMatchLocations = useLocationOptions(organizationId, smartMatchId ? smartMatchRecipientId : "");
@@ -273,7 +296,7 @@ function AgencyShiftsContent() {
 
   async function saveNewShift() {
     const token = getToken();
-    if (!organizationId || !token || !effectiveRecipientId || !effectiveWorkerId) return;
+    if (!organizationId || !token || !effectiveWorkerId || (forEstablishment ? !effectiveEstablishmentId : !effectiveRecipientId)) return;
     if (new Date(times.start).getTime() >= new Date(times.end).getTime()) {
       show("La hora de salida debe ser posterior a la de entrada.", "danger");
       return;
@@ -281,8 +304,9 @@ function AgencyShiftsContent() {
     setSaving(true);
     try {
       const shift = await createShift(organizationId, {
-        careRecipientId: effectiveRecipientId, scheduledStart: new Date(times.start).toISOString(), scheduledEnd: new Date(times.end).toISOString(),
-        ...(genericLocationId ? { serviceLocationId: genericLocationId } : {}),
+        ...(forEstablishment ? { establishmentId: effectiveEstablishmentId } : { careRecipientId: effectiveRecipientId }),
+        scheduledStart: new Date(times.start).toISOString(), scheduledEnd: new Date(times.end).toISOString(),
+        ...(!forEstablishment && genericLocationId ? { serviceLocationId: genericLocationId } : {}),
         requiredRole: workerById[effectiveWorkerId]?.internal_role ?? "Cuidador/a",
       }, token);
       if (finance && serviceId) {
@@ -437,7 +461,7 @@ function AgencyShiftsContent() {
                 className="flex items-center justify-between gap-3 flex-wrap cursor-pointer hover:bg-[var(--color-ivory-100)] transition-colors"
               >
                 <div>
-                  <p className="font-medium text-[var(--color-text-primary)]">{recipientName(recipientById[shift.care_recipient_id ?? ""])}</p>
+                  <p className="font-medium text-[var(--color-text-primary)]">{shiftRecipientName(shift, recipientById[shift.care_recipient_id ?? ""])}</p>
                   <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{formatWindow(shift)}</p>
                   {assignee && <p className="text-[var(--text-caption)] text-[var(--color-text-muted)]">Cuidador: {assignee.display_name ?? assignee.internal_role}</p>}
                   {shiftOffers.length > 0 && <p className="text-[var(--text-caption)] text-[var(--color-accent-700)]">Ola {campaign.currentWave}: {plural(interestedNames.length,"disponible","disponibles")} · {plural(pendingCount,"pendiente","pendientes")} · {queuedCount} en espera</p>}
@@ -497,16 +521,35 @@ function AgencyShiftsContent() {
         </div>
       </Modal>
 
-      <Modal open={creating && !smartMatchId} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || coverageLoading || !effectiveRecipientId || !effectiveWorkerId || !selectedWorkerAllowed}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
+      <Modal open={creating && !smartMatchId} onClose={() => !saving && setCreating(false)} title="Crear y asignar turno" footer={<><Button variant="secondary" onClick={() => setCreating(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void saveNewShift()} disabled={saving || coverageLoading || (forEstablishment ? !effectiveEstablishmentId : !effectiveRecipientId) || !effectiveWorkerId || !selectedWorkerAllowed}>{saving ? "Guardando..." : "Crear y asignar"}</Button></>}>
         <div className="flex flex-col gap-4">
-          <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => { setRecipientId(event.target.value); setCoverageCandidates(null); }} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
-          <LocationSelect options={genericLocations} value={genericLocationId} onChange={(id) => setLocationChoice((c) => ({ ...c, [effectiveRecipientId]: id }))} />
+          {establishmentShifts && (
+            <fieldset className="flex flex-col gap-2" data-testid="shift-target">
+              <legend className="mb-1 text-[var(--text-small)] font-medium text-[var(--color-text-primary)]">{tr("shiftTarget.legend")}</legend>
+              <Radio name="shift-target" label={tr("shiftTarget.resident")} checked={target === "resident"} onChange={() => { setTarget("resident"); setCoverageCandidates(null); }} />
+              <Radio name="shift-target" label={tr("shiftTarget.establishment")} checked={target === "establishment"} onChange={() => { setTarget("establishment"); setCoverageCandidates(null); }} />
+            </fieldset>
+          )}
+          {forEstablishment ? (
+            <>
+              <Select label={tr("shiftTarget.establishmentLabel")} value={effectiveEstablishmentId} onChange={(event) => setEstablishmentId(event.target.value)} required>
+                <option value="">{tr("shiftTarget.choose")}</option>
+                {homeEstablishments.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </Select>
+              <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{tr("shiftTarget.hint")}</p>
+            </>
+          ) : (
+            <>
+              <Select label="Persona atendida" value={effectiveRecipientId} onChange={(event) => { setRecipientId(event.target.value); setCoverageCandidates(null); }} required><option value="">Selecciona una persona</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)}</option>)}</Select>
+              <LocationSelect options={genericLocations} value={genericLocationId} onChange={(id) => setLocationChoice((c) => ({ ...c, [effectiveRecipientId]: id }))} />
+            </>
+          )}
           {finance && <Select label="Servicio" value={serviceId} onChange={(event) => setServiceId(event.target.value)} hint="Opcional. Define las tarifas de cobro y de pago de este turno."><option value="">Sin servicio (o el del residente)</option>{financeServices.filter((s) => s.active).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</Select>}
           <Select label="Cuidador apto" value={effectiveWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)} required><option value="">Selecciona un cuidador</option>{workers.map((worker) => { const reason = firstBlockingReason(worker); const recommendation = coverageCandidates?.find((candidate) => candidate.membershipId === worker.id); const unavailable = recommendation && !recommendation.recommended; return <option key={worker.id} value={worker.id} disabled={reason !== null || unavailable}>{worker.display_name ?? worker.internal_role}{reason ? ` — No apta: ${reason}` : unavailable ? " — Conflicto o requisito pendiente" : " — Apta"}</option>; })}</Select>
           {eligibleWorkers.length === 0 && <p className="text-[var(--text-small)] text-[var(--color-warning-700)]">No hay personal apto. Revisa los requisitos en Cumplimiento antes de crear el turno.</p>}
           <Input label="Entrada" type="datetime-local" value={times.start} onChange={(event) => { setTimes((current) => ({ ...current, start: event.target.value })); setCoverageCandidates(null); }} required />
           <Input label="Salida" type="datetime-local" value={times.end} onChange={(event) => { setTimes((current) => ({ ...current, end: event.target.value })); setCoverageCandidates(null); }} required />
-          <Button variant="secondary" icon={<Sparkles size={18} />} loading={coverageLoading} onClick={() => void analyzeCoverage(effectiveRecipientId, times.start, times.end, workerById[effectiveWorkerId]?.internal_role)} disabled={!effectiveRecipientId}>Analizar cobertura</Button>
+          <Button variant="secondary" icon={<Sparkles size={18} />} loading={coverageLoading} onClick={() => void analyzeCoverage(effectiveRecipientId, times.start, times.end, workerById[effectiveWorkerId]?.internal_role)} disabled={!effectiveRecipientId || forEstablishment}>Analizar cobertura</Button>
           {coverageCandidates && <CoverageRecommendations candidates={coverageCandidates} selectedWorkerId={effectiveWorkerId} onSelect={setSelectedWorkerId} />}
         </div>
       </Modal>

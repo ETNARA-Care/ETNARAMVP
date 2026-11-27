@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useNavigate } from "react-router-dom";
-import { BriefcaseBusiness, Building2, CalendarRange, Home, MessageCircle, MoreHorizontal } from "lucide-react";
+import { BriefcaseBusiness, Building2, CalendarRange, Home, MessageCircle, MoreHorizontal, CalendarDays } from "lucide-react";
 import { PortalBottomNav } from "./PortalBottomNav";
 import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -36,6 +36,8 @@ function CaregiverAccountMenu({ userLabel }: { userLabel: string }) {
 export function CaregiverLayout() {
   const { activeOrganization, activeWorkerProfile, user, roles } = useAuth();
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
+  // 27-nov: «Mi horario» solo en hogares con el calendario semanal encendido (HOGAR_CALENDARIO solo existe en hogares).
+  const mySchedule = hasOrgFeature(activeOrganization?.features, "HOGAR_CALENDARIO");
   const alsoStaff = roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR");
   const { t } = useTranslation("shell");
   const caregiverName = activeWorkerProfile?.displayName ?? user?.email ?? t("caregiver.nameFallback");
@@ -83,6 +85,7 @@ export function CaregiverLayout() {
     <PortalBottomNav tabs={[
       { to: "/caregiver/today", icon: Home, label: t("caregiver.items.today") },
       { to: "/caregiver/shifts", icon: CalendarRange, label: t("caregiver.items.shifts") },
+      ...(mySchedule ? [{ to: "/caregiver/horario", icon: CalendarDays, label: t("caregiver.items.mySchedule") }] : []),
       ...(smartMatch ? [{ to: "/caregiver/smartmatch", icon: BriefcaseBusiness, label: t("caregiver.items.offers") }] : []),
       { to: "/caregiver/messages", icon: MessageCircle, label: t("caregiver.items.messages") },
       { to: "/caregiver/profile", icon: MoreHorizontal, label: t("caregiver.items.more") },

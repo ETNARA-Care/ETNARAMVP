@@ -1,3 +1,4 @@
+import i18n from "@/i18n";
 import { apiClient } from "./client";
 
 export type ShiftStatus = "unassigned" | "confirmed" | "in_progress" | "completed" | "cancelled";
@@ -16,6 +17,8 @@ export interface Shift {
   assignment_response_status?: "pending" | "accepted";
   /** Name only, for the caregiver's own visits (also past ones). */
   care_recipient_display_name?: string | null;
+  /** 172: turno del calendario semanal de un hogar (sin residente): nombre del establecimiento. Nunca la habitación técnica. */
+  establishment_name?: string | null;
   /** 154: cierre sin servicio vigente (solo administración/supervisión). */
   closed_without_service?: boolean;
 }
@@ -34,7 +37,8 @@ export async function listMyShifts(organizationId:string,token:string):Promise<S
 export async function getShift(organizationId:string,shiftId:string,token:string):Promise<Shift>{const r=await apiClient.get<{shift:Shift}>(`/organizations/${organizationId}/shifts/${shiftId}`,token);return r.shift;}
 export async function createShift(
   organizationId: string,
-  input: { careRecipientId: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string; serviceLocationId?: string },
+  // 27-nov (hogares): establishmentId = turno de todo el establecimiento, sin residente (el servidor lo resuelve).
+  input: { careRecipientId?: string; establishmentId?: string; scheduledStart: string; scheduledEnd: string; requiredRole?: string; serviceLocationId?: string },
   token: string,
 ): Promise<Shift> {
   const r = await apiClient.post<{ shift: Shift }>(`/organizations/${organizationId}/shifts`, input, token);
@@ -67,5 +71,6 @@ export async function checkOut(organizationId:string,shiftId:string,token:string
 export async function getShiftPrivateInstructions(organizationId:string,shiftId:string,token:string):Promise<{instructions:string;updated_at:string}|null>{try{const r=await apiClient.get<{instructions:{instructions:string;updated_at:string}}>(`/organizations/${organizationId}/shifts/${shiftId}/private-instructions`,token);return r.instructions;}catch(error){if((error as {status?:number}).status===404)return null;throw error;}}
 export async function saveShiftPrivateInstructions(organizationId:string,shiftId:string,instructions:string,token:string):Promise<{instructions:string;updated_at:string}>{const r=await apiClient.put<{instructions:{instructions:string;updated_at:string}}>(`/organizations/${organizationId}/shifts/${shiftId}/private-instructions`,{instructions},token);return r.instructions;}
 /** Name of the person a shift is for: full record when visible, else the name /me/shifts carries. */
-export function shiftRecipientName(shift:{care_recipient_display_name?:string|null}|null|undefined,recipient:CareRecipient|undefined):string{return recipient?recipientName(recipient):(shift?.care_recipient_display_name||recipientName(undefined));}
+/** Título de un turno: la persona atendida o, en un turno del calendario de un hogar (172), «Turno del establecimiento · nombre». */
+export function shiftRecipientName(shift:{care_recipient_display_name?:string|null;establishment_name?:string|null}|null|undefined,recipient:CareRecipient|undefined):string{if(recipient)return recipientName(recipient);if(shift?.care_recipient_display_name)return shift.care_recipient_display_name;if(shift?.establishment_name)return i18n.t("residential:schedule.establishmentShift",{name:shift.establishment_name});return recipientName(undefined);}
 export function recipientName(recipient:CareRecipient|undefined):string{return recipient?.preferred_name||`${recipient?.first_name||"Persona"} ${recipient?.last_name||"atendida"}`.trim();}

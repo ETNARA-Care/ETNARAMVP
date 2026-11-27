@@ -12,6 +12,7 @@ import {
   listCareRecipients,
   listWorkers,
   recipientName,
+  shiftRecipientName,
   type Assignment,
   type CareRecipient,
   type Shift,
@@ -133,7 +134,7 @@ export function AgencyShiftDetailPage() {
     <div className="flex flex-col gap-[var(--spacing-md)]">
       <Button variant="ghost" icon={<ArrowLeft size={18} />} onClick={() => navigate("/agency/shifts")} className="self-start">Volver a turnos</Button>
       <PageHeader
-        title={recipientName(recipient ?? undefined)}
+        title={shiftRecipientName(shift, recipient ?? undefined)}
         description="Detalle operacional del turno y sus respuestas."
         actions={shift.closed_without_service ? <ClosedWithoutServiceBadge /> : <StatusBadge status={shift.status} />}
       />

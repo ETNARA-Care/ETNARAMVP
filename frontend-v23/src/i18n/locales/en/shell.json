@@ -52,7 +52,8 @@
       "clients": "Clients",
       "documents": "My documents",
       "residentialPanel": "Care home panel",
-      "residentialEstablishments": "Facilities and rooms"
+      "residentialEstablishments": "Facilities and rooms",
+      "residentialSchedule": "Weekly schedule"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",
@@ -71,7 +72,8 @@
       "shifts": "Shifts",
       "offers": "Offers",
       "messages": "Messages",
-      "more": "More"
+      "more": "More",
+      "mySchedule": "My schedule"
     },
     "goToAgency": "Go to the agency",
     "goToPractice": "Go to My practice",
