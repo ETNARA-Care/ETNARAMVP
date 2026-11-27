@@ -281,7 +281,8 @@
       "overlap": "{{name}} has two overlapping shifts.",
       "duplicate": "{{name}} appears twice in the same shift.",
       "badge": "Review",
-      "publishBlocked": "Fix the warnings before publishing: a week with overlapping or duplicated shifts is not published."
+      "publishBlocked": "Fix the warnings before publishing: a week with overlapping or duplicated shifts is not published.",
+      "withIndividual": "(with an individual shift from “Shifts”)."
     },
     "summary": {
       "title": "Scheduled hours",
@@ -291,7 +292,7 @@
       "byPerson": "By person",
       "byDay": "By day",
       "none": "Nothing scheduled",
-      "note": "These are planned hours, not hours worked. An overnight shift splits its hours between both days."
+      "note": "These are planned hours, not hours worked. An overnight shift splits its hours between both days. Includes the establishment’s individual shifts created from “Shifts”."
     },
     "csv": {
       "date": "Date",
@@ -381,7 +382,39 @@
       "FEATURE_NOT_ENABLED": "The weekly schedule is not enabled for this home.",
       "INVALID_INPUT": "Check the data: a value is not valid."
     },
-    "establishmentShift": "Facility shift · {{name}}"
+    "establishmentShift": "Facility shift · {{name}}",
+    "individual": {
+      "badge": "Individual shift",
+      "establishment": "Whole establishment",
+      "room": "Room {{name}}",
+      "resident": "Resident: {{name}}",
+      "open": "Open in Shifts"
+    }
+  },
+  "mySchedule": {
+    "title": "My schedule",
+    "description": "Your published shifts for the week in this home.",
+    "weekNav": "Change week",
+    "prev": "Previous week",
+    "next": "Next week",
+    "thisWeek": "This week",
+    "total": "{{hours}} scheduled this week",
+    "daysWithShifts_one": "{{count}} day with shifts",
+    "daysWithShifts_other": "{{count}} days with shifts",
+    "today": "Today",
+    "noShifts": "No shifts",
+    "fromPreviousDay": "From the previous day",
+    "untilNextDay": "{{time}} next day",
+    "establishmentFallback": "Establishment",
+    "note": "You only see your own published shifts. Schedule changes that haven’t been published yet don’t appear here."
+  },
+  "shiftTarget": {
+    "legend": "Who is this shift for?",
+    "resident": "One resident",
+    "establishment": "The whole establishment (no specific resident)",
+    "establishmentLabel": "Establishment",
+    "choose": "Choose an establishment",
+    "hint": "The shift will also appear in that establishment’s weekly schedule."
   },
   "attendance": {
     "title": "Attendance",
@@ -616,7 +649,17 @@
       "queueDetail": "They will be sent automatically when the connection returns, with the time you punched.",
       "sendNow": "Send now",
       "recent": "Your recent punches",
-      "noRecent": "No punches yet."
+      "noRecent": "No punches yet.",
+      "saveFailed": "The punch could not be saved on this phone (storage full or unavailable). It was NOT recorded: note the time and request a correction once you have signal.",
+      "queueFull": "You already have {{max}} unsent punches on this phone. This one was NOT saved: get online to send them or request a correction.",
+      "holdAuth": "Your session ended. Sign in again and they will be sent; none has been lost.",
+      "holdFeature": "Attendance is turned off for this home for now. They are still saved and will be sent when it is active again.",
+      "rejectedTitle_one": "{{count}} punch not accepted",
+      "rejectedTitle_other": "{{count}} punches not accepted",
+      "rejectedDetail": "The server did not accept these punches. They are still saved on this phone: you can retry, request a correction from the administration or discard it.",
+      "retry": "Retry",
+      "discard": "Discard",
+      "discardConfirm": "Confirm: discard this punch"
     },
     "correction": {
       "open": "Request a correction",
@@ -633,6 +676,7 @@
       "network": "No connection to the server.",
       "ATTENDANCE_UNAVAILABLE": "Attendance is not available right now. Use the contingency sheet and tell the management.",
       "ATTENDANCE_NOT_AUTHORIZED": "That shift is not yours or is not accepted: you cannot punch on it.",
+      "ATTENDANCE_DUPLICATE_EVENT": "That punch was already recorded.",
       "ATTENDANCE_TOO_MANY_ATTEMPTS": "Too many failed attempts. Wait 15 minutes or ask the management for help.",
       "ATTENDANCE_CODE_NOT_AVAILABLE": "That code is not available yet or is not for this week.",
       "ATTENDANCE_CODE_KEY_RETIRED": "That code was issued with a retired key. Revoke it to generate a new one.",

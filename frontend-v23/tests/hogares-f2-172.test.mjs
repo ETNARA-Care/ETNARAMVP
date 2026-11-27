@@ -143,7 +143,8 @@ test("F2: turnos del calendario se presentan «del establecimiento» (nunca la h
     assert.equal(lr.scopedTo(state, "H1", "E1|2026-12-07"), null);
     assert.equal(lr.scopedTo(state, "H2", "E9|2026-12-14"), null, "otra semana no reutiliza los datos");
     assert.match(page, /const current = scopedTo\(state, organizationId, key\);/);
-    assert.match(page, /const dialog = dialogState && dialogState\.organizationId === organizationId \? dialogState\.dialog : null;/);
+    // Auditoría 26-nov: ligado a organización, establecimiento y semana (más estricto que solo la organización).
+    assert.match(page, /const dialog = current \? scopedValue\(dialogState, organizationId, key\) : null;/);
     assert.match(page, /const chosen = selected && selected\.organizationId === organizationId \? selected\.locationId : null;/);
     assert.equal((page.match(/let active = true;/g) ?? []).length, 2);
     assert.equal((page.match(/return \(\) => \{ active = false; \};/g) ?? []).length, 2);
@@ -175,3 +176,91 @@ test("F2: catálogo inglés con las mismas claves, marcadores y sin español; to
   assert.equal(JSON.parse(read("src/i18n/locales/en/shell.json")).agency.items.residentialSchedule, "Weekly schedule");
   assert.equal(JSON.parse(read("src/i18n/locales/es/shell.json")).agency.items.residentialSchedule, "Calendario semanal");
 });
+
+test("el diálogo del calendario va ligado a organización, establecimiento y semana y se descarta al cambiar", () => {
+  assert.match(page, /useState<ScreenScoped<Dialog> \| null>\(null\)/);
+  assert.match(page, /const key = locationId \? `\$\{locationId\}\|\$\{weekStart\}` : undefined;/);
+  assert.match(page, /setDialogState\(\{ organizationId, key, value: d \}\)/);
+  assert.match(page, /const screenKey = `\$\{organizationId \?\? ""\}\|\$\{key \?\? ""\}`;/);
+  assert.match(page, /if \(dialogScreen !== screenKey\) \{ setDialogScreen\(screenKey\); setDialogState\(null\); \}/);
+  assert.doesNotMatch(page, /dialogState\.organizationId === organizationId \? dialogState\.dialog/);
+});
+
+// 27-nov (decisiones de Rafa): turnos individuales sincronizados con la semana, turnos del establecimiento sin residente
+// y «Mi horario» del cuidador.
+{
+  const myPage = read("src/pages/caregiver/CaregiverSchedulePage.tsx");
+  const caregiverLayout = read("src/layouts/CaregiverLayout.tsx");
+  const shiftsPage = read("src/pages/agency/AgencyShiftsPage.tsx");
+  const shiftsApi = read("src/api/shifts.ts");
+  const es = JSON.parse(read("src/i18n/locales/es/residential.json"));
+  const en = JSON.parse(read("src/i18n/locales/en/residential.json"));
+  const esShell = JSON.parse(read("src/i18n/locales/es/shell.json"));
+  const enShell = JSON.parse(read("src/i18n/locales/en/shell.json"));
+
+  test("la semana muestra los turnos individuales (solo lectura, enlazados a «Turnos») y los marca si entran en un aviso", () => {
+    assert.match(api, /individualShifts\?: ScheduleIndividualShift\[\]/);
+    assert.match(api, /shiftIds\?: string\[\]/);
+    assert.match(page, /individualByDay\(weekStart, schedule\.individualShifts \?\? \[\]\)/);
+    assert.match(page, /<IndividualCard key=\{x\.shiftId\} shift=\{x\} warned=\{warnedShifts\.has\(x\.shiftId\)\} \/>/);
+    assert.match(page, /to=\{`\/agency\/shifts\/\$\{shift\.shiftId\}`\}/);
+    // Solo lectura: la tarjeta individual no abre los diálogos de edición del calendario.
+    const card = page.slice(page.indexOf("function IndividualCard"), page.indexOf("function Summary"));
+    assert.doesNotMatch(card, /onEdit|onRemove|open\(/);
+  });
+
+  test("«Crear turno» en un hogar: «Todo el establecimiento» solo con HOGAR_CALENDARIO; residente como siempre; agencias sin cambios", () => {
+    assert.match(shiftsApi, /careRecipientId\?: string; establishmentId\?: string;/);
+    assert.match(shiftsPage, /const residentialHome = isResidentialOrganization\(activeOrganization\);/);
+    // Decisión B (27-nov): la opción depende del interruptor del hogar, no solo de la modalidad.
+    assert.match(shiftsPage, /const establishmentShifts = residentialHome && hasOrgFeature\(activeOrganization\?\.features, "HOGAR_CALENDARIO"\);/);
+    assert.match(shiftsPage, /const forEstablishment = establishmentShifts && target === "establishment";/);
+    assert.match(shiftsPage, /\{establishmentShifts && \(\s*<fieldset/);
+    assert.doesNotMatch(shiftsPage, /\{residentialHome && \(\s*<fieldset/);
+    assert.match(shiftsPage, /\.\.\.\(forEstablishment \? \{ establishmentId: effectiveEstablishmentId \} : \{ careRecipientId: effectiveRecipientId \}\)/);
+    // Sin el interruptor ni siquiera se piden los establecimientos.
+    assert.match(shiftsPage, /if \(!establishmentShifts \|\| !creating \|\| !organizationId \|\| !token\) return;/);
+    assert.match(shiftsPage, /e\.status === "active"/);
+  });
+
+  test("«Mi horario»: ruta y pestaña solo con HOGAR_CALENDARIO; solo su propia semana, ligada a la organización y la semana", () => {
+    assert.match(app, /<Route path="horario" element=\{<FeatureRoute feature="HOGAR_CALENDARIO" fallback="\/caregiver"><CaregiverSchedulePage\/><\/FeatureRoute>\}\/>/);
+    assert.match(caregiverLayout, /const mySchedule = hasOrgFeature\(activeOrganization\?\.features, "HOGAR_CALENDARIO"\);/);
+    assert.match(caregiverLayout, /\.\.\.\(mySchedule \? \[\{ to: "\/caregiver\/horario"/);
+    assert.match(api, /mine: \(o: string, w: string, t: string\) => apiClient\.get<\{ schedule: MyScheduleWeek \}>\(`\$\{base\(o\)\}\/me\/weeks\/\$\{w\}`, t\)/);
+    assert.match(myPage, /scheduleApi\.mine\(organizationId, weekStart, token\)/);
+    assert.match(myPage, /const current = scopedTo\(state, organizationId, key\);/);
+    // Nunca usa las rutas de administración del calendario.
+    assert.doesNotMatch(myPage, /scheduleApi\.(week|establishments|publish|createEntry|templates)\(/);
+    // Semanas anteriores y siguientes, días sin turnos y horas.
+    assert.match(myPage, /setWeekStart\(addDays\(weekStart, -7\)\)/);
+    assert.match(myPage, /setWeekStart\(addDays\(weekStart, 7\)\)/);
+    assert.match(myPage, /t\("mySchedule\.noShifts"\)/);
+    assert.match(myPage, /formatHours\(day\.minutes, lang\)/);
+  });
+
+  test("«Mi horario» se actualiza al volver a la app: una vez, misma semana y organización, sin consultas periódicas", () => {
+    assert.match(myPage, /document\.addEventListener\("visibilitychange", onVisible\)/);
+    assert.match(myPage, /document\.removeEventListener\("visibilitychange", onVisible\)/);
+    assert.match(myPage, /if \(document\.visibilityState !== "visible" \|\| !organizationId\) return;/);
+    // Sin duplicados: si ya hay una carga de esta organización y semana, no lanza otra.
+    assert.match(myPage, /if \(inFlight\.current === `\$\{organizationId\}\|\$\{key\}`\) return;/);
+    // La respuesta solo se aplica si sigue siendo la última petición; lo visible sigue ligado a organización y semana.
+    assert.match(myPage, /if \(request\.isCurrent\(\)\) setState\(\{ organizationId, key, data: r\.schedule, error: false \}\);/);
+    assert.match(myPage, /const current = scopedTo\(state, organizationId, key\);/);
+    // La semana elegida no se reinicia al volver: la recarga no toca weekStart.
+    const onVisible = myPage.slice(myPage.indexOf("const onVisible"), myPage.indexOf("removeEventListener(\"visibilitychange\""));
+    assert.ok(onVisible.length > 0 && !/setWeekStart|setState/.test(onVisible));
+    // Nada de consultas periódicas ni de otros eventos que repitan la carga.
+    assert.doesNotMatch(myPage, /setInterval|setTimeout|addEventListener\("(focus|pageshow|online)"/);
+  });
+
+  test("traducciones completas en español e inglés (mismas claves)", () => {
+    const keys = (o, p = "") => Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? keys(v, `${p}${k}.`) : [`${p}${k}`]));
+    for (const section of ["mySchedule", "shiftTarget"]) assert.deepEqual(keys(es[section]).sort(), keys(en[section]).sort(), section);
+    assert.deepEqual(keys(es.schedule.individual).sort(), keys(en.schedule.individual).sort());
+    assert.ok(es.schedule.warnings.withIndividual && en.schedule.warnings.withIndividual);
+    assert.equal(esShell.caregiver.items.mySchedule, "Mi horario");
+    assert.equal(enShell.caregiver.items.mySchedule, "My schedule");
+  });
+}

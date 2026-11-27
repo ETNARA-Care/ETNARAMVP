@@ -154,7 +154,8 @@ test("F1 171: sin tope de camas por habitación en el portal; mensaje de traslad
     }
     assert.match(list, /const current = scopedTo\(state, organizationId\);/);
     assert.match(detail, /const current = scopedTo\(state, organizationId, establishmentId\);/);
-    assert.match(detail, /const dialog = dialogState && dialogState\.organizationId === organizationId \? dialogState\.dialog : null;/);
+    // Auditoría 26-nov: el diálogo va ligado a la organización y al establecimiento (más estricto que solo la organización).
+    assert.match(detail, /const dialog = data && data\.establishment\.id === establishmentId \? scopedValue\(dialogState, organizationId, establishmentId\) : null;/);
     // Diálogos (ubicar, historial, geocerca, cierre): cada efecto descarta su respuesta si cambió la organización.
     assert.equal((detail.match(/let active = true;/g) ?? []).length, 4);
     assert.equal((detail.match(/return \(\) => \{ active = false; \};/g) ?? []).length, 4);
@@ -183,3 +184,30 @@ test("F1: el catálogo inglés de establecimientos tiene las mismas claves y los
   for (const [k, v] of en) assert.doesNotMatch(String(v), /\b(habitación|establecimiento|residentes|camas|unidad)\b/i, `en.${k} en español`);
   assert.equal(JSON.parse(read("src/i18n/locales/en/shell.json")).agency.items.residentialEstablishments, "Facilities and rooms");
 });
+
+// Auditoría 26-nov: el diálogo abierto va ligado a la organización Y al establecimiento.
+{
+  const ts = (await import("typescript")).default;
+  const src = readFileSync(new URL("../src/features/residential/latestRequest.ts", import.meta.url), "utf8");
+  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const lr = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+  test("scopedValue: solo devuelve el diálogo en la misma organización y el mismo establecimiento", () => {
+    const open = { organizationId: "org-1", key: "est-A", value: { kind: "room", roomId: "room-A" } };
+    assert.deepEqual(lr.scopedValue(open, "org-1", "est-A"), open.value);
+    assert.equal(lr.scopedValue(open, "org-1", "est-B"), null, "otro establecimiento de la misma organización");
+    assert.equal(lr.scopedValue(open, "org-2", "est-A"), null, "otra organización");
+    assert.equal(lr.scopedValue(open, "", "est-A"), null);
+    assert.equal(lr.scopedValue(open, "org-1", ""), null);
+    assert.equal(lr.scopedValue(null, "org-1", "est-A"), null);
+  });
+  test("la ficha del establecimiento liga el diálogo al establecimiento y lo descarta al cambiar", () => {
+    assert.match(detail, /useState<ScreenScoped<Dialog> \| null>\(null\)/);
+    assert.match(detail, /scopedValue\(dialogState, organizationId, establishmentId\)/);
+    assert.match(detail, /data && data\.establishment\.id === establishmentId \? scopedValue/);
+    assert.match(detail, /setDialogState\(d \? \{ organizationId, key: establishmentId, value: d \} : null\)/);
+    // Cambio de organización o de establecimiento: se descarta durante el render (no reaparece al volver).
+    assert.match(detail, /const screenKey = `\$\{organizationId\}:\$\{establishmentId\}`;/);
+    assert.match(detail, /if \(dialogScreen !== screenKey\) \{ setDialogScreen\(screenKey\); setDialogState\(null\); \}/);
+    assert.doesNotMatch(detail, /dialogState\.organizationId === organizationId \? dialogState\.dialog/);
+  });
+}

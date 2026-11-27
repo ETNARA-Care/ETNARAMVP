@@ -1,19 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/auth/AuthProvider";
 import { getToken } from "@/auth/token";
 import { useOrgFeature } from "@/auth/orgFeatures";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import {
-  scheduleApi, scheduleErrorMessage, type ScheduleEntry, type ScheduleEstablishment, type SchedulePublication, type ScheduleTemplate, type ScheduleWeek,
-} from "@/api/residentialSchedule";
+  scheduleApi, scheduleErrorMessage, type ScheduleEntry, type ScheduleEstablishment, type SchedulePublication, type ScheduleTemplate, type ScheduleWeek, type ScheduleIndividualShift } from "@/api/residentialSchedule";
 import { csvLines } from "@/features/export/csv";
-import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
+import { createLatestRequest, scopedTo, scopedValue, type OrganizationScoped, type ScreenScoped } from "@/features/residential/latestRequest";
 import { isResidentialOrganization, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
 import {
-  addDays, entriesByDay, formatHours, mondayOf, puertoRicoDate, scheduleCsvRows, slotsFromWeek, staffNeedsReview, timeOf, warnedEntryIds, weekDays,
-} from "@/features/residential/schedule";
+  addDays, entriesByDay, formatHours, mondayOf, puertoRicoDate, scheduleCsvRows, slotsFromWeek, staffNeedsReview, timeOf, warnedEntryIds, weekDays, individualByDay, warnedShiftIds } from "@/features/residential/schedule";
 
 /**
  * 172 (hogares F2): calendario semanal del establecimiento. Solo hogares, solo con HOGAR_CALENDARIO y solo administración.
@@ -48,7 +46,10 @@ export function ResidentialSchedulePage() {
   const [selected, setSelected] = useState<{ organizationId: string; locationId: string } | null>(null);
   const [weekStart, setWeekStart] = useState(() => mondayOf(puertoRicoDate()));
   const [state, setState] = useState<OrganizationScoped<ScheduleWeek> | null>(null);
-  const [dialogState, setDialogState] = useState<{ organizationId: string; dialog: Dialog } | null>(null);
+  // Auditoría 26-nov (como en la ficha de F1): el diálogo abierto pertenece a la organización, el establecimiento y la
+  // semana en que se abrió; si cualquiera cambia (también si la lista de establecimientos se recarga y cambia la
+  // selección), desaparece y no actúa sobre otro establecimiento ni otra semana.
+  const [dialogState, setDialogState] = useState<ScreenScoped<Dialog> | null>(null);
   const [busy, setBusy] = useState(false);
   const latestList = useRef(createLatestRequest());
   const latest = useRef(createLatestRequest());
@@ -96,8 +97,11 @@ export function ResidentialSchedulePage() {
   const current = scopedTo(state, organizationId, key);
   const schedule = current?.data ?? null;
   const error = current?.error === true;
-  const dialog = dialogState && dialogState.organizationId === organizationId ? dialogState.dialog : null;
-  const open = (d: Dialog) => organizationId && setDialogState({ organizationId, dialog: d });
+  const screenKey = `${organizationId ?? ""}|${key ?? ""}`;
+  const [dialogScreen, setDialogScreen] = useState(screenKey);
+  if (dialogScreen !== screenKey) { setDialogScreen(screenKey); setDialogState(null); }
+  const dialog = current ? scopedValue(dialogState, organizationId, key) : null;
+  const open = (d: Dialog) => organizationId && key && setDialogState({ organizationId, key, value: d });
   const close = () => setDialogState(null);
 
   /** Ejecuta un cambio, avisa y vuelve a leer la semana (el backend es la fuente de verdad). */
@@ -118,7 +122,9 @@ export function ResidentialSchedulePage() {
 
   const days = weekDays(weekStart);
   const byDay = schedule ? entriesByDay(weekStart, schedule.entries) : null;
+  const individualDay = schedule ? individualByDay(weekStart, schedule.individualShifts ?? []) : null;
   const warned = schedule ? warnedEntryIds(schedule.warnings) : new Set<string>();
+  const warnedShifts = schedule ? warnedShiftIds(schedule.warnings) : new Set<string>();
   const staffName = (membershipId: string) => schedule?.staff.find((s) => s.membershipId === membershipId)?.name ?? t("schedule.unnamed");
   const removedPublished = schedule?.entries.filter((e) => e.removed && e.published) ?? [];
   const exportCsv = () => {
@@ -181,7 +187,7 @@ export function ResidentialSchedulePage() {
                 <Card className="border-[var(--color-warning-700)]/40 bg-[var(--color-warning-100)]" data-testid="schedule-warnings">
                   <p className="font-medium text-[var(--color-text-primary)]">{t("schedule.warnings.title", { count: schedule.warnings.length })}</p>
                   <ul className="mt-1 list-disc pl-5 text-[var(--text-small)]">
-                    {schedule.warnings.map((w) => <li key={`${w.type}-${w.entryIds.join("-")}`}>{t(`schedule.warnings.${w.type}`, { name: staffName(w.membershipId) })}</li>)}
+                    {schedule.warnings.map((w) => <li key={`${w.type}-${w.entryIds.join("-")}-${(w.shiftIds ?? []).join("-")}`}>{t(`schedule.warnings.${w.type}`, { name: staffName(w.membershipId) })}{(w.shiftIds ?? []).length > 0 ? ` ${t("schedule.warnings.withIndividual")}` : ""}</li>)}
                   </ul>
                   <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">{t("schedule.warnings.publishBlocked")}</p>
                 </Card>
@@ -197,8 +203,9 @@ export function ResidentialSchedulePage() {
                         <span className="print:hidden">+</span>
                       </Button>
                     </div>
-                    {(byDay.get(day) ?? []).length === 0 ? <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{t("schedule.dayEmpty")}</p>
+                    {(byDay.get(day) ?? []).length === 0 && (individualDay?.get(day) ?? []).length === 0 ? <p className="text-[var(--text-small)] text-[var(--color-text-secondary)]">{t("schedule.dayEmpty")}</p>
                       : (byDay.get(day) ?? []).map((e) => <EntryCard key={e.id} entry={e} warned={warned.has(e.id)} onEdit={() => open({ kind: "entry", day, entry: e })} onRemove={() => open({ kind: "remove", entry: e })} />)}
+                    {(individualDay?.get(day) ?? []).map((x) => <IndividualCard key={x.shiftId} shift={x} warned={warnedShifts.has(x.shiftId)} />)}
                   </Card>
                 ))}
               </div>
@@ -282,6 +289,26 @@ function EntryCard({ entry, warned, onEdit, onRemove }: { entry: ScheduleEntry; 
         <Button variant="ghost" size="sm" onClick={onEdit}>{t("schedule.edit")}</Button>
         <Button variant="ghost" size="sm" onClick={onRemove}>{t("schedule.remove")}</Button>
       </div>
+    </div>
+  );
+}
+
+/** 27-nov: turno individual del establecimiento (de «Turnos»): solo lectura aquí, se gestiona en «Turnos». */
+function IndividualCard({ shift, warned }: { shift: ScheduleIndividualShift; warned: boolean }) {
+  const { t } = useTranslation("residential");
+  const place = shift.target === "room" ? t("schedule.individual.room", { name: shift.roomName ?? "" })
+    : shift.target === "resident" ? t("schedule.individual.resident", { name: shift.residentName ?? "" }) : t("schedule.individual.establishment");
+  return (
+    <div data-testid="schedule-individual" className={`flex flex-col gap-1 rounded-[var(--radius-sm)] border border-dashed p-2 text-[var(--text-small)] ${warned ? "border-[var(--color-warning-700)]" : "border-[var(--color-border)]"}`}>
+      <p className="font-medium text-[var(--color-text-primary)]">{`${timeOf(shift.startsAt)}–${timeOf(shift.endsAt)}`}{shift.endsAt.slice(0, 10) !== shift.startsAt.slice(0, 10) && <span className="text-[var(--color-text-secondary)]"> {t("schedule.nextDay")}</span>}</p>
+      <p className="text-[var(--color-text-primary)]">{shift.workerName ?? t("schedule.unassigned")}</p>
+      <p className="text-[var(--color-text-secondary)]">{shift.requiredRole} · {place}</p>
+      <div className="flex flex-wrap gap-1">
+        <Badge tone="neutral">{t("schedule.individual.badge")}</Badge>
+        {shift.assignmentStatus && <Badge tone={shift.assignmentStatus === "accepted" ? "success" : "accent"}>{t(`schedule.assignment.${shift.assignmentStatus}`)}</Badge>}
+        {warned && <Badge tone="warning">{t("schedule.warnings.badge")}</Badge>}
+      </div>
+      <Link to={`/agency/shifts/${shift.shiftId}`} className="text-[var(--color-accent-700)] underline print:hidden">{t("schedule.individual.open")}</Link>
     </div>
   );
 }
