@@ -8,6 +8,11 @@
 
 ## Current Status
 
+## 2026-11-25 — 171 Hogares F1 (portal) — rama claude/171-hogares-f1 (apilada sobre claude/170-hogares-f0; local, sin PR)
+- Menú «Hogar» → «Establecimientos y habitaciones» (/agency/hogar/establecimientos y /:id), solo hogares. Unidades (con «General»), habitaciones, camas registradas (aviso: no es capacidad autorizada por el Departamento de la Familia), ocupación con «Sin configurar», ubicar y trasladar residentes con historial, geocerca (50–300 m, motivo, historial), comprobación y cierre con confirmación escrita.
+- Solo backend real (/residential/* de la 171); tras cada cambio se vuelve a leer del servidor. Sin piezas técnicas ni datos clínicos.
+- Pruebas: npm test 470/470, tsc, build, lint sin errores; prueba real en navegador (390 px y escritorio) con backend local y datos ficticios: traslado y cierre por la interfaz verificados en la base.
+
 ## 2026-11-23 — 161 PR C (portal): «Mis documentos», confirmación e «Informe del proveedor» — rama claude/161-mis-documentos-informe-proveedor (apilada sobre claude/160b-mi-practica), PR borrador
 - api/practice.ts; /agency/documents (PracticeDocumentsPage): requisitos propios, registrar/corregir/renovar/retirar; estados Registrado · Vence pronto · Vencido · Falta · Retirado; «Autodeclarado»; nunca Verificado/Aprobado.
 - Mis turnos: advertencia con lo que falta, casilla «Confirmo que cumplo…» y aviso legal fijo antes de enviar confirmSelfDeclaration.

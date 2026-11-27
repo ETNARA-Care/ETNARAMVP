@@ -7,6 +7,8 @@
  */
 export interface OrganizationScoped<T> {
   organizationId: string;
+  /** 171: además de la organización, lo que identifica la pantalla (p. ej. el establecimiento). */
+  key?: string;
   data: T | null;
   error: boolean;
 }
@@ -21,7 +23,22 @@ export function createLatestRequest() {
   };
 }
 
-/** El estado solo es visible si pertenece a la organización activa. */
-export function scopedTo<T>(state: OrganizationScoped<T> | null, organizationId: string | null | undefined): OrganizationScoped<T> | null {
-  return state && organizationId && state.organizationId === organizationId ? state : null;
+/** El estado solo es visible si pertenece a la organización activa (y, si se indica, a la misma pantalla). */
+export function scopedTo<T>(state: OrganizationScoped<T> | null, organizationId: string | null | undefined, key?: string): OrganizationScoped<T> | null {
+  return state && organizationId && state.organizationId === organizationId && (key === undefined || state.key === key) ? state : null;
+}
+
+/**
+ * 171 · auditoría 26-nov. Un valor de pantalla (p. ej. un diálogo abierto con su formulario) ligado a la organización
+ * Y al establecimiento en que se abrió: si cambia cualquiera de los dos deja de existir, así que nunca se conserva un
+ * formulario anterior ni se ejecuta una operación sobre el establecimiento equivocado.
+ */
+export interface ScreenScoped<T> {
+  organizationId: string;
+  key: string;
+  value: T;
+}
+
+export function scopedValue<T>(scoped: ScreenScoped<T> | null, organizationId: string | null | undefined, key: string | null | undefined): T | null {
+  return scoped && organizationId && key && scoped.organizationId === organizationId && scoped.key === key ? scoped.value : null;
 }

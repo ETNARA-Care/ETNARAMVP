@@ -51,7 +51,8 @@
       "practiceHome": "Home",
       "clients": "Clients",
       "documents": "My documents",
-      "residentialPanel": "Care home panel"
+      "residentialPanel": "Care home panel",
+      "residentialEstablishments": "Facilities and rooms"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",

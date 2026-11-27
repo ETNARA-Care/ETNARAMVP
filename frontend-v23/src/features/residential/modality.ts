@@ -23,9 +23,14 @@ export function isHiddenForResidential(pathname: string): boolean {
 
 /** Panel base del hogar (solo hogares). */
 export const RESIDENTIAL_PANEL_PATH = "/agency/hogar";
+/** 171 (F1): establecimientos, unidades, habitaciones y ubicación de residentes (solo hogares). */
+export const RESIDENTIAL_ESTABLISHMENTS_PATH = "/agency/hogar/establecimientos";
 
 /** D9: franja visible solo cuando ETNARA central encendió DEMO_ENVIRONMENT para esa organización. */
 export const DEMO_ENVIRONMENT_NOTICE = "Entorno de demostración — Datos ficticios";
 export function isDemoEnvironment(features: readonly string[] | undefined | null): boolean {
   return Array.isArray(features) && features.includes("DEMO_ENVIRONMENT");
 }
+
+/** 171: mensaje cuando se intenta archivar un establecimiento de hogar por la vía ordinaria (Configuración). Texto en el catálogo «residential». */
+export const RESIDENTIAL_CLOSURE_REQUIRED_MESSAGE_KEY = "residential:establishments.settings.closureRequired";
