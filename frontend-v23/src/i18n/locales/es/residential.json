@@ -649,7 +649,17 @@
       "queueDetail": "Se enviarán solos al volver la conexión, con la hora en que ponchaste.",
       "sendNow": "Enviar ahora",
       "recent": "Tus ponches recientes",
-      "noRecent": "Todavía no hay ponches."
+      "noRecent": "Todavía no hay ponches.",
+      "saveFailed": "No se pudo guardar el ponche en el teléfono (almacenamiento lleno o no disponible). NO quedó registrado: anota la hora y pide una corrección cuando tengas señal.",
+      "queueFull": "Ya tienes {{max}} ponches sin enviar en este teléfono. Este NO se guardó: conéctate para enviarlos o pide una corrección.",
+      "holdAuth": "Tu sesión terminó. Inicia sesión de nuevo y se enviarán; no se ha perdido ninguno.",
+      "holdFeature": "La asistencia está desactivada en este hogar por ahora. Siguen guardados y se enviarán cuando vuelva a estar activa.",
+      "rejectedTitle_one": "{{count}} ponche no aceptado",
+      "rejectedTitle_other": "{{count}} ponches no aceptados",
+      "rejectedDetail": "El servidor no aceptó estos ponches. Siguen guardados en este teléfono: puedes reintentarlo, pedir una corrección a la administración o descartarlo.",
+      "retry": "Reintentar",
+      "discard": "Descartar",
+      "discardConfirm": "Confirmar: descartar este ponche"
     },
     "correction": {
       "open": "Pedir una corrección",

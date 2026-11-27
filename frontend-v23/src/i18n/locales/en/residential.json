@@ -649,7 +649,17 @@
       "queueDetail": "They will be sent automatically when the connection returns, with the time you punched.",
       "sendNow": "Send now",
       "recent": "Your recent punches",
-      "noRecent": "No punches yet."
+      "noRecent": "No punches yet.",
+      "saveFailed": "The punch could not be saved on this phone (storage full or unavailable). It was NOT recorded: note the time and request a correction once you have signal.",
+      "queueFull": "You already have {{max}} unsent punches on this phone. This one was NOT saved: get online to send them or request a correction.",
+      "holdAuth": "Your session ended. Sign in again and they will be sent; none has been lost.",
+      "holdFeature": "Attendance is turned off for this home for now. They are still saved and will be sent when it is active again.",
+      "rejectedTitle_one": "{{count}} punch not accepted",
+      "rejectedTitle_other": "{{count}} punches not accepted",
+      "rejectedDetail": "The server did not accept these punches. They are still saved on this phone: you can retry, request a correction from the administration or discard it.",
+      "retry": "Retry",
+      "discard": "Discard",
+      "discardConfirm": "Confirm: discard this punch"
     },
     "correction": {
       "open": "Request a correction",

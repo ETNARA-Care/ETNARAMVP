@@ -6,7 +6,8 @@ import { getToken } from "@/auth/token";
 import { useOrgFeature } from "@/auth/orgFeatures";
 import { Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { attendanceApi, attendanceErrorMessage, type MyAttendance, type Punch, type PunchInput, type PunchType } from "@/api/residentialAttendance";
-import { availablePunchTypes, dropQueuedAfterError, enqueue, parseQueue, qrFromLink, QUEUE_KEY, type QueuedPunch } from "@/features/residential/attendance";
+import { availablePunchTypes, qrFromLink } from "@/features/residential/attendance";
+import { addItem, classifyQueueError, mine, readAll, updateItem, withFlushLock, withQueueLock, MAX_PENDING, QUEUE_KEY_V2, type QueueItem, type QueueStorage } from "@/features/residential/attendanceQueue";
 import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
 import { isResidentialOrganization } from "@/features/residential/modality";
 
@@ -17,8 +18,10 @@ import { isResidentialOrganization } from "@/features/residential/modality";
  * - Sin conexión el ponche queda en el teléfono SIN ubicación y se envía después: el servidor lo deja pendiente de
  *   revisión. El servidor decide todo; esta pantalla solo muestra su respuesta.
  */
-const readQueue = (): QueuedPunch[] => { try { return parseQueue(localStorage.getItem(QUEUE_KEY)); } catch { return []; } };
-const writeQueue = (q: QueuedPunch[]) => { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch { /* almacenamiento no disponible */ } };
+/** localStorage, o null si el navegador no lo permite (modo privado estricto, bloqueado…). */
+const store = (): QueueStorage | null => { try { return window.localStorage; } catch { return null; } };
+/** Hora local de Puerto Rico (UTC−4) para el campo de la corrección. */
+const prLocalInput = (iso: string) => new Date(new Date(iso).getTime() - 4 * 3_600_000).toISOString().slice(0, 16);
 const fmt = (iso: string, lang: string | undefined) => new Date(iso).toLocaleString(lang === "en" ? "en-US" : "es-PR", { timeZone: "America/Puerto_Rico", dateStyle: "medium", timeStyle: "short" });
 
 /** Una sola lectura, con límite de tiempo; si falla, se poncha igual («ubicación no disponible»). */
@@ -34,21 +37,44 @@ function readLocationOnce(): Promise<PunchInput["location"]> {
 }
 
 export function CaregiverPunchPage() {
-  const { activeOrganization } = useAuth();
+  const { activeOrganization, user } = useAuth();
   const organizationId = activeOrganization?.id;
+  const userId = user?.id ?? null;
   const residential = isResidentialOrganization(activeOrganization);
   const enabled = useOrgFeature("HOGAR_PONCHES");
   const { t, i18n } = useTranslation("residential");
   const lang = i18n.resolvedLanguage;
   const toast = useToast();
   const routeLocation = useLocation();
-  const qr = qrFromLink(routeLocation.search);
+  // El QR llega en el fragmento (#c=…): se lee una vez y se quita de la barra de direcciones y del historial.
+  // También si llega con la pantalla ya abierta (cambio de fragmento sin recargar).
+  const [qr, setQr] = useState<string | null>(() => qrFromLink(routeLocation.hash || (typeof window !== "undefined" ? window.location.hash : "")));
+  useEffect(() => {
+    const take = () => {
+      if (!/(^#|&)c=/.test(window.location.hash)) return;
+      const v = qrFromLink(window.location.hash);
+      if (v) setQr(v);
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    };
+    take();
+    window.addEventListener("hashchange", take);
+    return () => window.removeEventListener("hashchange", take);
+  }, []);
   const [state, setState] = useState<OrganizationScoped<MyAttendance> | null>(null);
   const [shiftChoice, setShiftChoice] = useState<{ organizationId: string; shiftId: string } | null>(null);
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ organizationId: string; punch: Punch } | null>(null);
-  const [queue, setQueue] = useState<QueuedPunch[]>(() => readQueue());
+  const [queue, setQueue] = useState<QueueItem[]>(() => readAll(store()));
+  const [correctionFor, setCorrectionFor] = useState<string | null>(null);
+  const [discardFor, setDiscardFor] = useState<string | null>(null);
+  const refreshQueue = useCallback(() => setQueue(readAll(store())), []);
+  // Otra pestaña del mismo teléfono cambió la cola: se vuelve a leer (nunca se escribe una copia antigua).
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => { if (e.key === QUEUE_KEY_V2 || e.key === null) refreshQueue(); };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [refreshQueue]);
   const latest = useRef(createLatestRequest());
 
   const load = useCallback(async () => {
@@ -72,44 +98,60 @@ export function CaregiverPunchPage() {
   const chosen = shiftChoice && shiftChoice.organizationId === organizationId ? shiftChoice.shiftId : null;
   const shift = data?.shifts.find((s) => s.shiftId === chosen) ?? data?.shifts[0] ?? null;
   const last = result && result.organizationId === organizationId ? result.punch : null;
-  const myQueue = queue.filter((q) => q.organizationId === organizationId);
+  // Solo los ponches de ESTA persona en ESTA organización (A1): los de otra persona del mismo teléfono no se ven ni se tocan.
+  const myItems = organizationId && userId ? mine(queue, { userId, organizationId }) : [];
+  const myQueue = myItems.filter((q) => q.status === "pending");
+  const myRejected = myItems.filter((q) => q.status === "rejected");
+  const holdAuth = myQueue.some((q) => q.hold === "auth"), holdFeature = myQueue.some((q) => q.hold === "feature");
 
-  /** Reenvía la cola (mismo client_event_id: el servidor no duplica). */
+  /**
+   * Reenvía la cola de ESTA persona (mismo client_event_id: el servidor no duplica). Un solo envío a la vez en todo el
+   * teléfono; cada cambio se hace con el candado y releyendo, así que un ponche nuevo guardado durante el envío no se
+   * pierde. Solo se quita lo que el servidor aceptó; lo demás espera o queda «no aceptado» a la vista (A2, A5, A6).
+   */
   const flush = useCallback(async () => {
     const token = getToken();
-    if (!organizationId || !token) return;
-    let rest = readQueue();
-    for (const item of rest.filter((q) => q.organizationId === organizationId)) {
-      try {
-        await attendanceApi.punch(organizationId, { clientEventId: item.clientEventId, shiftId: item.shiftId, type: item.type, method: item.method,
-          ...(item.method === "qr" ? { qr: item.qr } : { pin: item.pin }), offline: true, declaredAt: item.declaredAt, deviceNow: new Date().toISOString() }, token);
-        rest = rest.filter((q) => q.clientEventId !== item.clientEventId);
-      } catch (e) {
-        if ((e as { isNetworkError?: boolean }).isNetworkError) break;
-        // Rechazo definitivo (4xx): se quita y no se reintenta en bucle. Un 5xx o un 429 no es un rechazo: se conserva y
-        // se detiene el envío, para no mandar los siguientes (p. ej. la salida) antes que este (la entrada).
-        if (!dropQueuedAfterError(e)) break;
-        rest = rest.filter((q) => q.clientEventId !== item.clientEventId);
+    if (!organizationId || !userId || !token) return;
+    const owner = { userId, organizationId };
+    await withFlushLock(async () => {
+      const tried = new Set<string>();
+      for (;;) {
+        const item = await withQueueLock(() => mine(readAll(store()), owner).find((i) => i.status === "pending" && !tried.has(i.clientEventId)));
+        if (!item) break;
+        tried.add(item.clientEventId);
+        try {
+          await attendanceApi.punch(organizationId, { clientEventId: item.clientEventId, shiftId: item.shiftId, type: item.type, method: item.method,
+            ...(item.method === "qr" ? { qr: item.qr } : { pin: item.pin }), offline: true, declaredAt: item.declaredAt, deviceNow: new Date().toISOString() }, token);
+          await withQueueLock(() => updateItem(store(), item.clientEventId, () => null));
+        } catch (e) {
+          const d = classifyQueueError(e);
+          // Red, 5xx, 408 o 429: espera, y se detiene para no mandar los siguientes antes que este.
+          if (d.kind === "retry") break;
+          // 401 o asistencia apagada por ahora: espera con su explicación, sin perder nada.
+          if (d.kind === "hold") { await withQueueLock(() => updateItem(store(), item.clientEventId, (i) => ({ ...i, hold: d.hold }))); break; }
+          await withQueueLock(() => updateItem(store(), item.clientEventId, (i) => ({ ...i, status: "rejected", hold: undefined,
+            rejection: { status: d.status, code: d.code, at: new Date().toISOString() } })));
+        }
       }
-    }
-    writeQueue(rest); setQueue(rest); await load();
-  }, [organizationId, load]);
+    });
+    refreshQueue(); await load();
+  }, [organizationId, userId, load, refreshQueue]);
   useEffect(() => {
     const onOnline = () => void flush();
     window.addEventListener("online", onOnline);
-    if (navigator.onLine && readQueue().some((q) => q.organizationId === organizationId)) void flush();
+    if (navigator.onLine && organizationId && userId && mine(readAll(store()), { userId, organizationId }).some((q) => q.status === "pending")) void flush();
     return () => window.removeEventListener("online", onOnline);
-  }, [flush, organizationId]);
+  }, [flush, organizationId, userId]);
 
   const doPunch = async (type: PunchType) => {
     const token = getToken();
-    if (!organizationId || !token || !shift) return;
+    if (!organizationId || !userId || !token || !shift) return;
     const method: "qr" | "pin" = qr ? "qr" : "pin";
     if (method === "pin" && !/^\d{6}$/.test(pin)) return;
     setBusy(true);
     const clientEventId = crypto.randomUUID();
     const declaredAt = new Date().toISOString();
-    const queued: QueuedPunch = { clientEventId, organizationId, shiftId: shift.shiftId, type, method, ...(method === "qr" ? { qr: qr! } : { pin }), declaredAt };
+    const queued: QueueItem = { clientEventId, userId, organizationId, shiftId: shift.shiftId, type, method, ...(method === "qr" ? { qr: qr! } : { pin }), declaredAt, status: "pending" };
     try {
       if (!navigator.onLine) throw { isNetworkError: true };
       const location = data?.consent.accepted ? await readLocationOnce() : undefined;
@@ -120,12 +162,24 @@ export function CaregiverPunchPage() {
       await load();
     } catch (e) {
       if ((e as { isNetworkError?: boolean }).isNetworkError) {
-        const next = enqueue(readQueue(), queued); writeQueue(next); setQueue(next); setPin("");
-        toast.show(t("attendance.punch.queued"), "warning");
+        // Se guarda con el candado y se comprueba releyendo: nunca un «guardado» falso (A3) ni un borrado silencioso (A4).
+        const saved = await withQueueLock(() => addItem(store(), queued));
+        refreshQueue();
+        if (saved === "saved" || saved === "duplicate") { setPin(""); toast.show(t("attendance.punch.queued"), "warning"); }
+        else if (saved === "full") toast.show(t("attendance.punch.queueFull", { max: MAX_PENDING }), "danger");
+        else toast.show(t("attendance.punch.saveFailed"), "danger");
       } else {
         toast.show(attendanceErrorMessage(e), "danger");
       }
     } finally { setBusy(false); }
+  };
+  const retryRejected = async (id: string) => {
+    await withQueueLock(() => updateItem(store(), id, (i) => ({ ...i, status: "pending", rejection: undefined })));
+    refreshQueue(); void flush();
+  };
+  const discardRejected = async (id: string) => {
+    await withQueueLock(() => updateItem(store(), id, () => null));
+    setDiscardFor(null); refreshQueue();
   };
   const setConsent = async (accept: boolean) => {
     const token = getToken();
@@ -143,7 +197,32 @@ export function CaregiverPunchPage() {
       {myQueue.length > 0 && <Card className="border-[var(--color-warning-700)]/40 bg-[var(--color-warning-100)] text-[var(--text-small)]" data-testid="punch-queue">
         <p className="font-medium">{t("attendance.punch.queueTitle", { count: myQueue.length })}</p>
         <p>{t("attendance.punch.queueDetail")}</p>
+        {holdAuth && <p data-testid="punch-hold-auth">{t("attendance.punch.holdAuth")}</p>}
+        {holdFeature && <p data-testid="punch-hold-feature">{t("attendance.punch.holdFeature")}</p>}
         <div className="mt-2"><Button size="sm" variant="secondary" disabled={busy} onClick={() => void flush()}>{t("attendance.punch.sendNow")}</Button></div>
+      </Card>}
+      {myRejected.length > 0 && <Card className="flex flex-col gap-3 border-[var(--color-danger-700)]/40 text-[var(--text-small)]" data-testid="punch-rejected">
+        <div>
+          <p className="font-medium text-[var(--color-text-primary)]">{t("attendance.punch.rejectedTitle", { count: myRejected.length })}</p>
+          <p className="text-[var(--color-text-secondary)]">{t("attendance.punch.rejectedDetail")}</p>
+        </div>
+        {myRejected.map((i) => (
+          <div key={i.clientEventId} className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-2" data-testid="punch-rejected-item">
+            <p className="font-medium">{`${t(`attendance.punchType.${i.type}`)} · ${fmt(i.declaredAt, lang)}`}</p>
+            <p>{attendanceErrorMessage({ status: i.rejection?.status, code: i.rejection?.code ?? undefined })}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" disabled={busy} onClick={() => void retryRejected(i.clientEventId)}>{t("attendance.punch.retry")}</Button>
+              <Button size="sm" variant="secondary" onClick={() => setCorrectionFor(correctionFor === i.clientEventId ? null : i.clientEventId)}>{t("attendance.correction.open")}</Button>
+              {discardFor === i.clientEventId
+                ? <Button size="sm" variant="ghost" onClick={() => void discardRejected(i.clientEventId)}>{t("attendance.punch.discardConfirm")}</Button>
+                : <Button size="sm" variant="ghost" onClick={() => setDiscardFor(i.clientEventId)}>{t("attendance.punch.discard")}</Button>}
+            </div>
+            {correctionFor === i.clientEventId && organizationId && (
+              <CorrectionForm organizationId={organizationId} shiftId={i.shiftId} punches={[]} initialOpen initialType={i.type} initialTime={prLocalInput(i.declaredAt)}
+                onSent={() => { setCorrectionFor(null); void discardRejected(i.clientEventId); }} />
+            )}
+          </div>
+        ))}
       </Card>}
       {current?.error ? <ErrorState kind="server" onRetry={() => { setState(null); void load(); }} /> : !data ? <Skeleton className="h-48" /> : (
         <>
@@ -193,13 +272,15 @@ export function CaregiverPunchPage() {
   );
 }
 
-function CorrectionForm({ organizationId, shiftId, punches }: { organizationId: string; shiftId: string; punches: Punch[] }) {
+function CorrectionForm({ organizationId, shiftId, punches, initialOpen = false, initialType = "in", initialTime = "", onSent }: {
+  organizationId: string; shiftId: string; punches: Punch[]; initialOpen?: boolean; initialType?: PunchType; initialTime?: string; onSent?: () => void;
+}) {
   const { t } = useTranslation("residential");
   const toast = useToast();
-  const [openForm, setOpenForm] = useState(false);
-  const [type, setType] = useState<PunchType>("in");
+  const [openForm, setOpenForm] = useState(initialOpen);
+  const [type, setType] = useState<PunchType>(initialType);
   const [punchId, setPunchId] = useState("");
-  const [time, setTime] = useState("");
+  const [time, setTime] = useState(initialTime);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const valid = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(time) && reason.trim().length >= 3;
@@ -210,7 +291,7 @@ function CorrectionForm({ organizationId, shiftId, punches }: { organizationId: 
     try {
       // Hora local de Puerto Rico (UTC−4) → instante.
       await attendanceApi.requestCorrection(organizationId, { shiftId, ...(punchId ? { punchId } : {}), type, requestedAt: new Date(`${time}:00-04:00`).toISOString(), reason: reason.trim() }, token);
-      toast.show(t("attendance.correction.sent"), "success"); setOpenForm(false); setReason(""); setTime(""); setPunchId("");
+      toast.show(t("attendance.correction.sent"), "success"); setOpenForm(false); setReason(""); setTime(""); setPunchId(""); onSent?.();
     } catch (e) { toast.show(attendanceErrorMessage(e), "danger"); }
     finally { setBusy(false); }
   };

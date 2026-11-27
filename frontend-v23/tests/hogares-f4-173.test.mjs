@@ -42,9 +42,10 @@ test("F4 privacidad: ubicación una sola vez al ponchar, solo con consentimiento
   assert.doesNotMatch(punch + admin, /watchPosition/);
   assert.match(punch, /const location = data\?\.consent\.accepted \? await readLocationOnce\(\) : undefined;/);
   assert.match(punch, /maximumAge: 0/);
-  const queued = punch.slice(punch.indexOf("const queued: QueuedPunch"), punch.indexOf("try {", punch.indexOf("const queued: QueuedPunch")));
+  const queued = punch.slice(punch.indexOf("const queued: QueueItem"), punch.indexOf("try {", punch.indexOf("const queued: QueueItem")));
+  assert.ok(queued.length > 0);
   assert.doesNotMatch(queued, /location/);
-  assert.match(helpers, /!\("location" in x\)/);
+  assert.match(read("src/features/residential/attendanceQueue.ts"), /!\("location" in \(v as object\)\)/);
   assert.doesNotMatch(admin, /latitude|longitude/);
   assert.match(esCat.consent.body, /No hay rastreo y no se guardan coordenadas/);
   assert.match(enCat.consent.body, /There is no tracking and no coordinates are stored/);
@@ -65,7 +66,9 @@ test("F4 aislamiento: datos ligados a organización + establecimiento + semana; 
   assert.match(admin, /const dialog = dialogState && dialogState\.organizationId === organizationId \? dialogState\.dialog : null;/);
   assert.match(admin, /const printView = printState && printState\.organizationId === organizationId \? printState\.print : null;/);
   assert.match(punch, /const current = scopedTo\(state, organizationId\);/);
-  assert.match(punch, /const myQueue = queue\.filter\(\(q\) => q\.organizationId === organizationId\);/);
+  // La cola es de la persona Y de la organización (27-nov, A1), no solo de la organización.
+  assert.match(punch, /const myItems = organizationId && userId \? mine\(queue, \{ userId, organizationId \}\) : \[\];/);
+  assert.doesNotMatch(punch, /queue\.filter\(\(q\) => q\.organizationId === organizationId\)/);
   assert.equal((admin.match(/let active = true;/g) ?? []).length, 2);
 });
 
@@ -86,18 +89,99 @@ test("F4 aislamiento: datos ligados a organización + establecimiento + semana; 
     assert.deepEqual(h.availablePunchTypes({ openSession: true, breakOpen: true, mealOpen: false }), ["break_end"]);
     assert.deepEqual(h.availablePunchTypes({ openSession: true, breakOpen: false, mealOpen: true }), ["meal_end"]);
   });
-  test("F4 QR desde el enlace: solo la forma esperada; el enlace impreso abre «Ponchar»", () => {
-    assert.equal(h.qrFromLink(`?c=${encodeURIComponent(QR)}`), QR);
-    for (const bad of ["", "?c=", "?c=EA2.x", `?c=${QR}x`, "?c=<script>"]) assert.equal(h.qrFromLink(bad), null, bad);
-    assert.equal(h.punchLink("https://app.example.invalid/", QR), `https://app.example.invalid/caregiver/ponchar?c=${encodeURIComponent(QR)}`);
+  test("F4 QR desde el enlace: solo la forma esperada, en el FRAGMENTO (#c=, nunca llega a un servidor) y se borra de la barra", () => {
+    assert.equal(h.qrFromLink(`#c=${encodeURIComponent(QR)}`), QR);
+    for (const bad of ["", "#c=", "#c=EA2.x", `#c=${QR}x`, "#c=<script>", `?c=${encodeURIComponent(QR)}`]) assert.equal(h.qrFromLink(bad), null, bad);
+    assert.equal(h.punchLink("https://app.example.invalid/", QR), `https://app.example.invalid/caregiver/ponchar#c=${encodeURIComponent(QR)}`);
+    assert.match(punch, /window\.history\.replaceState\(window\.history\.state, "", window\.location\.pathname \+ window\.location\.search\)/);
+    assert.doesNotMatch(punch, /qrFromLink\(routeLocation\.search\)/);
+    assert.match(punch, /window\.addEventListener\("hashchange", take\)/);
   });
-  test("F4 cola sin conexión: sin duplicados, máximo 50, descarta lo mal formado y cualquier elemento con ubicación", () => {
-    const item = { clientEventId: "e1", organizationId: "o", shiftId: "s", type: "in", method: "pin", pin: "123456", declaredAt: "2026-11-26T12:00:00Z" };
-    assert.equal(h.enqueue(h.enqueue([], item), item).length, 1);
-    assert.deepEqual(h.parseQueue(JSON.stringify([item, { ...item, clientEventId: "e2", location: { latitude: 1 } }, 5, null])), [item]);
-    assert.deepEqual(h.parseQueue("no es json"), []);
-    let q = []; for (let i = 0; i < 60; i++) q = h.enqueue(q, { ...item, clientEventId: `e${i}` });
-    assert.equal(q.length, 50);
+  // ---- Cola sin conexión (auditoría GPT del 27-nov, A1–A6): comportamiento real del módulo, sin React ni red.
+  const qm = await load("src/features/residential/attendanceQueue.ts");
+  const mem = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, m }; };
+  const base = { userId: "ana", organizationId: "o1", shiftId: "s", type: "in", method: "pin", pin: "123456", declaredAt: "2026-11-27T12:00:00Z", status: "pending" };
+  const it = (id, extra = {}) => ({ ...base, clientEventId: id, ...extra });
+  test("F4 cola · A1: cada ponche es de una persona y una organización; nadie más lo ve ni lo toca", () => {
+    const st = mem();
+    assert.equal(qm.addItem(st, it("a1")), "saved");
+    assert.equal(qm.addItem(st, it("b1", { userId: "bea" })), "saved");
+    assert.equal(qm.addItem(st, it("a2", { organizationId: "o2" })), "saved");
+    const all = qm.readAll(st);
+    assert.deepEqual(qm.mine(all, { userId: "ana", organizationId: "o1" }).map((i) => i.clientEventId), ["a1"]);
+    assert.deepEqual(qm.mine(all, { userId: "bea", organizationId: "o1" }).map((i) => i.clientEventId), ["b1"]);
+    // Quitar el de Bea no toca los de Ana.
+    assert.equal(qm.updateItem(st, "b1", () => null), true);
+    assert.deepEqual(qm.readAll(st).map((i) => i.clientEventId), ["a1", "a2"]);
+    assert.match(punch, /mine\(queue, \{ userId, organizationId \}\)/);
+    assert.match(punch, /mine\(readAll\(store\(\)\), owner\)\.find\(\(i\) => i\.status === "pending"/);
+  });
+  test("F4 cola · A2: los cambios releen y no pisan lo que otro guardó mientras tanto; candado común y un solo envío", async () => {
+    const st = mem();
+    qm.addItem(st, it("e1"));
+    // Un envío «lee» e1; mientras está en la red se guarda e2; al terminar quita SOLO e1.
+    const sending = qm.readAll(st)[0];
+    assert.equal(qm.addItem(st, it("e2")), "saved");
+    qm.updateItem(st, sending.clientEventId, () => null);
+    assert.deepEqual(qm.readAll(st).map((i) => i.clientEventId), ["e2"]);
+    // Candado de la pestaña: las operaciones van de una en una y en orden.
+    const order = [];
+    await Promise.all([1, 2, 3].map((n) => qm.withQueueLock(async () => { order.push(`in${n}`); await new Promise((r) => setTimeout(r, 5)); order.push(`out${n}`); })));
+    assert.deepEqual(order, ["in1", "out1", "in2", "out2", "in3", "out3"]);
+    // Un segundo envío simultáneo no hace nada.
+    let runs = 0;
+    const slow = () => qm.withFlushLock(async () => { runs++; await new Promise((r) => setTimeout(r, 10)); });
+    const [r1, r2] = await Promise.all([slow(), slow()]);
+    assert.equal(runs, 1); assert.deepEqual([r1, r2].sort(), [false, true]);
+    assert.match(read("src/features/residential/attendanceQueue.ts"), /l\.request\("etnara-attendance-queue"/);
+    assert.match(read("src/features/residential/attendanceQueue.ts"), /l\.request\("etnara-attendance-flush", \{ ifAvailable: true \}/);
+    assert.match(punch, /window\.addEventListener\("storage", onStorage\)/);
+  });
+  test("F4 cola · A3: si el almacenamiento falla o está lleno, se dice; nunca un «guardado» falso", () => {
+    const full = { getItem: () => null, setItem: () => { throw new Error("QuotaExceededError"); } };
+    assert.equal(qm.addItem(full, it("x")), "storage_failed");
+    const lies = { getItem: () => "[]", setItem: () => {} }; // acepta pero no guarda
+    assert.equal(qm.addItem(lies, it("x")), "storage_failed");
+    assert.equal(qm.addItem(null, it("x")), "storage_failed");
+    assert.match(punch, /else toast\.show\(t\("attendance\.punch\.saveFailed"\), "danger"\);/);
+    assert.match(esCat.punch.saveFailed, /NO quedó registrado/); assert.match(enCat.punch.saveFailed, /NOT recorded/);
+  });
+  test("F4 cola · A4: con 50 pendientes de la misma persona el nuevo NO se guarda y se avisa; nunca se borra uno antiguo", () => {
+    const st = mem();
+    for (let i = 0; i < qm.MAX_PENDING; i++) assert.equal(qm.addItem(st, it(`p${i}`)), "saved");
+    assert.equal(qm.addItem(st, it("p50")), "full");
+    const ids = qm.readAll(st).map((i) => i.clientEventId);
+    assert.equal(ids.length, 50); assert.equal(ids[0], "p0");
+    // Otra persona del mismo teléfono no queda bloqueada por los de Ana.
+    assert.equal(qm.addItem(st, it("bea1", { userId: "bea" })), "saved");
+    // La lectura nunca recorta; solo ignora lo mal formado o con ubicación.
+    const raw = JSON.stringify([...Array.from({ length: 70 }, (_, i) => it(`r${i}`)), { ...it("loc"), location: { latitude: 1 } }, 5, null]);
+    assert.equal(qm.parseItems(raw).length, 70);
+    assert.deepEqual(qm.parseItems("no es json"), []);
+    assert.match(punch, /else if \(saved === "full"\) toast\.show\(t\("attendance\.punch\.queueFull", \{ max: MAX_PENDING \}\), "danger"\);/);
+  });
+  test("F4 cola · A5: cada error según su causa; 401, 403, 404, 408 y 429 nunca borran el ponche", () => {
+    const c = (status, code, net) => qm.classifyQueueError(net ? { isNetworkError: true, status: 0 } : { status, code });
+    assert.deepEqual(c(0, null, true), { kind: "retry" });
+    for (const st of [500, 502, 503, 408, 429]) assert.deepEqual(c(st), { kind: "retry" }, String(st));
+    assert.deepEqual(c(401, "UNAUTHORIZED"), { kind: "hold", hold: "auth" });
+    assert.deepEqual(c(404, "FEATURE_NOT_ENABLED"), { kind: "hold", hold: "feature" });
+    assert.deepEqual(c(403, "ATTENDANCE_NOT_AUTHORIZED"), { kind: "rejected", status: 403, code: "ATTENDANCE_NOT_AUTHORIZED" });
+    assert.deepEqual(c(404, "RESIDENTIAL_NOT_FOUND"), { kind: "rejected", status: 404, code: "RESIDENTIAL_NOT_FOUND" });
+    assert.deepEqual(c(409, "ATTENDANCE_DUPLICATE_EVENT"), { kind: "rejected", status: 409, code: "ATTENDANCE_DUPLICATE_EVENT" });
+    // En la página: solo un envío aceptado quita el ponche; lo demás espera o queda «no aceptado».
+    const flushSrc = punch.slice(punch.indexOf("const flush = useCallback"), punch.indexOf("useEffect(() => {\n    const onOnline"));
+    assert.equal((flushSrc.match(/updateItem\(store\(\), item\.clientEventId, \(\) => null\)/g) ?? []).length, 1);
+    assert.match(flushSrc, /if \(d\.kind === "retry"\) break;/);
+    assert.match(flushSrc, /status: "rejected"/);
+  });
+  test("F4 cola · A6: lo no aceptado queda a la vista con su explicación: reintentar, pedir una corrección o descartar (con confirmación)", () => {
+    assert.match(punch, /data-testid="punch-rejected"/);
+    assert.match(punch, /attendanceErrorMessage\(\{ status: i\.rejection\?\.status, code: i\.rejection\?\.code \?\? undefined \}\)/);
+    assert.match(punch, /onClick=\{\(\) => void retryRejected\(i\.clientEventId\)\}/);
+    assert.match(punch, /<CorrectionForm organizationId=\{organizationId\} shiftId=\{i\.shiftId\} punches=\{\[\]\} initialOpen initialType=\{i\.type\}/);
+    assert.match(punch, /t\("attendance\.punch\.discardConfirm"\)/);
+    for (const cat of [esCat, enCat]) for (const k of ["rejectedTitle_one", "rejectedTitle_other", "rejectedDetail", "retry", "discard", "discardConfirm", "holdAuth", "holdFeature", "queueFull", "saveFailed"]) assert.ok(cat.punch[k], k);
   });
   test("F4 CSV: aviso de que no es nómina, cabecera traducida y horas validadas y pendientes por separado", async () => {
     const csv = await load("src/features/export/csv.ts");
@@ -136,14 +220,7 @@ test("F4: catálogo inglés con las mismas claves y marcadores, sin español; to
   assert.equal(JSON.parse(read("src/i18n/locales/es/shell.json")).agency.items.residentialAttendance, "Asistencia");
 });
 
-test("27-nov · la cola sin conexión nunca pierde un ponche por un error temporal del servidor", () => {
-  // Solo un rechazo definitivo (4xx salvo 408 y 429) lo quita; red, 5xx, 408 y 429 lo conservan.
-  assert.match(helpers, /export function dropQueuedAfterError\(error: unknown\): boolean \{/);
-  assert.match(helpers, /if \(!e \|\| e\.isNetworkError \|\| typeof e\.status !== "number" \|\| e\.status === 0\) return false;/);
-  assert.match(helpers, /return e\.status >= 400 && e\.status < 500 && e\.status !== 408 && e\.status !== 429;/);
-  // Al conservarlo se detiene el envío, para no mandar los siguientes antes que este; y ya no se quita sin preguntar.
-  assert.match(punch, /if \(\(e as \{ isNetworkError\?: boolean \}\)\.isNetworkError\) break;\s*\/\/[^\n]*\n\s*\/\/[^\n]*\n\s*if \(!dropQueuedAfterError\(e\)\) break;\s*rest = rest\.filter/);
-  assert.doesNotMatch(punch, /rechazado por el servidor: no se reintenta en bucle/);
-  // Sin reintentos en bucle: solo al volver la señal o al abrir la pantalla.
+test("27-nov · la cola sin conexión no se reintenta en bucle: solo al volver la señal, al abrir la pantalla o a petición", () => {
   assert.doesNotMatch(punch, /setInterval\(/);
+  assert.match(punch, /window\.addEventListener\("online", onOnline\)/);
 });
