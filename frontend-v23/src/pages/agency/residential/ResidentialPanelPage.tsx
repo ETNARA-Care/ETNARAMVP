@@ -6,8 +6,9 @@ import { getToken } from "@/auth/token";
 import { Link } from "react-router-dom";
 import { Badge, Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { getResidentialOverview, type ResidentialOverview, type ResidentialPanel } from "@/api/residential";
-import { isResidentialOrganization, RESIDENTIAL_ASSIGNMENTS_PATH, RESIDENTIAL_ATTENDANCE_PATH, RESIDENTIAL_REPORTS_PATH } from "@/features/residential/modality";
+import { isResidentialOrganization, RESIDENTIAL_ADMIN_GUIDE_PATH, RESIDENTIAL_ASSIGNMENTS_PATH, RESIDENTIAL_ATTENDANCE_PATH, RESIDENTIAL_REPORTS_PATH } from "@/features/residential/modality";
 import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
+import { GuideLink } from "@/features/residential/GuideLink";
 
 /**
  * 170 (hogares F0): panel base del hogar. Solo administrativo: recuentos y el estado de los módulos de hogar,
@@ -50,6 +51,7 @@ export function ResidentialPanelPage() {
   return (
     <div className="flex flex-col gap-6" data-testid="residential-panel">
       <PageHeader title={t("panel.title")} description={t("panel.description", { name: activeOrganization?.name ?? t("panel.nameFallback") })} />
+      <GuideLink to={RESIDENTIAL_ADMIN_GUIDE_PATH} />
       {error ? <ErrorState kind="server" onRetry={() => { setState(null); void load(); }} /> : overview === null ? <Skeleton className="h-32" /> : (
         <>
           <div className="grid gap-4 sm:grid-cols-3">

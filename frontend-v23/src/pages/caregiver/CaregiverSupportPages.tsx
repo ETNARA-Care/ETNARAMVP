@@ -14,6 +14,8 @@ import { listMyCredentials, uploadMyCredentialDocument, type CredentialSummary }
 import { getMyAvailability, saveMyAvailability, type MyAvailability } from "@/api/availability";
 import { LocationConsentCard } from "@/features/serviceLocation/LocationConsentCard";
 import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCard";
+import { GuideLink } from "@/features/residential/GuideLink";
+import { CAREGIVER_GUIDE_PATH } from "@/features/residential/modality";
 
 const weekdays = [
   { value: 1, label: "Lunes" }, { value: 2, label: "Martes" }, { value: 3, label: "Miércoles" },
@@ -209,6 +211,7 @@ export function CaregiverProfilePage() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Cuenta y herramientas</p>
         <h1 className="mt-1 font-[var(--font-serif)] text-2xl text-[var(--color-navy-900)]">Más</h1>
+        <GuideLink to={CAREGIVER_GUIDE_PATH} className="mt-2" />
       </div>
       <Card className="flex items-center gap-3">
         <Avatar name={caregiverName} size={48} />

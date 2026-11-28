@@ -131,3 +131,12 @@
     }
   }
 }
+
+/* F6 (hogares): guías de uso imprimibles. Al imprimir con una guía abierta, solo sale la guía (una página): todo lo que
+   no es la guía ni la contiene se retira del flujo, y los contenedores no añaden alto, márgenes ni relleno. */
+@media print {
+  body.etnara-print-guide *:not(:has([data-print-guide])):not([data-print-guide]):not([data-print-guide] *) { display: none !important; }
+  body.etnara-print-guide, body.etnara-print-guide *:has([data-print-guide]) { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; position: static !important; }
+  body.etnara-print-guide [data-print-guide] { width: 100%; max-width: none; padding: 0; box-shadow: none; border: 0; }
+  @page { margin: 14mm; }
+}

@@ -35,6 +35,10 @@ export const RESIDENTIAL_ASSIGNMENTS_PATH = "/agency/hogar/asignaciones";
 export const CAREGIVER_RESIDENTS_PATH = "/caregiver/residentes";
 /** 177 (F5): informes administrativos del hogar (asistencia, asignaciones y ocupación). */
 export const RESIDENTIAL_REPORTS_PATH = "/agency/hogar/informes";
+/** F6: guías de uso imprimibles de cada portal (solo hogares). */
+export const RESIDENTIAL_ADMIN_GUIDE_PATH = "/agency/hogar/guia";
+export const CAREGIVER_GUIDE_PATH = "/caregiver/guia";
+export const FAMILY_GUIDE_PATH = "/family/guia";
 
 /** D9: franja visible solo cuando ETNARA central encendió DEMO_ENVIRONMENT para esa organización. */
 export const DEMO_ENVIRONMENT_NOTICE = "Entorno de demostración — Datos ficticios";
