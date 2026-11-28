@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useNavigate } from "react-router-dom";
-import { BriefcaseBusiness, Building2, CalendarRange, Fingerprint, Home, MessageCircle, MoreHorizontal, Users } from "lucide-react";
+import { BriefcaseBusiness, Building2, CalendarDays, CalendarRange, Fingerprint, Home, MessageCircle, MoreHorizontal, Users } from "lucide-react";
 import { PortalBottomNav } from "./PortalBottomNav";
 import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -37,6 +37,8 @@ function CaregiverAccountMenu({ userLabel }: { userLabel: string }) {
 export function CaregiverLayout() {
   const { activeOrganization, activeWorkerProfile, user, roles } = useAuth();
   const smartMatch = hasOrgFeature(activeOrganization?.features, "SMARTMATCH");
+  // 27-nov: «Mi horario» solo en hogares con el calendario semanal encendido (HOGAR_CALENDARIO solo existe en hogares).
+  const mySchedule = hasOrgFeature(activeOrganization?.features, "HOGAR_CALENDARIO");
   // 173–175 (F4): «Ponchar» solo en hogares con HOGAR_PONCHES encendido.
   const punches = isResidentialOrganization(activeOrganization) && hasOrgFeature(activeOrganization?.features, "HOGAR_PONCHES");
   // 176 (F3): «Mis residentes» solo en hogares con HOGAR_ASIGNACIONES encendido.
@@ -90,6 +92,7 @@ export function CaregiverLayout() {
       ...(punches ? [{ to: CAREGIVER_PUNCH_PATH, icon: Fingerprint, label: t("caregiver.items.punch") }] : []),
       ...(myResidents ? [{ to: CAREGIVER_RESIDENTS_PATH, icon: Users, label: t("caregiver.items.residents") }] : []),
       { to: "/caregiver/shifts", icon: CalendarRange, label: t("caregiver.items.shifts") },
+      ...(mySchedule ? [{ to: "/caregiver/horario", icon: CalendarDays, label: t("caregiver.items.mySchedule") }] : []),
       ...(smartMatch ? [{ to: "/caregiver/smartmatch", icon: BriefcaseBusiness, label: t("caregiver.items.offers") }] : []),
       { to: "/caregiver/messages", icon: MessageCircle, label: t("caregiver.items.messages") },
       { to: "/caregiver/profile", icon: MoreHorizontal, label: t("caregiver.items.more") },
