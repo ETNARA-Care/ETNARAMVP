@@ -25,7 +25,8 @@
       "operation": "Operations",
       "care": "Care",
       "administration": "Administration",
-      "practice": "My practice"
+      "practice": "My practice",
+      "residential": "Care home"
     },
     "items": {
       "overview": "Overview",
@@ -36,6 +37,7 @@
       "smartmatch": "SmartMatch",
       "planning": "Planning",
       "timesheets": "Hours & billing",
+      "staffHours": "Staff hours",
       "finance": "Finance",
       "operations": "Operations center",
       "residents": "Residents",
@@ -48,7 +50,11 @@
       "contracts": "Contracts",
       "practiceHome": "Home",
       "clients": "Clients",
-      "documents": "My documents"
+      "documents": "My documents",
+      "residentialPanel": "Care home panel",
+      "residentialEstablishments": "Facilities and rooms",
+      "residentialSchedule": "Weekly schedule",
+      "residentialAttendance": "Attendance"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",
@@ -67,7 +73,9 @@
       "shifts": "Shifts",
       "offers": "Offers",
       "messages": "Messages",
-      "more": "More"
+      "more": "More",
+      "mySchedule": "My schedule",
+      "punch": "Punch"
     },
     "goToAgency": "Go to the agency",
     "goToPractice": "Go to My practice",

@@ -25,7 +25,8 @@
       "operation": "Operación",
       "care": "Cuidado",
       "administration": "Administración",
-      "practice": "Mi práctica"
+      "practice": "Mi práctica",
+      "residential": "Hogar"
     },
     "items": {
       "overview": "Resumen",
@@ -36,6 +37,7 @@
       "smartmatch": "SmartMatch",
       "planning": "Planificación",
       "timesheets": "Horas y facturación",
+      "staffHours": "Horas del personal",
       "finance": "Finanzas",
       "operations": "Centro operacional",
       "residents": "Residentes",
@@ -48,7 +50,11 @@
       "contracts": "Contratos",
       "practiceHome": "Inicio",
       "clients": "Clientes",
-      "documents": "Mis documentos"
+      "documents": "Mis documentos",
+      "residentialPanel": "Panel del hogar",
+      "residentialEstablishments": "Establecimientos y habitaciones",
+      "residentialSchedule": "Calendario semanal",
+      "residentialAttendance": "Asistencia"
     },
     "platform": "Plataforma",
     "myCaregiverDay": "Mi día como cuidador/a",
@@ -67,7 +73,9 @@
       "shifts": "Turnos",
       "offers": "Ofertas",
       "messages": "Mensajes",
-      "more": "Más"
+      "more": "Más",
+      "mySchedule": "Mi horario",
+      "punch": "Ponchar"
     },
     "goToAgency": "Ir a la agencia",
     "goToPractice": "Ir a Mi práctica",
