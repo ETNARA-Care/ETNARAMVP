@@ -12,28 +12,22 @@ export function availablePunchTypes(shift: Pick<MyShift, "openSession" | "breakO
   return ["out", "break_start", "meal_start"];
 }
 
-/** Contenido del QR leído desde el enlace (`?c=`): se valida la forma; el servidor decide si es vigente. */
-export function qrFromLink(search: string): string | null {
-  const c = new URLSearchParams(search).get("c");
+/**
+ * Contenido del QR leído desde el enlace. 27-nov (auditoría GPT, C): va en el FRAGMENTO (`#c=`), que el navegador nunca
+ * envía a ningún servidor, así que no queda en registros de acceso del portal; además «Ponchar» lo quita de la barra de
+ * direcciones al leerlo. Se valida la forma; el servidor decide si es vigente.
+ */
+export function qrFromLink(hash: string): string | null {
+  if (!hash.startsWith("#")) return null;
+  const c = new URLSearchParams(hash.slice(1)).get("c");
   return c && /^EA1\.[A-Za-z0-9_-]{1,32}\.[0-9a-f-]{36}\.\d{4}-\d{2}-\d{2}\.\d{1,6}\.[A-Za-z0-9_-]{22}$/.test(c) ? c : null;
 }
-/** Enlace impreso en el QR: abre «Ponchar» en el portal con el código; sin sesión iniciada no sirve. */
+/** Enlace impreso en el QR: abre «Ponchar» en el portal con el código en el fragmento; sin sesión iniciada no sirve. */
 export function punchLink(origin: string, qr: string): string {
-  return `${origin.replace(/\/+$/, "")}/caregiver/ponchar?c=${encodeURIComponent(qr)}`;
+  return `${origin.replace(/\/+$/, "")}/caregiver/ponchar#c=${encodeURIComponent(qr)}`;
 }
 
-/** Ponche guardado en el teléfono sin conexión: nunca con ubicación (privacidad); se reenvía con su mismo id. */
-export interface QueuedPunch { clientEventId: string; organizationId: string; shiftId: string; type: PunchType; method: "qr" | "pin"; qr?: string; pin?: string; declaredAt: string }
-export const QUEUE_KEY = "etnara.attendanceQueue.v1";
-export function parseQueue(raw: string | null): QueuedPunch[] {
-  try {
-    const v = JSON.parse(raw ?? "[]");
-    return Array.isArray(v) ? v.filter((x) => x && typeof x.clientEventId === "string" && typeof x.shiftId === "string" && !("location" in x)).slice(0, 50) : [];
-  } catch { return []; }
-}
-export function enqueue(queue: QueuedPunch[], item: QueuedPunch): QueuedPunch[] {
-  return queue.some((q) => q.clientEventId === item.clientEventId) ? queue : [...queue, item].slice(-50);
-}
+// La cola sin conexión vive en ./attendanceQueue (persona + organización, candado entre pestañas, sin pérdidas).
 
 export const minutesToHours = (m: number) => (m / 60).toFixed(2);
 /** CSV de asistencia: registro administrativo, no nómina (aviso en la primera fila). Cabecera traducida. */

@@ -8,7 +8,7 @@ import {
   residentialApi, residentialErrorMessage, type ResidentialEstablishmentDetail, type ResidentialEstablishmentSummary,
   type ResidentialGeofenceEvent, type ResidentialPerson, type ResidentialPlacementEvent, type ResidentialRoom, type ResidentialUnit,
 } from "@/api/residential";
-import { createLatestRequest, scopedTo, type OrganizationScoped } from "@/features/residential/latestRequest";
+import { createLatestRequest, scopedTo, scopedValue, type OrganizationScoped, type ScreenScoped } from "@/features/residential/latestRequest";
 import { isResidentialOrganization, RESIDENTIAL_ESTABLISHMENTS_PATH } from "@/features/residential/modality";
 import { bedsDisclaimer, OccupancySummary } from "./OccupancySummary";
 
@@ -38,8 +38,15 @@ export function ResidentialEstablishmentPage() {
   // Protección de cambio de organización (como el panel, A4): el detalle va ligado a la organización y al
   // establecimiento que lo pidieron; una respuesta atrasada se descarta y nunca se muestran datos de otra organización.
   const [state, setState] = useState<OrganizationScoped<{ detail: ResidentialEstablishmentDetail; all: ResidentialEstablishmentSummary[] }> | null>(null);
-  const [dialogState, setDialogState] = useState<{ organizationId: string; dialog: Dialog } | null>(null);
+  // Auditoría 26-nov: el diálogo abierto (y su formulario) pertenece a la organización Y al establecimiento en que se
+  // abrió. Al cambiar de establecimiento dentro de la misma organización también desaparece.
+  const [dialogState, setDialogState] = useState<ScreenScoped<Dialog> | null>(null);
   const latest = useRef(createLatestRequest());
+  // Cambio de organización o de establecimiento: se descarta cualquier diálogo abierto, también si luego se vuelve
+  // al anterior (ajuste de estado durante el render, sin efecto).
+  const screenKey = `${organizationId}:${establishmentId}`;
+  const [dialogScreen, setDialogScreen] = useState(screenKey);
+  if (dialogScreen !== screenKey) { setDialogScreen(screenKey); setDialogState(null); }
 
   const load = useCallback(async () => {
     const token = getToken();
@@ -64,9 +71,10 @@ export function ResidentialEstablishmentPage() {
   const data = current?.data?.detail ?? null;
   const all = current?.data?.all ?? [];
   const error = current?.error === true;
-  // Un diálogo abierto pertenece a la organización en la que se abrió: al cambiar de organización desaparece.
-  const dialog = dialogState && dialogState.organizationId === organizationId ? dialogState.dialog : null;
-  const setDialog = (d: Dialog | null) => setDialogState(d ? { organizationId, dialog: d } : null);
+  // Un diálogo abierto pertenece a la organización y al establecimiento en que se abrió (también en el primer render
+  // tras el cambio, antes de que el efecto lo descarte); solo se muestra con los datos de ese mismo establecimiento.
+  const dialog = data && data.establishment.id === establishmentId ? scopedValue(dialogState, organizationId, establishmentId) : null;
+  const setDialog = (d: Dialog | null) => setDialogState(d ? { organizationId, key: establishmentId, value: d } : null);
 
   /** Ejecuta un cambio, avisa y vuelve a leer del servidor (fuente de verdad). */
   const run = async (fn: (token: string) => Promise<unknown>, ok: string): Promise<boolean> => {
