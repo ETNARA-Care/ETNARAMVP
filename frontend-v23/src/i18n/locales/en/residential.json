@@ -1105,6 +1105,7 @@
         {
           "title": "Facilities and residents",
           "steps": [
+            "First create the facility in Settings → Facilities.",
             "Create the rooms and, if you wish, the beds.",
             "Place each resident; the history is kept."
           ]
@@ -1133,7 +1134,7 @@
         {
           "title": "Reports and panel",
           "steps": [
-            "The panel shows staff present, residents without coverage and alerts.",
+            "The panel shows who is present (confirmed entries), punches to review, residents without coverage and alerts.",
             "In “Reports”, generate and export attendance, assignments and occupancy."
           ]
         },
@@ -1156,13 +1157,14 @@
           "steps": [
             "Open “Punch” and scan the QR at the entrance or type the 6-digit code.",
             "Your location is read only at that moment and only if you gave consent.",
-            "Without signal, the punch stays on your phone and is sent when the signal returns."
+            "Without signal, the punch is kept on your phone and sent when you reopen the portal with a connection."
           ]
         },
         {
           "title": "Your week",
           "steps": [
-            "In “Shifts” you see your published week.",
+            "In “My schedule” you see your published week and your hours each day.",
+            "In “Shifts” you accept or decline each shift assigned to you.",
             "If you are substituted or assigned a substitution, you get a notice."
           ]
         },

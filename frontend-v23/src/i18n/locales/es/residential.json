@@ -1105,6 +1105,7 @@
         {
           "title": "Establecimientos y residentes",
           "steps": [
+            "Primero crea el establecimiento en Configuración → Establecimientos.",
             "Crea las habitaciones y, si quieres, las camas.",
             "Ubica a cada residente; queda el historial."
           ]
@@ -1133,7 +1134,7 @@
         {
           "title": "Informes y panel",
           "steps": [
-            "El panel muestra presentes, residentes sin cobertura y alertas.",
+            "El panel muestra quién está presente (entradas confirmadas), los ponches por revisar, los residentes sin cobertura y las alertas.",
             "En «Informes» genera y exporta asistencia, asignaciones y ocupación."
           ]
         },
@@ -1156,13 +1157,14 @@
           "steps": [
             "Abre «Ponchar» y escanea el QR de la entrada o escribe el código de 6 dígitos.",
             "La ubicación se lee solo en ese momento y solo si diste tu consentimiento.",
-            "Sin señal, el ponche queda en el teléfono y se envía solo al volver."
+            "Sin señal, el ponche queda guardado en el teléfono y se envía al volver a abrir el portal con conexión."
           ]
         },
         {
           "title": "Tu semana",
           "steps": [
-            "En «Turnos» ves tu semana publicada.",
+            "En «Mi horario» ves tu semana publicada y tus horas de cada día.",
+            "En «Turnos» aceptas o rechazas cada turno que te asignan.",
             "Si te sustituyen o te asignan una sustitución, recibes un aviso."
           ]
         },

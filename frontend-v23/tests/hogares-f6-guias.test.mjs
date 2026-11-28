@@ -60,3 +60,22 @@ test("F6: alcance no clínico y privacidad de la familia", () => {
   assert.match(es.family.privacy, /no se comparten/);
   assert.doesNotMatch(JSON.stringify(es.family) + JSON.stringify(en.family), /ponch|punch|turno de|horario del|schedule of|credencial|credential/i);
 });
+
+test("F6 (28-nov): las guías siguen a lo integrado — «Mi horario» y «Turnos», presentes confirmados y primer establecimiento", () => {
+  const step = (g, a, i, j) => g[a].sections[i].steps[j];
+  const all = (g, a) => g[a].sections.flatMap((s) => s.steps).join(" ");
+  assert.equal(esS.caregiver.items.mySchedule, "Mi horario");
+  assert.equal(enS.caregiver.items.mySchedule, "My schedule");
+  assert.match(all(es, "caregiver"), /En «Mi horario» ves tu semana publicada/);
+  assert.match(all(es, "caregiver"), /En «Turnos» aceptas o rechazas cada turno/);
+  assert.match(all(en, "caregiver"), /In “My schedule” you see your published week/);
+  assert.match(all(en, "caregiver"), /In “Shifts” you accept or decline each shift/);
+  assert.match(all(es, "admin"), /presente \(entradas confirmadas\)/);
+  assert.match(all(en, "admin"), /present \(confirmed entries\)/);
+  // El primer paso de un hogar nuevo coincide con lo que dice la pantalla vacía de establecimientos.
+  const esR = JSON.parse(read("src/i18n/locales/es/residential.json")), enR = JSON.parse(read("src/i18n/locales/en/residential.json"));
+  assert.match(step(es, "admin", 0, 0), /Configuración → Establecimientos/);
+  assert.match(esR.establishments.emptyDetail, /Configuración → Establecimientos/);
+  assert.match(step(en, "admin", 0, 0), /Settings → Facilities/);
+  assert.match(enR.establishments.emptyDetail, /Settings → Facilities/);
+});
