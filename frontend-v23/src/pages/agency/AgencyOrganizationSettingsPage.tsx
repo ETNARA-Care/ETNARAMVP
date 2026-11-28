@@ -11,6 +11,7 @@ import { createEstablishment, listEstablishments, updateEstablishment, type Esta
 import { TeamPanel } from "@/features/agency/TeamPanel";
 import { IncidentClosersCard } from "@/features/incidents/IncidentClosersCard";
 import { NotificationSettingsCard } from "@/features/push/NotificationSettingsCard";
+import { ConnectLinkCard } from "@/features/connect/ConnectLinkCard";
 
 export function AgencyOrganizationSettingsPage() {
   const { user, logout, activeOrganization, organizations, roles } = useAuth();
@@ -87,6 +88,9 @@ export function AgencyOrganizationSettingsPage() {
       </div>
       {organizations.length > 1 && <Button variant="secondary" onClick={() => navigate("/select-organization")}>Cambiar organización</Button>}
     </Card>
+
+    {/* 181: ETNARA Connect (agencias e independientes; los hogares no reciben solicitudes de Connect). */}
+    {isOrgAdmin && organizationId && !residential && <ConnectLinkCard organizationId={organizationId} />}
 
     {!independent && <>
     {isOrgAdmin && organizationId && <TeamPanel organizationId={organizationId} />}
