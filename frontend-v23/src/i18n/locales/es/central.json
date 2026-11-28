@@ -96,5 +96,11 @@
       "title": "Entorno de demostración",
       "detail": "Muestra la franja «Entorno de demostración — Datos ficticios» en todo el portal del hogar. Solo para hogares de demostración."
     }
+  },
+  "residentialSubscription": {
+    "badge": "Más de {{limit}} residentes activos ({{count}})",
+    "overview": "Este hogar tiene {{count}} residentes activos, por encima de {{limit}}. Es una alerta comercial: no bloquea nada ni cambia el precio.",
+    "demo": "Hogar Demo: fuera de alertas y métricas",
+    "activeResidents": "Residentes activos"
   }
 }

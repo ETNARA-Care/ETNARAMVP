@@ -96,5 +96,11 @@
       "title": "Demo environment",
       "detail": "Shows the “Demo environment — Fictitious data” banner across the care home portal. Only for demo care homes."
     }
+  },
+  "residentialSubscription": {
+    "badge": "More than {{limit}} active residents ({{count}})",
+    "overview": "This home has {{count}} active residents, above {{limit}}. This is a commercial alert: it blocks nothing and does not change the price.",
+    "demo": "Hogar Demo: excluded from alerts and metrics",
+    "activeResidents": "Active residents"
   }
 }

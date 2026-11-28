@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, ChevronRight, MailPlus, MoreHorizontal, Plus, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { getToken } from "@/auth/token";
@@ -22,6 +23,7 @@ import {
   type PlatformOrganizationOverview,
   type PlatformOrganizationType,
 } from "@/api/platformOrganizations";
+import type { ResidentialSubscription } from "@/api/platformOrganizations";
 import { Button, Card, EmptyState, ErrorState, IconButton, Input, Modal, Skeleton, useToast } from "@/components/ui";
 
 const STATUS: Record<string, { label: string; className: string }> = {
@@ -313,6 +315,7 @@ export function PlatformOrganizationsPage() {
                   <h2 className="font-display text-[var(--text-h3)]">{org.name}</h2>
                   <p className="mt-1 text-[var(--text-small)] text-[var(--color-text-secondary)]">{orgTypeLabel(org.type)}</p>
                 </div>
+                <ResidentialSubscriptionBadge subscription={org.residentialSubscription} />
 
                 <div className="mt-4 flex gap-2 md:hidden">
                   <Button className="flex-1" onClick={() => void inspect(org)}>Ver resumen</Button>
@@ -359,6 +362,7 @@ export function PlatformOrganizationsPage() {
                 </div>
               ))}
             </div>
+            <ResidentialSubscriptionNotice subscription={overview.residentialSubscription} />
             {selectedOrg && <OrganizationFeaturesCard organizationId={selectedOrg.id} organizationType={selectedOrg.type}/>}
             <section className="rounded-[1.25rem] border border-[var(--color-border)] bg-white p-4">
               <h3 className="mb-1 font-sans text-[length:0.9375rem] font-semibold">Establecimientos</h3>
@@ -413,4 +417,18 @@ export function PlatformOrganizationsPage() {
       </Modal>
     </div>
   );
+}
+
+/** 177 (hogares F5, D8 y D9): alerta comercial de residentes en Central. Solo un número; no bloquea nada. */
+function ResidentialSubscriptionBadge({ subscription }: { subscription?: ResidentialSubscription }) {
+  const { t } = useTranslation("central");
+  if (!subscription) return null;
+  if (subscription.demo) return <p className="mt-3 text-[length:var(--text-caption)] text-[var(--color-text-secondary)]" data-testid="residential-demo-badge">{t("residentialSubscription.demo")}</p>;
+  if (!subscription.overLimit) return null;
+  return <p className="mt-3 inline-flex rounded-full bg-[var(--color-warning-100)] px-3 py-1 text-[length:var(--text-caption)] font-medium text-[var(--color-warning-700)]" data-testid="residential-subscription-badge">{t("residentialSubscription.badge", { limit: subscription.limit, count: subscription.activeResidents })}</p>;
+}
+function ResidentialSubscriptionNotice({ subscription }: { subscription?: ResidentialSubscription }) {
+  const { t } = useTranslation("central");
+  if (!subscription || subscription.demo || !subscription.overLimit) return null;
+  return <p className="rounded-[var(--radius-md)] border border-[var(--color-warning-700)]/40 bg-[var(--color-warning-100)] p-3 text-[length:var(--text-small)] text-[var(--color-warning-700)]" data-testid="residential-subscription-notice">{t("residentialSubscription.overview", { limit: subscription.limit, count: subscription.activeResidents })}</p>;
 }

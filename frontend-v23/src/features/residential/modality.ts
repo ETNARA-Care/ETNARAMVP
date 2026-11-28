@@ -33,6 +33,8 @@ export const CAREGIVER_PUNCH_PATH = "/caregiver/ponchar";
 /** 176 (F3): asignación de residentes y sustituciones (solo con HOGAR_ASIGNACIONES) y «Mis residentes» del personal. */
 export const RESIDENTIAL_ASSIGNMENTS_PATH = "/agency/hogar/asignaciones";
 export const CAREGIVER_RESIDENTS_PATH = "/caregiver/residentes";
+/** 177 (F5): informes administrativos del hogar (asistencia, asignaciones y ocupación). */
+export const RESIDENTIAL_REPORTS_PATH = "/agency/hogar/informes";
 
 /** D9: franja visible solo cuando ETNARA central encendió DEMO_ENVIRONMENT para esa organización. */
 export const DEMO_ENVIRONMENT_NOTICE = "Entorno de demostración — Datos ficticios";
