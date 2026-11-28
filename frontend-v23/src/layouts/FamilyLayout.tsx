@@ -17,7 +17,7 @@ export function FamilyLayout() {
   return (
     <FamilyRecipientProvider>
     <div data-portal="family" className="min-h-dvh flex flex-col bg-[#f8f5ee] text-[#173154]"><DemoEnvironmentBanner />
-      <header className="sticky top-0 z-[var(--z-header)] border-b border-[#173154]/10 bg-[#f8f5ee]/95 backdrop-blur">
+      <header className="sticky top-[var(--demo-banner-offset)] z-[var(--z-header)] border-b border-[#173154]/10 bg-[#f8f5ee]/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-[760px] items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
             <img src={`${import.meta.env.BASE_URL}etnara-mark.svg`} alt="" className="h-9 w-9 rounded-[10px]" />

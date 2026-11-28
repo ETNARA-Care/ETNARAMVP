@@ -59,7 +59,7 @@ export function CaregiverLayout() {
   }, [activeOrganization]);
 
   return <CareEventQueueProvider><AppLockGate><div data-portal="caregiver" className="min-h-dvh bg-[var(--color-ivory-50)] text-[var(--color-text-primary)]"><DemoEnvironmentBanner />
-    <header className="sticky top-0 z-30 border-b border-[var(--color-border)]/70 bg-[var(--color-ivory-50)]/95 backdrop-blur">
+    <header className="sticky top-[var(--demo-banner-offset)] z-30 border-b border-[var(--color-border)]/70 bg-[var(--color-ivory-50)]/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-[760px] items-center gap-3 px-4 sm:px-6">
         <img src="/etnara-mark.svg" alt="" className="h-9 w-9 rounded-lg" />
         <div className="min-w-0 flex-1">

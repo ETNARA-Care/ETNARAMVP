@@ -10,7 +10,7 @@ export function AdminTopbar({ organizationName, canSwitchOrganization, userLabel
 }) {
  const { t } = useTranslation("shell");
  return (
- <header className="sticky top-0 z-[var(--z-header)] border-b border-[var(--color-border)]/70 bg-[var(--color-bg)]/85 backdrop-blur-md">
+ <header className="sticky top-[var(--demo-banner-offset)] z-[var(--z-header)] border-b border-[var(--color-border)]/70 bg-[var(--color-bg)]/85 backdrop-blur-md">
  <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:px-6 lg:px-10">
  <Link to="/agency" className="shrink-0 lg:hidden" aria-label={t("agency.homeLink")}><AdminLogo /></Link>
  <div className="hidden min-w-0 flex-1 items-center gap-2.5 px-1 sm:flex">

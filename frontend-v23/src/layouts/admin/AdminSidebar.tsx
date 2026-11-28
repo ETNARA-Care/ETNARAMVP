@@ -22,7 +22,7 @@ export function AdminSideLink({ to, icon: Icon, label, end, onNavigate }: { to: 
 export function AdminSidebar({ groups, platformLink, organizationName }: { groups: AdminNavGroup[]; platformLink: ReactNode; organizationName: string }) {
  const { t } = useTranslation("shell");
  return (
- <aside className="sticky top-0 hidden h-dvh w-[264px] shrink-0 flex-col bg-[var(--color-navy-950)] text-[#DEE4EE] lg:flex">
+ <aside className="sticky top-[var(--demo-banner-offset)] hidden h-[calc(100dvh-var(--demo-banner-offset))] w-[264px] shrink-0 flex-col bg-[var(--color-navy-950)] text-[#DEE4EE] lg:flex">
  <Link to="/agency" className="px-6 pb-6 pt-7" aria-label={t("agency.homeLink")}><AdminLogo inverted /></Link>
  <nav aria-label={t("nav.main")} className="flex-1 overflow-y-auto px-3">
  {platformLink && <div className="mb-5">{platformLink}</div>}
