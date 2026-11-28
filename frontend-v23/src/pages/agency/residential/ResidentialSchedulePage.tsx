@@ -282,6 +282,7 @@ function EntryCard({ entry, warned, onEdit, onRemove }: { entry: ScheduleEntry; 
       <div className="flex flex-wrap gap-1">
         <Badge tone={entry.published ? "success" : "neutral"}>{entry.published ? t("schedule.status.publishedShort") : t("schedule.status.draft")}</Badge>
         {entry.assignmentStatus && <Badge tone={entry.assignmentStatus === "accepted" ? "success" : "accent"}>{t(`schedule.assignment.${entry.assignmentStatus}`)}</Badge>}
+        {entry.substitution && <Badge tone="warning">{t("assignments.scheduleSubstitution", { name: entry.substitution.substituteName ?? t("assignments.unnamed"), time: timeOf(entry.substitution.effectiveAt) })}</Badge>}
         {warned && <Badge tone="warning">{t("schedule.warnings.badge")}</Badge>}
       </div>
       <div className="flex flex-wrap gap-1 print:hidden">

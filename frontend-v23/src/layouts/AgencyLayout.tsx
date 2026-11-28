@@ -1,13 +1,13 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { usePhotoMode } from "@/features/activityPhotos/usePhotoMode";
 import { useTranslation } from "react-i18next";
-import { BedDouble, Camera, HeartHandshake, Home, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
+import { BedDouble, Camera, HeartHandshake, Home, LayoutDashboard, Users, UserCog, CalendarRange, AlertTriangle, BadgeCheck, Bot, MessageCircle, ShieldCheck, Settings, TrendingUp, DollarSign, Siren, ClipboardCheck, ClipboardList, BriefcaseBusiness, Landmark, FileSignature } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { RoleTermsGate } from "@/features/contracts/RoleTermsGate";
 import { hasOrgFeature } from "@/auth/orgFeatures";
 import { contractOnlyRedirect, useContractsAvailable } from "@/features/contracts/useContractsAvailable";
 import { isHiddenForIndependent, isIndependentOrganization } from "@/features/practice/modality";
-import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_ATTENDANCE_PATH, RESIDENTIAL_ESTABLISHMENTS_PATH, RESIDENTIAL_SCHEDULE_PATH, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
+import { isHiddenForResidential, isResidentialOrganization, RESIDENTIAL_ASSIGNMENTS_PATH, RESIDENTIAL_ATTENDANCE_PATH, RESIDENTIAL_ESTABLISHMENTS_PATH, RESIDENTIAL_SCHEDULE_PATH, RESIDENTIAL_PANEL_PATH } from "@/features/residential/modality";
 import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
 import { AdminSidebar, AdminSideLink } from "@/layouts/admin/AdminSidebar";
 import { AdminTopbar } from "@/layouts/admin/AdminTopbar";
@@ -15,7 +15,7 @@ import { AdminMobileNav } from "@/layouts/admin/AdminMobileNav";
 import type { AdminNavGroup, AdminNavItem } from "@/layouts/admin/adminNav";
 /* Navegación del Portal Administrativo. Solo rutas que ya existen en App.tsx. */
 // Labels are catalog keys (shell:agency.items.*); translated when rendered.
-type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "residentialEstablishments" | "residentialSchedule" | "residentialAttendance" | "staffHours" };
+type NavKey = Omit<AdminNavItem, "label"> & { k: "overview" | "home" | "practiceHome" | "clients" | "documents" | "compliance" | "workers" | "shifts" | "smartmatch" | "planning" | "timesheets" | "finance" | "operations" | "residents" | "quality" | "incidents" | "photos" | "messages" | "agents" | "settings" | "contracts" | "residentialPanel" | "residentialEstablishments" | "residentialSchedule" | "residentialAttendance" | "residentialAssignments" | "staffHours" };
 const OPERATION: NavKey[] = [
  { to: "/agency", end: true, icon: LayoutDashboard, k: "overview" },
  { to: "/agency/compliance", icon: ShieldCheck, k: "compliance" },
@@ -74,6 +74,7 @@ const RESIDENTIAL: NavKey[] = [
  { to: RESIDENTIAL_ESTABLISHMENTS_PATH, icon: BedDouble, k: "residentialEstablishments" },
  { to: RESIDENTIAL_SCHEDULE_PATH, icon: CalendarRange, k: "residentialSchedule" },
  { to: RESIDENTIAL_ATTENDANCE_PATH, icon: ClipboardCheck, k: "residentialAttendance" },
+ { to: RESIDENTIAL_ASSIGNMENTS_PATH, icon: ClipboardList, k: "residentialAssignments" },
 ];
 const RESIDENTIAL_GROUPS: Array<{ k: "residential" | "operation" | "care" | "administration"; items: NavKey[] }> = [
  { k: "residential", items: RESIDENTIAL },
@@ -107,6 +108,8 @@ export function AgencyLayout() {
  const residentialSchedule = hasOrgFeature(activeOrganization?.features, "HOGAR_CALENDARIO");
  // 173–175 (F4): asistencia solo con HOGAR_PONCHES encendido por ETNARA central.
  const residentialAttendance = hasOrgFeature(activeOrganization?.features, "HOGAR_PONCHES");
+ // 176 (F3): asignaciones y sustituciones solo con HOGAR_ASIGNACIONES encendido por ETNARA central.
+ const residentialAssignments = hasOrgFeature(activeOrganization?.features, "HOGAR_ASIGNACIONES");
  const contracts = useContractsAvailable(activeOrganization?.id, roles.includes("ORGANIZATION_ADMIN"), contractsOn);
  const location = useLocation();
  const independent = isIndependentOrganization(activeOrganization);
@@ -119,6 +122,7 @@ export function AgencyLayout() {
    && (photos || item.to !== "/agency/photos")
    && (residentialSchedule || item.to !== RESIDENTIAL_SCHEDULE_PATH)
    && (residentialAttendance || item.to !== RESIDENTIAL_ATTENDANCE_PATH)
+   && (residentialAssignments || item.to !== RESIDENTIAL_ASSIGNMENTS_PATH)
    && (contracts.available || item.to !== "/agency/contracts")).map((item) => {
      const nav = toNav(item);
      return item.k === "contracts" && contracts.pending > 0 ? { ...nav, label: `${nav.label} (${contracts.pending})` } : nav;
