@@ -54,7 +54,8 @@
       "residentialPanel": "Care home panel",
       "residentialEstablishments": "Facilities and rooms",
       "residentialSchedule": "Weekly schedule",
-      "residentialAttendance": "Attendance"
+      "residentialAttendance": "Attendance",
+      "residentialAssignments": "Assignments"
     },
     "platform": "Platform",
     "myCaregiverDay": "My day as a caregiver",
@@ -75,7 +76,8 @@
       "messages": "Messages",
       "more": "More",
       "mySchedule": "My schedule",
-      "punch": "Punch"
+      "punch": "Punch",
+      "residents": "Residents"
     },
     "goToAgency": "Go to the agency",
     "goToPractice": "Go to My practice",

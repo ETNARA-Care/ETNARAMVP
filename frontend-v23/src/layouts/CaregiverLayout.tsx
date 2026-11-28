@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useNavigate } from "react-router-dom";
-import { BriefcaseBusiness, Building2, CalendarDays, CalendarRange, Fingerprint, Home, MessageCircle, MoreHorizontal } from "lucide-react";
+import { BriefcaseBusiness, Building2, CalendarDays, CalendarRange, Fingerprint, Home, MessageCircle, MoreHorizontal, Users } from "lucide-react";
 import { PortalBottomNav } from "./PortalBottomNav";
 import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -15,7 +15,7 @@ import { hasOrgFeature } from "@/auth/orgFeatures";
 import { getToken } from "@/auth/token";
 import { listMyEstablishmentAdminAssignments, type MyEstablishmentAdminAssignment } from "@/api/establishments";
 import { DemoEnvironmentBanner } from "@/components/DemoEnvironmentBanner";
-import { CAREGIVER_PUNCH_PATH, isResidentialOrganization } from "@/features/residential/modality";
+import { CAREGIVER_PUNCH_PATH, CAREGIVER_RESIDENTS_PATH, isResidentialOrganization } from "@/features/residential/modality";
 
 /**
  * Menú de la cuenta: si hay registros sin enviar, avisa antes de cerrar sesión. Por defecto
@@ -41,6 +41,8 @@ export function CaregiverLayout() {
   const mySchedule = hasOrgFeature(activeOrganization?.features, "HOGAR_CALENDARIO");
   // 173–175 (F4): «Ponchar» solo en hogares con HOGAR_PONCHES encendido.
   const punches = isResidentialOrganization(activeOrganization) && hasOrgFeature(activeOrganization?.features, "HOGAR_PONCHES");
+  // 176 (F3): «Mis residentes» solo en hogares con HOGAR_ASIGNACIONES encendido.
+  const myResidents = isResidentialOrganization(activeOrganization) && hasOrgFeature(activeOrganization?.features, "HOGAR_ASIGNACIONES");
   const alsoStaff = roles.includes("ORGANIZATION_ADMIN") || roles.includes("SUPERVISOR");
   const { t } = useTranslation("shell");
   const caregiverName = activeWorkerProfile?.displayName ?? user?.email ?? t("caregiver.nameFallback");
@@ -88,6 +90,7 @@ export function CaregiverLayout() {
     <PortalBottomNav tabs={[
       { to: "/caregiver/today", icon: Home, label: t("caregiver.items.today") },
       ...(punches ? [{ to: CAREGIVER_PUNCH_PATH, icon: Fingerprint, label: t("caregiver.items.punch") }] : []),
+      ...(myResidents ? [{ to: CAREGIVER_RESIDENTS_PATH, icon: Users, label: t("caregiver.items.residents") }] : []),
       { to: "/caregiver/shifts", icon: CalendarRange, label: t("caregiver.items.shifts") },
       ...(mySchedule ? [{ to: "/caregiver/horario", icon: CalendarDays, label: t("caregiver.items.mySchedule") }] : []),
       ...(smartMatch ? [{ to: "/caregiver/smartmatch", icon: BriefcaseBusiness, label: t("caregiver.items.offers") }] : []),
