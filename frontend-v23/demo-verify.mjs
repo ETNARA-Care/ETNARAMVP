@@ -33,4 +33,8 @@ for (const [id, base] of [["P8 demo", PORTAL], ["P9 producción", "https://app.e
   const { all, n } = await bundleText(base); const missing = FINAL.filter((t) => !all.includes(t));
   ck(`${id}: la versión publicada contiene los textos finales de #294 y #290`, missing.length === 0 && !all.includes("Cumple todos los requisitos verificados"), { n, missing });
 }
+
+// P10: el portal de la demo incluye las pantallas de hogares (F2 calendario y «Mi horario», F4 ponches, F3 vista previa).
+{ const { all, n } = await bundleText(PORTAL); const want = ["Mi horario", "Ponchar", "Mis residentes"]; const missing = want.filter((t) => !all.includes(t));
+  ck("P10 demo: el portal publicado incluye «Mi horario», «Ponchar» y «Mis residentes» (F3)", missing.length === 0, { n, missing }); }
 await b.close(); const f = out.filter((x) => !x).length; console.log(`RESULTADO ${out.length - f}/${out.length}`); process.exit(f ? 1 : 0);
