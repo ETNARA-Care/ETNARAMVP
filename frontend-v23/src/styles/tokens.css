@@ -140,3 +140,8 @@
   body.etnara-print-guide [data-print-guide] { width: 100%; max-width: none; padding: 0; box-shadow: none; border: 0; }
   @page { margin: 14mm; }
 }
+
+/* 28-nov · Franja «Entorno de demostración» (DEMO_ENVIRONMENT): altura fija de una línea. Las barras fijas de los portales
+   se desplazan --demo-banner-offset, que es 0 si la franja no existe (sin cambios para nadie) y su altura si existe. */
+:root { --demo-banner-h: 2.25rem; --demo-banner-offset: 0px; }
+html:has([data-demo-banner]) { --demo-banner-offset: var(--demo-banner-h); }
