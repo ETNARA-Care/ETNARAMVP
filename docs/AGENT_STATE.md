@@ -1,5 +1,10 @@
 # ETNARA Frontend Agent State
 
+## 2026-11-28 — 181 Integración con ETNARA Connect (portal) — rama integracion-connect (local, sin publicar; aprobada por Rafa como rama independiente)
+- Configuración → tarjeta «ETNARA Connect» (features/connect/ConnectLinkCard.tsx, api/connect.ts): solo ORGANIZATION_ADMIN, agencias e independientes (nunca hogares). Genera el código de un solo uso (10 min) que se pega en Connect; muestra «Vinculado/Sin vincular»; «Desvincular» con confirmación (Connect deja de recibir al instante). Con la integración apagada en el servidor (404) no se muestra. El código no se guarda en el navegador.
+- Backend: ETNARA-Backend rama integracion-connect, migración 181. El inicio de sesión de Care no cambia.
+- Pruebas: tests/connect-181.test.mjs 2; suite 562/562; tsc -b y build OK.
+
 ## 2026-11-25 — Fase 1 independientes, portal (rama claude/fase1-independientes, PR borrador; backend ETNARA-Backend #284, migración 164)
 - Textos según el tipo de organización (features/practice/practiceText.ts, arrivalText.proximityText): en una práctica no hay «agencia» en la familia (inicio y lugar del servicio), en «Mi día» («Ir a Mi práctica»), en el detalle del turno ni en la llegada («queda registrado»; «No requiere revisión de otra persona» en la administración). Agencias y hogares sin cambios.
 - Activación: «Tu nombre profesional» obligatorio solo al crear la cuenta de una práctica (invitation.independent).
